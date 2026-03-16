@@ -1063,7 +1063,7 @@ export default function LegacyApp() {
           return tier === "pro" ? (
             <ProgressScreen history={history} profile={profile} onBack={() => setScreen("dashboard")} />
           ) : (
-            <div style={{ minHeight: "100vh", padding: "24px 20px", maxWidth: 600, margin: "0 auto" }}>
+            <div style={{ minHeight: "100vh", padding: "24px 20px 90px", maxWidth: 600, margin: "0 auto" }}>
               <button onClick={() => setScreen("dashboard")} style={{ background: "none", border: "none", color: "#C4982A", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 20 }}>← Dashboard</button>
               <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>📈 Progress Tracking</h2>
               <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 14, marginBottom: 16 }}>Track your score trends across the season.</p>
@@ -1097,7 +1097,7 @@ export default function LegacyApp() {
           return tier === "pro" ? (
             <MentalTrainingScreen profile={profile} onBack={() => setScreen("dashboard")} />
           ) : (
-            <div style={{ minHeight: "100vh", padding: "24px 20px", maxWidth: 600, margin: "0 auto" }}>
+            <div style={{ minHeight: "100vh", padding: "24px 20px 90px", maxWidth: 600, margin: "0 auto" }}>
               <button onClick={() => setScreen("dashboard")} style={{ background: "none", border: "none", color: "#C4982A", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 20 }}>← Dashboard</button>
               <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>🧠 Mental Training</h2>
               <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 14, marginBottom: 24 }}>Gymnastics is 80% mental. Train the mind alongside the body.</p>
@@ -1129,7 +1129,7 @@ export default function LegacyApp() {
           return tier === "pro" ? (
             <SeasonGoalsScreen profile={profile} history={history} onBack={() => setScreen("dashboard")} />
           ) : (
-            <div style={{ minHeight: "100vh", padding: "24px 20px", maxWidth: 600, margin: "0 auto" }}>
+            <div style={{ minHeight: "100vh", padding: "24px 20px 90px", maxWidth: 600, margin: "0 auto" }}>
               <button onClick={() => setScreen("dashboard")} style={{ background: "none", border: "none", color: "#C4982A", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 20 }}>← Dashboard</button>
               <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>🎯 Season Goals</h2>
               <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 14, marginBottom: 24 }}>Set targets and track progress across the season.</p>
@@ -1147,50 +1147,54 @@ export default function LegacyApp() {
           );
         })()
       )}
+
+      {/* Bottom Navigation — shows on main screens */}
+      {["dashboard", "deductions", "meets", "progress", "mental", "goals", "settings"].includes(screen) && (
+        <nav style={{
+          position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 100,
+          background: "linear-gradient(to top, #0B1024 80%, transparent)",
+          paddingBottom: "max(12px, env(safe-area-inset-bottom))",
+          paddingTop: 8,
+        }}>
+          <div style={{ display: "flex", justifyContent: "space-around", maxWidth: 500, margin: "0 auto", padding: "0 8px" }}>
+            {[
+              { id: "dashboard", label: "Home", icon: "🏠" },
+              { id: "meets", label: "History", icon: "🏆" },
+              { id: "upload", label: "Analyze", icon: "📹", primary: true },
+              { id: "deductions", label: "Guide", icon: "📋" },
+              { id: "settings", label: "Profile", icon: "⚙️" },
+            ].map(tab => {
+              const isActive = screen === tab.id || (tab.id === "dashboard" && screen === "dashboard");
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setScreen(tab.id)}
+                  style={{
+                    display: "flex", flexDirection: "column", alignItems: "center", gap: 2,
+                    padding: tab.primary ? "6px 18px" : "6px 14px",
+                    borderRadius: 12, border: "none", cursor: "pointer",
+                    fontFamily: "'Outfit', sans-serif", fontSize: 9, fontWeight: 600,
+                    background: tab.primary ? "rgba(196,152,42,0.1)" : isActive ? "rgba(255,255,255,0.04)" : "transparent",
+                    color: tab.primary ? "#C4982A" : isActive ? "#C4982A" : "rgba(255,255,255,0.25)",
+                    transition: "all 0.2s", WebkitTapHighlightColor: "transparent",
+                    letterSpacing: 0.3,
+                    ...(tab.primary ? { border: "1px solid rgba(196,152,42,0.15)" } : {}),
+                  }}
+                >
+                  <span style={{ fontSize: tab.primary ? 18 : 16, lineHeight: 1 }}>{tab.icon}</span>
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </nav>
+      )}
     </div>
   );
 }
-
-// ─── SPLASH SCREEN ──────────────────────────────────────────────────
 function SplashScreen({ onStart }) {
   const [entered, setEntered] = useState(false);
   useEffect(() => { setTimeout(() => setEntered(true), 100); }, []);
-
-  // SVG gymnast silhouette logo
-  const Logo = () => (
-    <svg viewBox="0 0 120 120" width="110" height="110" style={{ filter: "drop-shadow(0 0 30px rgba(196,152,42,0.3))" }}>
-      <defs>
-        <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#C4982A" />
-          <stop offset="50%" stopColor="#E8C35A" />
-          <stop offset="100%" stopColor="#C4982A" />
-        </linearGradient>
-      </defs>
-      {/* Outer ring — like a judge's seal */}
-      <circle cx="60" cy="60" r="56" fill="none" stroke="url(#goldGrad)" strokeWidth="1.5" opacity="0.4" />
-      <circle cx="60" cy="60" r="52" fill="none" stroke="url(#goldGrad)" strokeWidth="0.5" opacity="0.2" />
-      {/* Gymnast silhouette — arabesque/scale pose */}
-      <g transform="translate(60,62)" fill="url(#goldGrad)">
-        {/* Head */}
-        <circle cx="0" cy="-28" r="5" />
-        {/* Torso */}
-        <path d="M-1,-23 Q0,-14 0,-8 L2,-8 Q2,-14 1,-23 Z" />
-        {/* Standing leg */}
-        <path d="M0,-8 Q-1,4 -3,16 L-1,16 Q1,4 2,-8 Z" />
-        {/* Extended leg — back */}
-        <path d="M0,-10 Q12,-14 28,-18 L28,-16 Q12,-12 1,-8 Z" />
-        {/* Front arm — reaching forward */}
-        <path d="M0,-22 Q-10,-28 -24,-30 L-24,-28 Q-10,-26 0,-20 Z" />
-        {/* Back arm — grace line */}
-        <path d="M1,-20 Q8,-26 18,-28 L18,-26 Q8,-24 1,-18 Z" />
-        {/* Pointed foot detail */}
-        <path d="M-3,16 L-5,19 L-3,18 Z" />
-        <path d="M28,-18 L32,-19 L30,-17 Z" />
-      </g>
-      {/* 10.0 subtle in bottom */}
-      <text x="60" y="106" textAnchor="middle" fill="url(#goldGrad)" fontFamily="'Space Mono', monospace" fontSize="8" fontWeight="700" opacity="0.3">10.000</text>
-    </svg>
-  );
 
   return (
     <div style={{
@@ -1198,77 +1202,111 @@ function SplashScreen({ onStart }) {
       alignItems: "center", justifyContent: "center", padding: 32, textAlign: "center",
       position: "relative", overflow: "hidden",
     }}>
-      {/* Background elements */}
-      <div style={{
-        position: "absolute", top: "10%", left: "50%", transform: "translateX(-50%)",
-        width: 500, height: 500,
-        background: "radial-gradient(circle, rgba(196,152,42,0.06) 0%, transparent 60%)",
-        pointerEvents: "none",
-      }} />
-      {/* Subtle decorative lines */}
+      {/* Background grid */}
       <div style={{
         position: "absolute", top: 0, left: 0, right: 0, bottom: 0, pointerEvents: "none",
-        backgroundImage: `
-          linear-gradient(rgba(196,152,42,0.03) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(196,152,42,0.03) 1px, transparent 1px)
-        `,
-        backgroundSize: "60px 60px",
-        opacity: 0.5,
+        backgroundImage: `linear-gradient(rgba(196,152,42,0.015) 1px, transparent 1px), linear-gradient(90deg, rgba(196,152,42,0.015) 1px, transparent 1px)`,
+        backgroundSize: "60px 60px", opacity: 0.5,
+      }} />
+      <div style={{
+        position: "absolute", top: "10%", left: "50%", transform: "translateX(-50%)",
+        width: 400, height: 400, borderRadius: "50%",
+        background: "radial-gradient(circle, rgba(196,152,42,0.05) 0%, transparent 60%)",
+        pointerEvents: "none",
       }} />
 
-      {/* Logo */}
+      {/* Arc Logo */}
       <div style={{
-        opacity: entered ? 1 : 0, transform: entered ? "scale(1)" : "scale(0.8)",
+        opacity: entered ? 1 : 0, transform: entered ? "scale(1)" : "scale(0.85)",
         transition: "all 1s cubic-bezier(0.16, 1, 0.3, 1)",
-        marginBottom: 28,
+        marginBottom: 32,
       }}>
-        <Logo />
+        <svg viewBox="0 0 120 120" width="110" height="110" style={{ filter: "drop-shadow(0 0 24px rgba(196,152,42,0.2))" }}>
+          <defs>
+            <linearGradient id="sg" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#C4982A" />
+              <stop offset="50%" stopColor="#E8C35A" />
+              <stop offset="100%" stopColor="#C4982A" />
+            </linearGradient>
+          </defs>
+          <circle cx="60" cy="60" r="56" fill="none" stroke="url(#sg)" strokeWidth="1.2" opacity="0.25" />
+          <circle cx="60" cy="60" r="52" fill="none" stroke="url(#sg)" strokeWidth="0.5" opacity="0.1" />
+          <g transform="translate(60,62)">
+            <path d="M-30 22 Q-10 -32, 20 -20 Q35 -12, 28 22" fill="none" stroke="url(#sg)" strokeWidth="3.5" strokeLinecap="round" />
+            <path d="M-20 16 Q-4 -18, 18 -12" fill="none" stroke="#E8C35A" strokeWidth="1.5" strokeLinecap="round" opacity="0.4" />
+            <circle cx="22" cy="-22" r="3" fill="#E8C35A" opacity="0.85" />
+            <circle cx="22" cy="-22" r="6" fill="#E8C35A" opacity="0.1" />
+          </g>
+          <text x="60" y="106" textAnchor="middle" fill="url(#sg)" fontFamily="'Space Mono', monospace" fontSize="8" fontWeight="700" opacity="0.2">10.000</text>
+        </svg>
       </div>
 
-      {/* Brand name */}
+      {/* Brand */}
       <div style={{
-        opacity: entered ? 1 : 0, transform: entered ? "translateY(0)" : "translateY(20px)",
+        opacity: entered ? 1 : 0, transform: entered ? "translateY(0)" : "translateY(16px)",
         transition: "all 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s",
       }}>
         <h1 style={{
-          fontFamily: "'Georgia', 'Times New Roman', serif", fontSize: 44, fontWeight: 500,
-          letterSpacing: 6, marginBottom: 0, lineHeight: 1,
+          fontFamily: "'Georgia', 'Times New Roman', serif", fontSize: 42, fontWeight: 500,
+          letterSpacing: 8, marginBottom: 0, lineHeight: 1,
         }}>
           <span style={{
             background: "linear-gradient(135deg, #C4982A, #E8C35A, #C4982A)",
             backgroundClip: "text", WebkitBackgroundClip: "text", color: "transparent",
-          }}>STRIVE</span><span style={{ color: "#C4982A" }}>.</span>
+          }}>STRIVE</span>
         </h1>
         <div style={{
-          fontSize: 11, fontWeight: 600, letterSpacing: 4,
-          color: "rgba(255,255,255,0.3)", marginTop: 10,
+          fontSize: 10, fontWeight: 600, letterSpacing: 3,
+          color: "rgba(255,255,255,0.2)", marginTop: 10,
           textTransform: "uppercase",
         }}>
           See Your Score. Own Your Growth.
         </div>
       </div>
 
-      {/* Tagline */}
+      {/* Description */}
       <div style={{
-        opacity: entered ? 1 : 0, transform: entered ? "translateY(0)" : "translateY(20px)",
+        opacity: entered ? 1 : 0, transform: entered ? "translateY(0)" : "translateY(16px)",
         transition: "all 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.6s",
-        marginTop: 32, marginBottom: 48,
+        marginTop: 28, marginBottom: 40,
       }}>
         <p style={{
-          color: "rgba(255,255,255,0.35)", fontSize: 14, maxWidth: 320,
+          color: "rgba(255,255,255,0.3)", fontSize: 14, maxWidth: 320,
           margin: "0 auto", lineHeight: 1.8, fontWeight: 400,
         }}>
-          AI video judging using official USA Gymnastics & Xcel scoring criteria. Detailed motion analysis and personalized drills to raise your score.
+          AI-powered video analysis using official USA Gymnastics & Xcel scoring criteria. 
+          Detailed deduction breakdowns and personalized training to raise your score.
         </p>
+      </div>
+
+      {/* Value props */}
+      <div style={{
+        opacity: entered ? 1 : 0, transform: entered ? "translateY(0)" : "translateY(16px)",
+        transition: "all 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.7s",
+        display: "flex", flexDirection: "column", gap: 8, marginBottom: 36, width: "100%", maxWidth: 340,
+      }}>
+        {[
+          { icon: "🎯", text: "Understand exactly why your score is what it is" },
+          { icon: "📈", text: "Get a personalized plan to improve every tenth" },
+          { icon: "🧠", text: "Mental training, nutrition, and recovery guidance" },
+        ].map((prop, i) => (
+          <div key={i} style={{
+            display: "flex", alignItems: "center", gap: 14, padding: "12px 16px",
+            borderRadius: 12, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)",
+          }}>
+            <span style={{ fontSize: 18, flexShrink: 0 }}>{prop.icon}</span>
+            <span style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", lineHeight: 1.4 }}>{prop.text}</span>
+          </div>
+        ))}
       </div>
 
       {/* CTA */}
       <div style={{
-        opacity: entered ? 1 : 0, transform: entered ? "translateY(0)" : "translateY(20px)",
+        opacity: entered ? 1 : 0, transform: entered ? "translateY(0)" : "translateY(16px)",
         transition: "all 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.9s",
       }}>
         <button className="btn-gold" onClick={onStart} style={{
-          fontSize: 16, padding: "16px 56px", letterSpacing: 1,
+          fontSize: 16, padding: "16px 56px", letterSpacing: 0.5,
           borderRadius: 14,
         }}>
           Get Started
@@ -1283,8 +1321,8 @@ function SplashScreen({ onStart }) {
       }}>
         {["USAG Levels 1–10", "Xcel Bronze–Sapphire", "MAG & WAG"].map((badge, i) => (
           <span key={i} style={{
-            fontSize: 9, fontWeight: 600, letterSpacing: 1.5,
-            color: "rgba(196,152,42,0.3)", textTransform: "uppercase",
+            fontSize: 8, fontWeight: 600, letterSpacing: 1.5,
+            color: "rgba(196,152,42,0.25)", textTransform: "uppercase",
           }}>
             {badge}
           </span>
@@ -1610,7 +1648,7 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
   const todayAffirmation = affirmationPool[day % affirmationPool.length];
 
   return (
-    <div style={{ minHeight: "100vh", padding: "20px 20px 32px", maxWidth: 600, margin: "0 auto" }}>
+    <div style={{ minHeight: "100vh", padding: "20px 20px 100px", maxWidth: 600, margin: "0 auto" }}>
       {/* Header — STRIVE branded */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -1845,30 +1883,32 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
         ))}
       </div>
 
-      {/* Quick Actions — 3x2 grid */}
+      {/* Quick Actions — horizontal scrollable pills */}
       {(() => {
         const tier = (() => { try { return localStorage.getItem("strive-tier") || "free"; } catch { return "free"; } })();
         const isPro = tier === "pro";
         return (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 20 }}>
+          <div style={{ display: "flex", gap: 8, marginBottom: 20, overflowX: "auto", paddingBottom: 4, WebkitOverflowScrolling: "touch" }}>
             {[
-              { icon: "note", label: "Deductions", sub: "USAG guide", action: onViewDeductions },
-              { icon: "chart", label: "Progress", sub: "Score trends", action: onProgress, pro: true },
-              { icon: "trophy", label: "My Meets", sub: "All results", action: onMeets },
-              { icon: "brain", label: "Mental", sub: "Visualization", action: onMental, pro: true },
-              { icon: "target", label: "Goals", sub: "Season targets", action: onGoals, pro: true },
-              { icon: "drill", label: "Drills", sub: "Exercises", action: onUpload },
+              { emoji: "📋", label: "Guide", action: onViewDeductions },
+              { emoji: "🏆", label: "Meets", action: onMeets },
+              { emoji: "📈", label: "Progress", action: onProgress, pro: true },
+              { emoji: "🧠", label: "Mental", action: onMental, pro: true },
+              { emoji: "🎯", label: "Goals", action: onGoals, pro: true },
             ].map((btn, i) => (
-              <button key={i} className="card" onClick={btn.action} style={{
-                cursor: "pointer", textAlign: "center", border: "1px solid rgba(255,255,255,0.06)", padding: "14px 8px",
-                position: "relative",
+              <button key={i} onClick={btn.action} style={{
+                display: "flex", alignItems: "center", gap: 6,
+                padding: "10px 16px", borderRadius: 12, cursor: "pointer",
+                background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)",
+                fontFamily: "'Outfit', sans-serif", fontSize: 12, fontWeight: 600,
+                color: "rgba(255,255,255,0.55)", whiteSpace: "nowrap",
+                transition: "all 0.2s", flexShrink: 0,
               }}>
+                <span style={{ fontSize: 14 }}>{btn.emoji}</span>
+                {btn.label}
                 {btn.pro && !isPro && (
-                  <span style={{ position: "absolute", top: 6, right: 6, fontSize: 7, fontWeight: 700, padding: "1px 5px", borderRadius: 3, background: "rgba(139,92,246,0.15)", color: "#A78BFA" }}>PRO</span>
+                  <span style={{ fontSize: 8, fontWeight: 700, padding: "1px 5px", borderRadius: 4, background: "rgba(139,92,246,0.12)", color: "#A78BFA", marginLeft: 2 }}>PRO</span>
                 )}
-                <Icon name={btn.icon} size={18} />
-                <div style={{ fontWeight: 600, fontSize: 12, marginTop: 5 }}>{btn.label}</div>
-                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginTop: 2 }}>{btn.sub}</div>
               </button>
             ))}
           </div>
@@ -2238,7 +2278,7 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
   // The URL will be garbage collected when the user navigates away or uploads a new video.
 
   return (
-    <div style={{ minHeight: "100vh", padding: "24px 20px", maxWidth: 600, margin: "0 auto" }}>
+    <div style={{ minHeight: "100vh", padding: "24px 20px 90px", maxWidth: 600, margin: "0 auto" }}>
       <button onClick={onBack} style={{ background: "none", border: "none", color: "#C4982A", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 24 }}>
         <Icon name="back" /> Dashboard
       </button>
@@ -3808,17 +3848,25 @@ RESPOND WITH VALID JSON ONLY:
       {/* Error state */}
       {error && (
         <div style={{
-          marginTop: 20, padding: "14px 20px", borderRadius: 12,
-          background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)",
+          marginTop: 20, padding: "16px 20px", borderRadius: 14,
+          background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.15)",
           maxWidth: 340, textAlign: "center",
         }}>
-          <div style={{ fontSize: 13, color: "#ef4444", fontWeight: 600, marginBottom: 4 }}>Analysis Error</div>
-          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>{error}</div>
-          <button onClick={onBack} style={{
-            marginTop: 12, background: "none", border: "1px solid rgba(239,68,68,0.3)",
-            borderRadius: 8, padding: "8px 20px", color: "#ef4444", fontSize: 12,
-            fontWeight: 600, cursor: "pointer", fontFamily: "'Outfit', sans-serif",
-          }}>Go Back</button>
+          <div style={{ fontSize: 13, color: "#ef4444", fontWeight: 600, marginBottom: 6 }}>Analysis Error</div>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: 1.6, marginBottom: 12 }}>
+            {error.match(/JSON|parse|Unexpected|truncat/i) ? "The AI returned an incomplete response. This happens occasionally — try again." :
+             error.match(/403|401|quota|rate/i) ? "API rate limit hit. Wait 30 seconds and try again." :
+             error.match(/network|fetch|Failed to fetch/i) ? "Network error — check your connection and try again." :
+             error.match(/video|frame|extract|format/i) ? "Video format issue. Try a shorter clip or different format." :
+             error}
+          </div>
+          <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+            <button onClick={onBack} style={{
+              background: "linear-gradient(135deg, #C4982A, #E8C35A)", border: "none",
+              borderRadius: 10, padding: "10px 24px", color: "#0B1024", fontSize: 13,
+              fontWeight: 700, cursor: "pointer", fontFamily: "'Outfit', sans-serif",
+            }}>Try Again</button>
+          </div>
         </div>
       )}
 
@@ -4162,7 +4210,7 @@ function ResultsScreen({ result, profile, history, videoUrl, onBack, onDrills })
   ];
 
   return (
-    <div style={{ minHeight: "100vh", padding: "24px 20px", maxWidth: 600, margin: "0 auto" }}>
+    <div style={{ minHeight: "100vh", padding: "24px 20px 90px", maxWidth: 600, margin: "0 auto" }}>
       <button onClick={onBack} style={{ background: "none", border: "none", color: "#C4982A", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 20 }}>
         <Icon name="back" /> Dashboard
       </button>
@@ -4820,7 +4868,7 @@ function DrillsScreen({ result, onBack }) {
   const totalGain = uniquePairs.reduce((s, p) => s + p.deduction, 0);
 
   return (
-    <div style={{ minHeight: "100vh", padding: "24px 20px", maxWidth: 600, margin: "0 auto" }}>
+    <div style={{ minHeight: "100vh", padding: "24px 20px 90px", maxWidth: 600, margin: "0 auto" }}>
       <button onClick={onBack} style={{ background: "none", border: "none", color: "#C4982A", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 20 }}>
         <Icon name="back" /> Results
       </button>
@@ -4941,7 +4989,7 @@ function DeductionsScreen({ onBack, profile }) {
   };
 
   return (
-    <div style={{ minHeight: "100vh", padding: "24px 20px", maxWidth: 600, margin: "0 auto" }}>
+    <div style={{ minHeight: "100vh", padding: "24px 20px 90px", maxWidth: 600, margin: "0 auto" }}>
       <button onClick={onBack} style={{ background: "none", border: "none", color: "#C4982A", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 20 }}>
         <Icon name="back" /> Dashboard
       </button>
@@ -5077,12 +5125,12 @@ function SettingsScreen({ profile, onSave, onBack, onReset }) {
   }, []);
 
   return (
-    <div style={{ minHeight: "100vh", padding: "24px 20px", maxWidth: 600, margin: "0 auto" }}>
+    <div style={{ minHeight: "100vh", padding: "24px 20px 90px", maxWidth: 600, margin: "0 auto" }}>
       <button onClick={onBack} style={{ background: "none", border: "none", color: "#C4982A", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 20 }}>
         <Icon name="back" /> Dashboard
       </button>
 
-      <h2 style={{ fontSize: 26, fontWeight: 700, marginBottom: 24 }}>Profile Settings</h2>
+      <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 24 }}>Settings</h2>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
         <div>
@@ -5391,11 +5439,11 @@ function ProgressScreen({ history, profile, onBack }) {
   });
 
   return (
-    <div style={{ minHeight: "100vh", padding: "24px 20px", maxWidth: 600, margin: "0 auto" }}>
+    <div style={{ minHeight: "100vh", padding: "24px 20px 90px", maxWidth: 600, margin: "0 auto" }}>
       <button onClick={onBack} style={{ background: "none", border: "none", color: "#C4982A", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 20 }}>
         <Icon name="back" /> Dashboard
       </button>
-      <h2 style={{ fontSize: 26, fontWeight: 700, marginBottom: 4 }}>Progress Tracking</h2>
+      <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 4 }}>Progress Tracking</h2>
       <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 14, marginBottom: 24 }}>Your scoring trends over time</p>
 
       {history.length < 2 ? (
@@ -5498,7 +5546,7 @@ function MeetsScreen({ history, savedResults, profile, onBack, onViewResult }) {
   })();
 
   return (
-    <div style={{ minHeight: "100vh", padding: "24px 20px", maxWidth: 600, margin: "0 auto" }}>
+    <div style={{ minHeight: "100vh", padding: "24px 20px 90px", maxWidth: 600, margin: "0 auto" }}>
       <button onClick={onBack} style={{ background: "none", border: "none", color: "#C4982A", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 20 }}>
         <Icon name="back" /> Dashboard
       </button>
@@ -5611,11 +5659,11 @@ function MentalTrainingScreen({ profile, onBack }) {
   ];
 
   return (
-    <div style={{ minHeight: "100vh", padding: "24px 20px", maxWidth: 600, margin: "0 auto" }}>
+    <div style={{ minHeight: "100vh", padding: "24px 20px 90px", maxWidth: 600, margin: "0 auto" }}>
       <button onClick={onBack} style={{ background: "none", border: "none", color: "#C4982A", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 20 }}>
         <Icon name="back" /> Dashboard
       </button>
-      <h2 style={{ fontSize: 26, fontWeight: 700, marginBottom: 4 }}><Icon name="brain" size={24} /> Mental Training</h2>
+      <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 4 }}><Icon name="brain" size={24} /> Mental Training</h2>
       <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 14, marginBottom: 20 }}>Gymnastics is 80% mental. Train the mind alongside the body.</p>
 
       {/* Section tabs */}
@@ -5917,11 +5965,11 @@ function SeasonGoalsScreen({ profile, history, onBack }) {
   const removeGoal = (id) => saveGoals(goals.filter(g => g.id !== id));
 
   return (
-    <div style={{ minHeight: "100vh", padding: "24px 20px", maxWidth: 600, margin: "0 auto" }}>
+    <div style={{ minHeight: "100vh", padding: "24px 20px 90px", maxWidth: 600, margin: "0 auto" }}>
       <button onClick={onBack} style={{ background: "none", border: "none", color: "#C4982A", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 20 }}>
         <Icon name="back" /> Dashboard
       </button>
-      <h2 style={{ fontSize: 26, fontWeight: 700, marginBottom: 4 }}><Icon name="target" size={24} /> Season Goals</h2>
+      <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 4 }}><Icon name="target" size={24} /> Season Goals</h2>
       <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 14, marginBottom: 20 }}>Set targets and track progress toward them</p>
 
       {/* Add new goal */}
