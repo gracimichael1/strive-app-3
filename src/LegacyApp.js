@@ -1733,31 +1733,60 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
           )}
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 12, paddingTop: 10, borderTop: "1px solid rgba(196,152,42,0.1)" }}>
-          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>
-            {history.length > 0 ? (
-              <>Analyses: <span style={{ color: "#C4982A", fontWeight: 700 }}>{history.length}</span></>
-            ) : "Upload your first routine to get started"}
-          </div>
+          {history.length > 0 ? (
+            <div style={{ display: "flex", gap: 16, fontSize: 11 }}>
+              <span style={{ color: "rgba(255,255,255,0.35)" }}>
+                Best: <span style={{ color: "#C4982A", fontWeight: 700, fontFamily: "'Space Mono', monospace" }}>
+                  {Math.max(...history.filter(h => h.score).map(h => h.score)).toFixed(1)}
+                </span>
+              </span>
+              <span style={{ color: "rgba(255,255,255,0.35)" }}>
+                Total: <span style={{ color: "#C4982A", fontWeight: 700 }}>{history.length}</span>
+              </span>
+            </div>
+          ) : (
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>Upload your first routine to get started</div>
+          )}
           {scoreTrend !== 0 && (
             <div style={{ fontSize: 11, fontWeight: 600, color: scoreTrend > 0 ? "#22c55e" : "#ef4444" }}>
-              Score trend: {scoreTrend > 0 ? "+" : ""}{scoreTrend.toFixed(2)}
+              {scoreTrend > 0 ? "▲" : "▼"} {Math.abs(scoreTrend).toFixed(2)}
             </div>
           )}
         </div>
       </div>
 
-      {/* Did You Know — rotating parent tip */}
+      {/* Smart Tip — data-driven when history exists, generic otherwise */}
       <div className="card" style={{
         padding: "12px 16px", marginBottom: 16,
         borderColor: "rgba(212,175,55,0.12)",
         background: "rgba(212,175,55,0.03)",
       }}>
         <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-          <span style={{ fontSize: 18, flexShrink: 0, marginTop: 2 }}>💡</span>
+          <span style={{ fontSize: 16, flexShrink: 0, marginTop: 2 }}>💡</span>
           <div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: "#d4af37", letterSpacing: 0.5, marginBottom: 4 }}>DID YOU KNOW?</div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: "#d4af37", letterSpacing: 0.5, marginBottom: 4 }}>
+              {history.length >= 2 ? "YOUR DATA SAYS" : "DID YOU KNOW?"}
+            </div>
             <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", lineHeight: 1.7 }}>
-              {PARENT_TIPS[Math.floor(Date.now() / 86400000) % PARENT_TIPS.length]}
+              {(() => {
+                if (history.length >= 2) {
+                  // Generate data-driven tips from actual history
+                  const totalLanding = history.slice(0, 5).reduce((s, h) => s + (h.landingCount || 0), 0);
+                  const totalTpm = history.slice(0, 5).reduce((s, h) => s + (h.tpmCount || 0), 0);
+                  const totalKtm = history.slice(0, 5).reduce((s, h) => s + (h.ktmCount || 0), 0);
+                  const hasFalls = history.slice(0, 5).some(h => h.hasFall);
+
+                  if (hasFalls) return `Falls cost 0.50 each — that's the single biggest deduction in gymnastics. Focus on consistency over difficulty. A clean routine without falls beats a hard routine with one.`;
+                  if (totalLanding >= 4) return `Landing deductions have appeared ${totalLanding} times in your last ${Math.min(5, history.length)} analyses. Stick drills (20 reps, freeze 3 seconds) are the fastest way to fix this — could save 0.20+ per routine.`;
+                  if (totalTpm >= 5) return `Toe point issues keep showing up (${totalTpm} times recently). Add theraband ankle exercises to your daily warm-up — 3x20 each direction. This becomes automatic within 2 weeks.`;
+                  if (totalKtm >= 4) return `Knee tension deductions are a pattern (${totalKtm} times). Foam block squeezes during handstands and tuck drills will train the squeeze reflex. Coaches: verbal cue "zip your legs" helps.`;
+
+                  const bestScore = Math.max(...history.filter(h => h.score).map(h => h.score));
+                  const avgScore = history.filter(h => h.score).reduce((s, h) => s + h.score, 0) / history.filter(h => h.score).length;
+                  if (bestScore - avgScore > 0.3) return `Your best score (${bestScore.toFixed(1)}) is ${(bestScore - avgScore).toFixed(1)} higher than your average. That means the skill is there — it's about consistency now. Mental training and routine repetition will close that gap.`;
+                }
+                return PARENT_TIPS[Math.floor(Date.now() / 86400000) % PARENT_TIPS.length];
+              })()}
             </div>
           </div>
         </div>
@@ -1857,8 +1886,16 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
       })()}
 
       {/* History — clickable */}
-      <div style={{ marginBottom: 24 }}>
-        <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>Recent Analyses</h3>
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+          <h3 style={{ fontSize: 15, fontWeight: 700 }}>Recent Analyses</h3>
+          {history.length > 3 && (
+            <button onClick={onMeets} style={{
+              background: "none", border: "none", color: "#C4982A", cursor: "pointer",
+              fontSize: 12, fontWeight: 600, fontFamily: "'Outfit', sans-serif",
+            }}>See all {history.length} →</button>
+          )}
+        </div>
         {history.length === 0 ? (
           <div className="card" style={{ textAlign: "center", padding: "32px 24px" }}>
             <div style={{ fontSize: 36, marginBottom: 12 }}>🤸</div>
@@ -1871,32 +1908,50 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
             </button>
           </div>
         ) : (
-          history.slice(0, 5).map((h, i) => {
+          history.slice(0, 3).map((h, i) => {
             const hasResult = savedResults && savedResults[h.id];
+            const sc = h.score || 0;
+            const scColor = sc >= 9.0 ? "#22c55e" : sc >= 8.0 ? "#f59e0b" : sc > 0 ? "#ef4444" : "rgba(255,255,255,0.3)";
+            // Show trend vs previous of same event
+            const prevSame = history.slice(i + 1).find(p => p.event === h.event && p.score);
+            const trend = prevSame ? sc - prevSame.score : null;
+            const eventIcons = { "Vault": "🏋", "Uneven Bars": "🤸", "Balance Beam": "━", "Floor Exercise": "🟫", "Pommel Horse": "🐴", "Still Rings": "⭕", "Parallel Bars": "═", "High Bar": "🔝" };
             return (
               <div key={h.id}
                 onClick={() => hasResult && onViewResult(savedResults[h.id])}
                 className="card" style={{
                   marginBottom: 8, display: "flex", justifyContent: "space-between", alignItems: "center",
-                  padding: "16px 20px", animation: `fadeIn 0.3s ease-out ${i * 0.1}s both`,
+                  padding: "14px 16px", animation: `fadeIn 0.3s ease-out ${i * 0.08}s both`,
                   cursor: hasResult ? "pointer" : "default",
-                  borderLeft: hasResult ? "3px solid rgba(212,175,55,0.3)" : "3px solid transparent",
+                  borderLeft: `3px solid ${scColor}40`,
                 }}>
-                <div>
-                  <div style={{ fontWeight: 600, fontSize: 14 }}>{h.event}</div>
-                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>
-                    {h.meetName ? `${h.meetName}` : h.date}
-                    {h.meetLocation ? ` · ${h.meetLocation}` : ""}
-                    {h.meetDate ? ` · ${h.meetDate}` : !h.meetName ? "" : ""}
-                    {hasResult && <span style={{ color: "#d4af37" }}> · tap to review</span>}
+                <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1 }}>
+                  <div style={{
+                    width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                    background: `${scColor}10`, display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 16,
+                  }}>
+                    {eventIcons[h.event] || "🤸"}
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: 14 }}>{h.event}</div>
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>
+                      {h.meetName || h.date}{h.meetLocation ? ` · ${h.meetLocation}` : ""}
+                    </div>
                   </div>
                 </div>
                 <div style={{ textAlign: "right" }}>
-                  <div style={{ fontWeight: 800, fontSize: 18, color: "#d4af37", fontFamily: "'Space Mono', monospace" }}>
-                    {h.score?.toFixed(3) || "—"}
+                  <div style={{ fontWeight: 800, fontSize: 18, color: scColor, fontFamily: "'Space Mono', monospace" }}>
+                    {sc > 0 ? sc.toFixed(3) : "—"}
                   </div>
-                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>
-                    -{h.deductions?.toFixed(2) || "0.00"} ded.
+                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.25)" }}>
+                    {trend !== null && Math.abs(trend) >= 0.01 ? (
+                      <span style={{ color: trend > 0 ? "#22c55e" : "#ef4444", fontWeight: 600 }}>
+                        {trend > 0 ? "▲" : "▼"} {Math.abs(trend).toFixed(2)}
+                      </span>
+                    ) : (
+                      <span>-{(h.deductions || 0).toFixed(2)} ded</span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1929,6 +1984,18 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
 
       {/* Meet Day Checklist */}
       <MeetDayChecklist gender={profile.gender} />
+
+      {/* Dashboard footer */}
+      <div style={{ textAlign: "center", paddingTop: 20, paddingBottom: 32, borderTop: "1px solid rgba(255,255,255,0.03)", marginTop: 8 }}>
+        <div style={{
+          fontFamily: "'Georgia', serif", fontSize: 14, fontWeight: 500, letterSpacing: 3,
+          background: "linear-gradient(135deg, #C4982A, #E8C35A)", backgroundClip: "text",
+          WebkitBackgroundClip: "text", color: "transparent", marginBottom: 4,
+        }}>STRIVE</div>
+        <div style={{ fontSize: 9, color: "rgba(255,255,255,0.12)", letterSpacing: 1 }}>
+          v1.0 · 3-Pass AI Engine · {profile.level}
+        </div>
+      </div>
 
     </div>
   );
@@ -2108,9 +2175,11 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
         <Icon name="back" /> Dashboard
       </button>
 
-      <h2 style={{ fontSize: 26, fontWeight: 700, marginBottom: 4 }}>Analyze Routine</h2>
-      <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 14, marginBottom: 28 }}>
-        Upload a video and our AI judge will score it using {profile.level} criteria.
+      <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 4 }}>
+        <Icon name="camera" size={20} /> New Analysis
+      </h2>
+      <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, marginBottom: 24 }}>
+        Upload a routine video — 3-pass AI judge scores using {profile.level} {profile.levelCategory === "xcel" ? "Xcel" : "USAG"} criteria.
       </p>
 
       {/* Video Upload / Record */}
@@ -2313,18 +2382,33 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
             </button>
           ))}
         </div>
+        {/* Event-specific filming tip */}
+        {event && (
+          <div style={{ marginTop: 8, padding: "8px 12px", borderRadius: 8, background: "rgba(196,152,42,0.04)", fontSize: 11, color: "rgba(255,255,255,0.4)", lineHeight: 1.5 }}>
+            {{
+              "Vault": "Best angle: side view, capturing the full run and landing. Get the board contact!",
+              "Uneven Bars": "Best angle: side view from the low bar side. Capture transitions between bars.",
+              "Balance Beam": "Best angle: side or diagonal. Keep the full beam length visible.",
+              "Floor Exercise": "Best angle: corner diagonal. Try to capture the full floor area.",
+              "Pommel Horse": "Best angle: end view for circles, side for travel.",
+              "Still Rings": "Best angle: front or slight angle. Capture the full hang and swing.",
+              "Parallel Bars": "Best angle: side view to see swing amplitude.",
+              "High Bar": "Best angle: side view to capture giants and releases.",
+            }[event] || "Film from the side at apparatus height for best results."}
+          </div>
+        )}
       </div>
 
-      {/* Meet Information */}
-      <div style={{ marginBottom: 20 }}>
-        <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, display: "block", color: "rgba(255,255,255,0.6)" }}>
-          MEET DETAILS
+      {/* Meet Information — compact */}
+      <div style={{ marginBottom: 16 }}>
+        <label style={{ fontSize: 12, fontWeight: 600, marginBottom: 6, display: "block", color: "rgba(255,255,255,0.4)" }}>
+          MEET DETAILS (optional)
         </label>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
-          <input className="input-field" placeholder="Meet name" value={meetName} onChange={e => setMeetName(e.target.value)} style={{ fontSize: 13 }} />
-          <input className="input-field" placeholder="Location" value={meetLocation} onChange={e => setMeetLocation(e.target.value)} style={{ fontSize: 13 }} />
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
+          <input className="input-field" placeholder="Meet name" value={meetName} onChange={e => setMeetName(e.target.value)} style={{ fontSize: 12, padding: "10px 12px" }} />
+          <input className="input-field" placeholder="Location" value={meetLocation} onChange={e => setMeetLocation(e.target.value)} style={{ fontSize: 12, padding: "10px 12px" }} />
+          <input className="input-field" type="date" value={meetDate} onChange={e => setMeetDate(e.target.value)} style={{ fontSize: 12, padding: "10px 12px" }} />
         </div>
-        <input className="input-field" type="date" value={meetDate} onChange={e => setMeetDate(e.target.value)} style={{ fontSize: 13 }} />
       </div>
 
       {/* Notes */}
@@ -4737,6 +4821,21 @@ function DrillsScreen({ result, onBack }) {
 // ─── DEDUCTIONS REFERENCE SCREEN ────────────────────────────────────
 function DeductionsScreen({ onBack, profile }) {
   const [activeCategory, setActiveCategory] = useState("execution");
+  const [calcStart, setCalcStart] = useState("10.0");
+  const [calcDeds, setCalcDeds] = useState("");
+
+  // Quick score calculator
+  const startVal = parseFloat(calcStart) || 10;
+  const totalDeds = parseFloat(calcDeds) || 0;
+  const calcResult = Math.max(0, startVal - totalDeds);
+
+  // Descriptions for each category
+  const catDescriptions = {
+    execution: "Form errors on individual skills — bent knees, flexed feet, body alignment. Taken on every skill.",
+    landing: "Steps, hops, squats, or falls on landings. Every landing is judged separately.",
+    artistry: "Beam and floor only — confidence, musicality, expression, use of space.",
+    neutral: "Rule violations — out of bounds, overtime, missing requirements. Not execution errors.",
+  };
 
   return (
     <div style={{ minHeight: "100vh", padding: "24px 20px", maxWidth: 600, margin: "0 auto" }}>
@@ -4744,25 +4843,69 @@ function DeductionsScreen({ onBack, profile }) {
         <Icon name="back" /> Dashboard
       </button>
 
-      <h2 style={{ fontSize: 26, fontWeight: 700, marginBottom: 4 }}>Deduction Guide</h2>
-      <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 14, marginBottom: 20 }}>
-        USAG Development Program · {profile?.level || "All Levels"}
+      <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 4 }}>Deduction Guide</h2>
+      <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, marginBottom: 20 }}>
+        USAG / Xcel scoring reference · {profile?.level || "All Levels"}
       </p>
 
-      {/* Scale Legend */}
-      <div className="card" style={{ marginBottom: 20, padding: 16 }}>
-        <h4 style={{ fontSize: 12, fontWeight: 700, marginBottom: 10, letterSpacing: 1 }}>DEDUCTION SCALE</h4>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-          {Object.entries(DEDUCTION_SCALE).map(([key, val]) => (
-            <span key={key} className="tag" style={{ background: `${val.color}22`, color: val.color }}>
-              {key}: {val.range}
-            </span>
-          ))}
+      {/* Quick Score Calculator for Parents */}
+      <div className="card" style={{ marginBottom: 16, padding: 16, borderColor: "rgba(196,152,42,0.15)", background: "rgba(196,152,42,0.03)" }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: "#C4982A", letterSpacing: 1, marginBottom: 10 }}>QUICK SCORE CALCULATOR</div>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", marginBottom: 4 }}>START</div>
+            <input
+              className="input-field"
+              type="number"
+              value={calcStart}
+              onChange={e => setCalcStart(e.target.value)}
+              style={{ width: 70, textAlign: "center", fontSize: 16, padding: "8px 6px", fontFamily: "'Space Mono', monospace", fontWeight: 700 }}
+            />
+          </div>
+          <span style={{ fontSize: 18, color: "rgba(255,255,255,0.2)", marginTop: 14 }}>−</span>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", marginBottom: 4 }}>DEDUCTIONS</div>
+            <input
+              className="input-field"
+              type="number"
+              step="0.05"
+              placeholder="0.00"
+              value={calcDeds}
+              onChange={e => setCalcDeds(e.target.value)}
+              style={{ width: 70, textAlign: "center", fontSize: 16, padding: "8px 6px", fontFamily: "'Space Mono', monospace", fontWeight: 700 }}
+            />
+          </div>
+          <span style={{ fontSize: 18, color: "rgba(255,255,255,0.2)", marginTop: 14 }}>=</span>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", marginBottom: 4 }}>SCORE</div>
+            <div style={{
+              fontSize: 22, fontWeight: 900, fontFamily: "'Space Mono', monospace",
+              color: calcResult >= 9.0 ? "#22c55e" : calcResult >= 8.0 ? "#f59e0b" : "#ef4444",
+              padding: "6px 0",
+            }}>
+              {calcResult.toFixed(2)}
+            </div>
+          </div>
+        </div>
+        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", marginTop: 8 }}>
+          Add up the deductions from the list below to understand how a score is calculated.
         </div>
       </div>
 
+      {/* Scale Legend — compact */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 16 }}>
+        {Object.entries(DEDUCTION_SCALE).map(([key, val]) => (
+          <span key={key} style={{
+            fontSize: 10, fontWeight: 600, padding: "3px 10px", borderRadius: 6,
+            background: `${val.color}15`, color: val.color, letterSpacing: 0.3,
+          }}>
+            {key}: {val.range}
+          </span>
+        ))}
+      </div>
+
       {/* Category Tabs */}
-      <div style={{ display: "flex", gap: 4, marginBottom: 16, overflowX: "auto" }}>
+      <div style={{ display: "flex", gap: 4, marginBottom: 8, overflowX: "auto" }}>
         {Object.keys(DEDUCTION_CATEGORIES).map(cat => (
           <button
             key={cat}
@@ -4770,7 +4913,7 @@ function DeductionsScreen({ onBack, profile }) {
             style={{
               padding: "8px 16px", borderRadius: 8, border: "none", cursor: "pointer",
               fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 12,
-              background: activeCategory === cat ? "#d4af37" : "rgba(255,255,255,0.06)",
+              background: activeCategory === cat ? "#C4982A" : "rgba(255,255,255,0.06)",
               color: activeCategory === cat ? "#0a0e27" : "rgba(255,255,255,0.5)",
               whiteSpace: "nowrap", transition: "all 0.2s", textTransform: "capitalize",
             }}
@@ -4780,23 +4923,28 @@ function DeductionsScreen({ onBack, profile }) {
         ))}
       </div>
 
+      {/* Category description */}
+      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginBottom: 14, lineHeight: 1.5, padding: "0 4px" }}>
+        {catDescriptions[activeCategory]}
+      </div>
+
       {/* Deduction List */}
       {DEDUCTION_CATEGORIES[activeCategory]?.map((ded, i) => {
         const severityColor = ded.category === "fall" ? "#dc2626" :
-          ded.category === "large" ? "#f97316" :
-          ded.category === "medium" ? "#f59e0b" : "#22c55e";
+          ded.category.includes("large") ? "#f97316" :
+          ded.category === "medium" || ded.category === "small-medium" ? "#f59e0b" : "#22c55e";
 
         return (
           <div key={i} className="card" style={{
-            marginBottom: 8, padding: "14px 16px",
+            marginBottom: 6, padding: "12px 14px",
             borderLeft: `3px solid ${severityColor}`,
-            animation: `fadeIn 0.3s ease-out ${i * 0.05}s both`,
+            animation: `fadeIn 0.2s ease-out ${i * 0.03}s both`,
           }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: 14, fontWeight: 600, flex: 1 }}>{ded.fault}</span>
+              <span style={{ fontSize: 13, fontWeight: 600, flex: 1 }}>{ded.fault}</span>
               <span style={{
-                fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize: 13,
-                color: severityColor, marginLeft: 12,
+                fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize: 12,
+                color: severityColor, marginLeft: 12, whiteSpace: "nowrap",
               }}>
                 {ded.deduction}
               </span>
@@ -5227,58 +5375,114 @@ function MeetsScreen({ history, savedResults, profile, onBack, onViewResult }) {
     meets[key].entries.push(h);
   });
 
+  // Overall stats
+  const allScores = history.filter(h => h.score > 0).map(h => h.score);
+  const bestScore = allScores.length > 0 ? Math.max(...allScores) : 0;
+  const avgScore = allScores.length > 0 ? allScores.reduce((a, b) => a + b, 0) / allScores.length : 0;
+  const bestEvent = (() => {
+    const byEvent = {};
+    history.forEach(h => {
+      if (!h.score) return;
+      if (!byEvent[h.event]) byEvent[h.event] = [];
+      byEvent[h.event].push(h.score);
+    });
+    let best = null, bestAvg = 0;
+    Object.entries(byEvent).forEach(([evt, scores]) => {
+      const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+      if (avg > bestAvg) { bestAvg = avg; best = evt; }
+    });
+    return best ? { event: best, avg: bestAvg } : null;
+  })();
+
   return (
     <div style={{ minHeight: "100vh", padding: "24px 20px", maxWidth: 600, margin: "0 auto" }}>
       <button onClick={onBack} style={{ background: "none", border: "none", color: "#d4af37", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 20 }}>
         <Icon name="back" /> Dashboard
       </button>
-      <h2 style={{ fontSize: 26, fontWeight: 700, marginBottom: 4 }}>My Meets</h2>
-      <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 14, marginBottom: 24 }}>All competitions organized by meet</p>
+      <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 4 }}>Competition History</h2>
+      <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, marginBottom: 20 }}>
+        {history.length} analyses across {Object.keys(meets).length} meets
+      </p>
+
+      {/* Stats Summary */}
+      {allScores.length > 0 && (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 20 }}>
+          <div className="card" style={{ textAlign: "center", padding: 14 }}>
+            <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", letterSpacing: 0.5 }}>BEST SCORE</div>
+            <div style={{ fontSize: 20, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: "#22c55e", marginTop: 4 }}>
+              {bestScore.toFixed(1)}
+            </div>
+          </div>
+          <div className="card" style={{ textAlign: "center", padding: 14 }}>
+            <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", letterSpacing: 0.5 }}>AVERAGE</div>
+            <div style={{ fontSize: 20, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: "#C4982A", marginTop: 4 }}>
+              {avgScore.toFixed(1)}
+            </div>
+          </div>
+          <div className="card" style={{ textAlign: "center", padding: 14 }}>
+            <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", letterSpacing: 0.5 }}>BEST EVENT</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#E2E8F0", marginTop: 6 }}>
+              {bestEvent ? bestEvent.event.replace("Exercise", "").replace("Uneven ", "") : "—"}
+            </div>
+          </div>
+        </div>
+      )}
 
       {Object.keys(meets).length === 0 ? (
-        <div className="card" style={{ padding: 40, textAlign: "center" }}>
-          <Icon name="trophy" size={32} />
-          <p style={{ color: "rgba(255,255,255,0.4)", marginTop: 12, fontSize: 14 }}>
-            No meets yet. Upload a video and enter the meet name to get started.
+        <div className="card" style={{ padding: "32px 24px", textAlign: "center" }}>
+          <div style={{ fontSize: 32, marginBottom: 10 }}>🏆</div>
+          <h4 style={{ fontSize: 15, fontWeight: 700, marginBottom: 6 }}>No meets recorded yet</h4>
+          <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, lineHeight: 1.6 }}>
+            When you upload a video, add the meet name to organize your competition history here.
           </p>
         </div>
       ) : (
         Object.entries(meets).map(([key, meet], mi) => {
           const aa = meet.entries.reduce((s, h) => s + (h.score || 0), 0);
+          const meetAvg = meet.entries.length > 0 ? aa / meet.entries.length : 0;
           return (
-            <div key={mi} className="card" style={{ marginBottom: 16, padding: 0, overflow: "hidden" }}>
+            <div key={mi} className="card" style={{ marginBottom: 12, padding: 0, overflow: "hidden", animation: `fadeIn 0.3s ease-out ${mi * 0.08}s both` }}>
               {/* Meet header */}
-              <div style={{ padding: "16px 18px", background: "rgba(212,175,55,0.06)", borderBottom: "1px solid rgba(212,175,55,0.1)" }}>
-                <div style={{ fontWeight: 700, fontSize: 16 }}>{meet.name || key}</div>
-                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>
-                  {meet.location && `${meet.location} · `}{meet.date}
+              <div style={{ padding: "14px 16px", background: "rgba(196,152,42,0.04)", borderBottom: "1px solid rgba(196,152,42,0.08)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: 15 }}>{meet.name || key}</div>
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>
+                      {meet.location && `${meet.location} · `}{meet.date}
+                    </div>
+                  </div>
                   {meet.entries.length > 1 && (
-                    <span style={{ color: "#d4af37", marginLeft: 8 }}>
-                      AA: {aa.toFixed(3)}
-                    </span>
+                    <div style={{ textAlign: "right" }}>
+                      <div style={{ fontSize: 9, color: "rgba(255,255,255,0.25)" }}>ALL-AROUND</div>
+                      <div style={{ fontSize: 16, fontWeight: 800, fontFamily: "'Space Mono', monospace", color: "#C4982A" }}>
+                        {aa.toFixed(2)}
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>
               {/* Routines in this meet */}
               {meet.entries.map((h, i) => {
                 const hasR = savedResults && savedResults[h.id];
+                const sc = h.score || 0;
+                const scColor = sc >= 9.0 ? "#22c55e" : sc >= 8.0 ? "#f59e0b" : sc > 0 ? "#ef4444" : "rgba(255,255,255,0.3)";
                 return (
                   <div key={i}
                     onClick={() => hasR && onViewResult(savedResults[h.id])}
                     style={{
                       display: "flex", justifyContent: "space-between", alignItems: "center",
-                      padding: "12px 18px", cursor: hasR ? "pointer" : "default",
-                      borderBottom: i < meet.entries.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
+                      padding: "11px 16px", cursor: hasR ? "pointer" : "default",
+                      borderBottom: i < meet.entries.length - 1 ? "1px solid rgba(255,255,255,0.03)" : "none",
+                      transition: "background 0.2s",
                     }}>
                     <div>
-                      <div style={{ fontSize: 14, fontWeight: 600 }}>{h.event}</div>
-                      {hasR && <div style={{ fontSize: 11, color: "#d4af37" }}>tap to review</div>}
+                      <div style={{ fontSize: 13, fontWeight: 600 }}>{h.event}</div>
+                      {hasR && <div style={{ fontSize: 10, color: "#C4982A" }}>tap to review →</div>}
                     </div>
                     <div style={{ textAlign: "right" }}>
-                      <div style={{ fontWeight: 800, fontSize: 18, fontFamily: "'Space Mono', monospace", color: "#d4af37" }}>
-                        {h.score?.toFixed(3) || "—"}
+                      <div style={{ fontWeight: 800, fontSize: 17, fontFamily: "'Space Mono', monospace", color: scColor }}>
+                        {sc > 0 ? sc.toFixed(3) : "—"}
                       </div>
-                      <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>-{h.deductions?.toFixed(2)} ded</div>
                     </div>
                   </div>
                 );
