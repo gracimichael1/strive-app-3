@@ -4195,6 +4195,72 @@ function ResultsScreen({ result, profile, history, videoUrl, onBack, onDrills })
         );
       })()}
 
+      {/* ═══ SCORE BENCHMARK ═══ */}
+      <ScoreBenchmark score={result.finalScore} level={result.level} />
+
+      {/* ═══ EVENT COMPARISON ═══ */}
+      {(() => {
+        const sameEventHistory = (history || []).filter(h => h.event === result.event && h.score);
+        if (sameEventHistory.length > 0) {
+          const lastScore = sameEventHistory[0].score;
+          const evDiff = result.finalScore - lastScore;
+          const improved = evDiff > 0;
+          const same = Math.abs(evDiff) < 0.01;
+          return (
+            <div style={{
+              padding: "12px 16px", borderRadius: 14, marginBottom: 14,
+              background: same ? "rgba(255,255,255,0.02)" : improved ? "rgba(34,197,94,0.03)" : "rgba(239,68,68,0.02)",
+              border: `1px solid ${same ? "rgba(255,255,255,0.04)" : improved ? "rgba(34,197,94,0.08)" : "rgba(239,68,68,0.06)"}`,
+            }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div>
+                  <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.25)", letterSpacing: 0.5 }}>VS LAST {result.event?.toUpperCase()}</div>
+                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginTop: 4 }}>
+                    <span style={{ fontFamily: "'Space Mono', monospace" }}>{lastScore.toFixed(3)}</span>
+                    <span style={{ color: "rgba(255,255,255,0.15)", margin: "0 6px" }}>→</span>
+                    <span style={{ fontFamily: "'Space Mono', monospace", color: scoreColor }}>{result.finalScore.toFixed(3)}</span>
+                  </div>
+                </div>
+                <div style={{ fontSize: 18, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: same ? "rgba(255,255,255,0.3)" : improved ? "#22c55e" : "#ef4444" }}>
+                  {same ? "=" : improved ? "+" : ""}{evDiff.toFixed(2)}
+                </div>
+              </div>
+            </div>
+          );
+        }
+        return null;
+      })()}
+
+      {/* ═══ BODY HEATMAP + TIMELINE (visual) ═══ */}
+      <div style={{ marginBottom: 14 }}>
+        <BodyHeatmap deductions={result.executionDeductions} />
+      </div>
+      <div style={{ marginBottom: 14 }}>
+        <DeductionTimeline deductions={result.executionDeductions} />
+      </div>
+
+      {/* ═══ IMPROVEMENT POTENTIAL ═══ */}
+      {sortedDeds.length >= 2 && (() => {
+        const top3 = sortedDeds.slice(0, 3);
+        const potentialGain = top3.reduce((s, d) => s + safeNum(d.deduction, 0), 0);
+        const projectedScore = Math.min(10, safeNum(result.finalScore, 0) + potentialGain);
+        return (
+          <div style={{ marginBottom: 14, padding: "14px 16px", borderRadius: 16, background: "linear-gradient(135deg, rgba(196,152,42,0.04), rgba(34,197,94,0.02))", border: "1px solid rgba(196,152,42,0.08)" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 14, marginBottom: 4 }}>
+              <div style={{ textAlign: "center" }}>
+                <div style={{ fontSize: 9, color: "rgba(255,255,255,0.25)" }}>NOW</div>
+                <div style={{ fontSize: 22, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: scoreColor }}>{safeNum(result.finalScore, 0).toFixed(1)}</div>
+              </div>
+              <svg width="20" height="12" viewBox="0 0 20 12" fill="none"><path d="M2 6h14M14 2l4 4-4 4" stroke="rgba(196,152,42,0.3)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              <div style={{ textAlign: "center" }}>
+                <div style={{ fontSize: 9, color: "rgba(255,255,255,0.25)" }}>POSSIBLE</div>
+                <div style={{ fontSize: 22, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: "#22c55e" }}>{projectedScore.toFixed(1)}</div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* ═══ VIDEO (collapsible) ═══ */}
       {hasVideo && (
         <div style={{ marginBottom: 16 }}>
@@ -4327,31 +4393,73 @@ function ResultsScreen({ result, profile, history, videoUrl, onBack, onDrills })
 
       {/* ═══ STRENGTHS (pill chips) ═══ */}
       {safeArray(result.strengths).length > 0 && (
-        <div style={{ marginBottom: 16 }}>
+        <div style={{ marginBottom: 14 }}>
           <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.2)", letterSpacing: 1, marginBottom: 8 }}>STRENGTHS</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-            {safeArray(result.strengths).slice(0, 4).map((s, i) => (
+            {safeArray(result.strengths).slice(0, 5).map((s, i) => (
               <span key={i} style={{ fontSize: 11, padding: "6px 12px", borderRadius: 10, background: "rgba(34,197,94,0.04)", border: "1px solid rgba(34,197,94,0.08)", color: "rgba(34,197,94,0.7)", fontWeight: 500 }}>
-                {safeStr(s).substring(0, 50)}
+                {safeStr(s).substring(0, 60)}
               </span>
             ))}
           </div>
         </div>
       )}
 
+      {/* ═══ AREAS FOR IMPROVEMENT ═══ */}
+      {safeArray(result.areasForImprovement).length > 0 && (
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.2)", letterSpacing: 1, marginBottom: 8 }}>AREAS TO IMPROVE</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {safeArray(result.areasForImprovement).slice(0, 5).map((a, i) => (
+              <span key={i} style={{ fontSize: 11, padding: "6px 12px", borderRadius: 10, background: "rgba(245,158,11,0.04)", border: "1px solid rgba(245,158,11,0.08)", color: "rgba(245,158,11,0.7)", fontWeight: 500 }}>
+                {safeStr(a).substring(0, 60)}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ═══ JUDGE'S ASSESSMENT ═══ */}
+      {result.overallAssessment && (
+        <div style={{ marginBottom: 14, padding: "14px 16px", borderRadius: 16, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)" }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(196,152,42,0.5)", letterSpacing: 1, marginBottom: 8 }}>JUDGE'S ASSESSMENT</div>
+          <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", lineHeight: 1.7 }}>
+            {safeStr(result.overallAssessment || result.truthAnalysis || "")}
+          </div>
+        </div>
+      )}
+
+      {/* ═══ TOP FIXES (detailed) ═══ */}
+      {safeArray(result.topFixes).length > 0 && (
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.2)", letterSpacing: 1, marginBottom: 8 }}>TOP FIXES</div>
+          {safeArray(result.topFixes).slice(0, 3).map((fix, i) => (
+            <div key={i} style={{ padding: "10px 14px", borderRadius: 12, marginBottom: 6, background: "rgba(34,197,94,0.03)", border: "1px solid rgba(34,197,94,0.06)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: "#e2e8f0" }}>{safeStr(fix.name || fix)}</span>
+                {fix.saves && <span style={{ fontSize: 12, fontWeight: 700, color: "#22c55e", fontFamily: "'Space Mono', monospace" }}>+{safeNum(fix.saves, 0).toFixed(2)}</span>}
+              </div>
+              {fix.drill && <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 4, lineHeight: 1.5 }}>{safeStr(fix.drill)}</div>}
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* ═══ PARENT SUMMARY ═══ */}
-      <div style={{ marginBottom: 16, padding: "14px 16px", borderRadius: 16, background: "rgba(196,152,42,0.03)", border: "1px solid rgba(196,152,42,0.06)" }}>
+      <div style={{ marginBottom: 14, padding: "14px 16px", borderRadius: 16, background: "rgba(196,152,42,0.03)", border: "1px solid rgba(196,152,42,0.06)" }}>
         <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(196,152,42,0.5)", letterSpacing: 1, marginBottom: 8 }}>WHAT THIS MEANS</div>
-        <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", lineHeight: 1.7 }}>
-          {result.finalScore >= 9.2 ? (
-            `Excellent execution. Only minor deductions — this is a competitive score at ${result.level}.`
-          ) : result.finalScore >= 8.5 ? (
-            `Solid routine with ${deds.length} deductions totaling ${safeNum(result.totalDeductions, 0).toFixed(2)}. Fixing the top 3 could push this above ${(result.finalScore + sortedDeds.slice(0, 3).reduce((s, d) => s + safeNum(d.deduction, 0), 0)).toFixed(1)}.`
-          ) : result.finalScore >= 7.5 ? (
-            `Room to grow. The ${deds.length} deductions are mostly fixable execution details. Focus on the top 3 — that alone could add +${sortedDeds.slice(0, 3).reduce((s, d) => s + safeNum(d.deduction, 0), 0).toFixed(2)} to the score.`
-          ) : (
-            `Several areas need attention, but don't be discouraged. Focus on the biggest deductions first — small improvements add up quickly.`
-          )}
+        <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", lineHeight: 1.7, marginBottom: 10 }}>
+          {result.finalScore >= 9.2 ?
+            `Excellent execution at ${result.level}. Only minor deductions — this is a top-tier score. Celebrate this.` :
+           result.finalScore >= 8.5 ?
+            `Solid routine. ${deds.length} deductions totaling ${safeNum(result.totalDeductions, 0).toFixed(2)}. Fixing the top 3 could push above ${(result.finalScore + sortedDeds.slice(0, 3).reduce((s, d) => s + safeNum(d.deduction, 0), 0)).toFixed(1)} — a realistic goal for next meet.` :
+           result.finalScore >= 7.5 ?
+            `Room to grow. The ${deds.length} deductions are mostly fixable — body position, landings, foot form. Top 3 fixes alone add +${sortedDeds.slice(0, 3).reduce((s, d) => s + safeNum(d.deduction, 0), 0).toFixed(2)}.` :
+            `Several areas need work, but every gymnast at ${result.level} has been here. Focus on the biggest 2-3 deductions. Small improvements add up fast.`}
+        </div>
+        <div style={{ padding: "8px 12px", borderRadius: 8, background: "rgba(255,255,255,0.02)", fontSize: 11, color: "rgba(255,255,255,0.3)", lineHeight: 1.6 }}>
+          {safeNum(result.startValue, 10).toFixed(1)} − {deds.length} deductions ({safeNum(result.totalDeductions, 0).toFixed(2)}) = {safeNum(result.finalScore, 0).toFixed(3)}
+          {sortedDeds.length > 0 && `. Biggest single loss: ${safeStr(sortedDeds[0].skill)} (-${safeNum(sortedDeds[0].deduction, 0).toFixed(2)})`}
         </div>
       </div>
 
