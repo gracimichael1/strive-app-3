@@ -2172,7 +2172,25 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
   const [meetName, setMeetName] = useState("");
   const [meetLocation, setMeetLocation] = useState("");
   const [meetDate, setMeetDate] = useState(new Date().toISOString().split("T")[0]);
-  const [hasApiKey, setHasApiKey] = useState(true);
+  const [hasApiKey, setHasApiKey] = useState(null); // null=checking
+  const [inlineKey, setInlineKey] = useState("");
+  const [keySaving, setKeySaving] = useState(false);
+
+  // Check for API key on mount (user saved key OR server key)
+  useEffect(() => {
+    (async () => {
+      try {
+        const k = await storage.get("strive-gemini-key");
+        if (k?.value) { setHasApiKey(true); return; }
+      } catch {}
+      // Check server-side key
+      try {
+        const resp = await fetch("/api/gemini-key");
+        if (resp.ok) { setHasApiKey(true); return; }
+      } catch {}
+      setHasApiKey(false);
+    })();
+  }, []);
   const fileRef = useRef(null);
   const captureRef = useRef(null);
   const videoPreviewRef = useRef(null);
@@ -2615,16 +2633,71 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
         <span style={{ fontSize: 11, color: "rgba(147,197,253,0.7)" }}>Video processed on-device. Only frames sent to AI. Your data stays private.</span>
       </div>
 
-      {/* Analysis engine status */}
-      <div style={{
-        display: "flex", alignItems: "center", gap: 8,
-        padding: "10px 14px", borderRadius: 10, marginBottom: 16,
-        background: "rgba(34,197,94,0.04)", border: "1px solid rgba(34,197,94,0.1)",
-      }}>
-        <span style={{ color: "#22c55e", fontSize: 14 }}>✓</span>
-        <span style={{ fontSize: 12, color: "rgba(34,197,94,0.7)" }}>3-pass analysis engine ready</span>
-        <span style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", marginLeft: "auto" }}>Detect → Judge → Verify</span>
-      </div>
+      {/* API Key Status */}
+      {hasApiKey === false ? (
+        <div style={{
+          padding: 16, borderRadius: 14, marginBottom: 16,
+          background: "rgba(196,152,42,0.04)", border: "1px solid rgba(196,152,42,0.12)",
+        }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#C4982A", marginBottom: 6 }}>
+            🔑 One-time setup
+          </div>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", lineHeight: 1.6, marginBottom: 10 }}>
+            STRIVE needs a free Gemini API key to analyze videos. Takes 30 seconds:
+          </div>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginBottom: 12, lineHeight: 1.8 }}>
+            <span style={{ color: "#C4982A", fontWeight: 700 }}>1.</span>{" "}<span style={{ color: "#C4982A", cursor: "pointer", textDecoration: "underline" }} onClick={() => window.open("https://aistudio.google.com/apikey", "_blank")}>Open aistudio.google.com/apikey</span><br/>
+            <span style={{ color: "#C4982A", fontWeight: 700 }}>2.</span> Click "Create API Key"<br/>
+            <span style={{ color: "#C4982A", fontWeight: 700 }}>3.</span> Paste below
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <input
+              className="input-field"
+              type="password"
+              placeholder="Paste API key (AIza...)"
+              value={inlineKey}
+              onChange={e => setInlineKey(e.target.value)}
+              style={{ fontSize: 12, flex: 1 }}
+            />
+            <button
+              onClick={async () => {
+                if (!inlineKey.trim()) return;
+                setKeySaving(true);
+                try {
+                  await storage.set("strive-gemini-key", inlineKey.trim());
+                  setHasApiKey(true);
+                } catch (e) { alert("Error: " + e.message); }
+                setKeySaving(false);
+              }}
+              disabled={!inlineKey.trim() || keySaving}
+              style={{
+                background: "linear-gradient(135deg, #C4982A, #E8C35A)",
+                color: "#0B1024", border: "none", borderRadius: 10,
+                padding: "0 20px", fontWeight: 700, fontSize: 13,
+                cursor: inlineKey.trim() ? "pointer" : "not-allowed",
+                opacity: inlineKey.trim() ? 1 : 0.4,
+                fontFamily: "'Outfit', sans-serif", whiteSpace: "nowrap",
+              }}
+            >
+              {keySaving ? "..." : "Save"}
+            </button>
+          </div>
+        </div>
+      ) : hasApiKey === true ? (
+        <div style={{
+          display: "flex", alignItems: "center", gap: 8,
+          padding: "10px 14px", borderRadius: 10, marginBottom: 16,
+          background: "rgba(34,197,94,0.04)", border: "1px solid rgba(34,197,94,0.08)",
+        }}>
+          <span style={{ color: "#22c55e", fontSize: 14 }}>✓</span>
+          <span style={{ fontSize: 12, color: "rgba(34,197,94,0.7)" }}>3-pass analysis engine ready</span>
+          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.15)", marginLeft: "auto" }}>Detect → Judge → Verify</span>
+        </div>
+      ) : (
+        <div style={{ padding: "10px 14px", borderRadius: 10, marginBottom: 16, background: "rgba(255,255,255,0.02)" }}>
+          <span style={{ fontSize: 12, color: "rgba(255,255,255,0.3)" }}>Checking API key...</span>
+        </div>
+      )}
 
       <button
         className="btn-gold"
@@ -3258,13 +3331,27 @@ RESPOND WITH VALID JSON ONLY:
     setStatus("Preparing analysis...");
     setProgress(35);
 
-    // Default platform key — users can override in Settings
-    const DEFAULT_GEMINI_KEY = "AIzaSyBQByoYEe9qxlDWzvqfOX9bPQb9I86Vy9Q";
+    // Try user's saved key first, then server-side key
     let apiKey = null;
     try {
       const k = await storage.get("strive-gemini-key");
-      apiKey = k?.value || DEFAULT_GEMINI_KEY;
-    } catch (e) { apiKey = DEFAULT_GEMINI_KEY; }
+      apiKey = k?.value || null;
+    } catch (e) {}
+
+    // If no user key, fetch from server (key stored in Vercel env var, not in code)
+    if (!apiKey) {
+      try {
+        const resp = await fetch("/api/gemini-key");
+        if (resp.ok) {
+          const data = await resp.json();
+          apiKey = data.key || null;
+        }
+      } catch {}
+    }
+
+    if (!apiKey) {
+      throw new Error("No API key found. Go to Settings → Video Analysis Engine and paste your free Gemini API key from aistudio.google.com/apikey");
+    }
 
     let result = null;
     let geminiError = null;
@@ -5301,27 +5388,38 @@ function SettingsScreen({ profile, onSave, onBack, onReset }) {
       {/* API Configuration */}
       <div style={{ marginTop: 32, paddingTop: 24, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
         <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>
-          <Icon name="target" size={14} /> Video Analysis Engine
+          Video Analysis Engine
         </h3>
-        <div style={{
-          display: "flex", alignItems: "center", gap: 8,
-          padding: "10px 14px", borderRadius: 10, marginBottom: 12,
-          background: "rgba(34,197,94,0.04)", border: "1px solid rgba(34,197,94,0.1)",
-        }}>
-          <span style={{ color: "#22c55e", fontSize: 14 }}>✓</span>
-          <div>
-            <span style={{ fontSize: 12, color: "rgba(34,197,94,0.8)" }}>3-pass Gemini engine active</span>
-            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", marginTop: 2 }}>Detect → Judge → Verify · Platform key built-in</div>
+        {geminiKey ? (
+          <div style={{
+            display: "flex", alignItems: "center", gap: 8,
+            padding: "10px 14px", borderRadius: 10, marginBottom: 12,
+            background: "rgba(34,197,94,0.04)", border: "1px solid rgba(34,197,94,0.08)",
+          }}>
+            <span style={{ color: "#22c55e", fontSize: 14 }}>✓</span>
+            <div>
+              <span style={{ fontSize: 12, color: "rgba(34,197,94,0.8)" }}>API key configured</span>
+              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", marginTop: 2 }}>3-pass engine: Detect → Judge → Verify</div>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div style={{
+            display: "flex", alignItems: "center", gap: 8,
+            padding: "10px 14px", borderRadius: 10, marginBottom: 12,
+            background: "rgba(245,158,11,0.04)", border: "1px solid rgba(245,158,11,0.1)",
+          }}>
+            <span style={{ color: "#f59e0b", fontSize: 14 }}>!</span>
+            <span style={{ fontSize: 12, color: "rgba(245,158,11,0.8)" }}>No API key — add one below to enable analysis</span>
+          </div>
+        )}
         <p style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginBottom: 10, lineHeight: 1.5 }}>
-          Advanced: Override with your own API key for higher rate limits. Get one free at <span style={{ color: "#C4982A" }}>aistudio.google.com/apikey</span>
+          Get a free API key at <span style={{ color: "#C4982A", cursor: "pointer" }} onClick={() => window.open("https://aistudio.google.com/apikey", "_blank")}>aistudio.google.com/apikey</span>. Create one, copy it, paste below.
         </p>
         <div style={{ display: "flex", gap: 8 }}>
           <input
             className="input-field"
             type="password"
-            placeholder="Optional — paste your own key to override"
+            placeholder="Paste your Gemini API key (AIza...)"
             value={geminiKey}
             onChange={e => setGeminiKey(e.target.value)}
             style={{ fontSize: 12, flex: 1 }}

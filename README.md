@@ -41,10 +41,19 @@ PORT=3001 npm start  # opens http://localhost:3001
 
 ## Gemini API Key
 
-The app needs a Gemini API key for video analysis:
-1. Go to [aistudio.google.com/apikey](https://aistudio.google.com/apikey)
-2. Create a free API key
-3. In STRIVE: Settings → Video Analysis Engine → paste your key → Save
+Two options for providing the API key:
+
+### Option A: Server-side (recommended for production)
+1. Go to [aistudio.google.com/apikey](https://aistudio.google.com/apikey) and create a key
+2. In Vercel: go to your project → Settings → Environment Variables
+3. Add: `GEMINI_API_KEY` = your key
+4. Redeploy (Settings → Deployments → click the 3 dots on latest → Redeploy)
+5. The key is now secure — never visible in source code
+
+### Option B: User-provided (each user adds their own)
+1. Open STRIVE → go to Upload or Settings
+2. Paste your key in the API key field
+3. Key is saved locally in your browser
 
 ---
 
