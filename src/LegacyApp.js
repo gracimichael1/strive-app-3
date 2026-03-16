@@ -931,43 +931,51 @@ export default function LegacyApp() {
         * { box-sizing: border-box; margin: 0; padding: 0; }
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(196,152,42,0.2); border-radius: 2px; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        ::-webkit-scrollbar-thumb { background: rgba(196,152,42,0.15); border-radius: 2px; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
         @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
         @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        @keyframes scaleIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        @keyframes scaleIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
         @keyframes barGrow { from { width: 0%; } to { width: var(--target-width); } }
-        @keyframes glowPulse { 0%, 100% { box-shadow: 0 0 20px rgba(196,152,42,0.15); } 50% { box-shadow: 0 0 40px rgba(196,152,42,0.25); } }
+        @keyframes glowPulse { 0%, 100% { box-shadow: 0 0 20px rgba(196,152,42,0.12); } 50% { box-shadow: 0 0 40px rgba(196,152,42,0.2); } }
+        @keyframes floatIn { from { opacity: 0; transform: translateY(6px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        html { scroll-behavior: smooth; }
         .btn-gold {
           background: linear-gradient(135deg, #C4982A, #E8C35A);
           color: #0B1024; border: none; padding: 14px 32px; border-radius: 14px;
           font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 15px;
-          cursor: pointer; transition: all 0.3s; letter-spacing: 0.3px;
-          box-shadow: 0 4px 20px rgba(196,152,42,0.25);
+          cursor: pointer; transition: all 0.2s ease; letter-spacing: 0.3px;
+          box-shadow: 0 2px 16px rgba(196,152,42,0.2);
         }
-        .btn-gold:hover { transform: translateY(-1px); box-shadow: 0 6px 28px rgba(196,152,42,0.35); filter: brightness(1.05); }
-        .btn-gold:active { transform: translateY(0); }
-        .btn-gold:disabled { opacity: 0.4; cursor: not-allowed; transform: none; filter: none; box-shadow: none; }
+        .btn-gold:hover { transform: translateY(-1px); box-shadow: 0 4px 24px rgba(196,152,42,0.3); }
+        .btn-gold:active { transform: translateY(0); box-shadow: 0 2px 12px rgba(196,152,42,0.15); }
+        .btn-gold:disabled { opacity: 0.35; cursor: not-allowed; transform: none; box-shadow: none; }
         .btn-outline {
-          background: transparent; color: #C4982A; border: 1.5px solid rgba(196,152,42,0.3);
+          background: rgba(255,255,255,0.02); color: #C4982A; border: 1px solid rgba(196,152,42,0.2);
           padding: 12px 28px; border-radius: 12px; font-family: 'Outfit', sans-serif;
           font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s;
         }
-        .btn-outline:hover { background: rgba(196,152,42,0.08); border-color: rgba(196,152,42,0.5); }
+        .btn-outline:hover { background: rgba(196,152,42,0.06); border-color: rgba(196,152,42,0.35); }
         .card {
-          background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05);
-          border-radius: 16px; padding: 20px; transition: border-color 0.2s;
+          background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.04);
+          border-radius: 18px; padding: 18px; transition: border-color 0.2s;
         }
-        .card:hover { border-color: rgba(255,255,255,0.08); }
+        .card:hover { border-color: rgba(255,255,255,0.07); }
+        .card-elevated {
+          background: rgba(255,255,255,0.035); border: 1px solid rgba(255,255,255,0.06);
+          border-radius: 20px; padding: 20px; box-shadow: 0 4px 24px rgba(0,0,0,0.15);
+          transition: all 0.2s;
+        }
+        .card-elevated:hover { border-color: rgba(255,255,255,0.1); box-shadow: 0 6px 32px rgba(0,0,0,0.2); }
         .input-field {
-          width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
+          width: 100%; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07);
           border-radius: 12px; padding: 14px 16px; color: #e2e8f0; font-family: 'Outfit', sans-serif;
           font-size: 15px; outline: none; transition: all 0.2s;
         }
-        .input-field:focus { border-color: #C4982A; box-shadow: 0 0 0 3px rgba(196,152,42,0.08); }
-        .input-field::placeholder { color: rgba(255,255,255,0.2); }
+        .input-field:focus { border-color: rgba(196,152,42,0.5); box-shadow: 0 0 0 3px rgba(196,152,42,0.06); }
+        .input-field::placeholder { color: rgba(255,255,255,0.18); }
         select.input-field { appearance: none; cursor: pointer;
           background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23C4982A' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
           background-repeat: no-repeat; background-position: right 16px center;
@@ -976,6 +984,10 @@ export default function LegacyApp() {
         .tag {
           display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px;
           font-weight: 600; letter-spacing: 0.5px;
+        }
+        .section-label {
+          font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+          color: rgba(255,255,255,0.2); margin-bottom: 12px;
         }
       `}</style>
 
@@ -1068,9 +1080,9 @@ export default function LegacyApp() {
           return tier === "pro" ? (
             <ProgressScreen history={history} profile={profile} onBack={() => setScreen("dashboard")} />
           ) : (
-            <div style={{ minHeight: "100vh", padding: "24px 20px 90px", maxWidth: 600, margin: "0 auto" }}>
+            <div style={{ minHeight: "100vh", padding: "16px 18px 90px", maxWidth: 540, margin: "0 auto" }}>
               <button onClick={() => setScreen("dashboard")} style={{ background: "none", border: "none", color: "#C4982A", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 20 }}>← Dashboard</button>
-              <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>📈 Progress Tracking</h2>
+              <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>📈 Progress Tracking</h2>
               <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 14, marginBottom: 16 }}>Track your score trends across the season.</p>
               {/* Show basic stats as teaser */}
               {history.length > 0 && (
@@ -1102,9 +1114,9 @@ export default function LegacyApp() {
           return tier === "pro" ? (
             <MentalTrainingScreen profile={profile} onBack={() => setScreen("dashboard")} />
           ) : (
-            <div style={{ minHeight: "100vh", padding: "24px 20px 90px", maxWidth: 600, margin: "0 auto" }}>
+            <div style={{ minHeight: "100vh", padding: "16px 18px 90px", maxWidth: 540, margin: "0 auto" }}>
               <button onClick={() => setScreen("dashboard")} style={{ background: "none", border: "none", color: "#C4982A", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 20 }}>← Dashboard</button>
-              <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>🧠 Mental Training</h2>
+              <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>🧠 Mental Training</h2>
               <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 14, marginBottom: 24 }}>Gymnastics is 80% mental. Train the mind alongside the body.</p>
               {/* Free teaser */}
               <div className="card" style={{ padding: 20, marginBottom: 16, borderColor: "rgba(196,152,42,0.15)" }}>
@@ -1134,9 +1146,9 @@ export default function LegacyApp() {
           return tier === "pro" ? (
             <SeasonGoalsScreen profile={profile} history={history} onBack={() => setScreen("dashboard")} />
           ) : (
-            <div style={{ minHeight: "100vh", padding: "24px 20px 90px", maxWidth: 600, margin: "0 auto" }}>
+            <div style={{ minHeight: "100vh", padding: "16px 18px 90px", maxWidth: 540, margin: "0 auto" }}>
               <button onClick={() => setScreen("dashboard")} style={{ background: "none", border: "none", color: "#C4982A", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 20 }}>← Dashboard</button>
-              <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>🎯 Season Goals</h2>
+              <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>🎯 Season Goals</h2>
               <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 14, marginBottom: 24 }}>Set targets and track progress across the season.</p>
               <div style={{ border: "1.5px solid rgba(139,92,246,0.25)", borderRadius: 16, padding: 24, textAlign: "center", background: "rgba(139,92,246,0.04)" }}>
                 <div style={{ fontSize: 22, marginBottom: 8 }}>🔒</div>
@@ -1153,40 +1165,41 @@ export default function LegacyApp() {
         })()
       )}
 
-      {/* Bottom Navigation — shows on main screens */}
+      {/* Bottom Navigation */}
       {["dashboard", "deductions", "meets", "progress", "mental", "goals", "settings"].includes(screen) && (
         <nav style={{
           position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 100,
-          background: "linear-gradient(to top, #0B1024 80%, transparent)",
-          paddingBottom: "max(12px, env(safe-area-inset-bottom))",
-          paddingTop: 8,
+          background: "linear-gradient(to top, #0B1024 85%, rgba(11,16,36,0.95) 92%, transparent)",
+          paddingBottom: "max(10px, env(safe-area-inset-bottom))",
+          paddingTop: 6,
         }}>
-          <div style={{ display: "flex", justifyContent: "space-around", maxWidth: 500, margin: "0 auto", padding: "0 8px" }}>
+          <div style={{ display: "flex", justifyContent: "space-around", maxWidth: 420, margin: "0 auto", padding: "0 12px" }}>
             {[
-              { id: "dashboard", label: "Home", icon: "🏠" },
-              { id: "meets", label: "History", icon: "🏆" },
-              { id: "upload", label: "Analyze", icon: "📹", primary: true },
-              { id: "deductions", label: "Guide", icon: "📋" },
-              { id: "settings", label: "Profile", icon: "⚙️" },
+              { id: "dashboard", label: "Home", svg: `<path d="M3 10.5L10 4l7 6.5V18a1 1 0 01-1 1h-4v-5h-4v5H4a1 1 0 01-1-1z" stroke-linejoin="round"/>` },
+              { id: "meets", label: "History", svg: `<circle cx="10" cy="10" r="7.5"/><path d="M10 5v5l3 3"/>` },
+              { id: "upload", label: "Analyze", primary: true, svg: `<circle cx="10" cy="10" r="8"/><path d="M10 6v8M6 10h8"/>` },
+              { id: "deductions", label: "Guide", svg: `<path d="M4 4h12v14a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/><path d="M7 8h6M7 11h4"/>` },
+              { id: "settings", label: "Profile", svg: `<circle cx="10" cy="7" r="3.5"/><path d="M3.5 18c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"/>` },
             ].map(tab => {
-              const isActive = screen === tab.id || (tab.id === "dashboard" && screen === "dashboard");
+              const isActive = screen === tab.id;
+              const color = tab.primary ? "#C4982A" : isActive ? "#C4982A" : "rgba(255,255,255,0.22)";
               return (
                 <button
                   key={tab.id}
                   onClick={() => setScreen(tab.id)}
                   style={{
-                    display: "flex", flexDirection: "column", alignItems: "center", gap: 2,
-                    padding: tab.primary ? "6px 18px" : "6px 14px",
-                    borderRadius: 12, border: "none", cursor: "pointer",
+                    display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
+                    padding: "8px 16px",
+                    borderRadius: 14, border: "none", cursor: "pointer",
                     fontFamily: "'Outfit', sans-serif", fontSize: 9, fontWeight: 600,
-                    background: tab.primary ? "rgba(196,152,42,0.1)" : isActive ? "rgba(255,255,255,0.04)" : "transparent",
-                    color: tab.primary ? "#C4982A" : isActive ? "#C4982A" : "rgba(255,255,255,0.25)",
-                    transition: "all 0.2s", WebkitTapHighlightColor: "transparent",
+                    background: tab.primary ? "rgba(196,152,42,0.08)" : "transparent",
+                    color,
+                    transition: "all 0.15s", WebkitTapHighlightColor: "transparent",
                     letterSpacing: 0.3,
-                    ...(tab.primary ? { border: "1px solid rgba(196,152,42,0.15)" } : {}),
+                    ...(tab.primary ? { border: "1px solid rgba(196,152,42,0.12)", borderRadius: 16 } : {}),
                   }}
                 >
-                  <span style={{ fontSize: tab.primary ? 18 : 16, lineHeight: 1 }}>{tab.icon}</span>
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" dangerouslySetInnerHTML={{ __html: tab.svg }} />
                   <span>{tab.label}</span>
                 </button>
               );
@@ -1374,44 +1387,50 @@ function OnboardingScreen({ onComplete }) {
   };
 
   const steps = [
-    // Step 0: Role selection (NEW)
-    <div key="role" style={{ animation: "fadeIn 0.5s ease-out" }}>
-      <h2 style={{ fontSize: 28, fontWeight: 700, marginBottom: 8 }}>Welcome to STRIVE</h2>
-      <p style={{ color: "rgba(255,255,255,0.5)", marginBottom: 32 }}>How will you be using the app?</p>
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+    // Step 0: Role selection
+    <div key="role" style={{ animation: "floatIn 0.4s ease-out" }}>
+      <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 6 }}>Welcome to STRIVE</h2>
+      <p style={{ color: "rgba(255,255,255,0.35)", marginBottom: 28, fontSize: 14 }}>How will you be using the app?</p>
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {[
-          { val: "parent", label: "Parent", desc: "I'm recording and reviewing my child's routines", icon: "👨‍👩‍👧" },
-          { val: "athlete", label: "Athlete", desc: "I'm analyzing my own routines to improve", icon: "🤸" },
-          { val: "coach", label: "Coach", desc: "I'm working with athletes to build their scores", icon: "🏅" },
+          { val: "parent", label: "Parent", desc: "Recording my child's routines", icon: "👨‍👩‍👧" },
+          { val: "athlete", label: "Athlete", desc: "Analyzing my own routines", icon: "🤸" },
+          { val: "coach", label: "Coach", desc: "Working with athletes on scores", icon: "🏅" },
         ].map(opt => (
           <button
             key={opt.val}
             onClick={() => setRole(opt.val)}
             style={{
-              display: "flex", alignItems: "center", gap: 16, padding: "18px 20px",
-              background: role === opt.val ? "rgba(196,152,42,0.12)" : "rgba(255,255,255,0.03)",
-              border: `2px solid ${role === opt.val ? "#C4982A" : "rgba(255,255,255,0.06)"}`,
+              display: "flex", alignItems: "center", gap: 14, padding: "16px 18px",
+              background: role === opt.val ? "rgba(196,152,42,0.08)" : "rgba(255,255,255,0.02)",
+              border: `1.5px solid ${role === opt.val ? "rgba(196,152,42,0.4)" : "rgba(255,255,255,0.05)"}`,
               borderRadius: 16, cursor: "pointer", textAlign: "left",
-              transition: "all 0.3s",
+              transition: "all 0.2s",
             }}
           >
-            <span style={{ fontSize: 28, flexShrink: 0 }}>{opt.icon}</span>
+            <span style={{ fontSize: 24, flexShrink: 0 }}>{opt.icon}</span>
             <div>
-              <div style={{ color: "#e2e8f0", fontWeight: 600, fontSize: 16 }}>{opt.label}</div>
-              <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, marginTop: 2 }}>{opt.desc}</div>
+              <div style={{ color: role === opt.val ? "#E8C35A" : "#e2e8f0", fontWeight: 600, fontSize: 15, transition: "color 0.2s" }}>{opt.label}</div>
+              <div style={{ color: "rgba(255,255,255,0.3)", fontSize: 12, marginTop: 2 }}>{opt.desc}</div>
             </div>
+            {role === opt.val && (
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ marginLeft: "auto", flexShrink: 0 }}>
+                <circle cx="9" cy="9" r="8" fill="rgba(196,152,42,0.2)" stroke="#C4982A" strokeWidth="1.5"/>
+                <path d="M5.5 9l2.5 2.5 4.5-4.5" stroke="#C4982A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            )}
           </button>
         ))}
       </div>
     </div>,
 
     // Step 1: Name
-    <div key="name" style={{ animation: "fadeIn 0.5s ease-out" }}>
-      <h2 style={{ fontSize: 28, fontWeight: 700, marginBottom: 8 }}>
-        {role === "parent" ? "Gymnast's Name" : role === "coach" ? "Your Name" : "Your Name"}
+    <div key="name" style={{ animation: "floatIn 0.4s ease-out" }}>
+      <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 6 }}>
+        {role === "parent" ? "Gymnast's name" : "Your name"}
       </h2>
-      <p style={{ color: "rgba(255,255,255,0.5)", marginBottom: 32 }}>
-        {role === "parent" ? "We'll personalize everything for your child" : "We'll personalize your training experience"}
+      <p style={{ color: "rgba(255,255,255,0.35)", marginBottom: 28, fontSize: 14 }}>
+        {role === "parent" ? "We'll personalize everything for your child" : "We'll personalize your experience"}
       </p>
       <input
         className="input-field"
@@ -1419,33 +1438,33 @@ function OnboardingScreen({ onComplete }) {
         value={name}
         onChange={(e) => setName(e.target.value)}
         autoFocus
-        style={{ fontSize: 18, padding: 18 }}
+        style={{ fontSize: 17, padding: 16 }}
       />
     </div>,
 
     // Step 2: Gender
-    <div key="gender" style={{ animation: "fadeIn 0.5s ease-out" }}>
-      <h2 style={{ fontSize: 28, fontWeight: 700, marginBottom: 8 }}>Program Type</h2>
-      <p style={{ color: "rgba(255,255,255,0.5)", marginBottom: 32 }}>
-        Select the program to set the correct apparatus and judging criteria.
+    <div key="gender" style={{ animation: "floatIn 0.4s ease-out" }}>
+      <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 6 }}>Program type</h2>
+      <p style={{ color: "rgba(255,255,255,0.35)", marginBottom: 28, fontSize: 14 }}>
+        Sets the correct apparatus and judging criteria
       </p>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-        {[{ val: "female", label: "Women's Artistic", icon: "🤸‍♀️", desc: "VT · UB · BB · FX" },
-          { val: "male", label: "Men's Artistic", icon: "🤸‍♂️", desc: "FX · PH · SR · VT · PB · HB" }
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+        {[{ val: "female", label: "Women's artistic", icon: "🤸‍♀️", desc: "VT · UB · BB · FX" },
+          { val: "male", label: "Men's artistic", icon: "🤸‍♂️", desc: "FX · PH · SR · VT · PB · HB" }
         ].map(opt => (
           <button
             key={opt.val}
             onClick={() => { setGender(opt.val); setLevelCategory(""); setLevel(""); setPrimaryEvents([]); }}
             style={{
-              background: gender === opt.val ? "rgba(196,152,42,0.15)" : "rgba(255,255,255,0.04)",
-              border: `2px solid ${gender === opt.val ? "#C4982A" : "rgba(255,255,255,0.08)"}`,
-              borderRadius: 16, padding: 24, cursor: "pointer", textAlign: "center",
-              transition: "all 0.3s",
+              background: gender === opt.val ? "rgba(196,152,42,0.1)" : "rgba(255,255,255,0.02)",
+              border: `1.5px solid ${gender === opt.val ? "rgba(196,152,42,0.4)" : "rgba(255,255,255,0.05)"}`,
+              borderRadius: 16, padding: 20, cursor: "pointer", textAlign: "center",
+              transition: "all 0.2s",
             }}
           >
-            <span style={{ fontSize: 36, display: "block", marginBottom: 12 }}>{opt.icon}</span>
-            <span style={{ color: "#e2e8f0", fontWeight: 600, fontSize: 16, display: "block" }}>{opt.label}</span>
-            <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, marginTop: 4, display: "block", fontFamily: "'Space Mono', monospace" }}>
+            <span style={{ fontSize: 32, display: "block", marginBottom: 10 }}>{opt.icon}</span>
+            <span style={{ color: gender === opt.val ? "#E8C35A" : "#e2e8f0", fontWeight: 600, fontSize: 14, display: "block" }}>{opt.label}</span>
+            <span style={{ color: "rgba(255,255,255,0.25)", fontSize: 11, marginTop: 4, display: "block", fontFamily: "'Space Mono', monospace" }}>
               {opt.desc}
             </span>
           </button>
@@ -1564,33 +1583,33 @@ function OnboardingScreen({ onComplete }) {
   ];
 
   return (
-    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", padding: "32px 24px" }}>
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", padding: "24px 22px" }}>
       {/* Progress */}
-      <div style={{ display: "flex", gap: 6, marginBottom: 48 }}>
+      <div style={{ display: "flex", gap: 5, marginBottom: 40 }}>
         {[0,1,2,3,4,5].map(i => (
           <div key={i} style={{
-            flex: 1, height: 3, borderRadius: 2,
-            background: i <= step ? "linear-gradient(90deg, #C4982A, #E8C35A)" : "rgba(255,255,255,0.1)",
-            transition: "all 0.5s",
+            flex: 1, height: 2.5, borderRadius: 2,
+            background: i <= step ? "linear-gradient(90deg, #C4982A, #E8C35A)" : "rgba(255,255,255,0.06)",
+            transition: "all 0.4s ease-out",
           }} />
         ))}
       </div>
-      <div style={{ flex: 1, maxWidth: 480, margin: "0 auto", width: "100%" }}>
+      <div style={{ flex: 1, maxWidth: 420, margin: "0 auto", width: "100%" }}>
         {steps[step]}
       </div>
-      <div style={{ display: "flex", gap: 12, maxWidth: 480, margin: "32px auto 0", width: "100%" }}>
+      <div style={{ display: "flex", gap: 10, maxWidth: 420, margin: "28px auto 0", width: "100%" }}>
         {step > 0 && (
-          <button className="btn-outline" onClick={() => setStep(step - 1)} style={{ flex: 1 }}>
-            <Icon name="back" /> Back
+          <button className="btn-outline" onClick={() => setStep(step - 1)} style={{ flex: 1, padding: "13px 16px", fontSize: 14 }}>
+            Back
           </button>
         )}
         <button
           className="btn-gold"
           onClick={handleNext}
           disabled={!canProceed()}
-          style={{ flex: 2, opacity: canProceed() ? 1 : 0.4, pointerEvents: canProceed() ? "auto" : "none" }}
+          style={{ flex: 2, opacity: canProceed() ? 1 : 0.35, pointerEvents: canProceed() ? "auto" : "none", padding: "14px 24px", fontSize: 15 }}
         >
-          {step === 5 ? "Start Judging" : "Continue"} <Icon name="arrow" />
+          {step === 5 ? "Start analyzing" : "Continue"}
         </button>
       </div>
     </div>
@@ -1653,26 +1672,25 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
   const todayAffirmation = affirmationPool[day % affirmationPool.length];
 
   return (
-    <div style={{ minHeight: "100vh", padding: "20px 20px 100px", maxWidth: 600, margin: "0 auto" }}>
-      {/* Header — STRIVE branded */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          {/* Mini arc logo */}
-          <svg viewBox="0 0 32 32" width="28" height="28" style={{ flexShrink: 0 }}>
-            <g transform="translate(16,17)">
-              <path d="M-10 8 Q-3 -12, 8 -6 Q13 -3, 9 8" fill="none" stroke="#C4982A" strokeWidth="2.5" strokeLinecap="round"/>
-              <circle cx="9" cy="-7" r="1.5" fill="#E8C35A"/>
+    <div style={{ minHeight: "100vh", padding: "16px 18px 100px", maxWidth: 540, margin: "0 auto" }}>
+      {/* Header bar */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, padding: "4px 0" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <svg viewBox="0 0 28 28" width="24" height="24" style={{ flexShrink: 0 }}>
+            <g transform="translate(14,15)">
+              <path d="M-9 7 Q-3 -10, 7 -5 Q11 -2, 8 7" fill="none" stroke="#C4982A" strokeWidth="2.2" strokeLinecap="round"/>
+              <circle cx="8" cy="-6" r="1.3" fill="#E8C35A"/>
             </g>
           </svg>
           <div>
-            <h1 style={{ fontSize: 20, fontWeight: 700, lineHeight: 1.2 }}>
+            <h1 style={{ fontSize: 18, fontWeight: 700, lineHeight: 1.2 }}>
               {profile.role === "parent" ? (
-                <><span style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, fontWeight: 400 }}>Tracking </span><span style={{ color: "#E8C35A" }}>{profile.name}</span></>
+                <><span style={{ color: "rgba(255,255,255,0.35)", fontSize: 12, fontWeight: 400 }}>Tracking </span><span style={{ color: "#E8C35A" }}>{profile.name}</span></>
               ) : (
-                <>Hey, <span style={{ color: "#E8C35A" }}>{profile.name}</span></>
+                <><span style={{ color: "rgba(255,255,255,0.35)", fontSize: 12, fontWeight: 400 }}>Hey, </span><span style={{ color: "#E8C35A" }}>{profile.name}</span></>
               )}
             </h1>
-            <p style={{ color: "rgba(255,255,255,0.3)", fontSize: 12, marginTop: 2 }}>
+            <p style={{ color: "rgba(255,255,255,0.2)", fontSize: 11, marginTop: 1, letterSpacing: 0.3 }}>
               {profile.level} · {profile.gender === "female" ? "WAG" : "MAG"}
               {profile.role === "coach" && " · Coach"}
             </p>
@@ -1681,12 +1699,12 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
         <button
           onClick={onSettings}
           style={{
-            width: 38, height: 38, borderRadius: 12, border: "1px solid rgba(255,255,255,0.06)",
-            background: "rgba(255,255,255,0.03)", cursor: "pointer", display: "flex",
+            width: 36, height: 36, borderRadius: 10, border: "1px solid rgba(255,255,255,0.05)",
+            background: "rgba(255,255,255,0.025)", cursor: "pointer", display: "flex",
             alignItems: "center", justifyContent: "center", transition: "all 0.2s",
           }}
         >
-          <Icon name="user" size={16} />
+          <Icon name="user" size={15} />
         </button>
       </div>
 
@@ -1734,30 +1752,35 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
           <button
             onClick={onUpload}
             style={{
-              width: "100%", padding: "18px 20px", borderRadius: 16, cursor: "pointer",
-              background: "linear-gradient(135deg, rgba(196,152,42,0.08), rgba(196,152,42,0.03))",
-              border: "1px solid rgba(196,152,42,0.15)",
-              display: "flex", alignItems: "center", gap: 16,
-              transition: "all 0.2s", marginBottom: 16, textAlign: "left",
+              width: "100%", padding: "16px 18px", borderRadius: 18, cursor: "pointer",
+              background: "linear-gradient(135deg, rgba(196,152,42,0.1), rgba(196,152,42,0.04))",
+              border: "1px solid rgba(196,152,42,0.12)",
+              display: "flex", alignItems: "center", gap: 14,
+              transition: "all 0.2s", marginBottom: 14, textAlign: "left",
+              position: "relative", overflow: "hidden",
             }}
           >
+            {/* Subtle gradient accent line at top */}
+            <div style={{ position: "absolute", top: 0, left: 20, right: 20, height: 1, background: "linear-gradient(90deg, transparent, rgba(196,152,42,0.2), transparent)" }} />
             <div style={{
-              width: 48, height: 48, borderRadius: 14, flexShrink: 0,
+              width: 44, height: 44, borderRadius: 13, flexShrink: 0,
               background: "linear-gradient(135deg, #C4982A, #E8C35A)",
               display: "flex", alignItems: "center", justifyContent: "center",
-              boxShadow: "0 4px 16px rgba(196,152,42,0.2)",
+              boxShadow: "0 2px 12px rgba(196,152,42,0.2)",
             }}>
-              <Icon name="camera" size={22} />
+              <Icon name="camera" size={20} />
             </div>
-            <div style={{ flex: 1 }}>
-              <span style={{ color: "#E8C35A", fontWeight: 700, fontSize: 16, display: "block" }}>
-                Analyze Routine
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <span style={{ color: "#E8C35A", fontWeight: 700, fontSize: 15, display: "block" }}>
+                Analyze routine
               </span>
-              <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 12, marginTop: 3, display: "block" }}>
-                {isPro ? "Unlimited · 3-pass AI engine" : `${remaining} free remaining · 3-pass AI`}
+              <span style={{ color: "rgba(255,255,255,0.25)", fontSize: 11, marginTop: 2, display: "block" }}>
+                {isPro ? "Unlimited · 3-pass AI" : `${remaining} free remaining`}
               </span>
             </div>
-            <span style={{ color: "rgba(196,152,42,0.4)", fontSize: 18 }}>→</span>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0, opacity: 0.3 }}>
+              <path d="M6 3l5 5-5 5" stroke="#C4982A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
           </button>
         );
       })()}
@@ -1868,22 +1891,22 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
         </div>
       </div>
 
-      {/* Quick Stats — refined */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 20 }}>
+      {/* Quick Stats — sleek row */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
         {[
-          { label: "Analyzed", value: history.length, color: "rgba(196,152,42,0.8)" },
-          { label: "Avg Score", value: avgScore, color: "rgba(196,152,42,0.8)" },
-          { label: "Improved", value: scoreTrend !== 0 ? (scoreTrend > 0 ? "+" : "") + scoreTrend.toFixed(2) : "—", color: scoreTrend > 0 ? "#22c55e" : scoreTrend < 0 ? "#ef4444" : "rgba(255,255,255,0.3)" },
+          { label: "Analyzed", value: history.length, color: "rgba(196,152,42,0.7)" },
+          { label: "Avg", value: avgScore, color: "rgba(196,152,42,0.7)" },
+          { label: "Trend", value: scoreTrend !== 0 ? (scoreTrend > 0 ? "+" : "") + scoreTrend.toFixed(2) : "—", color: scoreTrend > 0 ? "#22c55e" : scoreTrend < 0 ? "#ef4444" : "rgba(255,255,255,0.2)" },
         ].map((stat, i) => (
           <div key={i} style={{
-            textAlign: "center", padding: "16px 8px",
+            flex: 1, textAlign: "center", padding: "14px 6px",
             borderRadius: 14, background: "rgba(255,255,255,0.02)",
-            border: "1px solid rgba(255,255,255,0.04)",
+            border: "1px solid rgba(255,255,255,0.03)",
           }}>
-            <div style={{ fontSize: 22, fontWeight: 800, color: stat.color, fontFamily: "'Space Mono', monospace" }}>
+            <div style={{ fontSize: 20, fontWeight: 800, color: stat.color, fontFamily: "'Space Mono', monospace", lineHeight: 1 }}>
               {stat.value}
             </div>
-            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", fontWeight: 500, marginTop: 4 }}>{stat.label}</div>
+            <div style={{ fontSize: 9, color: "rgba(255,255,255,0.2)", fontWeight: 600, marginTop: 6, letterSpacing: 0.5 }}>{stat.label}</div>
           </div>
         ))}
       </div>
@@ -2196,9 +2219,9 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
   const videoPreviewRef = useRef(null);
   const events = profile.gender === "female" ? WOMEN_EVENTS : MEN_EVENTS;
 
-  const COMPRESS_THRESHOLD = 50 * 1024 * 1024; // Auto-compress above 50MB
-  const TARGET_WIDTH = 720; // 720p is plenty for judging analysis
-  const TARGET_BITRATE = 2000000; // 2.0 Mbps — higher quality for better frame analysis
+  const COMPRESS_THRESHOLD = 100 * 1024 * 1024; // Only compress above 100MB — quality matters for judging
+  const TARGET_WIDTH = 1080; // 1080p preserves toe points, knee angles, body lines
+  const TARGET_BITRATE = 4000000; // 4.0 Mbps — higher quality for accurate frame analysis
 
   const formatFileSize = (bytes) => {
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + " KB";
@@ -2345,12 +2368,12 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
   // The URL will be garbage collected when the user navigates away or uploads a new video.
 
   return (
-    <div style={{ minHeight: "100vh", padding: "24px 20px 90px", maxWidth: 600, margin: "0 auto" }}>
-      <button onClick={onBack} style={{ background: "none", border: "none", color: "#C4982A", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 24 }}>
-        <Icon name="back" /> Dashboard
+    <div style={{ minHeight: "100vh", padding: "16px 18px 90px", maxWidth: 540, margin: "0 auto" }}>
+      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(196,152,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 13, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.5 2.5l-5 5 5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> Dashboard
       </button>
 
-      <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 4 }}>
+      <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>
         <Icon name="camera" size={20} /> New Analysis
       </h2>
       <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, marginBottom: 24 }}>
@@ -2805,7 +2828,7 @@ function AnalyzingScreen({ uploadData, profile, onComplete, onBack }) {
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
         if (!isFrameBlank(ctx, canvas)) {
-          const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+          const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
           captured.push({
             timestamp: video.currentTime.toFixed(2),
             dataUrl,
@@ -2867,7 +2890,7 @@ function AnalyzingScreen({ uploadData, profile, onComplete, onBack }) {
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
             if (!isFrameBlank(ctx, canvas)) {
-              const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+              const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
               captured.push({
                 timestamp: video.currentTime.toFixed(2),
                 dataUrl,
@@ -2903,7 +2926,7 @@ function AnalyzingScreen({ uploadData, profile, onComplete, onBack }) {
         canvas.width = Math.min(vw, 640);
         canvas.height = Math.round(canvas.width * (vh / vw));
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
         resolve([{
           timestamp: video.currentTime.toFixed(2),
           dataUrl,
@@ -2923,7 +2946,7 @@ function AnalyzingScreen({ uploadData, profile, onComplete, onBack }) {
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
     // Deterministic frame sampling: fixed 0.4s intervals, capped at 16
-    const maxFrames = 16;
+    const maxFrames = 24;
 
     // Wait for video to be ready (readyState >= 2 = HAVE_CURRENT_DATA)
     await new Promise((resolve) => {
@@ -3055,7 +3078,7 @@ ${isCompulsory ? 'COMPULSORY (' + level + '): Note every deviation from the pres
 ${isXcel ? level + ': Verify all 4 Special Requirements are present (0.50 each if missing).' : ''}
 
 ═══ STEP 2: JUDGE EACH SKILL ═══
-For each identified skill, watch it carefully and evaluate execution quality using ${level} standards. Judge what you SEE:
+For each identified skill, WATCH IT TWICE before judging. On the first viewing, observe the overall quality. On the second viewing, look specifically for form breaks. Only deduct for faults you can CLEARLY SEE in both viewings.
 
 WHAT TO LOOK FOR:
 - Toe point: Are feet pointed or flexed? Flexed feet = 0.05 each occurrence.
@@ -3266,7 +3289,7 @@ RESPOND WITH VALID JSON ONLY:
   const geminiGenerate = useCallback(async (fileRef, prompt, apiKey, config = {}) => {
     const {
       maxOutputTokens = 65536,
-      thinkingBudget = 8192,
+      thinkingBudget = 24576,
       responseMimeType = "application/json",
       label = "analysis",
     } = config;
@@ -3390,8 +3413,8 @@ RESPOND WITH VALID JSON ONLY:
           setProgress(68);
           const skillPrompt = buildSkillDetectionPrompt();
           const skillRaw = await geminiGenerate(fileRef, skillPrompt, apiKey, {
-            maxOutputTokens: 4096,
-            thinkingBudget: 2048,
+            maxOutputTokens: 8192,
+            thinkingBudget: 8192,
             label: "skill-detect",
           });
           try {
@@ -3459,24 +3482,35 @@ RESPOND WITH VALID JSON ONLY:
               if (deds.length >= 3) {
                 setStatus("Pass 3: Verifying deductions against video...");
                 setProgress(82);
-                const verifyPrompt = `You are a VERIFICATION JUDGE. A scoring judge has analyzed this gymnastics routine and produced the deductions listed below. Your job is to RE-WATCH THE VIDEO and verify each one.
+                const verifyPrompt = `You are an EXPERT VERIFICATION JUDGE reviewing a gymnastics scoring analysis. A less experienced judge has analyzed this ${profile.gender === "female" ? "Women's" : "Men's"} ${uploadData.event} routine (${profile.level}) and produced the deductions below. Your job is to RE-WATCH THE ENTIRE VIDEO CAREFULLY and verify each one.
 
-For EACH deduction, you must:
-1. Go to the timestamp listed
-2. Watch that specific skill
-3. Decide: CONFIRM (you can clearly see this fault) or REJECT (you cannot see this fault, it appears hallucinated)
-4. If confirmed, optionally adjust the deduction amount if it seems too high or too low
+VERIFICATION CRITERIA — be STRICT:
+- REJECT any deduction where you CANNOT clearly see the described fault in the video
+- REJECT any deduction where the skill doesn't match what's actually performed at that timestamp
+- REJECT duplicate deductions (same fault counted twice on the same skill)
+- ADJUST the deduction amount DOWN if the severity was exaggerated (e.g. "large" bend when it's actually slight)
+- ADJUST the deduction amount UP if the fault is worse than described
+- CONFIRM only when you can CLEARLY see the specific fault described
+
+COMMON HALLUCINATION PATTERNS TO WATCH FOR:
+- "Flexed feet" on skills where the feet aren't visible
+- "Knee separation" when legs are together in the video
+- Deductions at timestamps where no skill is actually being performed
+- "Balance check" or "wobble" when the gymnast appears stable
+- Deductions for skills that don't exist in this routine
 
 DEDUCTIONS TO VERIFY:
-${deds.map((d, i) => `${i+1}. [${d.timestamp || '?'}] ${d.skill || '?'}: "${d.fault || '?'}" → -${d.deduction || 0} (engine: ${d.engine || '?'})`).join('\n')}
+${deds.map((d, i) => `${i+1}. [${d.timestamp || '?'}s] ${d.skill || '?'}: "${d.fault || '?'}" → -${d.deduction || 0} (${d.severity || '?'})`).join('\n')}
+
+For each, go to that timestamp in the video, watch carefully, and decide.
 
 RESPOND WITH VALID JSON ONLY:
-{"verified":[{"index":0,"status":"confirmed","adjustedDeduction":0.10,"reason":"Clearly visible bent knees"},{"index":1,"status":"rejected","reason":"Cannot see this fault in the video"}],"verificationNotes":"Brief note on overall accuracy"}`;
+{"verified":[{"index":0,"status":"confirmed","adjustedDeduction":0.10,"reason":"Clearly visible in video"},{"index":1,"status":"rejected","reason":"Cannot see this fault — knees appear together"}],"overallAccuracy":"brief assessment of how accurate the original judging was","suggestedMissed":"any obvious deductions the original judge MISSED that you can see"}`;
 
                 try {
                   const verifyRaw = await geminiGenerate(fileRef, verifyPrompt, apiKey, {
-                    maxOutputTokens: 4096,
-                    thinkingBudget: 4096,
+                    maxOutputTokens: 8192,
+                    thinkingBudget: 16384,
                     label: "verify",
                   });
                   const verifyMatch = verifyRaw.match(/\{[\s\S]*\}/);
@@ -4346,9 +4380,14 @@ function ResultsScreen({ result, profile, history, videoUrl, onBack, onDrills })
   ];
 
   return (
-    <div style={{ minHeight: "100vh", padding: "24px 20px 90px", maxWidth: 600, margin: "0 auto" }}>
-      <button onClick={onBack} style={{ background: "none", border: "none", color: "#C4982A", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 20 }}>
-        <Icon name="back" /> Dashboard
+    <div style={{ minHeight: "100vh", padding: "16px 18px 90px", maxWidth: 540, margin: "0 auto" }}>
+      <button onClick={onBack} style={{
+        background: "none", border: "none", color: "rgba(196,152,42,0.6)", cursor: "pointer",
+        fontFamily: "'Outfit', sans-serif", fontSize: 13, fontWeight: 600, marginBottom: 14,
+        display: "flex", alignItems: "center", gap: 4,
+      }}>
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.5 2.5l-5 5 5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        Dashboard
       </button>
 
       {/* Demo mode notice */}
@@ -4591,17 +4630,17 @@ function ResultsScreen({ result, profile, history, videoUrl, onBack, onDrills })
       </div>
 
       {/* Tabs */}
-      <div style={{ display: "flex", gap: 3, marginBottom: 20, background: "rgba(255,255,255,0.04)", borderRadius: 12, padding: 4, overflowX: "auto" }}>
+      <div style={{ display: "flex", gap: 3, marginBottom: 16, background: "rgba(255,255,255,0.025)", borderRadius: 14, padding: 3, overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
         {tabs.map(tab => (
           <button
             key={tab.id}
             onClick={() => (tab.pro && !isPro) ? setActiveTab("pro-gate") : setActiveTab(tab.id)}
             style={{
-              flex: 1, padding: "10px 6px", borderRadius: 10, border: "none", cursor: "pointer",
+              flex: tab.id === "review" ? "none" : 1, padding: "9px 8px", borderRadius: 11, border: "none", cursor: "pointer",
               fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 11,
               background: activeTab === tab.id ? "linear-gradient(135deg, #C4982A, #E8C35A)" : "transparent",
-              color: activeTab === tab.id ? "#0B1024" : (tab.pro && !isPro) ? "rgba(255,255,255,0.25)" : "rgba(255,255,255,0.5)",
-              transition: "all 0.3s", whiteSpace: "nowrap", position: "relative",
+              color: activeTab === tab.id ? "#0B1024" : (tab.pro && !isPro) ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.45)",
+              transition: "all 0.2s", whiteSpace: "nowrap", position: "relative",
             }}
           >
             {tab.label}
@@ -5038,12 +5077,12 @@ function DrillsScreen({ result, onBack }) {
   const totalGain = uniquePairs.reduce((s, p) => s + p.deduction, 0);
 
   return (
-    <div style={{ minHeight: "100vh", padding: "24px 20px 90px", maxWidth: 600, margin: "0 auto" }}>
-      <button onClick={onBack} style={{ background: "none", border: "none", color: "#C4982A", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 20 }}>
-        <Icon name="back" /> Results
+    <div style={{ minHeight: "100vh", padding: "16px 18px 90px", maxWidth: 540, margin: "0 auto" }}>
+      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(196,152,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 13, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.5 2.5l-5 5 5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> Results
       </button>
 
-      <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 4 }}>
+      <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>
         Your Drill Plan
       </h2>
       <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, marginBottom: 8 }}>
@@ -5159,12 +5198,12 @@ function DeductionsScreen({ onBack, profile }) {
   };
 
   return (
-    <div style={{ minHeight: "100vh", padding: "24px 20px 90px", maxWidth: 600, margin: "0 auto" }}>
-      <button onClick={onBack} style={{ background: "none", border: "none", color: "#C4982A", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 20 }}>
-        <Icon name="back" /> Dashboard
+    <div style={{ minHeight: "100vh", padding: "16px 18px 90px", maxWidth: 540, margin: "0 auto" }}>
+      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(196,152,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 13, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.5 2.5l-5 5 5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> Dashboard
       </button>
 
-      <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 4 }}>Deduction Guide</h2>
+      <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Deduction Guide</h2>
       <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, marginBottom: 20 }}>
         USAG / Xcel scoring reference · {profile?.level || "All Levels"}
       </p>
@@ -5295,12 +5334,12 @@ function SettingsScreen({ profile, onSave, onBack, onReset }) {
   }, []);
 
   return (
-    <div style={{ minHeight: "100vh", padding: "24px 20px 90px", maxWidth: 600, margin: "0 auto" }}>
-      <button onClick={onBack} style={{ background: "none", border: "none", color: "#C4982A", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 20 }}>
-        <Icon name="back" /> Dashboard
+    <div style={{ minHeight: "100vh", padding: "16px 18px 90px", maxWidth: 540, margin: "0 auto" }}>
+      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(196,152,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 13, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.5 2.5l-5 5 5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> Dashboard
       </button>
 
-      <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 24 }}>Settings</h2>
+      <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 24 }}>Settings</h2>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
         <div>
@@ -5620,11 +5659,11 @@ function ProgressScreen({ history, profile, onBack }) {
   });
 
   return (
-    <div style={{ minHeight: "100vh", padding: "24px 20px 90px", maxWidth: 600, margin: "0 auto" }}>
-      <button onClick={onBack} style={{ background: "none", border: "none", color: "#C4982A", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 20 }}>
-        <Icon name="back" /> Dashboard
+    <div style={{ minHeight: "100vh", padding: "16px 18px 90px", maxWidth: 540, margin: "0 auto" }}>
+      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(196,152,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 13, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.5 2.5l-5 5 5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> Dashboard
       </button>
-      <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 4 }}>Progress Tracking</h2>
+      <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Progress Tracking</h2>
       <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 14, marginBottom: 24 }}>Your scoring trends over time</p>
 
       {history.length < 2 ? (
@@ -5727,11 +5766,11 @@ function MeetsScreen({ history, savedResults, profile, onBack, onViewResult }) {
   })();
 
   return (
-    <div style={{ minHeight: "100vh", padding: "24px 20px 90px", maxWidth: 600, margin: "0 auto" }}>
-      <button onClick={onBack} style={{ background: "none", border: "none", color: "#C4982A", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 20 }}>
-        <Icon name="back" /> Dashboard
+    <div style={{ minHeight: "100vh", padding: "16px 18px 90px", maxWidth: 540, margin: "0 auto" }}>
+      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(196,152,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 13, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.5 2.5l-5 5 5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> Dashboard
       </button>
-      <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 4 }}>Competition History</h2>
+      <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Competition History</h2>
       <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, marginBottom: 20 }}>
         {history.length} analyses across {Object.keys(meets).length} meets
       </p>
@@ -5840,11 +5879,11 @@ function MentalTrainingScreen({ profile, onBack }) {
   ];
 
   return (
-    <div style={{ minHeight: "100vh", padding: "24px 20px 90px", maxWidth: 600, margin: "0 auto" }}>
-      <button onClick={onBack} style={{ background: "none", border: "none", color: "#C4982A", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 20 }}>
-        <Icon name="back" /> Dashboard
+    <div style={{ minHeight: "100vh", padding: "16px 18px 90px", maxWidth: 540, margin: "0 auto" }}>
+      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(196,152,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 13, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.5 2.5l-5 5 5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> Dashboard
       </button>
-      <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 4 }}><Icon name="brain" size={24} /> Mental Training</h2>
+      <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}><Icon name="brain" size={24} /> Mental Training</h2>
       <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 14, marginBottom: 20 }}>Gymnastics is 80% mental. Train the mind alongside the body.</p>
 
       {/* Section tabs */}
@@ -6146,11 +6185,11 @@ function SeasonGoalsScreen({ profile, history, onBack }) {
   const removeGoal = (id) => saveGoals(goals.filter(g => g.id !== id));
 
   return (
-    <div style={{ minHeight: "100vh", padding: "24px 20px 90px", maxWidth: 600, margin: "0 auto" }}>
-      <button onClick={onBack} style={{ background: "none", border: "none", color: "#C4982A", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 20 }}>
-        <Icon name="back" /> Dashboard
+    <div style={{ minHeight: "100vh", padding: "16px 18px 90px", maxWidth: 540, margin: "0 auto" }}>
+      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(196,152,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 13, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.5 2.5l-5 5 5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> Dashboard
       </button>
-      <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 4 }}><Icon name="target" size={24} /> Season Goals</h2>
+      <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}><Icon name="target" size={24} /> Season Goals</h2>
       <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 14, marginBottom: 20 }}>Set targets and track progress toward them</p>
 
       {/* Add new goal */}
