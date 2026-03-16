@@ -822,7 +822,12 @@ function MeetDayChecklist({ gender }) {
 
 // ─── MAIN APP ───────────────────────────────────────────────────────
 export default function LegacyApp() {
-  const [screen, setScreen] = useState("splash");
+  const [screen, setScreenRaw] = useState("splash");
+  // Auto-scroll to top on screen changes
+  const setScreen = useCallback((s) => {
+    setScreenRaw(s);
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, []);
   const [profile, setProfile] = useState(null);
   const [analysisResult, setAnalysisResult] = useState(null);
   const [uploadData, setUploadData] = useState(null);
@@ -1883,6 +1888,50 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
         ))}
       </div>
 
+      {/* Mini Score History Chart — shows with 3+ analyses */}
+      {history.length >= 3 && (() => {
+        const scores = history.slice(0, 10).filter(h => h.score > 0).map(h => h.score).reverse();
+        if (scores.length < 3) return null;
+        const min = Math.min(...scores) - 0.3;
+        const max = Math.max(...scores) + 0.3;
+        const range = max - min || 1;
+        const w = 280, h = 60;
+        const points = scores.map((s, i) => ({
+          x: (i / (scores.length - 1)) * w,
+          y: h - ((s - min) / range) * h,
+        }));
+        const line = points.map((p, i) => `${i === 0 ? "M" : "L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
+        const area = line + ` L${w},${h} L0,${h} Z`;
+        return (
+          <div style={{
+            marginBottom: 16, padding: "12px 16px", borderRadius: 14,
+            background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)",
+          }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+              <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.35)" }}>Score Trend</span>
+              <span style={{ fontSize: 10, color: "rgba(255,255,255,0.2)" }}>Last {scores.length} analyses</span>
+            </div>
+            <svg viewBox={`-10 -5 ${w + 20} ${h + 10}`} width="100%" height="65" style={{ display: "block" }}>
+              <defs>
+                <linearGradient id="chartFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#C4982A" stopOpacity="0.15" />
+                  <stop offset="100%" stopColor="#C4982A" stopOpacity="0" />
+                </linearGradient>
+              </defs>
+              <path d={area} fill="url(#chartFill)" />
+              <path d={line} fill="none" stroke="#C4982A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              {/* End dot */}
+              <circle cx={points[points.length - 1].x} cy={points[points.length - 1].y} r="3.5" fill="#C4982A" />
+              <circle cx={points[points.length - 1].x} cy={points[points.length - 1].y} r="6" fill="#C4982A" opacity="0.15" />
+            </svg>
+            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
+              <span style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", fontFamily: "'Space Mono', monospace" }}>{scores[0].toFixed(1)}</span>
+              <span style={{ fontSize: 10, color: "#C4982A", fontWeight: 700, fontFamily: "'Space Mono', monospace" }}>{scores[scores.length - 1].toFixed(1)}</span>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Quick Actions — horizontal scrollable pills */}
       {(() => {
         const tier = (() => { try { return localStorage.getItem("strive-tier") || "free"; } catch { return "free"; } })();
@@ -1914,9 +1963,6 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
           </div>
         );
       })()}
-
-      {/* Skills Required for Level */}
-      <SkillsRequiredCard profile={profile} />
 
       {/* Last Result — quick review card */}
       {history.length > 0 && savedResults && savedResults[history[0].id] && (() => {
@@ -2035,6 +2081,9 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
           })
         )}
       </div>
+
+      {/* Skills Required for Level */}
+      <SkillsRequiredCard profile={profile} />
 
       {/* Quick Reference — condensed */}
       <div className="card" style={{ padding: 16, marginBottom: 12, borderColor: "rgba(196,152,42,0.1)" }}>
@@ -4674,65 +4723,99 @@ function ResultsScreen({ result, profile, history, videoUrl, onBack, onDrills })
           <DeductionsTabContent result={result} frames={result.frames} />
         ) : (
           <div style={{ animation: "fadeIn 0.4s ease-out" }}>
-            {/* Free tier: show top 3 deductions only */}
-            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10 }}>Biggest point losses</div>
+            {/* Free tier: show top 3 deductions with ranking */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+              <div style={{ fontSize: 13, fontWeight: 700 }}>Top Point Losses</div>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.25)" }}>
+                {groupedDeds.length} total found
+              </div>
+            </div>
             {[...groupedDeds].sort((a, b) => safeNum(b.deduction, 0) - safeNum(a.deduction, 0)).slice(0, 3).map((d, i) => {
               const c = d.severity === "fall" ? "#dc2626" : d.severity === "large" || d.severity === "veryLarge" ? "#ef4444" : d.severity === "medium" ? "#f59e0b" : "#22c55e";
+              const fixDifficulty = d.severity === "fall" ? "Hard" : d.severity === "large" || d.severity === "veryLarge" ? "Moderate" : "Quick fix";
+              const fixColor = d.severity === "fall" ? "#ef4444" : d.severity === "large" || d.severity === "veryLarge" ? "#f59e0b" : "#22c55e";
               return (
                 <div key={i} style={{
-                  borderRadius: 14, padding: 14, marginBottom: 8,
-                  background: `${c}08`, borderLeft: `3px solid ${c}`,
+                  borderRadius: 14, padding: "14px 16px", marginBottom: 8,
+                  background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)",
                   animation: `fadeIn 0.3s ease-out ${i * 0.1}s both`,
                 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <div>
-                      <div style={{ fontSize: 13, fontWeight: 700 }}>{safeStr(d.skill)}</div>
-                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 3 }}>
-                        {safeStr(d.timestamp)} · {safeStr(d.engine)} engine
-                      </div>
-                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginTop: 4, lineHeight: 1.5 }}>
-                        {safeStr(d.fault).substring(0, 100)}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                    <div style={{ display: "flex", gap: 12, flex: 1 }}>
+                      {/* Rank circle */}
+                      <div style={{
+                        width: 28, height: 28, borderRadius: 8, flexShrink: 0,
+                        background: `${c}12`, display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: 13, fontWeight: 800, color: c,
+                      }}>{i + 1}</div>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 700 }}>{safeStr(d.skill)}</div>
+                        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 3, lineHeight: 1.5 }}>
+                          {safeStr(d.fault).substring(0, 80)}
+                        </div>
+                        <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+                          <span style={{ fontSize: 9, fontWeight: 600, padding: "2px 8px", borderRadius: 4, background: `${fixColor}12`, color: fixColor }}>{fixDifficulty}</span>
+                          <span style={{ fontSize: 9, fontWeight: 600, padding: "2px 8px", borderRadius: 4, background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.3)" }}>{safeStr(d.timestamp)}</span>
+                        </div>
                       </div>
                     </div>
-                    <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 17, fontWeight: 800, color: c, marginLeft: 12 }}>
+                    <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 17, fontWeight: 800, color: c, marginLeft: 8, flexShrink: 0 }}>
                       -{safeNum(d.deduction, 0).toFixed(2)}
                     </span>
                   </div>
                 </div>
               );
             })}
-            {groupedDeds.length > 3 && (
-              <div style={{ textAlign: "center", padding: 16 }}>
-                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", marginBottom: 10 }}>
-                  Showing 3 of {groupedDeds.length} deductions
+
+            {/* Potential score gain summary */}
+            {groupedDeds.length >= 2 && (() => {
+              const top3 = [...groupedDeds].sort((a, b) => safeNum(b.deduction, 0) - safeNum(a.deduction, 0)).slice(0, 3);
+              const gain = top3.reduce((s, d) => s + safeNum(d.deduction, 0), 0);
+              return (
+                <div style={{
+                  textAlign: "center", padding: "10px 16px", marginBottom: 8,
+                  borderRadius: 10, background: "rgba(34,197,94,0.04)", border: "1px solid rgba(34,197,94,0.08)",
+                }}>
+                  <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>Fix these 3 → </span>
+                  <span style={{ fontSize: 15, fontWeight: 800, color: "#22c55e", fontFamily: "'Space Mono', monospace" }}>+{gain.toFixed(2)}</span>
+                  <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}> possible</span>
                 </div>
+              );
+            })()}
+
+            {groupedDeds.length > 3 && (
+              <div style={{ textAlign: "center", padding: 12 }}>
                 <button
                   onClick={() => setActiveTab("pro-gate")}
                   style={{
-                    background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.25)",
+                    background: "rgba(139,92,246,0.06)", border: "1px solid rgba(139,92,246,0.15)",
                     borderRadius: 10, padding: "10px 24px", cursor: "pointer",
-                    color: "#A78BFA", fontSize: 13, fontWeight: 600, fontFamily: "'Outfit', sans-serif",
+                    color: "#A78BFA", fontSize: 12, fontWeight: 600, fontFamily: "'Outfit', sans-serif",
                   }}
                 >
-                  🔒 See all {groupedDeds.length} deductions — STRIVE Pro
+                  See all {groupedDeds.length} deductions — Pro
                 </button>
               </div>
             )}
-            {/* Free tier: #1 fix */}
+
+            {/* Free tier: #1 actionable fix */}
             {groupedDeds.length > 0 && (() => {
               const topDed = [...groupedDeds].sort((a, b) => safeNum(b.deduction, 0) - safeNum(a.deduction, 0))[0];
               return (
                 <div style={{ marginTop: 12 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>
-                    <span style={{ color: "#22c55e" }}>✓</span> Your #1 fix
+                  <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 8, color: "#22c55e" }}>
+                    ✓ Your #1 priority fix
                   </div>
-                  <div className="card" style={{ borderLeft: "3px solid #22c55e", padding: 14 }}>
-                    <div style={{ fontSize: 14, fontWeight: 700 }}>Fix {safeStr(topDed.skill).toLowerCase()}</div>
-                    <div style={{ fontSize: 12, color: "#C4982A", marginTop: 4 }}>
-                      Saves +{safeNum(topDed.deduction, 0).toFixed(2)} per routine
+                  <div style={{
+                    borderRadius: 14, padding: 16,
+                    background: "rgba(34,197,94,0.03)", border: "1px solid rgba(34,197,94,0.1)",
+                  }}>
+                    <div style={{ fontSize: 14, fontWeight: 700 }}>Fix: {safeStr(topDed.skill).toLowerCase()}</div>
+                    <div style={{ fontSize: 13, color: "#C4982A", fontWeight: 700, marginTop: 4 }}>
+                      Worth +{safeNum(topDed.deduction, 0).toFixed(2)} per routine
                     </div>
-                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginTop: 6, lineHeight: 1.6 }}>
-                      {topDed.correction || `Focus on this skill in practice. Film it, review it, and work with your coach on the specific fault: ${safeStr(topDed.fault).substring(0, 80)}.`}
+                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", marginTop: 8, lineHeight: 1.6 }}>
+                      {topDed.correction || `Work with your coach on this specific fault: "${safeStr(topDed.fault).substring(0, 60)}." Film yourself doing drills for this skill and compare frame by frame.`}
                     </div>
                   </div>
                 </div>
