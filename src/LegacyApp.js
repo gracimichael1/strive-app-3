@@ -1289,6 +1289,7 @@ function SplashScreen({ onStart }) {
 // ─── ONBOARDING ─────────────────────────────────────────────────────
 function OnboardingScreen({ onComplete }) {
   const [step, setStep] = useState(0);
+  const [role, setRole] = useState("");
   const [name, setName] = useState("");
   const [age, setAge] = useState("");
   const [gender, setGender] = useState("");
@@ -1307,27 +1308,63 @@ function OnboardingScreen({ onComplete }) {
   };
 
   const canProceed = () => {
-    if (step === 0) return name.trim().length > 0;
-    if (step === 1) return gender !== "";
-    if (step === 2) return levelCategory !== "" && level !== "";
-    if (step === 3) return primaryEvents.length > 0;
-    if (step === 4) return true; // age/goals optional
+    if (step === 0) return role !== "";
+    if (step === 1) return name.trim().length > 0;
+    if (step === 2) return gender !== "";
+    if (step === 3) return levelCategory !== "" && level !== "";
+    if (step === 4) return primaryEvents.length > 0;
+    if (step === 5) return true;
     return false;
   };
 
   const handleNext = () => {
-    if (step < 4) setStep(step + 1);
-    else onComplete({ name, age: age ? parseInt(age) : null, gender, levelCategory, level, primaryEvents, goals: goals.trim() || null, createdAt: Date.now() });
+    if (step < 5) setStep(step + 1);
+    else onComplete({ role, name, age: age ? parseInt(age) : null, gender, levelCategory, level, primaryEvents, goals: goals.trim() || null, createdAt: Date.now() });
   };
 
   const steps = [
-    // Step 0: Name
+    // Step 0: Role selection (NEW)
+    <div key="role" style={{ animation: "fadeIn 0.5s ease-out" }}>
+      <h2 style={{ fontSize: 28, fontWeight: 700, marginBottom: 8 }}>Welcome to STRIVE</h2>
+      <p style={{ color: "rgba(255,255,255,0.5)", marginBottom: 32 }}>How will you be using the app?</p>
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        {[
+          { val: "parent", label: "Parent", desc: "I'm recording and reviewing my child's routines", icon: "👨‍👩‍👧" },
+          { val: "athlete", label: "Athlete", desc: "I'm analyzing my own routines to improve", icon: "🤸" },
+          { val: "coach", label: "Coach", desc: "I'm working with athletes to build their scores", icon: "🏅" },
+        ].map(opt => (
+          <button
+            key={opt.val}
+            onClick={() => setRole(opt.val)}
+            style={{
+              display: "flex", alignItems: "center", gap: 16, padding: "18px 20px",
+              background: role === opt.val ? "rgba(196,152,42,0.12)" : "rgba(255,255,255,0.03)",
+              border: `2px solid ${role === opt.val ? "#C4982A" : "rgba(255,255,255,0.06)"}`,
+              borderRadius: 16, cursor: "pointer", textAlign: "left",
+              transition: "all 0.3s",
+            }}
+          >
+            <span style={{ fontSize: 28, flexShrink: 0 }}>{opt.icon}</span>
+            <div>
+              <div style={{ color: "#e2e8f0", fontWeight: 600, fontSize: 16 }}>{opt.label}</div>
+              <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, marginTop: 2 }}>{opt.desc}</div>
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>,
+
+    // Step 1: Name
     <div key="name" style={{ animation: "fadeIn 0.5s ease-out" }}>
-      <h2 style={{ fontSize: 28, fontWeight: 700, marginBottom: 8 }}>Welcome, Gymnast</h2>
-      <p style={{ color: "rgba(255,255,255,0.5)", marginBottom: 32 }}>What's your name?</p>
+      <h2 style={{ fontSize: 28, fontWeight: 700, marginBottom: 8 }}>
+        {role === "parent" ? "Gymnast's Name" : role === "coach" ? "Your Name" : "Your Name"}
+      </h2>
+      <p style={{ color: "rgba(255,255,255,0.5)", marginBottom: 32 }}>
+        {role === "parent" ? "We'll personalize everything for your child" : "We'll personalize your training experience"}
+      </p>
       <input
         className="input-field"
-        placeholder="Enter your name"
+        placeholder={role === "parent" ? "Enter gymnast's name" : "Enter your name"}
         value={name}
         onChange={(e) => setName(e.target.value)}
         autoFocus
@@ -1335,7 +1372,7 @@ function OnboardingScreen({ onComplete }) {
       />
     </div>,
 
-    // Step 1: Gender
+    // Step 2: Gender
     <div key="gender" style={{ animation: "fadeIn 0.5s ease-out" }}>
       <h2 style={{ fontSize: 28, fontWeight: 700, marginBottom: 8 }}>Program Type</h2>
       <p style={{ color: "rgba(255,255,255,0.5)", marginBottom: 32 }}>
@@ -1365,7 +1402,7 @@ function OnboardingScreen({ onComplete }) {
       </div>
     </div>,
 
-    // Step 2: Level
+    // Step 3: Level
     <div key="level" style={{ animation: "fadeIn 0.5s ease-out" }}>
       <h2 style={{ fontSize: 28, fontWeight: 700, marginBottom: 8 }}>Competition Level</h2>
       <p style={{ color: "rgba(255,255,255,0.5)", marginBottom: 24 }}>
@@ -1414,7 +1451,7 @@ function OnboardingScreen({ onComplete }) {
       )}
     </div>,
 
-    // Step 3: Events
+    // Step 4: Events
     <div key="events" style={{ animation: "fadeIn 0.5s ease-out" }}>
       <h2 style={{ fontSize: 28, fontWeight: 700, marginBottom: 8 }}>Select Events</h2>
       <p style={{ color: "rgba(255,255,255,0.5)", marginBottom: 24 }}>
@@ -1440,7 +1477,7 @@ function OnboardingScreen({ onComplete }) {
       </div>
     </div>,
 
-    // Step 4: Age & Goals (optional)
+    // Step 5: Age & Goals (optional)
     <div key="goals" style={{ animation: "fadeIn 0.5s ease-out" }}>
       <h2 style={{ fontSize: 28, fontWeight: 700, marginBottom: 8 }}>About {name || "the Gymnast"}</h2>
       <p style={{ color: "rgba(255,255,255,0.5)", marginBottom: 24 }}>
@@ -1479,7 +1516,7 @@ function OnboardingScreen({ onComplete }) {
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", padding: "32px 24px" }}>
       {/* Progress */}
       <div style={{ display: "flex", gap: 6, marginBottom: 48 }}>
-        {[0,1,2,3,4].map(i => (
+        {[0,1,2,3,4,5].map(i => (
           <div key={i} style={{
             flex: 1, height: 3, borderRadius: 2,
             background: i <= step ? "linear-gradient(90deg, #d4af37, #f2d06b)" : "rgba(255,255,255,0.1)",
@@ -1502,7 +1539,7 @@ function OnboardingScreen({ onComplete }) {
           disabled={!canProceed()}
           style={{ flex: 2, opacity: canProceed() ? 1 : 0.4, pointerEvents: canProceed() ? "auto" : "none" }}
         >
-          {step === 3 ? "Start Judging" : "Continue"} <Icon name="arrow" />
+          {step === 5 ? "Start Judging" : "Continue"} <Icon name="arrow" />
         </button>
       </div>
     </div>
@@ -1523,9 +1560,9 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
     : 0;
   const maxRecent = recentScores.length > 0 ? Math.max(...recentScores) : 0;
 
-  // ── Daily affirmation (rotates daily, context-aware) ──
+  // ── Daily affirmation (rotates daily, role-aware) ──
   const day = Math.floor(Date.now() / 86400000);
-  const affirmations = [
+  const athleteAffirmations = [
     "I have trained for this. My body knows what to do.",
     "Trust your training. Your routine is ready.",
     "I am strong, I am prepared, I am ready.",
@@ -1542,7 +1579,27 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
     "Every routine is a chance to show what I can do.",
     "I trust my training. I trust my coach. I trust myself.",
   ];
-  const todayAffirmation = affirmations[day % affirmations.length];
+  const parentAffirmations = [
+    `${profile.name} has put in the work. Trust the process.`,
+    "Your child's effort matters more than any score on the board.",
+    `Every practice has made ${profile.name} stronger. The results will come.`,
+    "The best thing you can do at a meet: smile, cheer, and let them compete.",
+    `${profile.name} is building skills that last a lifetime — discipline, resilience, confidence.`,
+    "Don't compare scores between gymnasts. Every journey is different.",
+    `Small improvements add up. ${profile.name} is on the right path.`,
+    "The car ride home should be about joy, not scores. Ask what was fun.",
+    "Your support is the foundation your gymnast builds everything on.",
+    `${profile.name}'s coach sees potential you might not notice yet. Trust them.`,
+  ];
+  const coachAffirmations = [
+    "Every correction you make today shows up in their score tomorrow.",
+    "The athletes who trust their coach perform best under pressure.",
+    "Focus on the process. The scores follow the fundamentals.",
+    "Your eye for detail is what separates good gymnasts from great ones.",
+    "One drill, done perfectly, is worth more than ten done carelessly.",
+  ];
+  const affirmationPool = profile.role === "parent" ? parentAffirmations : profile.role === "coach" ? coachAffirmations : athleteAffirmations;
+  const todayAffirmation = affirmationPool[day % affirmationPool.length];
 
   return (
     <div style={{ minHeight: "100vh", padding: "24px 20px", maxWidth: 600, margin: "0 auto" }}>
@@ -1550,10 +1607,15 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 32 }}>
         <div>
           <h1 style={{ fontSize: 24, fontWeight: 700 }}>
-            Hey, <span style={{ color: "#d4af37" }}>{profile.name}</span>
+            {profile.role === "parent" ? (
+              <><span style={{ color: "rgba(255,255,255,0.5)", fontSize: 16, fontWeight: 400 }}>Tracking </span><span style={{ color: "#d4af37" }}>{profile.name}</span></>
+            ) : (
+              <>Hey, <span style={{ color: "#d4af37" }}>{profile.name}</span></>
+            )}
           </h1>
           <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, marginTop: 4 }}>
             {profile.level} · {profile.gender === "female" ? "WAG" : "MAG"}
+            {profile.role === "coach" && " · Coach View"}
           </p>
         </div>
         <button
@@ -1891,15 +1953,8 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
   const videoPreviewRef = useRef(null);
   const events = profile.gender === "female" ? WOMEN_EVENTS : MEN_EVENTS;
 
-  // Check if API key exists on mount
-  useEffect(() => {
-    (async () => {
-      try {
-        const k = await storage.get("strive-gemini-key");
-        setHasApiKey(!!(k?.value));
-      } catch { setHasApiKey(false); }
-    })();
-  }, []);
+  // API key is built-in — always available
+  useEffect(() => { setHasApiKey(true); }, []);
 
   const COMPRESS_THRESHOLD = 50 * 1024 * 1024; // Auto-compress above 50MB
   const TARGET_WIDTH = 720; // 720p is plenty for judging analysis
@@ -3006,11 +3061,13 @@ RESPOND WITH VALID JSON ONLY:
     setStatus("Preparing analysis...");
     setProgress(35);
 
+    // Default platform key — users can override in Settings
+    const DEFAULT_GEMINI_KEY = "AIzaSyBQByoYEe9qxlDWzvqfOX9bPQb9I86Vy9Q";
     let apiKey = null;
     try {
       const k = await storage.get("strive-gemini-key");
-      apiKey = k?.value;
-    } catch (e) { log.warn("storage", "Failed to read API key: " + e.message); }
+      apiKey = k?.value || DEFAULT_GEMINI_KEY;
+    } catch (e) { apiKey = DEFAULT_GEMINI_KEY; }
 
     let result = null;
     let geminiError = null;
@@ -3489,8 +3546,7 @@ RESPOND WITH VALID JSON ONLY:
     }
 
     if (!result && extractedFrames.length > 0 && !apiKey) {
-      // No API key — show clear error instead of bad fallback
-      throw new Error("No Gemini API key configured. Go to Settings → Video Analysis Engine to add your free key from aistudio.google.com/apikey");
+      throw new Error("API key error. Please try again or check Settings → Video Analysis Engine.");
     }
 
     if (!result && geminiError) {
@@ -4775,7 +4831,7 @@ function SettingsScreen({ profile, onSave, onBack, onReset }) {
           {keySaved ? "✓ Key Saved & Verified!" : "Save API Key"}
         </button>
         <p style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", marginTop: 8, lineHeight: 1.5 }}>
-          Get a free key at <span style={{ color: "#d4af37" }}>aistudio.google.com/apikey</span>. A key is required for video analysis. The 3-pass engine (detect → judge → verify) gives championship-level accuracy.
+          Get a free key at <span style={{ color: "#d4af37" }}>aistudio.google.com/apikey</span>. A platform key is built-in, but you can override it with your own for higher rate limits.
         </p>
       </div>
 
