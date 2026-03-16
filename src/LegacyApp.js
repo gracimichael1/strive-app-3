@@ -1813,15 +1813,62 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
       {/* Skills Required for Level */}
       <SkillsRequiredCard profile={profile} />
 
+      {/* Last Result — quick review card */}
+      {history.length > 0 && savedResults && savedResults[history[0].id] && (() => {
+        const last = history[0];
+        const lastResult = savedResults[last.id];
+        const sc = last.score || 0;
+        const scColor = sc >= 9.0 ? "#22c55e" : sc >= 8.0 ? "#f59e0b" : "#ef4444";
+        const dedCount = lastResult?.executionDeductions?.length || 0;
+        const topFault = lastResult?.executionDeductions?.[0];
+        return (
+          <div
+            onClick={() => onViewResult(lastResult)}
+            className="card" style={{
+              padding: 16, marginBottom: 20, cursor: "pointer",
+              borderColor: `${scColor}25`,
+              background: `linear-gradient(135deg, ${scColor}06, transparent)`,
+              animation: "fadeIn 0.4s ease-out",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.3)", letterSpacing: 1, marginBottom: 6 }}>LAST ANALYSIS</div>
+                <div style={{ fontSize: 15, fontWeight: 700 }}>{last.event}</div>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 3 }}>
+                  {last.meetName || last.date}{last.meetLocation ? ` · ${last.meetLocation}` : ""}
+                </div>
+                {topFault && (
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 8 }}>
+                    Top fix: <span style={{ color: "#C4982A" }}>{safeStr(topFault.skill)}</span> (-{safeNum(topFault.deduction, 0).toFixed(2)})
+                  </div>
+                )}
+              </div>
+              <div style={{ textAlign: "right" }}>
+                <div style={{ fontSize: 28, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: scColor }}>
+                  {sc.toFixed(1)}
+                </div>
+                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>{dedCount} deductions</div>
+                <div style={{ fontSize: 10, color: "#C4982A", marginTop: 4 }}>tap to review →</div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* History — clickable */}
       <div style={{ marginBottom: 24 }}>
         <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>Recent Analyses</h3>
         {history.length === 0 ? (
-          <div className="card" style={{ textAlign: "center", padding: 40 }}>
-            <Icon name="sparkle" size={28} />
-            <p style={{ color: "rgba(255,255,255,0.4)", marginTop: 12, fontSize: 14 }}>
-              No routines analyzed yet. Upload your first video to get started!
+          <div className="card" style={{ textAlign: "center", padding: "32px 24px" }}>
+            <div style={{ fontSize: 36, marginBottom: 12 }}>🤸</div>
+            <h4 style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>Ready to see your score?</h4>
+            <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, lineHeight: 1.6, maxWidth: 280, margin: "0 auto 16px" }}>
+              Upload a routine video and STRIVE's 3-pass AI engine will break down every deduction — just like a real judge.
             </p>
+            <button className="btn-gold" onClick={onUpload} style={{ fontSize: 14, padding: "12px 32px" }}>
+              Upload First Video
+            </button>
           </div>
         ) : (
           history.slice(0, 5).map((h, i) => {
@@ -1858,51 +1905,22 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
         )}
       </div>
 
-      {/* Parent Quick Reference */}
-      <div className="card" style={{ padding: 20, marginBottom: 16, borderColor: "rgba(212,175,55,0.15)" }}>
-        <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 10, color: "#d4af37" }}>
-          <Icon name="info" size={14} /> Parent's Guide — How Scoring Works
-        </h3>
-        <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", lineHeight: 1.8 }}>
-          {profile.levelCategory === "compulsory" ? (
-            <span>
-              At <strong style={{ color: "rgba(255,255,255,0.7)" }}>{profile.level}</strong>, every gymnast performs the same prescribed routine. The start value is 10.0 and judges deduct for any deviation from the exact choreography plus execution errors. Even small details like foot position and arm placement count. A score of 9.0+ is strong at this level.
-            </span>
-          ) : profile.levelCategory === "xcel" ? (
-            <span>
-              In <strong style={{ color: "rgba(255,255,255,0.7)" }}>{profile.level}</strong>, routines start at 10.0 with 4 special requirements (each worth 0.50). Missing a requirement costs half a point. Execution deductions are taken for form errors on every skill. Judges look at body position, landings, artistry, and rhythm. Scores typically range 8.0–9.5.
-            </span>
-          ) : (
-            <span>
-              At <strong style={{ color: "rgba(255,255,255,0.7)" }}>{profile.level}</strong>, the gymnast builds their own routine. The start value depends on difficulty + special requirements + bonus. Execution judges deduct from 10.0 for form errors. Two different panels score difficulty and execution separately. A strong routine scores 8.5–9.5.
-            </span>
-          )}
+      {/* Quick Reference — condensed */}
+      <div className="card" style={{ padding: 16, marginBottom: 12, borderColor: "rgba(212,175,55,0.1)" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+          <h3 style={{ fontSize: 13, fontWeight: 700, color: "#d4af37" }}>
+            Scoring at {profile.level}
+          </h3>
+          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.25)" }}>
+            {profile.levelCategory === "compulsory" ? "Compulsory — SV 10.0" : profile.levelCategory === "xcel" ? "Xcel — SV 10.0" : "Optional — D-Score + E-Score"}
+          </span>
         </div>
-      </div>
-
-      {/* What to Watch For at the Meet */}
-      <div className="card" style={{ padding: 20, marginBottom: 16, borderColor: "rgba(34,197,94,0.15)" }}>
-        <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, color: "#22c55e" }}>
-          <Icon name="eye" size={14} /> What to Watch For at the Meet
-        </h3>
-        <div style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", lineHeight: 1.8 }}>
-          {(profile.primaryEvents || []).map(evt => {
-            const tips = {
-              "Vault": "Watch for: strong run speed, explosive board punch, tight body in air, and a stuck landing. The whole vault takes ~5 seconds — every tenth of a second matters.",
-              "Uneven Bars": "Watch for: smooth flow between skills (no pauses or extra swings), high casts toward handstand, clean catches on releases, and a high dismount landing.",
-              "Balance Beam": "Watch for: confidence and rhythm (no wobbles or hesitations), pointed toes on leaps, controlled turns, and connected acrobatic series. Falls = 0.50 deduction.",
-              "Floor Exercise": "Watch for: height on tumbling passes, pointed toes and straight legs in the air, dance that matches the music, and controlled landings with no extra steps.",
-              "Pommel Horse": "Watch for: continuous circles without stops, legs together and straight, smooth travel from one end to the other, clean dismount.",
-              "Still Rings": "Watch for: still rings (no swinging!), strength holds held for 2 full seconds, high dismount with controlled landing.",
-              "Parallel Bars": "Watch for: smooth swings through handstands, no bent arms on support, controlled transitions, stuck dismount.",
-              "High Bar": "Watch for: big swings (giants), clean release catches, smooth flow, high dismount.",
-            }[evt];
-            return tips ? (
-              <div key={evt} style={{ marginBottom: 8 }}>
-                <strong style={{ color: "rgba(255,255,255,0.7)" }}>{evt}:</strong> {tips}
-              </div>
-            ) : null;
-          })}
+        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: 1.7 }}>
+          {profile.levelCategory === "compulsory" ?
+            "Same routine for everyone. Judges deduct for any deviation from the prescribed choreography. 9.0+ is strong." :
+           profile.levelCategory === "xcel" ?
+            "Start at 10.0 with 4 special requirements (0.50 each). Form errors get deducted on every skill. 8.5+ is competitive." :
+            "Build your own routine. Difficulty + composition + execution. Two panels score separately. 8.5-9.5 is the target range."}
         </div>
       </div>
 
@@ -1912,21 +1930,6 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
       {/* Meet Day Checklist */}
       <MeetDayChecklist gender={profile.gender} />
 
-      {/* Scoring Info */}
-      <div className="card" style={{ padding: 20, marginBottom: 24 }}>
-        <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12 }}>
-          <Icon name="info" size={14} /> Your Scoring Criteria
-        </h3>
-        <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", lineHeight: 1.7 }}>
-          {profile.levelCategory === "compulsory" ? (
-            <span>Compulsory levels are scored from 10.0 with deductions for deviation from the prescribed routine. Each skill has specific execution requirements.</span>
-          ) : profile.levelCategory === "xcel" ? (
-            <span>Xcel routines start from 10.0 (with special requirements). Each event has 4 special requirements worth 0.5 each. Execution deductions are taken for form errors.</span>
-          ) : (
-            <span>Optional routines: Start Value = Difficulty + Composition Requirements + Connection Value. E-score starts at 10.0 with deductions for execution faults.</span>
-          )}
-        </div>
-      </div>
     </div>
   );
 }
@@ -1945,16 +1948,11 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
   const [meetName, setMeetName] = useState("");
   const [meetLocation, setMeetLocation] = useState("");
   const [meetDate, setMeetDate] = useState(new Date().toISOString().split("T")[0]);
-  const [hasApiKey, setHasApiKey] = useState(null); // null=checking, true/false
-  const [inlineKey, setInlineKey] = useState("");
-  const [keySaving, setKeySaving] = useState(false);
+  const [hasApiKey, setHasApiKey] = useState(true);
   const fileRef = useRef(null);
   const captureRef = useRef(null);
   const videoPreviewRef = useRef(null);
   const events = profile.gender === "female" ? WOMEN_EVENTS : MEN_EVENTS;
-
-  // API key is built-in — always available
-  useEffect(() => { setHasApiKey(true); }, []);
 
   const COMPRESS_THRESHOLD = 50 * 1024 * 1024; // Auto-compress above 50MB
   const TARGET_WIDTH = 720; // 720p is plenty for judging analysis
@@ -2344,90 +2342,48 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
         />
       </div>
 
-      {/* Info Cards */}
-      <div className="card" style={{ padding: 16, marginBottom: 24 }}>
-        <h4 style={{ fontSize: 13, fontWeight: 700, color: "#d4af37", marginBottom: 8 }}>
-          <Icon name="info" size={14} /> Best Practices for Video
+      {/* Video Tips — visual checklist */}
+      <div className="card" style={{ padding: 16, marginBottom: 16 }}>
+        <h4 style={{ fontSize: 13, fontWeight: 700, color: "#d4af37", marginBottom: 10 }}>
+          Tips for best results
         </h4>
-        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.7 }}>
-          Film from the side at apparatus height. Keep the entire body in frame throughout the routine. Stable camera (tripod recommended). Good lighting with minimal background clutter. Include the full routine from salute to salute.
-        </div>
-        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginTop: 10, lineHeight: 1.6, borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 10 }}>
-          <strong style={{ color: "rgba(255,255,255,0.5)" }}>iPhone users:</strong> Videos from your Camera Roll work best. If a video won't load, try using the "Record from Camera" option above, or go to Settings → Camera → Formats → "Most Compatible" before filming.
+        {[
+          { icon: "📐", tip: "Film from the side at apparatus height" },
+          { icon: "🧍", tip: "Keep the full body in frame, salute to salute" },
+          { icon: "📱", tip: "Hold camera steady — tripod or lean on something" },
+          { icon: "💡", tip: "Good lighting, minimal background clutter" },
+          { icon: "⏱", tip: "Keep under 2 minutes for fastest processing" },
+        ].map((t, i) => (
+          <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "5px 0" }}>
+            <span style={{ fontSize: 14, flexShrink: 0 }}>{t.icon}</span>
+            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>{t.tip}</span>
+          </div>
+        ))}
+        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", marginTop: 8, paddingTop: 8, borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+          iPhone tip: If video won't load, go to Settings → Camera → Formats → "Most Compatible" before filming.
         </div>
       </div>
 
-      {/* Child Safety Notice */}
+      {/* Privacy */}
       <div style={{
-        padding: "12px 16px", borderRadius: 12, marginBottom: 20,
-        background: "rgba(59,130,246,0.06)", border: "1px solid rgba(59,130,246,0.15)",
-        fontSize: 12, color: "rgba(147,197,253,0.8)", lineHeight: 1.6,
+        display: "flex", alignItems: "center", gap: 8,
+        padding: "10px 14px", borderRadius: 10, marginBottom: 12,
+        background: "rgba(59,130,246,0.04)", border: "1px solid rgba(59,130,246,0.08)",
       }}>
-        <strong style={{ color: "rgba(147,197,253,1)" }}>🔒 Privacy & Safety:</strong> Videos are processed on-device for frame extraction. Only still frames are sent to the AI for analysis — never full videos. All data stays on your device. This app is designed for parents to analyze their own children's routines.
+        <span style={{ fontSize: 13 }}>🔒</span>
+        <span style={{ fontSize: 11, color: "rgba(147,197,253,0.7)" }}>Video processed on-device. Only frames sent to AI. Your data stays private.</span>
       </div>
 
-      {/* Inline API Key Setup — only shows if no key saved */}
-      {hasApiKey === false && (
-        <div style={{
-          padding: 16, borderRadius: 14, marginBottom: 20,
-          background: "rgba(196,152,42,0.04)", border: "1px solid rgba(196,152,42,0.15)",
-          animation: "fadeIn 0.3s ease-out",
-        }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "#C4982A", marginBottom: 6 }}>
-            🔑 One-time setup: API Key
-          </div>
-          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: 1.6, marginBottom: 12 }}>
-            STRIVE needs a free Gemini API key to analyze videos. Takes 30 seconds:
-          </div>
-          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginBottom: 12, lineHeight: 1.8 }}>
-            <span style={{ color: "#C4982A", fontWeight: 700 }}>1.</span> Go to <span style={{ color: "#C4982A", textDecoration: "underline", cursor: "pointer" }} onClick={() => window.open("https://aistudio.google.com/apikey", "_blank")}>aistudio.google.com/apikey</span><br/>
-            <span style={{ color: "#C4982A", fontWeight: 700 }}>2.</span> Click "Create API Key" and copy it<br/>
-            <span style={{ color: "#C4982A", fontWeight: 700 }}>3.</span> Paste below
-          </div>
-          <div style={{ display: "flex", gap: 8 }}>
-            <input
-              className="input-field"
-              type="password"
-              placeholder="Paste your API key (AIza...)"
-              value={inlineKey}
-              onChange={e => setInlineKey(e.target.value)}
-              style={{ fontSize: 13, flex: 1 }}
-            />
-            <button
-              onClick={async () => {
-                if (!inlineKey.trim()) return;
-                setKeySaving(true);
-                try {
-                  await storage.set("strive-gemini-key", inlineKey.trim());
-                  setHasApiKey(true);
-                } catch (e) { alert("Could not save: " + e.message); }
-                setKeySaving(false);
-              }}
-              disabled={!inlineKey.trim() || keySaving}
-              style={{
-                background: "linear-gradient(135deg, #C4982A, #E8C35A)",
-                color: "#0B1024", border: "none", borderRadius: 10,
-                padding: "0 20px", fontWeight: 700, fontSize: 13,
-                cursor: inlineKey.trim() ? "pointer" : "not-allowed",
-                opacity: inlineKey.trim() ? 1 : 0.4,
-                fontFamily: "'Outfit', sans-serif", whiteSpace: "nowrap",
-              }}
-            >
-              {keySaving ? "..." : "Save"}
-            </button>
-          </div>
-        </div>
-      )}
-      {hasApiKey === true && (
-        <div style={{
-          display: "flex", alignItems: "center", gap: 8,
-          padding: "8px 14px", borderRadius: 10, marginBottom: 16,
-          background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.15)",
-        }}>
-          <span style={{ color: "#22c55e", fontSize: 14 }}>✓</span>
-          <span style={{ fontSize: 12, color: "rgba(34,197,94,0.8)" }}>API key configured — 3-pass analysis ready</span>
-        </div>
-      )}
+      {/* Analysis engine status */}
+      <div style={{
+        display: "flex", alignItems: "center", gap: 8,
+        padding: "10px 14px", borderRadius: 10, marginBottom: 16,
+        background: "rgba(34,197,94,0.04)", border: "1px solid rgba(34,197,94,0.1)",
+      }}>
+        <span style={{ color: "#22c55e", fontSize: 14 }}>✓</span>
+        <span style={{ fontSize: 12, color: "rgba(34,197,94,0.7)" }}>3-pass analysis engine ready</span>
+        <span style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", marginLeft: "auto" }}>Detect → Judge → Verify</span>
+      </div>
 
       <button
         className="btn-gold"
@@ -3731,6 +3687,27 @@ RESPOND WITH VALID JSON ONLY:
           ))}
         </div>
       )}
+
+      {/* Rotating tips during analysis */}
+      {progress > 30 && progress < 95 && (
+        <div style={{
+          marginTop: 28, padding: "12px 20px", borderRadius: 12,
+          background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)",
+          maxWidth: 320, textAlign: "center", animation: "fadeIn 0.5s ease-out",
+        }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(196,152,42,0.5)", letterSpacing: 1, marginBottom: 6 }}>DID YOU KNOW?</div>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", lineHeight: 1.6 }}>
+            {[
+              "STRIVE uses a 3-pass system: first identifying every skill, then judging each one, then verifying to remove false deductions.",
+              "A typical Level 5-7 routine has 8-12 scoreable elements. Judges evaluate each one independently.",
+              "The most common deduction in all of gymnastics? Flexed feet. It happens on almost every skill and adds up fast.",
+              "A 'stuck' landing (zero steps) is the single most impressive thing to a judge. It also saves 0.05-0.30.",
+              "Knee separation in tucks is called 'cowboy' and costs 0.10-0.20 per occurrence. STRIVE's KTM engine catches it.",
+              "At higher levels, composition and connection value can add bonus points. This is why routine construction matters.",
+            ][Math.floor((Date.now() / 8000)) % 6]}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -4038,7 +4015,7 @@ function ResultsScreen({ result, profile, history, videoUrl, onBack, onDrills })
         <Icon name="back" /> Dashboard
       </button>
 
-      {/* Demo mode notice — shows WHY real analysis didn't work */}
+      {/* Demo mode notice */}
       {result.isDemo && (
         <div style={{
           padding: "12px 16px", borderRadius: 12, marginBottom: 16,
@@ -4051,42 +4028,64 @@ function ResultsScreen({ result, profile, history, videoUrl, onBack, onDrills })
           <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>
             {result.failureReason ? (
               <>
-                Real analysis failed: <span style={{ color: "#ef4444", fontFamily: "'Space Mono', monospace", fontSize: 11 }}>{result.failureReason}</span>
+                Analysis error: <span style={{ color: "#ef4444", fontFamily: "'Space Mono', monospace", fontSize: 11 }}>{result.failureReason}</span>
                 <div style={{ marginTop: 6, color: "rgba(255,255,255,0.4)" }}>
-                  {result.failureReason.match(/fetch|network|CORS|Failed to fetch/i) ? (
-                    "This environment blocks external API calls. Deploy to Vercel/Netlify or run locally (npm start) for real analysis."
-                  ) : result.failureReason.match(/403|401|key/i) ? (
-                    "Your API key may be invalid or expired. Get a new one at aistudio.google.com/apikey"
-                  ) : result.failureReason.match(/JSON|parse|Unexpected/i) ? (
-                    "The AI returned an unparseable response. Try again — this occasionally happens."
+                  {result.failureReason.match(/JSON|parse|Unexpected|truncat/i) ? (
+                    "The AI returned an incomplete response. This happens occasionally — try uploading again."
+                  ) : result.failureReason.match(/403|401|key|quota/i) ? (
+                    "API rate limit reached. Wait a minute and try again, or add your own key in Settings."
+                  ) : result.failureReason.match(/video|frame|extract/i) ? (
+                    "Video format issue. Try re-saving: open video in Photos → Edit → Done, then re-upload."
                   ) : (
-                    "Try deploying to a real hosting environment (Vercel, Netlify, or localhost) where API calls aren't blocked."
+                    "Try uploading again. If this persists, the video may be too long or in an unsupported format."
                   )}
                 </div>
               </>
-            ) : (
-              "No API key found. Go to Settings → Video Analysis Engine and enter your free API key from aistudio.google.com/apikey"
-            )}
+            ) : "Demo mode — upload a video for real AI analysis."}
           </div>
         </div>
       )}
 
-      {/* Score Card */}
+      {/* Score Card with celebration */}
       <div style={{
         background: "linear-gradient(135deg, rgba(212,175,55,0.1), rgba(212,175,55,0.03))",
-        border: "1px solid rgba(212,175,55,0.2)", borderRadius: 20, padding: 28,
+        border: `1px solid ${scoreColor}30`, borderRadius: 20, padding: 28,
         textAlign: "center", marginBottom: 24, animation: "scaleIn 0.5s ease-out",
+        position: "relative", overflow: "hidden",
       }}>
-        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", fontWeight: 600, letterSpacing: 2, marginBottom: 4 }}>
-          {result.event?.toUpperCase()} · {result.level}
-        </div>
+        {/* Ambient glow behind score */}
         <div style={{
-          fontSize: 56, fontWeight: 900, fontFamily: "'Space Mono', monospace",
-          color: scoreColor, lineHeight: 1, marginBottom: 8,
-        }}>
-          {safeNum(result.finalScore, 0, 0, 10).toFixed(3)}
-        </div>
-        <div style={{ display: "flex", justifyContent: "center", gap: 20, marginTop: 16, alignItems: "center" }}>
+          position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)",
+          width: 200, height: 200, borderRadius: "50%",
+          background: `radial-gradient(circle, ${scoreColor}12 0%, transparent 70%)`,
+          pointerEvents: "none",
+        }} />
+
+        <div style={{ position: "relative", zIndex: 1 }}>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", fontWeight: 600, letterSpacing: 2, marginBottom: 4 }}>
+            {result.event?.toUpperCase()} · {result.level}
+          </div>
+          <div style={{
+            fontSize: 56, fontWeight: 900, fontFamily: "'Space Mono', monospace",
+            color: scoreColor, lineHeight: 1, marginBottom: 4,
+          }}>
+            {safeNum(result.finalScore, 0, 0, 10).toFixed(3)}
+          </div>
+
+          {/* Score-specific celebration/context message */}
+          <div style={{
+            fontSize: 12, fontWeight: 600, marginBottom: 12,
+            color: result.finalScore >= 9.2 ? "#22c55e" : result.finalScore >= 8.5 ? "#C4982A" : result.finalScore >= 7.5 ? "#f59e0b" : "#ef4444",
+          }}>
+            {result.finalScore >= 9.5 ? "Outstanding — elite-level execution" :
+             result.finalScore >= 9.2 ? "Excellent — top of the field" :
+             result.finalScore >= 9.0 ? "Strong performance — podium range" :
+             result.finalScore >= 8.5 ? "Solid routine — room to push higher" :
+             result.finalScore >= 8.0 ? "Good foundation — focused fixes will jump this score" :
+             result.finalScore >= 7.5 ? "Building — the biggest gains are within reach" :
+             "Keep working — every practice makes a difference"}
+          </div>
+          <div style={{ display: "flex", justifyContent: "center", gap: 20, marginTop: 16, alignItems: "center" }}>
           <div style={{ textAlign: "center" }}>
             <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", letterSpacing: 0.5 }}>START VALUE</div>
             <div style={{ fontSize: 20, fontWeight: 700, fontFamily: "'Space Mono', monospace" }}>
@@ -4115,10 +4114,67 @@ function ResultsScreen({ result, profile, history, videoUrl, onBack, onDrills })
             <span style={{ color: "rgba(255,255,255,0.25)" }}> (raw AI: {safeNum(result.rawAiScore, 0).toFixed(3)})</span>
           </div>
         )}
+        </div>{/* close z-index wrapper */}
       </div>
 
       {/* Score Benchmark */}
       <ScoreBenchmark score={result.finalScore} level={result.level} />
+
+      {/* Event comparison — show improvement from last time */}
+      {(() => {
+        const sameEventHistory = (history || []).filter(h => h.event === result.event && h.score);
+        if (sameEventHistory.length > 0) {
+          const lastScore = sameEventHistory[0].score;
+          const diff = result.finalScore - lastScore;
+          const improved = diff > 0;
+          const same = Math.abs(diff) < 0.01;
+          return (
+            <div className="card" style={{
+              padding: 14, marginBottom: 16,
+              borderColor: same ? "rgba(255,255,255,0.06)" : improved ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.1)",
+              background: same ? "rgba(255,255,255,0.02)" : improved ? "rgba(34,197,94,0.03)" : "rgba(239,68,68,0.02)",
+            }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.35)", letterSpacing: 0.5 }}>VS LAST {result.event?.toUpperCase()}</div>
+                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginTop: 4 }}>
+                    Last: <span style={{ fontFamily: "'Space Mono', monospace", fontWeight: 700, color: "rgba(255,255,255,0.6)" }}>{lastScore.toFixed(3)}</span>
+                    <span style={{ color: "rgba(255,255,255,0.2)", margin: "0 6px" }}>→</span>
+                    Now: <span style={{ fontFamily: "'Space Mono', monospace", fontWeight: 700, color: scoreColor }}>{result.finalScore.toFixed(3)}</span>
+                  </div>
+                </div>
+                <div style={{
+                  fontSize: 18, fontWeight: 900, fontFamily: "'Space Mono', monospace",
+                  color: same ? "rgba(255,255,255,0.3)" : improved ? "#22c55e" : "#ef4444",
+                }}>
+                  {same ? "=" : improved ? "+" : ""}{diff.toFixed(2)}
+                </div>
+              </div>
+              {improved && diff >= 0.1 && (
+                <div style={{ fontSize: 11, color: "#22c55e", marginTop: 8, fontWeight: 600 }}>
+                  {diff >= 0.3 ? "Huge improvement — your training is paying off!" :
+                   diff >= 0.15 ? "Solid progress — keep doing what you're doing." :
+                   "Moving in the right direction. Consistency is key."}
+                </div>
+              )}
+            </div>
+          );
+        }
+        // First analysis for this event
+        if (history.length === 0) {
+          return (
+            <div className="card" style={{ padding: 14, marginBottom: 16, borderColor: "rgba(196,152,42,0.12)", background: "rgba(196,152,42,0.03)" }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: "#C4982A" }}>
+                First analysis recorded for {result.event}
+              </div>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 4 }}>
+                Upload again after your next practice or meet to track your improvement over time.
+              </div>
+            </div>
+          );
+        }
+        return null;
+      })()}
 
       {/* Actual Score Input */}
       <div className="card" style={{ marginBottom: 20, padding: 16 }}>
@@ -4321,6 +4377,57 @@ function ResultsScreen({ result, profile, history, videoUrl, onBack, onDrills })
             ))}
           </div>
 
+          {/* Improvement Potential — the conversion hook */}
+          {groupedDeds.length >= 2 && (() => {
+            const top3 = [...groupedDeds].sort((a, b) => safeNum(b.deduction, 0) - safeNum(a.deduction, 0)).slice(0, 3);
+            const potentialGain = top3.reduce((s, d) => s + safeNum(d.deduction, 0), 0);
+            const projectedScore = Math.min(10, safeNum(result.finalScore, 0) + potentialGain);
+            return (
+              <div className="card" style={{
+                padding: 16, marginBottom: 16,
+                background: "linear-gradient(135deg, rgba(196,152,42,0.06), rgba(34,197,94,0.03))",
+                borderColor: "rgba(196,152,42,0.15)",
+              }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#C4982A", letterSpacing: 1, marginBottom: 10 }}>
+                  IMPROVEMENT POTENTIAL
+                </div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginBottom: 12 }}>
+                  <div style={{ textAlign: "center" }}>
+                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>NOW</div>
+                    <div style={{ fontSize: 24, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: scoreColor }}>
+                      {safeNum(result.finalScore, 0).toFixed(1)}
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 20, color: "rgba(196,152,42,0.4)" }}>→</div>
+                  <div style={{ textAlign: "center" }}>
+                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>POSSIBLE</div>
+                    <div style={{ fontSize: 24, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: "#22c55e" }}>
+                      {projectedScore.toFixed(1)}
+                    </div>
+                  </div>
+                  <div style={{ textAlign: "center", marginLeft: 8 }}>
+                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>GAIN</div>
+                    <div style={{ fontSize: 18, fontWeight: 800, fontFamily: "'Space Mono', monospace", color: "#C4982A" }}>
+                      +{potentialGain.toFixed(2)}
+                    </div>
+                  </div>
+                </div>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", lineHeight: 1.6 }}>
+                  Fix just 3 skills and your score jumps by <span style={{ color: "#C4982A", fontWeight: 700 }}>+{potentialGain.toFixed(2)}</span>:
+                </div>
+                {top3.map((d, i) => (
+                  <div key={i} style={{
+                    display: "flex", justifyContent: "space-between", alignItems: "center",
+                    padding: "6px 0", borderBottom: i < 2 ? "1px solid rgba(255,255,255,0.04)" : "none",
+                  }}>
+                    <span style={{ fontSize: 12, color: "rgba(255,255,255,0.6)" }}>{i + 1}. {safeStr(d.skill)}</span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: "#22c55e", fontFamily: "'Space Mono', monospace" }}>+{safeNum(d.deduction, 0).toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+
           {/* Areas for Improvement */}
           <div className="card" style={{ marginBottom: 16 }}>
             <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12 }}>
@@ -4464,42 +4571,66 @@ function ResultsScreen({ result, profile, history, videoUrl, onBack, onDrills })
         <Icon name="drill" /> Get Personalized Drills <Icon name="arrow" />
       </button>
 
-      {/* Share with Coach */}
-      <button
-        className="btn-outline"
-        onClick={() => {
-          const text = [
-            `STRIVE AI Analysis — ${result.event} · ${result.level}`,
-            `Score: ${result.finalScore?.toFixed(3)} (SV: ${result.startValue?.toFixed(1)} - Ded: ${result.totalDeductions?.toFixed(2)})`,
-            ``,
-            `Assessment: ${result.overallAssessment}`,
-            ``,
-            `Deductions:`,
-            ...groupedDeds.map(d =>
-              `  ${d.timestamp}s | ${d.skill} | ${d.fault} | -${d.deduction?.toFixed(2)} (${d.severity})`
-            ),
-            ``,
-            `Strengths: ${(result.strengths || []).join("; ")}`,
-            `Areas to Improve: ${(result.areasForImprovement || []).join("; ")}`,
-            ``,
-            `— Generated by STRIVE See Your Score. Own Your Growth.`,
-          ].join("\n");
-          if (navigator.clipboard) {
-            navigator.clipboard.writeText(text).then(() => alert("Analysis copied to clipboard! Paste into a text or email to share with your coach."));
-          } else {
-            const ta = document.createElement("textarea");
-            ta.value = text;
-            document.body.appendChild(ta);
-            ta.select();
-            document.execCommand("copy");
-            document.body.removeChild(ta);
-            alert("Analysis copied! Paste into a text or email.");
-          }
-        }}
-        style={{ width: "100%", marginTop: 10, fontSize: 14, padding: 14 }}
-      >
-        <Icon name="save" size={14} /> Copy Analysis — Share with Coach
-      </button>
+      {/* Share / Export Actions */}
+      <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+        {/* Share with Coach — uses native share sheet on mobile, clipboard on desktop */}
+        <button
+          className="btn-outline"
+          onClick={() => {
+            const topDeds = [...groupedDeds].sort((a, b) => safeNum(b.deduction, 0) - safeNum(a.deduction, 0)).slice(0, 5);
+            const text = [
+              `STRIVE Analysis — ${result.event} · ${result.level}`,
+              `Score: ${safeNum(result.finalScore, 0).toFixed(3)} (Start: ${safeNum(result.startValue, 10).toFixed(1)} - Deductions: ${safeNum(result.totalDeductions, 0).toFixed(2)})`,
+              ``,
+              `Top deductions:`,
+              ...topDeds.map((d, i) =>
+                `  ${i+1}. ${safeStr(d.skill)} — ${safeStr(d.fault)} (-${safeNum(d.deduction, 0).toFixed(2)})`
+              ),
+              ``,
+              `Strengths: ${safeArray(result.strengths).slice(0, 3).map(s => safeStr(s)).join("; ")}`,
+              ``,
+              `#1 fix: ${topDeds[0] ? safeStr(topDeds[0].skill) + " (saves +" + safeNum(topDeds[0].deduction, 0).toFixed(2) + ")" : "See full report"}`,
+              ``,
+              `— Analyzed by STRIVE · strive-app-amber.vercel.app`,
+            ].join("\n");
+
+            // Try native share first (works on mobile)
+            if (navigator.share) {
+              navigator.share({ title: `STRIVE — ${result.event} ${safeNum(result.finalScore, 0).toFixed(3)}`, text }).catch(() => {});
+            } else if (navigator.clipboard) {
+              navigator.clipboard.writeText(text).then(() => alert("Copied! Paste into a text or email to share with your coach."));
+            } else {
+              const ta = document.createElement("textarea"); ta.value = text;
+              document.body.appendChild(ta); ta.select(); document.execCommand("copy");
+              document.body.removeChild(ta); alert("Copied!");
+            }
+          }}
+          style={{ flex: 1, fontSize: 13, padding: 14 }}
+        >
+          <Icon name="save" size={14} /> Share with Coach
+        </button>
+
+        {/* Analyze Another */}
+        <button
+          className="btn-outline"
+          onClick={onBack}
+          style={{ flex: 1, fontSize: 13, padding: 14 }}
+        >
+          <Icon name="camera" size={14} /> New Analysis
+        </button>
+      </div>
+
+      {/* App branding footer */}
+      <div style={{ textAlign: "center", marginTop: 24, paddingTop: 16, borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+        <div style={{
+          fontFamily: "'Georgia', serif", fontSize: 14, fontWeight: 500, letterSpacing: 3,
+          background: "linear-gradient(135deg, #C4982A, #E8C35A)", backgroundClip: "text",
+          WebkitBackgroundClip: "text", color: "transparent",
+        }}>STRIVE</div>
+        <div style={{ fontSize: 9, color: "rgba(255,255,255,0.15)", marginTop: 4, letterSpacing: 1 }}>
+          SEE YOUR SCORE. OWN YOUR GROWTH.
+        </div>
+      </div>
     </div>
   );
 }
@@ -4790,49 +4921,44 @@ function SettingsScreen({ profile, onSave, onBack, onReset }) {
         <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>
           <Icon name="target" size={14} /> Video Analysis Engine
         </h3>
-        <p style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: 12, lineHeight: 1.6 }}>
-          STRIVE can analyze your full video for significantly better accuracy — identifying every skill, real timestamps, and motion-based deductions. Enter your API key to unlock enhanced video analysis.
+        <div style={{
+          display: "flex", alignItems: "center", gap: 8,
+          padding: "10px 14px", borderRadius: 10, marginBottom: 12,
+          background: "rgba(34,197,94,0.04)", border: "1px solid rgba(34,197,94,0.1)",
+        }}>
+          <span style={{ color: "#22c55e", fontSize: 14 }}>✓</span>
+          <div>
+            <span style={{ fontSize: 12, color: "rgba(34,197,94,0.8)" }}>3-pass Gemini engine active</span>
+            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", marginTop: 2 }}>Detect → Judge → Verify · Platform key built-in</div>
+          </div>
+        </div>
+        <p style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginBottom: 10, lineHeight: 1.5 }}>
+          Advanced: Override with your own API key for higher rate limits. Get one free at <span style={{ color: "#d4af37" }}>aistudio.google.com/apikey</span>
         </p>
-        <div style={{ marginBottom: 12 }}>
-          <label style={{ fontSize: 12, fontWeight: 600, marginBottom: 6, display: "block", color: "rgba(255,255,255,0.5)" }}>VIDEO ANALYSIS API KEY</label>
+        <div style={{ display: "flex", gap: 8 }}>
           <input
             className="input-field"
             type="password"
-            placeholder="AIza..."
+            placeholder="Optional — paste your own key to override"
             value={geminiKey}
             onChange={e => setGeminiKey(e.target.value)}
-            style={{ fontSize: 13 }}
+            style={{ fontSize: 12, flex: 1 }}
           />
-        </div>
-        <button className="btn-outline" onClick={async () => {
-          try {
-            if (geminiKey) {
-              await storage.set("strive-gemini-key", geminiKey);
-              // Verify it actually saved
-              const check = await storage.get("strive-gemini-key");
-              if (check?.value === geminiKey) {
+          <button className="btn-outline" onClick={async () => {
+            try {
+              if (geminiKey) {
+                await storage.set("strive-gemini-key", geminiKey);
                 setKeySaved(true);
-                console.log("API key saved and verified:", geminiKey.substring(0, 8) + "...");
               } else {
-                console.error("Save failed — readback mismatch");
-                alert("Key could not be saved. Try again.");
-                return;
+                await storage.delete("strive-gemini-key");
+                setKeySaved(true);
               }
-            } else {
-              await storage.delete("strive-gemini-key");
-              setKeySaved(true);
-            }
-            setTimeout(() => setKeySaved(false), 3000);
-          } catch (e) {
-            console.error("Save error:", e);
-            alert("Could not save key: " + e.message);
-          }
-        }} style={{ width: "100%", padding: "10px 12px", fontSize: 13 }}>
-          {keySaved ? "✓ Key Saved & Verified!" : "Save API Key"}
-        </button>
-        <p style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", marginTop: 8, lineHeight: 1.5 }}>
-          Get a free key at <span style={{ color: "#d4af37" }}>aistudio.google.com/apikey</span>. A platform key is built-in, but you can override it with your own for higher rate limits.
-        </p>
+              setTimeout(() => setKeySaved(false), 3000);
+            } catch (e) { alert("Error: " + e.message); }
+          }} style={{ padding: "10px 16px", fontSize: 12, whiteSpace: "nowrap" }}>
+            {keySaved ? "✓ Saved" : "Save"}
+          </button>
+        </div>
       </div>
 
       {/* STRIVE Pro Section */}
@@ -4877,6 +5003,24 @@ function SettingsScreen({ profile, onSave, onBack, onReset }) {
       </div>
 
       <div style={{ marginTop: 24, paddingTop: 24, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+        {/* About STRIVE */}
+        <div style={{ textAlign: "center", marginBottom: 24 }}>
+          <div style={{
+            fontFamily: "'Georgia', serif", fontSize: 18, fontWeight: 500, letterSpacing: 4,
+            background: "linear-gradient(135deg, #C4982A, #E8C35A)", backgroundClip: "text",
+            WebkitBackgroundClip: "text", color: "transparent", marginBottom: 6,
+          }}>STRIVE</div>
+          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", letterSpacing: 1, marginBottom: 12 }}>
+            SEE YOUR SCORE. OWN YOUR GROWTH.
+          </div>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", lineHeight: 1.7, maxWidth: 300, margin: "0 auto" }}>
+            AI-powered gymnastics scoring using USAG criteria. Built for athletes, parents, and coaches. Levels 1-10, Xcel Bronze-Sapphire, WAG & MAG.
+          </div>
+          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.15)", marginTop: 12, fontFamily: "'Space Mono', monospace" }}>
+            v1.0.0 · 3-Pass Gemini Engine · strive-app-amber.vercel.app
+          </div>
+        </div>
+
         {!showConfirm ? (
           <button onClick={() => setShowConfirm(true)} style={{
             width: "100%", padding: 14, borderRadius: 12, border: "1px solid rgba(239,68,68,0.3)",
