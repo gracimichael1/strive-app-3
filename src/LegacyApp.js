@@ -618,7 +618,7 @@ function ScoreBenchmark({ score, level }) {
     score >= bench.avg ? "Above Average" :
     score >= bench.avg - 0.3 ? "Average Range" : "Below Average";
 
-  const pColor = percentile.includes("Top 10") ? "#d4af37" :
+  const pColor = percentile.includes("Top 10") ? "#C4982A" :
     percentile.includes("Top 25") ? "#22c55e" :
     percentile.includes("Above") ? "#22c55e" :
     percentile.includes("Average R") ? "#f59e0b" : "#ef4444";
@@ -642,17 +642,17 @@ function ScoreBenchmark({ score, level }) {
         {/* Top 10% zone */}
         <div style={{
           position: "absolute", left: `${topPct}%`, right: 0, top: 0, bottom: 0,
-          background: "rgba(212,175,55,0.08)", borderRadius: "0 12px 12px 0",
+          background: "rgba(196,152,42,0.08)", borderRadius: "0 12px 12px 0",
         }} />
         {/* Score marker */}
         <div style={{
           position: "absolute", top: -2, width: 28, height: 28, borderRadius: "50%",
-          background: pColor, border: "3px solid #0a0e27",
+          background: pColor, border: "3px solid #0B1024",
           left: `calc(${pct}% - 14px)`,
           display: "flex", alignItems: "center", justifyContent: "center",
           boxShadow: `0 0 10px ${pColor}50`,
         }}>
-          <span style={{ fontSize: 8, fontWeight: 900, color: "#0a0e27", fontFamily: "'Space Mono', monospace" }}>
+          <span style={{ fontSize: 8, fontWeight: 900, color: "#0B1024", fontFamily: "'Space Mono', monospace" }}>
             {score.toFixed(1)}
           </span>
         </div>
@@ -660,7 +660,7 @@ function ScoreBenchmark({ score, level }) {
       <div style={{ display: "flex", justifyContent: "space-between", fontSize: 9, color: "rgba(255,255,255,0.25)", fontFamily: "'Space Mono', monospace" }}>
         <span>{bench.low.toFixed(1)}</span>
         <span style={{ color: "rgba(245,158,11,0.5)" }}>avg {bench.avg.toFixed(1)}</span>
-        <span style={{ color: "rgba(212,175,55,0.5)" }}>top10% {bench.top10.toFixed(1)}</span>
+        <span style={{ color: "rgba(196,152,42,0.5)" }}>top10% {bench.top10.toFixed(1)}</span>
         <span>{bench.high.toFixed(1)}</span>
       </div>
     </div>
@@ -697,18 +697,18 @@ function SkillsRequiredCard({ profile }) {
     : [["Floor", "floor"], ["Vault", "vault"], ["Bars", "bars"]];
 
   return (
-    <div className="card" style={{ padding: 16, marginBottom: 20, borderColor: "rgba(212,175,55,0.12)" }}>
+    <div className="card" style={{ padding: 16, marginBottom: 20, borderColor: "rgba(196,152,42,0.12)" }}>
       <div onClick={() => setExpanded(!expanded)} style={{ cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <h3 style={{ fontSize: 14, fontWeight: 700 }}>
           <Icon name="star" size={14} /> Skills Required — {profile.level}
         </h3>
-        <span style={{ color: "#d4af37", fontSize: 13, fontWeight: 600 }}>{expanded ? "▲" : "▼"}</span>
+        <span style={{ color: "#C4982A", fontSize: 13, fontWeight: 600 }}>{expanded ? "▲" : "▼"}</span>
       </div>
       {expanded && (
         <div style={{ marginTop: 12 }}>
           {events.map(([label, key]) => skills[key] && (
             <div key={key} style={{ marginBottom: 10 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "#d4af37", letterSpacing: 1, marginBottom: 4 }}>{label.toUpperCase()}</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#C4982A", letterSpacing: 1, marginBottom: 4 }}>{label.toUpperCase()}</div>
               <div style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", lineHeight: 1.7 }}>{skills[key]}</div>
             </div>
           ))}
@@ -740,18 +740,18 @@ function GlossaryCard() {
   ];
 
   return (
-    <div className="card" style={{ padding: 16, marginBottom: 16, borderColor: "rgba(212,175,55,0.1)" }}>
+    <div className="card" style={{ padding: 16, marginBottom: 16, borderColor: "rgba(196,152,42,0.1)" }}>
       <div onClick={() => setExpanded(!expanded)} style={{ cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <h3 style={{ fontSize: 14, fontWeight: 700 }}>
           <Icon name="note" size={14} /> Parent's Glossary — Key Terms
         </h3>
-        <span style={{ color: "#d4af37", fontSize: 13, fontWeight: 600 }}>{expanded ? "▲" : "▼"}</span>
+        <span style={{ color: "#C4982A", fontSize: 13, fontWeight: 600 }}>{expanded ? "▲" : "▼"}</span>
       </div>
       {expanded && (
         <div style={{ marginTop: 12 }}>
           {terms.map(([term, def], i) => (
             <div key={i} style={{ marginBottom: 10, paddingBottom: 10, borderBottom: i < terms.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "#d4af37", marginBottom: 3 }}>{term}</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#C4982A", marginBottom: 3 }}>{term}</div>
               <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", lineHeight: 1.6 }}>{def}</div>
             </div>
           ))}
@@ -782,12 +782,12 @@ function MeetDayChecklist({ gender }) {
   ];
 
   return (
-    <div className="card" style={{ padding: 16, marginBottom: 16, borderColor: "rgba(212,175,55,0.1)" }}>
+    <div className="card" style={{ padding: 16, marginBottom: 16, borderColor: "rgba(196,152,42,0.1)" }}>
       <div onClick={() => setExpanded(!expanded)} style={{ cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <h3 style={{ fontSize: 14, fontWeight: 700 }}>
           <Icon name="check" size={14} /> Meet Day Checklist
         </h3>
-        <span style={{ color: "#d4af37", fontSize: 13, fontWeight: 600 }}>{expanded ? "▲" : "▼"}</span>
+        <span style={{ color: "#C4982A", fontSize: 13, fontWeight: 600 }}>{expanded ? "▲" : "▼"}</span>
       </div>
       {expanded && (
         <div style={{ marginTop: 12 }}>
@@ -915,7 +915,7 @@ export default function LegacyApp() {
   return (
     <div style={{
       minHeight: "100vh",
-      background: "linear-gradient(135deg, #0a0e27 0%, #121840 40%, #0d1117 100%)",
+      background: "#0B1024",
       fontFamily: "'Outfit', sans-serif",
       color: "#e2e8f0",
       position: "relative",
@@ -924,58 +924,66 @@ export default function LegacyApp() {
       <style>{fonts}</style>
       <style>{`
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); }
-        ::-webkit-scrollbar-thumb { background: rgba(212,175,55,0.3); border-radius: 3px; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(196,152,42,0.2); border-radius: 2px; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
         @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
         @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        @keyframes scaleIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+        @keyframes scaleIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
         @keyframes barGrow { from { width: 0%; } to { width: var(--target-width); } }
+        @keyframes glowPulse { 0%, 100% { box-shadow: 0 0 20px rgba(196,152,42,0.15); } 50% { box-shadow: 0 0 40px rgba(196,152,42,0.25); } }
         .btn-gold {
-          background: linear-gradient(135deg, #d4af37, #f2d06b, #d4af37);
-          color: #0a0e27; border: none; padding: 14px 32px; border-radius: 12px;
-          font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 16px;
-          cursor: pointer; transition: all 0.3s; letter-spacing: 0.5px;
-          box-shadow: 0 4px 20px rgba(212,175,55,0.3);
+          background: linear-gradient(135deg, #C4982A, #E8C35A);
+          color: #0B1024; border: none; padding: 14px 32px; border-radius: 14px;
+          font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 15px;
+          cursor: pointer; transition: all 0.3s; letter-spacing: 0.3px;
+          box-shadow: 0 4px 20px rgba(196,152,42,0.25);
         }
-        .btn-gold:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(212,175,55,0.4); }
+        .btn-gold:hover { transform: translateY(-1px); box-shadow: 0 6px 28px rgba(196,152,42,0.35); filter: brightness(1.05); }
+        .btn-gold:active { transform: translateY(0); }
+        .btn-gold:disabled { opacity: 0.4; cursor: not-allowed; transform: none; filter: none; box-shadow: none; }
         .btn-outline {
-          background: transparent; color: #d4af37; border: 1.5px solid rgba(212,175,55,0.4);
+          background: transparent; color: #C4982A; border: 1.5px solid rgba(196,152,42,0.3);
           padding: 12px 28px; border-radius: 12px; font-family: 'Outfit', sans-serif;
-          font-weight: 600; font-size: 15px; cursor: pointer; transition: all 0.3s;
+          font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s;
         }
-        .btn-outline:hover { background: rgba(212,175,55,0.1); border-color: #d4af37; }
+        .btn-outline:hover { background: rgba(196,152,42,0.08); border-color: rgba(196,152,42,0.5); }
         .card {
-          background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06);
-          border-radius: 16px; padding: 24px; backdrop-filter: blur(10px);
+          background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05);
+          border-radius: 16px; padding: 20px; transition: border-color 0.2s;
         }
-        .card:hover { border-color: rgba(212,175,55,0.2); }
+        .card:hover { border-color: rgba(255,255,255,0.08); }
         .input-field {
-          width: 100%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
-          border-radius: 10px; padding: 14px 16px; color: #e2e8f0; font-family: 'Outfit', sans-serif;
-          font-size: 15px; outline: none; transition: all 0.3s;
+          width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 12px; padding: 14px 16px; color: #e2e8f0; font-family: 'Outfit', sans-serif;
+          font-size: 15px; outline: none; transition: all 0.2s;
         }
-        .input-field:focus { border-color: #d4af37; box-shadow: 0 0 0 3px rgba(212,175,55,0.1); }
-        .input-field::placeholder { color: rgba(255,255,255,0.3); }
+        .input-field:focus { border-color: #C4982A; box-shadow: 0 0 0 3px rgba(196,152,42,0.08); }
+        .input-field::placeholder { color: rgba(255,255,255,0.2); }
         select.input-field { appearance: none; cursor: pointer;
-          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23d4af37' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23C4982A' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
           background-repeat: no-repeat; background-position: right 16px center;
         }
-        select.input-field option { background: #1a1f3a; color: #e2e8f0; }
+        select.input-field option { background: #111631; color: #e2e8f0; }
         .tag {
           display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px;
           font-weight: 600; letter-spacing: 0.5px;
         }
       `}</style>
 
-      {/* Background decoration */}
+      {/* Background ambient effects */}
       <div style={{
-        position: "fixed", top: "-50%", right: "-30%", width: "80vw", height: "80vw",
-        background: "radial-gradient(circle, rgba(212,175,55,0.03) 0%, transparent 70%)",
-        pointerEvents: "none",
+        position: "fixed", top: "-30%", right: "-20%", width: "60vw", height: "60vw",
+        background: "radial-gradient(circle, rgba(196,152,42,0.03) 0%, transparent 60%)",
+        pointerEvents: "none", zIndex: 0,
+      }} />
+      <div style={{
+        position: "fixed", bottom: "-20%", left: "-15%", width: "50vw", height: "50vw",
+        background: "radial-gradient(circle, rgba(139,92,246,0.015) 0%, transparent 60%)",
+        pointerEvents: "none", zIndex: 0,
       }} />
 
       {screen === "splash" && <SplashScreen onStart={() => setScreen("onboarding")} />}
@@ -1056,7 +1064,7 @@ export default function LegacyApp() {
             <ProgressScreen history={history} profile={profile} onBack={() => setScreen("dashboard")} />
           ) : (
             <div style={{ minHeight: "100vh", padding: "24px 20px", maxWidth: 600, margin: "0 auto" }}>
-              <button onClick={() => setScreen("dashboard")} style={{ background: "none", border: "none", color: "#d4af37", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 20 }}>← Dashboard</button>
+              <button onClick={() => setScreen("dashboard")} style={{ background: "none", border: "none", color: "#C4982A", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 20 }}>← Dashboard</button>
               <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>📈 Progress Tracking</h2>
               <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 14, marginBottom: 16 }}>Track your score trends across the season.</p>
               {/* Show basic stats as teaser */}
@@ -1090,12 +1098,12 @@ export default function LegacyApp() {
             <MentalTrainingScreen profile={profile} onBack={() => setScreen("dashboard")} />
           ) : (
             <div style={{ minHeight: "100vh", padding: "24px 20px", maxWidth: 600, margin: "0 auto" }}>
-              <button onClick={() => setScreen("dashboard")} style={{ background: "none", border: "none", color: "#d4af37", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 20 }}>← Dashboard</button>
+              <button onClick={() => setScreen("dashboard")} style={{ background: "none", border: "none", color: "#C4982A", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 20 }}>← Dashboard</button>
               <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>🧠 Mental Training</h2>
               <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 14, marginBottom: 24 }}>Gymnastics is 80% mental. Train the mind alongside the body.</p>
               {/* Free teaser */}
-              <div className="card" style={{ padding: 20, marginBottom: 16, borderColor: "rgba(212,175,55,0.15)" }}>
-                <h3 style={{ fontSize: 14, fontWeight: 700, color: "#d4af37", marginBottom: 10 }}>The 4 Pillars</h3>
+              <div className="card" style={{ padding: 20, marginBottom: 16, borderColor: "rgba(196,152,42,0.15)" }}>
+                <h3 style={{ fontSize: 14, fontWeight: 700, color: "#C4982A", marginBottom: 10 }}>The 4 Pillars</h3>
                 {["Visualization — mentally rehearse routines", "Breathing — control nerves before competing", "Confidence — replace negative self-talk", "Pressure Management — make meets feel familiar"].map((p, i) => (
                   <div key={i} style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", padding: "6px 0", borderBottom: i < 3 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>{p}</div>
                 ))}
@@ -1122,7 +1130,7 @@ export default function LegacyApp() {
             <SeasonGoalsScreen profile={profile} history={history} onBack={() => setScreen("dashboard")} />
           ) : (
             <div style={{ minHeight: "100vh", padding: "24px 20px", maxWidth: 600, margin: "0 auto" }}>
-              <button onClick={() => setScreen("dashboard")} style={{ background: "none", border: "none", color: "#d4af37", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 20 }}>← Dashboard</button>
+              <button onClick={() => setScreen("dashboard")} style={{ background: "none", border: "none", color: "#C4982A", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 20 }}>← Dashboard</button>
               <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>🎯 Season Goals</h2>
               <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 14, marginBottom: 24 }}>Set targets and track progress across the season.</p>
               <div style={{ border: "1.5px solid rgba(139,92,246,0.25)", borderRadius: 16, padding: 24, textAlign: "center", background: "rgba(139,92,246,0.04)" }}>
@@ -1150,12 +1158,12 @@ function SplashScreen({ onStart }) {
 
   // SVG gymnast silhouette logo
   const Logo = () => (
-    <svg viewBox="0 0 120 120" width="110" height="110" style={{ filter: "drop-shadow(0 0 30px rgba(212,175,55,0.3))" }}>
+    <svg viewBox="0 0 120 120" width="110" height="110" style={{ filter: "drop-shadow(0 0 30px rgba(196,152,42,0.3))" }}>
       <defs>
         <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#d4af37" />
-          <stop offset="50%" stopColor="#f2d06b" />
-          <stop offset="100%" stopColor="#d4af37" />
+          <stop offset="0%" stopColor="#C4982A" />
+          <stop offset="50%" stopColor="#E8C35A" />
+          <stop offset="100%" stopColor="#C4982A" />
         </linearGradient>
       </defs>
       {/* Outer ring — like a judge's seal */}
@@ -1194,15 +1202,15 @@ function SplashScreen({ onStart }) {
       <div style={{
         position: "absolute", top: "10%", left: "50%", transform: "translateX(-50%)",
         width: 500, height: 500,
-        background: "radial-gradient(circle, rgba(212,175,55,0.06) 0%, transparent 60%)",
+        background: "radial-gradient(circle, rgba(196,152,42,0.06) 0%, transparent 60%)",
         pointerEvents: "none",
       }} />
       {/* Subtle decorative lines */}
       <div style={{
         position: "absolute", top: 0, left: 0, right: 0, bottom: 0, pointerEvents: "none",
         backgroundImage: `
-          linear-gradient(rgba(212,175,55,0.03) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(212,175,55,0.03) 1px, transparent 1px)
+          linear-gradient(rgba(196,152,42,0.03) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(196,152,42,0.03) 1px, transparent 1px)
         `,
         backgroundSize: "60px 60px",
         opacity: 0.5,
@@ -1227,9 +1235,9 @@ function SplashScreen({ onStart }) {
           letterSpacing: 6, marginBottom: 0, lineHeight: 1,
         }}>
           <span style={{
-            background: "linear-gradient(135deg, #d4af37, #f2d06b, #d4af37)",
+            background: "linear-gradient(135deg, #C4982A, #E8C35A, #C4982A)",
             backgroundClip: "text", WebkitBackgroundClip: "text", color: "transparent",
-          }}>STRIVE</span><span style={{ color: "#d4af37" }}>.</span>
+          }}>STRIVE</span><span style={{ color: "#C4982A" }}>.</span>
         </h1>
         <div style={{
           fontSize: 11, fontWeight: 600, letterSpacing: 4,
@@ -1276,7 +1284,7 @@ function SplashScreen({ onStart }) {
         {["USAG Levels 1–10", "Xcel Bronze–Sapphire", "MAG & WAG"].map((badge, i) => (
           <span key={i} style={{
             fontSize: 9, fontWeight: 600, letterSpacing: 1.5,
-            color: "rgba(212,175,55,0.3)", textTransform: "uppercase",
+            color: "rgba(196,152,42,0.3)", textTransform: "uppercase",
           }}>
             {badge}
           </span>
@@ -1386,8 +1394,8 @@ function OnboardingScreen({ onComplete }) {
             key={opt.val}
             onClick={() => { setGender(opt.val); setLevelCategory(""); setLevel(""); setPrimaryEvents([]); }}
             style={{
-              background: gender === opt.val ? "rgba(212,175,55,0.15)" : "rgba(255,255,255,0.04)",
-              border: `2px solid ${gender === opt.val ? "#d4af37" : "rgba(255,255,255,0.08)"}`,
+              background: gender === opt.val ? "rgba(196,152,42,0.15)" : "rgba(255,255,255,0.04)",
+              border: `2px solid ${gender === opt.val ? "#C4982A" : "rgba(255,255,255,0.08)"}`,
               borderRadius: 16, padding: 24, cursor: "pointer", textAlign: "center",
               transition: "all 0.3s",
             }}
@@ -1420,8 +1428,8 @@ function OnboardingScreen({ onComplete }) {
             style={{
               flex: 1, padding: "10px 8px", borderRadius: 10, border: "none", cursor: "pointer",
               fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 13,
-              background: levelCategory === cat.val ? "linear-gradient(135deg, #d4af37, #f2d06b)" : "rgba(255,255,255,0.06)",
-              color: levelCategory === cat.val ? "#0a0e27" : "rgba(255,255,255,0.6)",
+              background: levelCategory === cat.val ? "linear-gradient(135deg, #C4982A, #E8C35A)" : "rgba(255,255,255,0.06)",
+              color: levelCategory === cat.val ? "#0B1024" : "rgba(255,255,255,0.6)",
               transition: "all 0.3s",
             }}
           >
@@ -1438,9 +1446,9 @@ function OnboardingScreen({ onComplete }) {
               style={{
                 padding: "14px 16px", borderRadius: 10, border: "none", cursor: "pointer",
                 fontFamily: "'Outfit', sans-serif", fontWeight: 500, fontSize: 14, textAlign: "left",
-                background: level === l ? "rgba(212,175,55,0.15)" : "rgba(255,255,255,0.04)",
-                color: level === l ? "#d4af37" : "rgba(255,255,255,0.6)",
-                border: `1.5px solid ${level === l ? "rgba(212,175,55,0.4)" : "rgba(255,255,255,0.06)"}`,
+                background: level === l ? "rgba(196,152,42,0.15)" : "rgba(255,255,255,0.04)",
+                color: level === l ? "#C4982A" : "rgba(255,255,255,0.6)",
+                border: `1.5px solid ${level === l ? "rgba(196,152,42,0.4)" : "rgba(255,255,255,0.06)"}`,
                 transition: "all 0.3s",
               }}
             >
@@ -1465,9 +1473,9 @@ function OnboardingScreen({ onComplete }) {
             style={{
               padding: 18, borderRadius: 12, cursor: "pointer", textAlign: "center",
               fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 15,
-              background: primaryEvents.includes(e) ? "rgba(212,175,55,0.15)" : "rgba(255,255,255,0.04)",
-              color: primaryEvents.includes(e) ? "#d4af37" : "rgba(255,255,255,0.5)",
-              border: `2px solid ${primaryEvents.includes(e) ? "#d4af37" : "rgba(255,255,255,0.06)"}`,
+              background: primaryEvents.includes(e) ? "rgba(196,152,42,0.15)" : "rgba(255,255,255,0.04)",
+              color: primaryEvents.includes(e) ? "#C4982A" : "rgba(255,255,255,0.5)",
+              border: `2px solid ${primaryEvents.includes(e) ? "#C4982A" : "rgba(255,255,255,0.06)"}`,
               transition: "all 0.3s",
             }}
           >
@@ -1519,7 +1527,7 @@ function OnboardingScreen({ onComplete }) {
         {[0,1,2,3,4,5].map(i => (
           <div key={i} style={{
             flex: 1, height: 3, borderRadius: 2,
-            background: i <= step ? "linear-gradient(90deg, #d4af37, #f2d06b)" : "rgba(255,255,255,0.1)",
+            background: i <= step ? "linear-gradient(90deg, #C4982A, #E8C35A)" : "rgba(255,255,255,0.1)",
             transition: "all 0.5s",
           }} />
         ))}
@@ -1602,31 +1610,40 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
   const todayAffirmation = affirmationPool[day % affirmationPool.length];
 
   return (
-    <div style={{ minHeight: "100vh", padding: "24px 20px", maxWidth: 600, margin: "0 auto" }}>
-      {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 32 }}>
-        <div>
-          <h1 style={{ fontSize: 24, fontWeight: 700 }}>
-            {profile.role === "parent" ? (
-              <><span style={{ color: "rgba(255,255,255,0.5)", fontSize: 16, fontWeight: 400 }}>Tracking </span><span style={{ color: "#d4af37" }}>{profile.name}</span></>
-            ) : (
-              <>Hey, <span style={{ color: "#d4af37" }}>{profile.name}</span></>
-            )}
-          </h1>
-          <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, marginTop: 4 }}>
-            {profile.level} · {profile.gender === "female" ? "WAG" : "MAG"}
-            {profile.role === "coach" && " · Coach View"}
-          </p>
+    <div style={{ minHeight: "100vh", padding: "20px 20px 32px", maxWidth: 600, margin: "0 auto" }}>
+      {/* Header — STRIVE branded */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          {/* Mini arc logo */}
+          <svg viewBox="0 0 32 32" width="28" height="28" style={{ flexShrink: 0 }}>
+            <g transform="translate(16,17)">
+              <path d="M-10 8 Q-3 -12, 8 -6 Q13 -3, 9 8" fill="none" stroke="#C4982A" strokeWidth="2.5" strokeLinecap="round"/>
+              <circle cx="9" cy="-7" r="1.5" fill="#E8C35A"/>
+            </g>
+          </svg>
+          <div>
+            <h1 style={{ fontSize: 20, fontWeight: 700, lineHeight: 1.2 }}>
+              {profile.role === "parent" ? (
+                <><span style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, fontWeight: 400 }}>Tracking </span><span style={{ color: "#E8C35A" }}>{profile.name}</span></>
+              ) : (
+                <>Hey, <span style={{ color: "#E8C35A" }}>{profile.name}</span></>
+              )}
+            </h1>
+            <p style={{ color: "rgba(255,255,255,0.3)", fontSize: 12, marginTop: 2 }}>
+              {profile.level} · {profile.gender === "female" ? "WAG" : "MAG"}
+              {profile.role === "coach" && " · Coach"}
+            </p>
+          </div>
         </div>
         <button
           onClick={onSettings}
           style={{
-            width: 42, height: 42, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.1)",
-            background: "rgba(255,255,255,0.04)", cursor: "pointer", display: "flex",
-            alignItems: "center", justifyContent: "center",
+            width: 38, height: 38, borderRadius: 12, border: "1px solid rgba(255,255,255,0.06)",
+            background: "rgba(255,255,255,0.03)", cursor: "pointer", display: "flex",
+            alignItems: "center", justifyContent: "center", transition: "all 0.2s",
           }}
         >
-          <Icon name="user" size={18} />
+          <Icon name="user" size={16} />
         </button>
       </div>
 
@@ -1674,97 +1691,113 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
           <button
             onClick={onUpload}
             style={{
-              width: "100%", padding: "28px 24px", borderRadius: 20, cursor: "pointer",
-              background: "linear-gradient(135deg, rgba(212,175,55,0.12), rgba(212,175,55,0.06))",
-              border: "2px dashed rgba(212,175,55,0.3)", textAlign: "center",
-              transition: "all 0.3s", marginBottom: 24,
+              width: "100%", padding: "18px 20px", borderRadius: 16, cursor: "pointer",
+              background: "linear-gradient(135deg, rgba(196,152,42,0.08), rgba(196,152,42,0.03))",
+              border: "1px solid rgba(196,152,42,0.15)",
+              display: "flex", alignItems: "center", gap: 16,
+              transition: "all 0.2s", marginBottom: 16, textAlign: "left",
             }}
           >
             <div style={{
-              width: 56, height: 56, borderRadius: "50%", margin: "0 auto 16px",
-              background: "linear-gradient(135deg, #d4af37, #f2d06b)",
+              width: 48, height: 48, borderRadius: 14, flexShrink: 0,
+              background: "linear-gradient(135deg, #C4982A, #E8C35A)",
               display: "flex", alignItems: "center", justifyContent: "center",
-              boxShadow: "0 4px 24px rgba(212,175,55,0.3)",
+              boxShadow: "0 4px 16px rgba(196,152,42,0.2)",
             }}>
-              <Icon name="camera" size={24} />
+              <Icon name="camera" size={22} />
             </div>
-            <span style={{ color: "#d4af37", fontWeight: 700, fontSize: 17, display: "block" }}>
-              Analyze Routine
-            </span>
-            <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, marginTop: 6, display: "block" }}>
-              {isPro ? "Unlimited AI analysis" : `${remaining} free analysis${remaining !== 1 ? "es" : ""} remaining this month`}
-            </span>
+            <div style={{ flex: 1 }}>
+              <span style={{ color: "#E8C35A", fontWeight: 700, fontSize: 16, display: "block" }}>
+                Analyze Routine
+              </span>
+              <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 12, marginTop: 3, display: "block" }}>
+                {isPro ? "Unlimited · 3-pass AI engine" : `${remaining} free remaining · 3-pass AI`}
+              </span>
+            </div>
+            <span style={{ color: "rgba(196,152,42,0.4)", fontSize: 18 }}>→</span>
           </button>
         );
       })()}
 
       {/* ── HERO CARD — Daily Focus & Affirmation ── */}
       <div style={{
-        background: "linear-gradient(135deg, rgba(196,152,42,0.12), rgba(196,152,42,0.04))",
-        border: "1px solid rgba(196,152,42,0.2)",
-        borderRadius: 20, padding: 20, marginBottom: 16,
+        background: "linear-gradient(135deg, rgba(196,152,42,0.08), rgba(196,152,42,0.02))",
+        border: "1px solid rgba(196,152,42,0.12)",
+        borderRadius: 20, padding: "20px 20px 16px", marginBottom: 16,
         animation: "fadeIn 0.5s ease-out",
+        position: "relative", overflow: "hidden",
       }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 9, fontWeight: 700, color: "#C4982A", letterSpacing: 1.5, marginBottom: 8 }}>
-              TODAY'S FOCUS
+        {/* Subtle ambient glow */}
+        <div style={{ position: "absolute", top: -40, right: -40, width: 120, height: 120, borderRadius: "50%", background: "rgba(196,152,42,0.06)", pointerEvents: "none" }} />
+
+        <div style={{ position: "relative", zIndex: 1 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(196,152,42,0.7)", letterSpacing: 1.5, marginBottom: 8 }}>
+                TODAY'S FOCUS
+              </div>
+              <div style={{ fontSize: 14, fontWeight: 500, lineHeight: 1.6, color: "rgba(255,255,255,0.75)", maxWidth: 230 }}>
+                "{todayAffirmation}"
+              </div>
             </div>
-            <div style={{ fontSize: 15, fontWeight: 600, lineHeight: 1.5, color: "#e2e8f0", maxWidth: 220 }}>
-              "{todayAffirmation}"
-            </div>
+            {/* Score sparkline */}
+            {recentScores.length >= 2 && (
+              <div style={{ display: "flex", alignItems: "flex-end", gap: 3, height: 36, marginLeft: 16 }}>
+                {recentScores.map((s, i) => {
+                  const h = maxRecent > 0 ? Math.max(5, (s / maxRecent) * 36) : 5;
+                  const isLast = i === recentScores.length - 1;
+                  return (
+                    <div key={i} style={{
+                      width: 6, borderRadius: 3,
+                      height: h,
+                      background: isLast ? "#C4982A" : "rgba(196,152,42,0.25)",
+                      transition: "height 0.5s ease-out",
+                    }} />
+                  );
+                })}
+              </div>
+            )}
           </div>
-          {/* Score sparkline */}
-          {recentScores.length >= 2 && (
-            <div style={{ display: "flex", alignItems: "flex-end", gap: 3, height: 32, marginLeft: 12 }}>
-              {recentScores.map((s, i) => {
-                const h = maxRecent > 0 ? Math.max(6, (s / maxRecent) * 32) : 6;
-                const isLast = i === recentScores.length - 1;
-                return (
-                  <div key={i} style={{
-                    width: 7, height: h, borderRadius: 4,
-                    background: "#C4982A",
-                    opacity: isLast ? 1 : 0.3 + (i / recentScores.length) * 0.5,
-                    transition: "height 0.5s ease-out",
-                  }} />
-                );
-              })}
-            </div>
-          )}
-        </div>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 12, paddingTop: 10, borderTop: "1px solid rgba(196,152,42,0.1)" }}>
-          {history.length > 0 ? (
-            <div style={{ display: "flex", gap: 16, fontSize: 11 }}>
-              <span style={{ color: "rgba(255,255,255,0.35)" }}>
-                Best: <span style={{ color: "#C4982A", fontWeight: 700, fontFamily: "'Space Mono', monospace" }}>
-                  {Math.max(...history.filter(h => h.score).map(h => h.score)).toFixed(1)}
+          {/* Stats footer */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 14, paddingTop: 12, borderTop: "1px solid rgba(196,152,42,0.06)" }}>
+            {history.length > 0 ? (
+              <div style={{ display: "flex", gap: 16, fontSize: 11 }}>
+                <span style={{ color: "rgba(255,255,255,0.25)" }}>
+                  Best: <span style={{ color: "rgba(196,152,42,0.8)", fontWeight: 700, fontFamily: "'Space Mono', monospace" }}>
+                    {Math.max(...history.filter(h => h.score).map(h => h.score)).toFixed(1)}
+                  </span>
                 </span>
-              </span>
-              <span style={{ color: "rgba(255,255,255,0.35)" }}>
-                Total: <span style={{ color: "#C4982A", fontWeight: 700 }}>{history.length}</span>
-              </span>
-            </div>
-          ) : (
-            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>Upload your first routine to get started</div>
-          )}
-          {scoreTrend !== 0 && (
-            <div style={{ fontSize: 11, fontWeight: 600, color: scoreTrend > 0 ? "#22c55e" : "#ef4444" }}>
-              {scoreTrend > 0 ? "▲" : "▼"} {Math.abs(scoreTrend).toFixed(2)}
-            </div>
-          )}
+                <span style={{ color: "rgba(255,255,255,0.25)" }}>
+                  Total: <span style={{ color: "rgba(196,152,42,0.8)", fontWeight: 700 }}>{history.length}</span>
+                </span>
+              </div>
+            ) : (
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.2)" }}>Upload your first routine to get started</div>
+            )}
+            {scoreTrend !== 0 && (
+              <div style={{
+                fontSize: 11, fontWeight: 700,
+                color: scoreTrend > 0 ? "#22c55e" : "#ef4444",
+                background: scoreTrend > 0 ? "rgba(34,197,94,0.08)" : "rgba(239,68,68,0.08)",
+                padding: "3px 10px", borderRadius: 6,
+              }}>
+                {scoreTrend > 0 ? "▲" : "▼"} {Math.abs(scoreTrend).toFixed(2)}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Smart Tip — data-driven when history exists, generic otherwise */}
       <div className="card" style={{
         padding: "12px 16px", marginBottom: 16,
-        borderColor: "rgba(212,175,55,0.12)",
-        background: "rgba(212,175,55,0.03)",
+        borderColor: "rgba(196,152,42,0.12)",
+        background: "rgba(196,152,42,0.03)",
       }}>
         <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
           <span style={{ fontSize: 16, flexShrink: 0, marginTop: 2 }}>💡</span>
           <div>
-            <div style={{ fontSize: 10, fontWeight: 700, color: "#d4af37", letterSpacing: 0.5, marginBottom: 4 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: "#C4982A", letterSpacing: 0.5, marginBottom: 4 }}>
               {history.length >= 2 ? "YOUR DATA SAYS" : "DID YOU KNOW?"}
             </div>
             <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", lineHeight: 1.7 }}>
@@ -1792,19 +1825,22 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
         </div>
       </div>
 
-      {/* Quick Stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 24 }}>
+      {/* Quick Stats — refined */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 20 }}>
         {[
-          { label: "Analyzed", value: history.length, icon: "chart", color: "#d4af37" },
-          { label: "Avg Score", value: avgScore, icon: "trophy", color: "#d4af37" },
-          { label: "Improved", value: scoreTrend !== 0 ? (scoreTrend > 0 ? "+" : "") + scoreTrend.toFixed(2) : "—", icon: "star", color: scoreTrend > 0 ? "#22c55e" : scoreTrend < 0 ? "#ef4444" : "#d4af37" },
+          { label: "Analyzed", value: history.length, color: "rgba(196,152,42,0.8)" },
+          { label: "Avg Score", value: avgScore, color: "rgba(196,152,42,0.8)" },
+          { label: "Improved", value: scoreTrend !== 0 ? (scoreTrend > 0 ? "+" : "") + scoreTrend.toFixed(2) : "—", color: scoreTrend > 0 ? "#22c55e" : scoreTrend < 0 ? "#ef4444" : "rgba(255,255,255,0.3)" },
         ].map((stat, i) => (
-          <div key={i} className="card" style={{ textAlign: "center", padding: 16 }}>
-            <Icon name={stat.icon} size={16} />
-            <div style={{ fontSize: 22, fontWeight: 800, color: stat.color, marginTop: 6, fontFamily: "'Space Mono', monospace" }}>
+          <div key={i} style={{
+            textAlign: "center", padding: "16px 8px",
+            borderRadius: 14, background: "rgba(255,255,255,0.02)",
+            border: "1px solid rgba(255,255,255,0.04)",
+          }}>
+            <div style={{ fontSize: 22, fontWeight: 800, color: stat.color, fontFamily: "'Space Mono', monospace" }}>
               {stat.value}
             </div>
-            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontWeight: 500 }}>{stat.label}</div>
+            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", fontWeight: 500, marginTop: 4 }}>{stat.label}</div>
           </div>
         ))}
       </div>
@@ -1961,9 +1997,9 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
       </div>
 
       {/* Quick Reference — condensed */}
-      <div className="card" style={{ padding: 16, marginBottom: 12, borderColor: "rgba(212,175,55,0.1)" }}>
+      <div className="card" style={{ padding: 16, marginBottom: 12, borderColor: "rgba(196,152,42,0.1)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-          <h3 style={{ fontSize: 13, fontWeight: 700, color: "#d4af37" }}>
+          <h3 style={{ fontSize: 13, fontWeight: 700, color: "#C4982A" }}>
             Scoring at {profile.level}
           </h3>
           <span style={{ fontSize: 10, color: "rgba(255,255,255,0.25)" }}>
@@ -1985,8 +2021,40 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
       {/* Meet Day Checklist */}
       <MeetDayChecklist gender={profile.gender} />
 
+      {/* Share STRIVE — virality hook */}
+      {history.length >= 1 && (
+        <div className="card" style={{
+          padding: 16, marginBottom: 12,
+          background: "linear-gradient(135deg, rgba(196,152,42,0.04), rgba(139,92,246,0.02))",
+          borderColor: "rgba(196,152,42,0.1)",
+          textAlign: "center",
+        }}>
+          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>Know a gymnast or coach?</div>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginBottom: 12, lineHeight: 1.5 }}>
+            STRIVE helps every gymnast understand their score and improve faster.
+          </div>
+          <button
+            onClick={() => {
+              const text = `Check out STRIVE — AI gymnastics scoring that breaks down every deduction and gives you a personalized training plan. It's free to try!\n\nhttps://strive-app-amber.vercel.app`;
+              if (navigator.share) {
+                navigator.share({ title: "STRIVE — AI Gymnastics Scoring", text }).catch(() => {});
+              } else if (navigator.clipboard) {
+                navigator.clipboard.writeText(text).then(() => alert("Link copied! Share it with your gym friends."));
+              }
+            }}
+            style={{
+              background: "rgba(196,152,42,0.1)", border: "1px solid rgba(196,152,42,0.2)",
+              borderRadius: 10, padding: "10px 24px", cursor: "pointer",
+              color: "#C4982A", fontSize: 13, fontWeight: 600, fontFamily: "'Outfit', sans-serif",
+            }}
+          >
+            Share STRIVE
+          </button>
+        </div>
+      )}
+
       {/* Dashboard footer */}
-      <div style={{ textAlign: "center", paddingTop: 20, paddingBottom: 32, borderTop: "1px solid rgba(255,255,255,0.03)", marginTop: 8 }}>
+      <div style={{ textAlign: "center", paddingTop: 16, paddingBottom: 32, marginTop: 4 }}>
         <div style={{
           fontFamily: "'Georgia', serif", fontSize: 14, fontWeight: 500, letterSpacing: 3,
           background: "linear-gradient(135deg, #C4982A, #E8C35A)", backgroundClip: "text",
@@ -2171,7 +2239,7 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
 
   return (
     <div style={{ minHeight: "100vh", padding: "24px 20px", maxWidth: 600, margin: "0 auto" }}>
-      <button onClick={onBack} style={{ background: "none", border: "none", color: "#d4af37", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 24 }}>
+      <button onClick={onBack} style={{ background: "none", border: "none", color: "#C4982A", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 24 }}>
         <Icon name="back" /> Dashboard
       </button>
 
@@ -2185,16 +2253,16 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
       {/* Video Upload / Record */}
       {compressing ? (
         <div style={{
-          border: "2px solid rgba(212,175,55,0.3)", borderRadius: 16, padding: 40,
-          textAlign: "center", marginBottom: 24, background: "rgba(212,175,55,0.03)",
+          border: "2px solid rgba(196,152,42,0.3)", borderRadius: 16, padding: 40,
+          textAlign: "center", marginBottom: 24, background: "rgba(196,152,42,0.03)",
         }}>
           <div style={{
             width: 60, height: 60, borderRadius: "50%", margin: "0 auto 16px",
-            background: "rgba(212,175,55,0.1)", display: "flex", alignItems: "center", justifyContent: "center",
+            background: "rgba(196,152,42,0.1)", display: "flex", alignItems: "center", justifyContent: "center",
           }}>
             <span style={{ fontSize: 28, animation: "pulse 1.5s ease-in-out infinite" }}>🎬</span>
           </div>
-          <div style={{ fontSize: 16, fontWeight: 700, color: "#d4af37", marginBottom: 8 }}>
+          <div style={{ fontSize: 16, fontWeight: 700, color: "#C4982A", marginBottom: 8 }}>
             Optimizing Video...
           </div>
           <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", marginBottom: 16, lineHeight: 1.5 }}>
@@ -2204,11 +2272,11 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
           {/* Progress bar */}
           <div style={{ height: 6, borderRadius: 3, background: "rgba(255,255,255,0.06)", overflow: "hidden", marginBottom: 8 }}>
             <div style={{
-              height: "100%", borderRadius: 3, background: "linear-gradient(90deg, #d4af37, #f2d06b)",
+              height: "100%", borderRadius: 3, background: "linear-gradient(90deg, #C4982A, #E8C35A)",
               width: `${compressProgress}%`, transition: "width 0.3s",
             }} />
           </div>
-          <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 13, fontWeight: 700, color: "#d4af37" }}>
+          <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 13, fontWeight: 700, color: "#C4982A" }}>
             {compressProgress}%
           </div>
         </div>
@@ -2218,18 +2286,18 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
           <div
             onClick={() => fileRef.current?.click()}
             style={{
-              border: "2px dashed rgba(212,175,55,0.3)", borderRadius: 16, padding: 40,
+              border: "2px dashed rgba(196,152,42,0.3)", borderRadius: 16, padding: 40,
               cursor: "pointer", textAlign: "center",
               background: "rgba(255,255,255,0.02)", transition: "all 0.3s",
             }}
           >
             <div style={{
               width: 64, height: 64, borderRadius: "50%", margin: "0 auto 16px",
-              background: "rgba(212,175,55,0.1)", display: "flex", alignItems: "center", justifyContent: "center",
+              background: "rgba(196,152,42,0.1)", display: "flex", alignItems: "center", justifyContent: "center",
             }}>
               <Icon name="upload" size={28} />
             </div>
-            <div style={{ color: "#d4af37", fontWeight: 600, fontSize: 16 }}>Choose Video from Library</div>
+            <div style={{ color: "#C4982A", fontWeight: 600, fontSize: 16 }}>Choose Video from Library</div>
             <div style={{ color: "rgba(255,255,255,0.3)", fontSize: 13, marginTop: 8 }}>
               MP4, MOV, WebM · iPhone recordings work great
             </div>
@@ -2279,7 +2347,7 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
         <div style={{ marginBottom: 24 }}>
           {/* Video Preview */}
           <div style={{
-            border: `2px solid ${videoReady && !videoError ? "#22c55e" : videoError ? "#f59e0b" : "rgba(212,175,55,0.3)"}`,
+            border: `2px solid ${videoReady && !videoError ? "#22c55e" : videoError ? "#f59e0b" : "rgba(196,152,42,0.3)"}`,
             borderRadius: 16, overflow: "hidden", background: "black", position: "relative",
             transition: "border-color 0.3s",
           }}>
@@ -2303,11 +2371,11 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
               }}>
                 <div style={{
                   width: 56, height: 56, borderRadius: "50%", margin: "0 auto 16px",
-                  background: "rgba(212,175,55,0.15)", display: "flex", alignItems: "center", justifyContent: "center",
+                  background: "rgba(196,152,42,0.15)", display: "flex", alignItems: "center", justifyContent: "center",
                 }}>
                   <Icon name="camera" size={24} />
                 </div>
-                <div style={{ color: "#d4af37", fontWeight: 600, fontSize: 15 }}>
+                <div style={{ color: "#C4982A", fontWeight: 600, fontSize: 15 }}>
                   {video.name?.split('.').pop()?.toUpperCase() || "Video"} File Loaded
                 </div>
                 <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, marginTop: 6 }}>
@@ -2339,7 +2407,7 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
               onClick={() => { setVideo(null); setVideoUrl(null); setVideoReady(false); setVideoError(null); }}
               style={{
                 background: "rgba(255,255,255,0.06)", border: "none", borderRadius: 8,
-                padding: "6px 14px", color: "#d4af37", fontSize: 12, fontWeight: 600,
+                padding: "6px 14px", color: "#C4982A", fontSize: 12, fontWeight: 600,
                 cursor: "pointer", fontFamily: "'Outfit', sans-serif",
               }}
             >
@@ -2373,8 +2441,8 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
               style={{
                 padding: "12px 8px", borderRadius: 10, border: "none", cursor: "pointer",
                 fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 12,
-                background: event === e ? "linear-gradient(135deg, #d4af37, #f2d06b)" : "rgba(255,255,255,0.06)",
-                color: event === e ? "#0a0e27" : "rgba(255,255,255,0.5)",
+                background: event === e ? "linear-gradient(135deg, #C4982A, #E8C35A)" : "rgba(255,255,255,0.06)",
+                color: event === e ? "#0B1024" : "rgba(255,255,255,0.5)",
                 transition: "all 0.2s",
               }}
             >
@@ -2428,7 +2496,7 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
 
       {/* Video Tips — visual checklist */}
       <div className="card" style={{ padding: 16, marginBottom: 16 }}>
-        <h4 style={{ fontSize: 13, fontWeight: 700, color: "#d4af37", marginBottom: 10 }}>
+        <h4 style={{ fontSize: 13, fontWeight: 700, color: "#C4982A", marginBottom: 10 }}>
           Tips for best results
         </h4>
         {[
@@ -3994,7 +4062,7 @@ function VideoReviewPlayer({ videoUrl: propUrl, result }) {
                   📷 See Examples
                 </a>
                 <a href={`https://www.youtube.com/results?search_query=${levelQuery}`} target="_blank" rel="noopener noreferrer"
-                  style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 4, padding: "8px 6px", borderRadius: 8, fontSize: 10, fontWeight: 700, background: "rgba(212,175,55,0.08)", border: "1px solid rgba(212,175,55,0.15)", color: "#d4af37", textDecoration: "none" }}>
+                  style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 4, padding: "8px 6px", borderRadius: 8, fontSize: 10, fontWeight: 700, background: "rgba(196,152,42,0.08)", border: "1px solid rgba(196,152,42,0.15)", color: "#C4982A", textDecoration: "none" }}>
                   🏅 {levelShort} Examples
                 </a>
               </div>
@@ -4003,7 +4071,7 @@ function VideoReviewPlayer({ videoUrl: propUrl, result }) {
 
           <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
             <button onClick={() => setShowCompare(!showCompare)} className="btn-outline"
-              style={{ flex: 1, padding: "10px 6px", fontSize: 12, fontWeight: 700, color: showCompare ? "#d4af37" : "rgba(255,255,255,0.4)", borderColor: showCompare ? "rgba(212,175,55,0.4)" : undefined }}>
+              style={{ flex: 1, padding: "10px 6px", fontSize: 12, fontWeight: 700, color: showCompare ? "#C4982A" : "rgba(255,255,255,0.4)", borderColor: showCompare ? "rgba(196,152,42,0.4)" : undefined }}>
               📷 {showCompare ? "Hide" : "Show"} Frame Compare
             </button>
             <button onClick={() => setShowSkeleton(!showSkeleton)} className="btn-outline"
@@ -4015,7 +4083,7 @@ function VideoReviewPlayer({ videoUrl: propUrl, result }) {
             <button onClick={() => jumpTo(activeIdx-1)} disabled={activeIdx<=0} className="btn-outline"
               style={{ flex: 1, padding: "10px 6px", fontSize: 13, fontWeight: 600, opacity: activeIdx<=0 ? 0.3 : 1 }}>← Prev</button>
             <button onClick={slowMoReplay} className="btn-outline"
-              style={{ flex: 1.3, padding: "10px 6px", fontSize: 13, fontWeight: 600, color: "#d4af37", borderColor: "rgba(212,175,55,0.5)" }}>🐢 Slow-Mo</button>
+              style={{ flex: 1.3, padding: "10px 6px", fontSize: 13, fontWeight: 600, color: "#C4982A", borderColor: "rgba(196,152,42,0.5)" }}>🐢 Slow-Mo</button>
             <button onClick={() => jumpTo(activeIdx+1)} disabled={activeIdx>=sorted.length-1} className="btn-outline"
               style={{ flex: 1, padding: "10px 6px", fontSize: 13, fontWeight: 600, opacity: activeIdx>=sorted.length-1 ? 0.3 : 1 }}>Next →</button>
           </div>
@@ -4095,7 +4163,7 @@ function ResultsScreen({ result, profile, history, videoUrl, onBack, onDrills })
 
   return (
     <div style={{ minHeight: "100vh", padding: "24px 20px", maxWidth: 600, margin: "0 auto" }}>
-      <button onClick={onBack} style={{ background: "none", border: "none", color: "#d4af37", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 20 }}>
+      <button onClick={onBack} style={{ background: "none", border: "none", color: "#C4982A", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 20 }}>
         <Icon name="back" /> Dashboard
       </button>
 
@@ -4132,7 +4200,7 @@ function ResultsScreen({ result, profile, history, videoUrl, onBack, onDrills })
 
       {/* Score Card with celebration */}
       <div style={{
-        background: "linear-gradient(135deg, rgba(212,175,55,0.1), rgba(212,175,55,0.03))",
+        background: "linear-gradient(135deg, rgba(196,152,42,0.1), rgba(196,152,42,0.03))",
         border: `1px solid ${scoreColor}30`, borderRadius: 20, padding: 28,
         textAlign: "center", marginBottom: 24, animation: "scaleIn 0.5s ease-out",
         position: "relative", overflow: "hidden",
@@ -4347,8 +4415,8 @@ function ResultsScreen({ result, profile, history, videoUrl, onBack, onDrills })
             style={{
               flex: 1, padding: "10px 6px", borderRadius: 10, border: "none", cursor: "pointer",
               fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 11,
-              background: activeTab === tab.id ? "linear-gradient(135deg, #d4af37, #f2d06b)" : "transparent",
-              color: activeTab === tab.id ? "#0a0e27" : (tab.pro && !isPro) ? "rgba(255,255,255,0.25)" : "rgba(255,255,255,0.5)",
+              background: activeTab === tab.id ? "linear-gradient(135deg, #C4982A, #E8C35A)" : "transparent",
+              color: activeTab === tab.id ? "#0B1024" : (tab.pro && !isPro) ? "rgba(255,255,255,0.25)" : "rgba(255,255,255,0.5)",
               transition: "all 0.3s", whiteSpace: "nowrap", position: "relative",
             }}
           >
@@ -4440,7 +4508,7 @@ function ResultsScreen({ result, profile, history, videoUrl, onBack, onDrills })
 
           {/* Assessment */}
           <div className="card" style={{ marginBottom: 16 }}>
-            <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 10, color: "#d4af37" }}>
+            <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 10, color: "#C4982A" }}>
               <Icon name="note" size={14} /> Judge's Assessment
             </h3>
             <p style={{ fontSize: 14, color: "rgba(255,255,255,0.7)", lineHeight: 1.7 }}>
@@ -4526,15 +4594,15 @@ function ResultsScreen({ result, profile, history, videoUrl, onBack, onDrills })
           </div>
 
           {/* Post-Meet Debrief — parent-friendly summary */}
-          <div className="card" style={{ padding: 16, marginBottom: 16, background: "rgba(212,175,55,0.03)", borderColor: "rgba(212,175,55,0.12)" }}>
-            <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 10, color: "#d4af37" }}>
+          <div className="card" style={{ padding: 16, marginBottom: 16, background: "rgba(196,152,42,0.03)", borderColor: "rgba(196,152,42,0.12)" }}>
+            <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 10, color: "#C4982A" }}>
               <Icon name="info" size={14} /> What This Score Means (Parent Summary)
             </h3>
             <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", lineHeight: 1.8 }}>
               {result.finalScore >= 9.2 ? (
                 <span>This is an <strong style={{ color: "#22c55e" }}>excellent score</strong>. Your child performed a very clean routine with only minor deductions. At {result.level}, scoring above 9.2 means they're executing at a high level. Celebrate this — it takes serious dedication to score this well.</span>
               ) : result.finalScore >= 8.8 ? (
-                <span>This is a <strong style={{ color: "#d4af37" }}>strong, solid score</strong>. Your child showed good execution with some typical deductions that most gymnasts receive. The {safeNum(result.totalDeductions, 0).toFixed(2)} in deductions came from {safeArray(result.executionDeductions).length} identified faults — most of which are fixable with focused practice. This is a competitive score at {result.level}.</span>
+                <span>This is a <strong style={{ color: "#C4982A" }}>strong, solid score</strong>. Your child showed good execution with some typical deductions that most gymnasts receive. The {safeNum(result.totalDeductions, 0).toFixed(2)} in deductions came from {safeArray(result.executionDeductions).length} identified faults — most of which are fixable with focused practice. This is a competitive score at {result.level}.</span>
               ) : result.finalScore >= 8.3 ? (
                 <span>This is an <strong style={{ color: "#f59e0b" }}>average score</strong> for {result.level} — not bad at all, but there's clear room for improvement. The deductions add up from multiple small form issues. The good news: most of these are execution details (body position, landings, foot form) that improve naturally with practice and awareness.</span>
               ) : (
@@ -4721,7 +4789,8 @@ function ResultsScreen({ result, profile, history, videoUrl, onBack, onDrills })
 
 // ─── DRILLS SCREEN ──────────────────────────────────────────────────
 function DrillsScreen({ result, onBack }) {
-  const identifiedFaults = result?.executionDeductions?.map(d => d.fault) || [];
+  const deds = result?.executionDeductions || [];
+  const identifiedFaults = deds.map(d => d.fault) || [];
 
   const getDrills = (fault) => {
     for (const [key, drills] of Object.entries(DRILLS_DATABASE)) {
@@ -4730,72 +4799,106 @@ function DrillsScreen({ result, onBack }) {
     return { key: "General conditioning", drills: DRILLS_DATABASE.default };
   };
 
-  const faultDrillPairs = identifiedFaults.map(f => ({ fault: f, ...getDrills(f) }));
+  const faultDrillPairs = identifiedFaults.map((f, i) => ({
+    fault: f,
+    skill: deds[i]?.skill || "",
+    deduction: deds[i]?.deduction || 0,
+    ...getDrills(f),
+  }));
 
-  // Deduplicate by drill key
+  // Deduplicate by drill key, keep highest deduction version
   const seen = new Set();
-  const uniquePairs = faultDrillPairs.filter(p => {
-    if (seen.has(p.key)) return false;
-    seen.add(p.key);
-    return true;
-  });
+  const uniquePairs = faultDrillPairs
+    .sort((a, b) => b.deduction - a.deduction)
+    .filter(p => {
+      if (seen.has(p.key)) return false;
+      seen.add(p.key);
+      return true;
+    });
+
+  // Total potential score gain
+  const totalGain = uniquePairs.reduce((s, p) => s + p.deduction, 0);
 
   return (
     <div style={{ minHeight: "100vh", padding: "24px 20px", maxWidth: 600, margin: "0 auto" }}>
-      <button onClick={onBack} style={{ background: "none", border: "none", color: "#d4af37", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 20 }}>
+      <button onClick={onBack} style={{ background: "none", border: "none", color: "#C4982A", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 20 }}>
         <Icon name="back" /> Results
       </button>
 
-      <h2 style={{ fontSize: 26, fontWeight: 700, marginBottom: 4 }}>
-        <Icon name="drill" /> Your Drill Plan
+      <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 4 }}>
+        Your Drill Plan
       </h2>
-      <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 14, marginBottom: 20 }}>
-        Targeted exercises based on the deductions identified in your routine.
+      <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, marginBottom: 8 }}>
+        {uniquePairs.length} targeted exercises based on {deds.length} deductions identified in your routine.
       </p>
+
+      {/* Score impact summary */}
+      {totalGain > 0 && (
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+          padding: "10px 16px", borderRadius: 12, marginBottom: 20,
+          background: "rgba(34,197,94,0.04)", border: "1px solid rgba(34,197,94,0.1)",
+        }}>
+          <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>Complete this plan to gain up to</span>
+          <span style={{ fontSize: 18, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: "#22c55e" }}>+{totalGain.toFixed(2)}</span>
+        </div>
+      )}
 
       {/* Weekly Training Plan */}
       <WeeklyTrainingPlan faults={identifiedFaults} />
 
       {uniquePairs.map((pair, i) => (
-        <div key={i} style={{ marginBottom: 24, animation: `slideUp 0.4s ease-out ${i * 0.1}s both` }}>
+        <div key={i} style={{ marginBottom: 20, animation: `fadeIn 0.3s ease-out ${i * 0.08}s both` }}>
           <div style={{
-            background: "rgba(212,175,55,0.08)", borderRadius: "12px 12px 0 0",
-            padding: "12px 18px", borderBottom: "1px solid rgba(212,175,55,0.15)",
+            background: "rgba(196,152,42,0.06)", borderRadius: "12px 12px 0 0",
+            padding: "10px 16px", borderBottom: "1px solid rgba(196,152,42,0.1)",
+            display: "flex", justifyContent: "space-between", alignItems: "center",
           }}>
-            <span className="tag" style={{ background: "rgba(239,68,68,0.15)", color: "#ef4444", marginRight: 8 }}>
-              <Icon name="flag" size={10} /> FAULT
-            </span>
-            <span style={{ fontSize: 14, fontWeight: 600 }}>{pair.fault}</span>
+            <div>
+              <span style={{ fontSize: 13, fontWeight: 700 }}>{pair.skill || pair.fault}</span>
+              {pair.skill && pair.fault !== pair.skill && (
+                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginLeft: 6 }}>— {pair.fault.substring(0, 40)}</span>
+              )}
+            </div>
+            {pair.deduction > 0 && (
+              <span style={{
+                fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 6,
+                background: "rgba(34,197,94,0.1)", color: "#22c55e",
+                fontFamily: "'Space Mono', monospace",
+              }}>
+                +{pair.deduction.toFixed(2)}
+              </span>
+            )}
           </div>
           {pair.drills.map((drill, j) => (
             <div key={j} className="card" style={{
               borderRadius: j === pair.drills.length - 1 ? "0 0 12px 12px" : 0,
-              borderTop: "none", marginBottom: 0, padding: "16px 18px",
+              borderTop: "none", marginBottom: 0, padding: "14px 16px",
             }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4, color: "#d4af37" }}>
+                  <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 3, color: "#C4982A" }}>
                     {drill.name}
                   </div>
-                  <p style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", lineHeight: 1.6 }}>
+                  <p style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", lineHeight: 1.6 }}>
                     {drill.description}
                   </p>
                   {drill.yt && (
                     <a href={drill.yt} target="_blank" rel="noopener noreferrer" style={{
                       display: "inline-flex", alignItems: "center", gap: 6, marginTop: 8,
                       padding: "5px 12px", borderRadius: 8,
-                      background: "rgba(255,0,0,0.08)", border: "1px solid rgba(255,0,0,0.15)",
+                      background: "rgba(255,0,0,0.06)", border: "1px solid rgba(255,0,0,0.12)",
                       color: "#ff6b6b", fontSize: 11, fontWeight: 600, textDecoration: "none",
                       fontFamily: "'Outfit', sans-serif",
                     }}>
-                      ▶ Watch Drill on YouTube
+                      ▶ Watch on YouTube
                     </a>
                   )}
                 </div>
                 <span style={{
-                  fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700,
-                  background: "rgba(255,255,255,0.06)", padding: "4px 10px", borderRadius: 6,
-                  whiteSpace: "nowrap", marginLeft: 12, color: "rgba(255,255,255,0.5)",
+                  fontFamily: "'Space Mono', monospace", fontSize: 10, fontWeight: 700,
+                  background: "rgba(255,255,255,0.05)", padding: "4px 8px", borderRadius: 5,
+                  whiteSpace: "nowrap", marginLeft: 10, color: "rgba(255,255,255,0.4)",
                 }}>
                   {drill.duration}
                 </span>
@@ -4806,8 +4909,8 @@ function DrillsScreen({ result, onBack }) {
       ))}
 
       {/* General recommendation */}
-      <div className="card" style={{ padding: 20, marginTop: 16, borderColor: "rgba(212,175,55,0.2)" }}>
-        <h3 style={{ fontSize: 14, fontWeight: 700, color: "#d4af37", marginBottom: 10 }}>
+      <div className="card" style={{ padding: 20, marginTop: 16, borderColor: "rgba(196,152,42,0.2)" }}>
+        <h3 style={{ fontSize: 14, fontWeight: 700, color: "#C4982A", marginBottom: 10 }}>
           <Icon name="sparkle" size={14} /> Pro Tips
         </h3>
         <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", lineHeight: 1.8 }}>
@@ -4839,7 +4942,7 @@ function DeductionsScreen({ onBack, profile }) {
 
   return (
     <div style={{ minHeight: "100vh", padding: "24px 20px", maxWidth: 600, margin: "0 auto" }}>
-      <button onClick={onBack} style={{ background: "none", border: "none", color: "#d4af37", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 20 }}>
+      <button onClick={onBack} style={{ background: "none", border: "none", color: "#C4982A", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 20 }}>
         <Icon name="back" /> Dashboard
       </button>
 
@@ -4914,7 +5017,7 @@ function DeductionsScreen({ onBack, profile }) {
               padding: "8px 16px", borderRadius: 8, border: "none", cursor: "pointer",
               fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 12,
               background: activeCategory === cat ? "#C4982A" : "rgba(255,255,255,0.06)",
-              color: activeCategory === cat ? "#0a0e27" : "rgba(255,255,255,0.5)",
+              color: activeCategory === cat ? "#0B1024" : "rgba(255,255,255,0.5)",
               whiteSpace: "nowrap", transition: "all 0.2s", textTransform: "capitalize",
             }}
           >
@@ -4975,7 +5078,7 @@ function SettingsScreen({ profile, onSave, onBack, onReset }) {
 
   return (
     <div style={{ minHeight: "100vh", padding: "24px 20px", maxWidth: 600, margin: "0 auto" }}>
-      <button onClick={onBack} style={{ background: "none", border: "none", color: "#d4af37", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 20 }}>
+      <button onClick={onBack} style={{ background: "none", border: "none", color: "#C4982A", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 20 }}>
         <Icon name="back" /> Dashboard
       </button>
 
@@ -5030,8 +5133,8 @@ function SettingsScreen({ profile, onSave, onBack, onReset }) {
                 style={{
                   padding: "8px 16px", borderRadius: 8, border: "none", cursor: "pointer",
                   fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 13,
-                  background: editProfile.primaryEvents?.includes(e) ? "#d4af37" : "rgba(255,255,255,0.06)",
-                  color: editProfile.primaryEvents?.includes(e) ? "#0a0e27" : "rgba(255,255,255,0.5)",
+                  background: editProfile.primaryEvents?.includes(e) ? "#C4982A" : "rgba(255,255,255,0.06)",
+                  color: editProfile.primaryEvents?.includes(e) ? "#0B1024" : "rgba(255,255,255,0.5)",
                 }}
               >
                 {e}
@@ -5081,7 +5184,7 @@ function SettingsScreen({ profile, onSave, onBack, onReset }) {
           </div>
         </div>
         <p style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginBottom: 10, lineHeight: 1.5 }}>
-          Advanced: Override with your own API key for higher rate limits. Get one free at <span style={{ color: "#d4af37" }}>aistudio.google.com/apikey</span>
+          Advanced: Override with your own API key for higher rate limits. Get one free at <span style={{ color: "#C4982A" }}>aistudio.google.com/apikey</span>
         </p>
         <div style={{ display: "flex", gap: 8 }}>
           <input
@@ -5289,7 +5392,7 @@ function ProgressScreen({ history, profile, onBack }) {
 
   return (
     <div style={{ minHeight: "100vh", padding: "24px 20px", maxWidth: 600, margin: "0 auto" }}>
-      <button onClick={onBack} style={{ background: "none", border: "none", color: "#d4af37", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 20 }}>
+      <button onClick={onBack} style={{ background: "none", border: "none", color: "#C4982A", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 20 }}>
         <Icon name="back" /> Dashboard
       </button>
       <h2 style={{ fontSize: 26, fontWeight: 700, marginBottom: 4 }}>Progress Tracking</h2>
@@ -5313,14 +5416,14 @@ function ProgressScreen({ history, profile, onBack }) {
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
                   <XAxis dataKey="name" tick={{ fill: "rgba(255,255,255,0.3)", fontSize: 10 }} />
                   <YAxis domain={[7, 10]} tick={{ fill: "rgba(255,255,255,0.3)", fontSize: 10 }} />
-                  <Tooltip contentStyle={{ background: "#1a1f3a", border: "1px solid rgba(212,175,55,0.2)", borderRadius: 8, color: "#e2e8f0", fontSize: 12 }} />
-                  <Line type="monotone" dataKey="score" stroke="#d4af37" strokeWidth={2} dot={{ fill: "#d4af37", r: 4 }} />
+                  <Tooltip contentStyle={{ background: "#111631", border: "1px solid rgba(196,152,42,0.2)", borderRadius: 8, color: "#e2e8f0", fontSize: 12 }} />
+                  <Line type="monotone" dataKey="score" stroke="#C4982A" strokeWidth={2} dot={{ fill: "#C4982A", r: 4 }} />
                 </LineChart>
               </ResponsiveContainer>
             ) : (
               <div style={{ padding: 20, textAlign: "center", color: "rgba(255,255,255,0.3)", fontSize: 13 }}>
                 {chartData.map((d, i) => (
-                  <span key={i} style={{ fontFamily: "'Space Mono', monospace", marginRight: 12 }}>{d.name}: <span style={{ color: "#d4af37" }}>{d.score?.toFixed(3)}</span></span>
+                  <span key={i} style={{ fontFamily: "'Space Mono', monospace", marginRight: 12 }}>{d.name}: <span style={{ color: "#C4982A" }}>{d.score?.toFixed(3)}</span></span>
                 ))}
               </div>
             )}
@@ -5333,10 +5436,10 @@ function ProgressScreen({ history, profile, onBack }) {
               {Object.entries(bests).map(([evt, score]) => (
                 <div key={evt} style={{
                   padding: "12px 14px", borderRadius: 10,
-                  background: "rgba(212,175,55,0.06)", border: "1px solid rgba(212,175,55,0.1)",
+                  background: "rgba(196,152,42,0.06)", border: "1px solid rgba(196,152,42,0.1)",
                 }}>
                   <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>{evt}</div>
-                  <div style={{ fontSize: 22, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: "#d4af37" }}>
+                  <div style={{ fontSize: 22, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: "#C4982A" }}>
                     {score?.toFixed(3)}
                   </div>
                 </div>
@@ -5354,7 +5457,7 @@ function ProgressScreen({ history, profile, onBack }) {
                 <div key={evt} style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
                   <span style={{ fontSize: 13, fontWeight: 600, flex: 1 }}>{evt}</span>
                   <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, color: "rgba(255,255,255,0.5)" }}>{count} analyzed</span>
-                  {count > 0 && <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 14, fontWeight: 700, color: "#d4af37" }}>{avg.toFixed(3)} avg</span>}
+                  {count > 0 && <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 14, fontWeight: 700, color: "#C4982A" }}>{avg.toFixed(3)} avg</span>}
                 </div>
               );
             })}
@@ -5396,7 +5499,7 @@ function MeetsScreen({ history, savedResults, profile, onBack, onViewResult }) {
 
   return (
     <div style={{ minHeight: "100vh", padding: "24px 20px", maxWidth: 600, margin: "0 auto" }}>
-      <button onClick={onBack} style={{ background: "none", border: "none", color: "#d4af37", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 20 }}>
+      <button onClick={onBack} style={{ background: "none", border: "none", color: "#C4982A", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 20 }}>
         <Icon name="back" /> Dashboard
       </button>
       <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 4 }}>Competition History</h2>
@@ -5509,7 +5612,7 @@ function MentalTrainingScreen({ profile, onBack }) {
 
   return (
     <div style={{ minHeight: "100vh", padding: "24px 20px", maxWidth: 600, margin: "0 auto" }}>
-      <button onClick={onBack} style={{ background: "none", border: "none", color: "#d4af37", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 20 }}>
+      <button onClick={onBack} style={{ background: "none", border: "none", color: "#C4982A", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 20 }}>
         <Icon name="back" /> Dashboard
       </button>
       <h2 style={{ fontSize: 26, fontWeight: 700, marginBottom: 4 }}><Icon name="brain" size={24} /> Mental Training</h2>
@@ -5521,16 +5624,16 @@ function MentalTrainingScreen({ profile, onBack }) {
           <button key={s.id} onClick={() => setActiveSection(s.id)} style={{
             flex: 1, padding: "8px 4px", borderRadius: 10, border: "none", cursor: "pointer",
             fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 11, whiteSpace: "nowrap",
-            background: activeSection === s.id ? "linear-gradient(135deg, #d4af37, #f2d06b)" : "transparent",
-            color: activeSection === s.id ? "#0a0e27" : "rgba(255,255,255,0.4)",
+            background: activeSection === s.id ? "linear-gradient(135deg, #C4982A, #E8C35A)" : "transparent",
+            color: activeSection === s.id ? "#0B1024" : "rgba(255,255,255,0.4)",
           }}>{s.label}</button>
         ))}
       </div>
 
       {activeSection === "overview" && (
         <div style={{ animation: "fadeIn 0.4s ease-out" }}>
-          <div className="card" style={{ padding: 20, marginBottom: 12, borderColor: "rgba(212,175,55,0.15)" }}>
-            <h3 style={{ fontSize: 15, fontWeight: 700, color: "#d4af37", marginBottom: 10 }}>Why Mental Training Matters</h3>
+          <div className="card" style={{ padding: 20, marginBottom: 12, borderColor: "rgba(196,152,42,0.15)" }}>
+            <h3 style={{ fontSize: 15, fontWeight: 700, color: "#C4982A", marginBottom: 10 }}>Why Mental Training Matters</h3>
             <p style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", lineHeight: 1.8 }}>
               The difference between a gymnast who scores 8.5 and one who scores 9.2 is rarely just physical ability. It's mental focus, confidence, and the ability to perform under pressure. Every elite gymnast — from Simone Biles to your child's favorite Level 10 at the gym — uses mental training techniques daily.
             </p>
@@ -5552,9 +5655,9 @@ function MentalTrainingScreen({ profile, onBack }) {
               </div>
             ))}
           </div>
-          <div className="card" style={{ padding: 16, background: "rgba(212,175,55,0.04)", borderColor: "rgba(212,175,55,0.1)" }}>
+          <div className="card" style={{ padding: 16, background: "rgba(196,152,42,0.04)", borderColor: "rgba(196,152,42,0.1)" }}>
             <p style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: 1.7, fontStyle: "italic" }}>
-              <strong style={{ color: "#d4af37" }}>Parent tip:</strong> You can practice these with your child in the car on the way to the gym. Even 5 minutes of visualization before practice makes a measurable difference.
+              <strong style={{ color: "#C4982A" }}>Parent tip:</strong> You can practice these with your child in the car on the way to the gym. Even 5 minutes of visualization before practice makes a measurable difference.
             </p>
           </div>
         </div>
@@ -5594,10 +5697,10 @@ function MentalTrainingScreen({ profile, onBack }) {
                 <h3 style={{ fontSize: 14, fontWeight: 700 }}>👁 {ex.title}</h3>
                 <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700, background: "rgba(255,255,255,0.06)", padding: "3px 8px", borderRadius: 5, color: "rgba(255,255,255,0.4)" }}>{ex.time}</span>
               </div>
-              <div style={{ fontSize: 11, color: "#d4af37", marginBottom: 8 }}>Best time: {ex.when}</div>
+              <div style={{ fontSize: 11, color: "#C4982A", marginBottom: 8 }}>Best time: {ex.when}</div>
               {ex.steps.map((step, j) => (
                 <div key={j} style={{ display: "flex", gap: 8, marginBottom: 6 }}>
-                  <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700, color: "rgba(212,175,55,0.5)", minWidth: 18 }}>{j+1}.</span>
+                  <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700, color: "rgba(196,152,42,0.5)", minWidth: 18 }}>{j+1}.</span>
                   <span style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", lineHeight: 1.6 }}>{step}</span>
                 </div>
               ))}
@@ -5620,7 +5723,7 @@ function MentalTrainingScreen({ profile, onBack }) {
               <div style={{ padding: "10px 12px", borderRadius: 8, background: "rgba(59,130,246,0.06)", border: "1px solid rgba(59,130,246,0.12)", marginBottom: 8 }}>
                 <div style={{ fontSize: 13, color: "rgba(147,197,253,0.9)", lineHeight: 1.7 }}>{ex.steps}</div>
               </div>
-              <div style={{ fontSize: 11, color: "#d4af37" }}>When to use: {ex.when}</div>
+              <div style={{ fontSize: 11, color: "#C4982A" }}>When to use: {ex.when}</div>
             </div>
           ))}
         </div>
@@ -5643,7 +5746,7 @@ function MentalTrainingScreen({ profile, onBack }) {
             ].map((a, i) => (
               <div key={i} style={{
                 padding: "8px 12px", borderRadius: 8, marginBottom: 4,
-                background: "rgba(212,175,55,0.04)", borderLeft: "3px solid rgba(212,175,55,0.2)",
+                background: "rgba(196,152,42,0.04)", borderLeft: "3px solid rgba(196,152,42,0.2)",
                 fontSize: 13, color: "rgba(255,255,255,0.6)", lineHeight: 1.5, fontStyle: "italic",
               }}>"{a}"</div>
             ))}
@@ -5677,11 +5780,11 @@ function MentalTrainingScreen({ profile, onBack }) {
             {[
               { time: "60 min before", title: "Arrival", desc: "Check in, find your team area, use the bathroom, get leotard on. No rushing.", color: "rgba(59,130,246,0.8)" },
               { time: "45 min before", title: "Light Warm-Up", desc: "Jog, stretch, handstands, basic skills only. NO new skills on meet day. Keep it familiar.", color: "rgba(59,130,246,0.6)" },
-              { time: "30 min before", title: "Mental Prep", desc: "This is where visualization and breathing happen. Review your routine in your mind 2-3 times. Power pose.", color: "rgba(212,175,55,0.8)" },
-              { time: "15 min before", title: "March-In", desc: "The team enters together. Wave to family. This is the exciting part! Soak it in.", color: "rgba(212,175,55,0.6)" },
+              { time: "30 min before", title: "Mental Prep", desc: "This is where visualization and breathing happen. Review your routine in your mind 2-3 times. Power pose.", color: "rgba(196,152,42,0.8)" },
+              { time: "15 min before", title: "March-In", desc: "The team enters together. Wave to family. This is the exciting part! Soak it in.", color: "rgba(196,152,42,0.6)" },
               { time: "~10 min", title: "Open Warm-Up", desc: "Brief touch on each event in your rotation order. 1-2 skills max per event. Get a feel, don't exhaust.", color: "rgba(34,197,94,0.8)" },
               { time: "Competition", title: "Rotation 1-4", desc: "Each event takes ~20-30 min per rotation. You'll warm up, compete, then rotate. Stay focused between events.", color: "rgba(34,197,94,0.6)" },
-              { time: "After", title: "Awards", desc: "Individual event awards, All-Around awards, team awards. Celebrate every achievement — even small improvements.", color: "rgba(212,175,55,0.8)" },
+              { time: "After", title: "Awards", desc: "Individual event awards, All-Around awards, team awards. Celebrate every achievement — even small improvements.", color: "rgba(196,152,42,0.8)" },
             ].map((step, i) => (
               <div key={i} style={{ display: "flex", gap: 12, marginBottom: 10 }}>
                 <div style={{ width: 3, flexShrink: 0, background: step.color, borderRadius: 2 }} />
@@ -5710,8 +5813,8 @@ function MentalTrainingScreen({ profile, onBack }) {
 
       {activeSection === "parents" && (
         <div style={{ animation: "fadeIn 0.4s ease-out" }}>
-          <div className="card" style={{ padding: 20, marginBottom: 12, borderColor: "rgba(212,175,55,0.15)" }}>
-            <h3 style={{ fontSize: 15, fontWeight: 700, color: "#d4af37", marginBottom: 10 }}>Your Stress Matters Too</h3>
+          <div className="card" style={{ padding: 20, marginBottom: 12, borderColor: "rgba(196,152,42,0.15)" }}>
+            <h3 style={{ fontSize: 15, fontWeight: 700, color: "#C4982A", marginBottom: 10 }}>Your Stress Matters Too</h3>
             <p style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", lineHeight: 1.8 }}>
               Watching your child compete is one of the most stressful experiences in youth sports. Your heart pounds, your palms sweat, and a wobble on beam feels like it's happening to YOU. This is completely normal — and there are proven techniques to manage it so you can be the calm, supportive presence your child needs.
             </p>
@@ -5768,9 +5871,9 @@ function MentalTrainingScreen({ profile, onBack }) {
             ))}
           </div>
 
-          <div className="card" style={{ padding: 14, background: "rgba(212,175,55,0.03)", borderColor: "rgba(212,175,55,0.1)" }}>
+          <div className="card" style={{ padding: 14, background: "rgba(196,152,42,0.03)", borderColor: "rgba(196,152,42,0.1)" }}>
             <p style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: 1.7, fontStyle: "italic" }}>
-              <strong style={{ color: "#d4af37" }}>Remember:</strong> The average competitive gymnastics career lasts 4-8 years. The relationship with your child lasts forever. Protect the relationship — the scores will take care of themselves.
+              <strong style={{ color: "#C4982A" }}>Remember:</strong> The average competitive gymnastics career lasts 4-8 years. The relationship with your child lasts forever. Protect the relationship — the scores will take care of themselves.
             </p>
           </div>
         </div>
@@ -5815,7 +5918,7 @@ function SeasonGoalsScreen({ profile, history, onBack }) {
 
   return (
     <div style={{ minHeight: "100vh", padding: "24px 20px", maxWidth: 600, margin: "0 auto" }}>
-      <button onClick={onBack} style={{ background: "none", border: "none", color: "#d4af37", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 20 }}>
+      <button onClick={onBack} style={{ background: "none", border: "none", color: "#C4982A", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 20 }}>
         <Icon name="back" /> Dashboard
       </button>
       <h2 style={{ fontSize: 26, fontWeight: 700, marginBottom: 4 }}><Icon name="target" size={24} /> Season Goals</h2>
@@ -5862,12 +5965,12 @@ function SeasonGoalsScreen({ profile, history, onBack }) {
               <div>
                 <div style={{ fontSize: 14, fontWeight: 700 }}>{goal.event}</div>
                 <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>
-                  Current best: <span style={{ color: "#d4af37", fontFamily: "'Space Mono', monospace", fontWeight: 700 }}>{current ? current.toFixed(3) : "—"}</span>
+                  Current best: <span style={{ color: "#C4982A", fontFamily: "'Space Mono', monospace", fontWeight: 700 }}>{current ? current.toFixed(3) : "—"}</span>
                 </div>
               </div>
               <div style={{ textAlign: "right" }}>
                 <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>TARGET</div>
-                <div style={{ fontSize: 22, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: achieved ? "#22c55e" : "#d4af37" }}>
+                <div style={{ fontSize: 22, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: achieved ? "#22c55e" : "#C4982A" }}>
                   {goal.target.toFixed(3)}
                 </div>
               </div>
@@ -5877,7 +5980,7 @@ function SeasonGoalsScreen({ profile, history, onBack }) {
               <div style={{
                 position: "absolute", top: 0, left: 0, bottom: 0, borderRadius: 4,
                 width: `${progress}%`, transition: "width 0.5s ease-out",
-                background: achieved ? "linear-gradient(90deg, #22c55e, #d4af37)" : "linear-gradient(90deg, #d4af37, #f2d06b)",
+                background: achieved ? "linear-gradient(90deg, #22c55e, #C4982A)" : "linear-gradient(90deg, #C4982A, #E8C35A)",
               }} />
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -5893,9 +5996,9 @@ function SeasonGoalsScreen({ profile, history, onBack }) {
       })}
 
       {/* Tip */}
-      <div className="card" style={{ padding: 14, marginTop: 12, background: "rgba(212,175,55,0.03)", borderColor: "rgba(212,175,55,0.1)" }}>
+      <div className="card" style={{ padding: 14, marginTop: 12, background: "rgba(196,152,42,0.03)", borderColor: "rgba(196,152,42,0.1)" }}>
         <p style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: 1.7, fontStyle: "italic" }}>
-          <strong style={{ color: "#d4af37" }}>Setting good goals:</strong> Aim for 0.2-0.4 improvement per season on each event. That might sound small, but in gymnastics scoring, improving 0.3 on every event means a 1.2 improvement in All-Around — that's the difference between 5th place and 1st.
+          <strong style={{ color: "#C4982A" }}>Setting good goals:</strong> Aim for 0.2-0.4 improvement per season on each event. That might sound small, but in gymnastics scoring, improving 0.3 on every event means a 1.2 improvement in All-Around — that's the difference between 5th place and 1st.
         </p>
       </div>
     </div>
@@ -6307,8 +6410,8 @@ function DeductionsTabContent({ result, frames }) {
 
       {/* Math breakdown */}
       <div style={{
-        background: "linear-gradient(135deg, rgba(212,175,55,0.06), rgba(212,175,55,0.02))",
-        border: "1px solid rgba(212,175,55,0.15)", borderRadius: 12,
+        background: "linear-gradient(135deg, rgba(196,152,42,0.06), rgba(196,152,42,0.02))",
+        border: "1px solid rgba(196,152,42,0.15)", borderRadius: 12,
         padding: 16, marginTop: 4,
       }}>
         <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: 1, marginBottom: 10 }}>SCORE MATH</div>
@@ -6364,10 +6467,10 @@ function WeeklyTrainingPlan({ faults }) {
   ];
 
   return (
-    <div className="card" style={{ padding: 16, marginBottom: 16, borderColor: "rgba(212,175,55,0.12)" }}>
+    <div className="card" style={{ padding: 16, marginBottom: 16, borderColor: "rgba(196,152,42,0.12)" }}>
       <div onClick={() => setExpanded(!expanded)} style={{ cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <h3 style={{ fontSize: 14, fontWeight: 700 }}><Icon name="target" size={14} /> Weekly Training Plan</h3>
-        <span style={{ color: "#d4af37", fontSize: 13, fontWeight: 600 }}>{expanded ? "▲" : "▼"}</span>
+        <span style={{ color: "#C4982A", fontSize: 13, fontWeight: 600 }}>{expanded ? "▲" : "▼"}</span>
       </div>
       {expanded && (
         <div style={{ marginTop: 12 }}>
@@ -6375,11 +6478,11 @@ function WeeklyTrainingPlan({ faults }) {
           {dayPlans.map((day, i) => (
             <div key={i} style={{ marginBottom: 12, paddingBottom: 12, borderBottom: i < dayPlans.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                <span style={{ fontSize: 13, fontWeight: 700, color: "#d4af37" }}>{day.day}</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: "#C4982A" }}>{day.day}</span>
                 <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>{day.focus}</span>
               </div>
               {day.items.map((item, j) => (
-                <div key={j} style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.7, paddingLeft: 12, borderLeft: "2px solid rgba(212,175,55,0.1)" }}>
+                <div key={j} style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.7, paddingLeft: 12, borderLeft: "2px solid rgba(196,152,42,0.1)" }}>
                   {item}
                 </div>
               ))}
@@ -6554,7 +6657,7 @@ function PillarProgress({ history, profile }) {
             <LineChart data={scoreTrend} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
               <XAxis dataKey="label" tick={{ fill: "rgba(255,255,255,0.2)", fontSize: 9 }} />
               <YAxis domain={["auto", "auto"]} tick={{ fill: "rgba(255,255,255,0.2)", fontSize: 9 }} />
-              <Line type="monotone" dataKey="score" stroke="#d4af37" strokeWidth={2} dot={{ r: 3, fill: "#d4af37" }} />
+              <Line type="monotone" dataKey="score" stroke="#C4982A" strokeWidth={2} dot={{ r: 3, fill: "#C4982A" }} />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -6665,8 +6768,8 @@ function TrainingProgram({ result, profile, history }) {
   return (
     <div style={{ animation: "fadeIn 0.4s ease-out" }}>
       {/* Header */}
-      <div className="card" style={{ padding: 16, marginBottom: 12, background: "linear-gradient(135deg, rgba(212,175,55,0.06), rgba(212,175,55,0.02))", borderColor: "rgba(212,175,55,0.15)" }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: "#d4af37", letterSpacing: 1, marginBottom: 8 }}>YOUR PERSONALIZED TRAINING PROGRAM</div>
+      <div className="card" style={{ padding: 16, marginBottom: 12, background: "linear-gradient(135deg, rgba(196,152,42,0.06), rgba(196,152,42,0.02))", borderColor: "rgba(196,152,42,0.15)" }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: "#C4982A", letterSpacing: 1, marginBottom: 8 }}>YOUR PERSONALIZED TRAINING PROGRAM</div>
         <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.7 }}>
           Built from {deds.length} deductions, {risks.length} injury risk flag{risks.length !== 1 ? "s" : ""}, biomechanical analysis
           {profile?.goals ? `, and goal of "${profile.goals}"` : ""} at {result.level || profile?.level || "your level"}.
@@ -6680,8 +6783,8 @@ function TrainingProgram({ result, profile, history }) {
         {[{ id: "thisWeek", label: "This Week" }, { id: "season", label: "Season Plan" }].map(m => (
           <button key={m.id} onClick={() => setViewMode(m.id)} style={{
             flex: 1, padding: "10px 0", borderRadius: 8, border: "none", fontSize: 12, fontWeight: 700, cursor: "pointer",
-            background: viewMode === m.id ? "rgba(212,175,55,0.15)" : "transparent",
-            color: viewMode === m.id ? "#d4af37" : "rgba(255,255,255,0.35)",
+            background: viewMode === m.id ? "rgba(196,152,42,0.15)" : "transparent",
+            color: viewMode === m.id ? "#C4982A" : "rgba(255,255,255,0.35)",
             transition: "all 0.2s",
           }}>{m.label}</button>
         ))}
@@ -6944,8 +7047,8 @@ function TrainingProgram({ result, profile, history }) {
 
       {/* ── GOAL-SPECIFIC ── */}
       {(dev?.goalSpecificAdvice || coach?.idealComparison) && (
-        <div className="card" style={{ padding: 16, marginBottom: 12, background: "rgba(212,175,55,0.03)", borderColor: "rgba(212,175,55,0.12)" }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: "#d4af37", letterSpacing: 1, marginBottom: 8 }}>🏆 {profile?.goals ? profile.goals.toUpperCase() : "DEVELOPMENT ADVICE"}</div>
+        <div className="card" style={{ padding: 16, marginBottom: 12, background: "rgba(196,152,42,0.03)", borderColor: "rgba(196,152,42,0.12)" }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#C4982A", letterSpacing: 1, marginBottom: 8 }}>🏆 {profile?.goals ? profile.goals.toUpperCase() : "DEVELOPMENT ADVICE"}</div>
           {viewMode === "thisWeek" ? (
             <>
               {dev?.goalSpecificAdvice && <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", lineHeight: 1.7, marginBottom: 8 }}>{safeStr(dev.goalSpecificAdvice)}</div>}
@@ -7359,7 +7462,7 @@ function DiagnosticsDashboard({ result }) {
           </div>
           {sortedDeds.length >= 3 && (
             <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginTop: 8, lineHeight: 1.6 }}>
-              Fixing the top 3 deductions alone would save <span style={{ color: "#d4af37", fontWeight: 700, fontFamily: "'Space Mono', monospace" }}>+{sortedDeds.slice(0, 3).reduce((s, d) => s + safeNum(d.deduction, 0), 0).toFixed(2)}</span> — that's the difference between {safeNum(result.finalScore, 0).toFixed(1)} and {(safeNum(result.finalScore, 0) + sortedDeds.slice(0, 3).reduce((s, d) => s + safeNum(d.deduction, 0), 0)).toFixed(1)}.
+              Fixing the top 3 deductions alone would save <span style={{ color: "#C4982A", fontWeight: 700, fontFamily: "'Space Mono', monospace" }}>+{sortedDeds.slice(0, 3).reduce((s, d) => s + safeNum(d.deduction, 0), 0).toFixed(2)}</span> — that's the difference between {safeNum(result.finalScore, 0).toFixed(1)} and {(safeNum(result.finalScore, 0) + sortedDeds.slice(0, 3).reduce((s, d) => s + safeNum(d.deduction, 0), 0)).toFixed(1)}.
             </div>
           )}
         </div>
@@ -7368,7 +7471,7 @@ function DiagnosticsDashboard({ result }) {
       {/* Consistency Analysis */}
       {diag.consistencyNote && (
         <div className="card" style={{ padding: 16, marginBottom: 12 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: "#d4af37", letterSpacing: 1, marginBottom: 6 }}>🔍 WHERE DOES FOCUS BREAK?</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#C4982A", letterSpacing: 1, marginBottom: 6 }}>🔍 WHERE DOES FOCUS BREAK?</div>
           <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", lineHeight: 1.7 }}>{diag.consistencyNote}</div>
         </div>
       )}
@@ -7500,8 +7603,8 @@ function DiagnosticsDashboard({ result }) {
       </div>
 
       {/* Coach Talking Points */}
-      <div className="card" style={{ padding: 16, background: "rgba(212,175,55,0.03)", borderColor: "rgba(212,175,55,0.12)" }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: "#d4af37", letterSpacing: 1, marginBottom: 8 }}>💬 TALKING POINTS FOR COACH</div>
+      <div className="card" style={{ padding: 16, background: "rgba(196,152,42,0.03)", borderColor: "rgba(196,152,42,0.12)" }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: "#C4982A", letterSpacing: 1, marginBottom: 8 }}>💬 TALKING POINTS FOR COACH</div>
         <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.7 }}>
           {sortedDeds.length > 0 && `"The analysis identified ${deds.length} deductions totaling -${safeNum(result.totalDeductions, 0).toFixed(2)}. `}
           {sortedDeds[0] && `The biggest single item was ${safeStr(sortedDeds[0].skill)} (${safeStr(sortedDeds[0].fault)}, -${safeNum(sortedDeds[0].deduction, 0).toFixed(2)}). `}
