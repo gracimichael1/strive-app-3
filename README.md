@@ -1,103 +1,108 @@
-# STRIVE — AI Gymnastics Analysis Platform
+# STRIVE — See Your Score. Own Your Growth.
 
-> AI-powered video analysis using official USA Gymnastics & Xcel scoring criteria.
+AI-powered gymnastics scoring and athlete development platform.
+
+---
+
+## Deploy to Vercel (Recommended — 5 minutes)
+
+### Prerequisites
+- GitHub account ([github.com](https://github.com))
+- Vercel account ([vercel.com](https://vercel.com)) — sign up with GitHub
+- GitHub Desktop ([desktop.github.com](https://desktop.github.com))
+
+### Steps
+
+1. **Open GitHub Desktop** → File → Add Local Repository → select this `strive-app` folder
+   - If it says "not a git repo", click "Create a Repository" → name it `strive-app` → Create
+2. **Commit**: In GitHub Desktop, type "Initial commit" in the Summary box → Click "Commit to main"
+3. **Push**: Click "Publish repository" (blue button at top) → Uncheck "Keep this code private" if you want → Publish
+4. **Deploy**: Go to [vercel.com/new](https://vercel.com/new) → Import your `strive-app` repo → Click Deploy
+5. **Done**: Your app is live at `strive-app.vercel.app`
+
+### Updating the app
+When you get a new build from Claude:
+1. Replace the files in your `strive-app` folder
+2. Open GitHub Desktop → it shows changed files
+3. Type a summary like "Phase 3 update" → Commit → Push
+4. Vercel auto-deploys in ~60 seconds
+
+---
+
+## Run Locally (for testing)
+
+```bash
+cd strive-app
+npm install          # first time only
+PORT=3001 npm start  # opens http://localhost:3001
+```
+
+---
+
+## Gemini API Key
+
+Two options for providing the API key:
+
+### Option A: Server-side (recommended for production)
+1. Go to [aistudio.google.com/apikey](https://aistudio.google.com/apikey) and create a key
+2. In Vercel: go to your project → Settings → Environment Variables
+3. Add: `GEMINI_API_KEY` = your key
+4. Redeploy (Settings → Deployments → click the 3 dots on latest → Redeploy)
+5. The key is now secure — never visible in source code
+
+### Option B: User-provided (each user adds their own)
+1. Open STRIVE → go to Upload or Settings
+2. Paste your key in the API key field
+3. Key is saved locally in your browser
+
+---
+
+## What's Inside
+
+### 3-Pass Analysis Engine
+- **Pass 1 — Skill Detection**: Gemini identifies every skill with timestamps
+- **Pass 2 — Execution Judging**: Each skill judged against USAG criteria
+- **Pass 3 — Verification**: Re-watches video, confirms or rejects each deduction
+
+### Two-Tier System
+| Feature | Free | Pro |
+|---|---|---|
+| Video analysis | 3/month | Unlimited |
+| Score + benchmark | Yes | Yes |
+| Deductions shown | Top 3 | All |
+| #1 fix | Yes | Full drill library |
+| Biomechanics | Locked | Yes |
+| Training program | Locked | Yes |
+| Mental training | Locked | Yes |
+| What-If simulator | Locked | Yes |
+
+### Coverage
+- USAG Levels 1–10
+- Xcel Bronze through Sapphire
+- Men's and Women's Artistic Gymnastics
+- All apparatus
 
 ---
 
 ## Architecture
 
 ```
-CLIENT (React)                        SERVER (Vercel API)
-│                                     │
-├── VideoAnalyzer.js (upload UI)      ├── api/gemini-key.js   ← Gemini key proxy
-├── SkillTimeline.js (timeline)       └── api/analyze.js      ← AI judging engine
-├── SkillCard.js (per-skill results)
-│
-├── src/analysis/
-│   ├── frameExtractor.js     ← Pull frames from video @ 8fps
-│   ├── poseDetector.js       ← MediaPipe PoseLandmarker
-│   ├── skillSegmentation.js  ← Gymnastics skill detection
-│   ├── biomechanics.js       ← Joint angles + deduction inference
-│   └── analysisPipeline.js   ← Full orchestration
-│
-└── src/overlay/
-    └── skeletonOverlay.js    ← Canvas skeleton + angle labels
+src/
+├── App.js              # STRIVE shell + TierProvider
+├── LegacyApp.js        # Core app (analysis, UI, all screens)
+├── components/
+│   ├── layout/         # BottomNav
+│   ├── onboarding/     # SplashScreen
+│   └── shared/         # StriveLogo
+├── context/
+│   └── TierContext.js   # Free/Pro tier system
+├── data/
+│   ├── constants.js     # Deductions, levels, benchmarks
+│   └── affirmations.js  # Daily inspiration system
+├── utils/
+│   ├── storage.js       # localStorage wrapper
+│   ├── helpers.js       # Safety utilities + logger
+│   └── validation.js    # AI response normalization
+└── styles/
+    └── global.css       # STRIVE design system
 ```
-
-## Pipeline
-
-```
-Video Upload
-  ↓
-Frame Extraction (8fps, willReadFrequently canvas)
-  ↓
-Pose Detection (MediaPipe PoseLandmarker — already in package.json)
-  ↓
-Skill Segmentation (hip velocity heuristic, gymnastics-specific)
-  ↓
-Biomechanics (knee/hip/shoulder angles, body line deviation)
-  ↓
-Deduction Inference (rule-based from biomechanics data)
-  ↓
-[Optional] AI Judging via Gemini (api/analyze.js)
-  ↓
-Interactive UI (timeline + per-skill cards + skeleton overlay)
-```
-
----
-
-## Setup
-
-### 1. Clone and install
-
-```bash
-git clone <your-repo>
-cd strive-app
-npm install
-```
-
-### 2. Environment variables
-
-Copy `.env.example` to `.env.local` and add your Gemini key:
-
-```
-GEMINI_API_KEY=your_key_here
-```
-
-### 3. Run locally
-
-```bash
-npm start
-```
-
-### 4. Deploy to Vercel
-
-```bash
-git add .
-git commit -m "add motion analysis engine"
-git push
-```
-
-Vercel auto-deploys. Add `GEMINI_API_KEY` in your Vercel project environment variables.
-
----
-
-## Key Design Choices
-
-| Decision | Reason |
-|---|---|
-| **MediaPipe** (not TensorFlow) | Already in package.json; GPU-accelerated; no extra install |
-| **8fps extraction** | Balance between accuracy and speed |
-| **Rule-based deductions** | Instant feedback, no AI call needed for biomechanics |
-| **Gemini AI judging** | Optional richer analysis via api/analyze.js |
-| **Canvas overlay** | Skeleton drawn over video, native video controls preserved |
-
----
-
-## Known Limitations & Upgrade Path
-
-1. **Custom skill recognition model** — Current segmentation uses hip-velocity heuristics. A trained classifier would improve skill-type labelling accuracy.
-
-2. **Server-side video processing** — For long routines, move frame extraction + pose detection to a GPU worker (Modal, Replicate, etc.).
-
-3. **Judging rule engine** — Replace inferred deductions with a full USA Gymnastics code-of-points engine keyed to the athlete's level and event.

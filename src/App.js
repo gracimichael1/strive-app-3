@@ -8,22 +8,10 @@ import './styles/global.css';
 // Phase 2 = progressively replace legacy screens with new components.
 import LegacyApp from './LegacyApp';
 import SplashScreen from './components/onboarding/SplashScreen';
-import VideoAnalyzer from './components/video/VideoAnalyzer';
 
 function AppShell() {
   const [hasProfile, setHasProfile] = useState(null);
   const [showStriveSplash, setShowStriveSplash] = useState(true);
-  // Track active tab so we can render VideoAnalyzer for 'analyze'
-  const [activeTab, setActiveTab] = useState('home');
-
-  // Listen for bottom-nav tab changes from LegacyApp / BottomNav
-  useEffect(() => {
-    const handler = (e) => {
-      if (e.detail?.tab) setActiveTab(e.detail.tab);
-    };
-    window.addEventListener('strive-nav', handler);
-    return () => window.removeEventListener('strive-nav', handler);
-  }, []);
 
   useEffect(() => {
     (async () => {
@@ -59,18 +47,6 @@ function AppShell() {
 
   if (!hasProfile && showStriveSplash) {
     return <SplashScreen onStart={() => setShowStriveSplash(false)} />;
-  }
-
-  // Route the 'analyze' tab to the new VideoAnalyzer screen
-  if (activeTab === 'analyze') {
-    return (
-      <VideoAnalyzer
-        onBack={() => {
-          setActiveTab('home');
-          window.dispatchEvent(new CustomEvent('strive-nav', { detail: { tab: 'home' } }));
-        }}
-      />
-    );
   }
 
   return <LegacyApp />;
