@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { LineChart, XAxis, YAxis, CartesianGrid, Tooltip, Line, ResponsiveContainer } from "recharts";
+import { LineChart, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Line, ResponsiveContainer, RadarChart, Radar, PolarGrid, PolarAngleAxis, Cell } from "recharts";
 
 // ─── STORAGE WRAPPER — works in Claude artifacts AND real browsers ──
 const storage = {
@@ -54,6 +54,24 @@ function safeArray(val) {
   if (typeof val === "object") return Object.values(val);
   return [val];
 }
+function parseTimestampToSec(ts) {
+  if (!ts || typeof ts !== "string") return 0;
+  const first = ts.split(/[,\-]/)[0].trim();
+  if (!first || first.toLowerCase() === "global") return 0;
+  const parts = first.split(":");
+  if (parts.length === 2) return parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+  const n = parseFloat(first);
+  return isNaN(n) ? 0 : n;
+}
+
+function computeAverageGrade(skills) {
+  if (!skills || skills.length === 0) return "B";
+  const GRADE_RANK = { "A+":12,"A":11,"A-":10,"B+":9,"B":8,"B-":7,"C+":6,"C":5,"C-":4,"D+":3,"D":2,"F":1 };
+  const RANK_GRADE = { 12:"A+",11:"A",10:"A-",9:"B+",8:"B",7:"B-",6:"C+",5:"C",4:"C-",3:"D+",2:"D",1:"F" };
+  const avg = skills.reduce((s, sk) => s + (GRADE_RANK[sk.grade] || 8), 0) / skills.length;
+  return RANK_GRADE[Math.round(avg)] || "B";
+}
+
 function safeNum(val, fallback = 0, min = -Infinity, max = Infinity) {
   const n = typeof val === "number" ? val : parseFloat(val);
   if (isNaN(n)) return fallback;
@@ -3050,843 +3068,377 @@ function AnalyzingScreen({ uploadData, profile, onComplete, onBack }) {
 
   // ── State Official judging prompt — returns JSON directly ──
   // skillList: optional array from Pass 1 skill detection [{time, skill, type}]
-  const buildJudgingPrompt = useCallback((skillList) => {
-    const gender = profile.gender === "female" ? "Women's" : "Men's";
-    const eventName = uploadData.event;
-    const level = profile.level;
-    const isXcel = profile.levelCategory === "xcel";
-    const isCompulsory = profile.levelCategory === "compulsory";
-    const splitThreshold = isXcel
-      ? (level.includes("Bronze") || level.includes("Silver") ? "90" : level.includes("Gold") ? "120" : "150")
-      : (level.includes("6") || level.includes("7") ? "150" : "180");
-
-    return `You are the UNIVERSAL GYMNASTICS JUDGING ENGINE (UGJE). You are a Brevet-level USAG Official at a State Championship judging this ${gender} ${eventName} routine (${level}).
-
-YOUR PRIMARY METHOD: Watch the video and judge EXACTLY as a real judge would — by watching what the gymnast does with your own eyes. You are fully capable of seeing form breaks, body positions, landing quality, and execution errors directly from the video. Trust your visual analysis. Do NOT fabricate or guess angle measurements — only include approximate angles when you can genuinely estimate them from what you see.
-
-No benefit of the doubt — if form is not picture-perfect, the deduction is taken.
-
-═══ STEP 1: IDENTIFICATION ═══
-${skillList && skillList.length > 0 ? `The following ${skillList.length} skills were identified in this routine by a prior analysis pass. You MUST judge EACH of these skills for execution errors. Do not skip any, and do not add skills that are not on this list unless you clearly see one that was missed.
-
-SKILL LIST:
-${skillList.map((s, i) => `${i + 1}. [${s.time}] ${s.skill} (${s.type})`).join("\n")}
-` : `Watch the full video and identify every distinct skill performed. For each skill, log:
-- Skill name, timestamp, and category (acrobatic, dance/leap, turn, mount, dismount, connection)
-- For ${eventName}: identify ${eventName === "Balance Beam" ? "mounts, acro series, leaps/jumps, turns, connections, and dismount" : eventName === "Uneven Bars" ? "kips, casts, releases, swings, transitions, and dismount" : eventName === "Floor Exercise" ? "tumbling passes, leaps/jumps, turns, and dance sequences" : "board contact, flight phase, and landing"}.`}
-${isCompulsory ? 'COMPULSORY (' + level + '): Note every deviation from the prescribed routine as an additional deduction (0.05-0.20).' : ''}
-${isXcel ? level + ': Verify all 4 Special Requirements are present (0.50 each if missing).' : ''}
-
-═══ STEP 2: JUDGE EACH SKILL ═══
-For each identified skill, WATCH IT TWICE before judging. On the first viewing, observe the overall quality. On the second viewing, look specifically for form breaks. Only deduct for faults you can CLEARLY SEE in both viewings.
-
-WHAT TO LOOK FOR:
-- Toe point: Are feet pointed or flexed? Flexed feet = 0.05 each occurrence.
-- Knee tension: Are legs straight when they should be? Soft/bent knees in flight = 0.05-0.10.
-- Body alignment: In handstands and inverted positions, is the body straight and vertical? Deviations = 0.05-0.10.
-- Leg separation: In saltos/flight, are knees together? "Cowboy" (knees apart wider than shoulders) = 0.10-0.20. This is one of the most visible errors — look for it in every tuck.
-- Split positions: In leaps/jumps, does the split reach ${splitThreshold}°? Most gymnasts at ${level} show 110-140° which is a 0.10-0.20 deduction. EVERY leap and jump must be evaluated for split position.
-- Acrobatic skills: Check body shape (tight tuck/pike/layout), rotation completion, and landing.
-- Landings: Watch for steps, hops, squat depth, chest position. EVERY landing must be evaluated separately.
-
-ANALYSIS ENGINES (tag every deduction + provide measured vs required):
-These engines categorize each deduction AND provide the motion analysis data that coaches, gymnasts, and parents use as a training tool to understand WHY a deduction was taken. For each deduction, tag the engine AND include the measured angle/position vs the skill requirement so the athlete can see the gap.
-- TPM (Toe Point Monitor) — foot/ankle position. Measured: estimated shin-to-foot angle. Required: 180° (fully pointed). Example: "Measured ~155°, required 180° — feet visibly flexed in flight."
-- KTM (Knee Tension Monitor) — knee straightness. Measured: estimated knee angle. Required: 175°+ (straight). Example: "Measured ~160°, required 175° — noticeably bent knees in back handspring."
-- VAE (Verticality & Alignment Engine) — body line in inverted/vertical positions. Measured: estimated deviation from vertical. Required: within 10°. Example: "~15° past vertical in handstand."
-- Split-Check — split amplitude in leaps/jumps. Measured: estimated hip vertex angle. Required: ${splitThreshold}° for ${level}. Example: "Measured ~130°, required ${splitThreshold}° — split visibly short."
-- Landing — landing mechanics. Measured: chest angle, knee flexion, steps/hops. Required: upright chest, controlled absorption, no extra steps.
-- General — artistry, rhythm, or other execution faults.
-Estimate angles from what you genuinely see in the video. Approximate is fine ("~155°", "~130°") — the goal is to show the athlete how far off they are from the standard, not to be a protractor. Do NOT fabricate precise numbers you cannot actually see.
-
-═══ STEP 3: SCORING OUTPUT ═══
-Compile all deductions into the scorecard. Rules:
-- DEDUCT PER-SKILL, NOT PER-PASS. In a tumbling pass like "Round-off BHS back tuck", the round-off, BHS, and back tuck each get their OWN deduction row if they have form errors. Do NOT write one row for the entire pass.
-- A single skill can have MULTIPLE faults combined into ONE deduction (e.g. BHS with bent elbows -0.10 AND neutral feet -0.05 = one row at -0.15 for BHS citing both faults).
-- EVERY landing gets its OWN row (step, hop, or squat). Landing deductions are separate from the preceding skill.
-- Use "Global" ONLY for artistry/presentation or a fault that is truly identical on 4+ skills. If a skill has a distinct fault (e.g. BHS elbows bent, back tuck cowboy knees), it MUST get its own row even if other skills also have minor knees/feet issues.
-- ${eventName === "Uneven Bars" ? "8-12" : eventName === "Floor Exercise" ? "8-12" : eventName === "Balance Beam" ? "8-12" : "5-8"} deduction entries expected.
-- Expected total deductions: 0.80-1.50 for a solid ${level} routine.
-- Expected final score: 8.00-9.50. If below 7.50, you are too strict.
-- Describe the fault you actually see. Include approximate angles only when you can genuinely estimate them.
-- Deduction values are positive (0.10 not -0.10).
-- "severity": "small" (0.05-0.10), "medium" (0.10-0.15), "large" (0.20-0.30), "veryLarge" (0.30-0.50), "fall" (0.50+)
-- "category": "execution", "artistry", or "landing"
-- "engine": "TPM", "KTM", "VAE", "Split-Check", "Landing", or "General"
-- Use "Global" as timestamp for artistry/whole-routine deductions.
-
-═══ STEP 4: SUMMARY ═══
-Write truthAnalysis (2-3 paragraphs): why this score, biggest math win, path to improvement.
-List strengths (with timestamps) and areas for improvement.
-List topFixes: the 3 changes that would save the most points, with specific drills.
-
-═══ RESPONSE FORMAT ═══
-YOU MUST RESPOND WITH VALID JSON ONLY. No markdown, no extra text.
-
-{"executionDeductions":[{"timestamp":"0:12","skill":"Back handspring","deduction":0.10,"engine":"KTM","fault":"Soft knees ~170°","category":"execution","severity":"small","skeleton":null}],"executionDeductionsTotal":0.80,"artistryDeductionsTotal":0.20,"finalScore":9.00,"truthAnalysis":"...","topFixes":[{"name":"Fix name","saves":0.15,"drill":"Specific drill"}],"strengths":["Strength 1"],"areasForImprovement":["Area 1"],"biomechanics":{"keyMoments":[{"timestamp":"0:08","skill":"Back tuck","phase":"takeoff","jointAngles":{"lKnee":142,"rKnee":145},"angularVelocity":{"hip":320,"knee":280},"notes":"..."}],"landingAnalysis":[{"timestamp":"0:12","skill":"Landing","kneeFlexionAtImpact":155,"chestAngle":72,"stepsAfter":1,"impactRisk":"low","notes":"..."}],"holdDurations":[{"timestamp":"0:25","skill":"Handstand","durationMs":800,"requiredMs":1000,"met":false}],"injuryRiskFlags":[{"timestamp":"0:12","joint":"lKnee","risk":"low","reason":"Valgus knee","recommendation":"Single-leg squats"}],"overallFlightHeight":"adequate","overallPowerRating":"7/10"},"coachReport":{"preemptiveCorrections":[{"skill":"...","currentFault":"...","riskIfUncorrected":"...","correction":"...","priority":"high"}],"conditioningPlan":[{"area":"...","exercise":"...","sets":"3x10","frequency":"3x/week","why":"..."}],"idealComparison":"...","techniqueProgressionNotes":"..."},"athleteDevelopment":{"mentalTraining":["..."],"goalSpecificAdvice":"..."}}
-
-CONFIDENCE SCORES: Every deduction MUST include "confidence" (0.0-1.0). Use 0.9+ for clearly visible errors you can see plainly in the video, 0.7-0.9 for likely errors, 0.5-0.7 for probable errors that are hard to confirm from the camera angle, below 0.5 only if you're unsure but it looks wrong. Do NOT include deductions with confidence below 0.3.
-
-SKELETON & MOTION ANALYSIS (Training Tool Layer):
-This data overlays on the video so gymnasts, coaches, and parents can VISUALLY SEE what the judge saw. It turns deductions into teaching moments.
-- skeleton: Include for the TOP 3 deductions. Provide joints as normalized [0-1] coordinates, faultJoints (joints involved in the fault), and angles (measured vs ideal for that skill). This lets the app draw the body position with highlighted problem areas.
-- For all other deductions, set skeleton to null. Prioritize complete scoring data over skeleton detail.
-
-BIOMECHANICS (fills the training/teaching layer):
-Fill completely — this is what coaches and parents review between the judging scorecard and the video replay.
-- keyMoments: For each major skill, show joint angles, angular velocity, and what was good or needs work. This is how athletes learn what their body is doing.
-- landingAnalysis: Every landing — knee flexion, chest angle, steps. Parents can see why a landing lost points.
-- holdDurations: Static holds — measured vs required time.
-- injuryRiskFlags: Flag positions that could lead to injury if not corrected. Coaches prioritize these.
-
-COACH REPORT:
-- preemptiveCorrections: technique habits forming NOW that become problems at higher levels. Include drill to fix.
-- conditioningPlan: 3-5 exercises addressing ROOT CAUSES of deductions (sets/reps/frequency).
-- idealComparison: compare to ideal model for ${level}.
-- techniqueProgressionNotes: what to train next.
-
-ATHLETE DEVELOPMENT for ${profile.age ? profile.age + '-year-old' : ''} ${gender.toLowerCase()} gymnast at ${level}${profile.goals ? ' (goal: ' + profile.goals + ')' : ''}:
-- mentalTraining: ${profile.goals ? 'techniques for goal of "' + profile.goals + '"' : 'visualization, pressure management'} appropriate for age.
-- goalSpecificAdvice: ${profile.goals ? 'Specific advice for "' + profile.goals + '" at ' + level + '.' : 'General development advice for ' + level + '.'}
-
-RESPONSE PRIORITY (if running low on output tokens):
-1. executionDeductions + finalScore + totals (REQUIRED — the judge's scorecard)
-2. truthAnalysis, topFixes, strengths, areasForImprovement (REQUIRED — the coach summary)
-3. biomechanics — keyMoments, landingAnalysis, injuryRiskFlags (IMPORTANT — the training layer that parents and athletes use to understand deductions)
-4. skeleton data on top 3 deductions (IMPORTANT — visual overlay for video replay)
-5. coachReport — preemptiveCorrections, conditioningPlan (important)
-6. biomechanics.holdDurations (nice-to-have)
-7. athleteDevelopment (brief is fine)
-${uploadData.notes ? '\nCoach notes: "' + uploadData.notes + '"' : ''}`;
-  }, [profile, uploadData]);
-
-  // ── Pass 1: Skill Detection prompt — fast, small output ──
-  const buildSkillDetectionPrompt = useCallback(() => {
-    const gender = profile.gender === "female" ? "Women's" : "Men's";
-    const eventName = uploadData.event;
-    const level = profile.level;
-    const isCompulsory = profile.levelCategory === "compulsory";
-
-    return `Watch this ${gender} ${eventName} routine (${level}) from start to finish. Identify EVERY distinct gymnastics skill/element performed in chronological order.
-
-CRITICAL RULES:
-- Each skill should appear ONLY ONCE. Do NOT list the same skill at multiple timestamps.
-- A typical ${eventName} routine at ${level} has 8-15 distinct elements. If you're listing more than 15, you are probably counting the same skill twice.
-- For tumbling passes: list EACH INDIVIDUAL SKILL within the pass separately (e.g. a "Round-off BHS back tuck" pass = 3 entries: "Round-off" at 0:32, "Back handspring" at 0:33, "Back tuck" at 0:34), each with its own timestamp (1 second apart for connected skills).
-- Landing is a separate entry if it has a notable deduction (step, hop, etc.).
-
-For each skill, provide:
-- "time": timestamp in M:SS format (e.g. "0:04", "1:12")
-- "skill": standard gymnastics name (e.g. "Round-off", "Back handspring", "Back tuck", "Split leap")
-- "type": one of "acro", "dance", "turn", "mount", "dismount", "connection", "pose", "landing"
-
-${eventName === "Balance Beam" ? "Include: mount, all acro elements, leaps/jumps (note if connected), turns, acro series, and dismount." : ""}${eventName === "Uneven Bars" ? "Include: mount/kip, all casts, releases, swings, transitions between bars, and dismount." : ""}${eventName === "Floor Exercise" ? "Include: each tumbling pass broken into individual skills (round-off, BHS, salto each listed separately), leaps/jumps, turns, and dance sequences. A typical Level 6-8 floor routine has 2-3 tumbling passes, 2-3 leaps/jumps, 1-2 turns, and choreography." : ""}${eventName === "Vault" ? "Include: run, board contact/hurdle, flight phase (name the vault), and landing." : ""}
-${isCompulsory ? 'This is a COMPULSORY routine (' + level + '). List each element from the prescribed routine and note if it was performed correctly, modified, or missing.' : ''}
-
-RESPOND WITH VALID JSON ONLY:
-{"skills":[{"time":"0:32","skill":"Round-off","type":"acro"},{"time":"0:33","skill":"Back handspring","type":"acro"},{"time":"0:34","skill":"Back tuck","type":"acro"},{"time":"0:35","skill":"Landing","type":"landing"},{"time":"0:44","skill":"Split leap","type":"dance"}],"routineDuration":"1:15","skillCount":12}`;
-  }, [profile, uploadData]);
-
-  // Simplified prompt for retry on truncated responses — core scorecard only
-  const buildSimplifiedPrompt = useCallback(() => {
-    const gender = profile.gender === "female" ? "Women's" : "Men's";
-    const level = profile.level;
-    const isXcel = profile.levelCategory === "xcel";
-    const isCompulsory = profile.levelCategory === "compulsory";
-    const splitThreshold = isXcel
-      ? (level.includes("Bronze") || level.includes("Silver") ? "90" : level.includes("Gold") ? "120" : "150")
-      : (level.includes("6") || level.includes("7") ? "150" : "180");
-
-    return `Analyze this ${gender} ${uploadData.event} routine (${level}) as a Brevet-level USAG Official. Strict judging — no benefit of the doubt. Judge by watching the video directly — trust what you see.
-
-LOOK FOR: Toe point (flexed feet=0.05), knee tension (bent knees=0.05-0.10), body alignment (0.05-0.10), split positions (must reach ${splitThreshold}° at ${level}, 0.10-0.20 if short), leg separation/cowboy (0.10-0.20), landing steps/hops/squat. Tag each deduction with engine: TPM/KTM/VAE/Split-Check/Landing/General.
-${isCompulsory ? 'COMPULSORY: Deduct for deviations from prescribed routine.' : ''}${isXcel ? level + ': Check 4 Special Requirements (0.50 each if missing).' : ''}
-
-RULES: Deduct PER-SKILL within tumbling passes (round-off, BHS, tuck each get their own row). Every landing gets its own row. Use "Global" ONLY for artistry or faults appearing 4+ times identically. Max 12 entries. Expected score: 8.00-9.50. Describe what you see — include approximate angles only when you can genuinely estimate them.
-
-RESPOND WITH VALID JSON ONLY:
-{"executionDeductions":[{"timestamp":"0:12","skill":"...","deduction":0.10,"engine":"KTM","fault":"...","category":"execution","severity":"small","confidence":0.92,"skeleton":null}],"executionDeductionsTotal":0.80,"artistryDeductionsTotal":0.20,"finalScore":9.00,"truthAnalysis":"Why this score, biggest math win, path to improvement.","topFixes":[{"name":"...","saves":0.15,"drill":"..."}],"strengths":["..."],"areasForImprovement":["..."]}
-
-"severity": "small"/"medium"/"large"/"veryLarge"/"fall". "category": "execution"/"artistry"/"landing". "engine": "TPM"/"KTM"/"VAE"/"Split-Check"/"Landing"/"General".`;
-  }, [profile, uploadData]);
-
-  // ── Gemini Video Upload (reusable — returns file reference for multiple API calls) ──
-  const uploadVideoToGemini = useCallback(async (videoFile, apiKey) => {
-    const mimeType = videoFile.type || "video/mp4";
-
-    // Step 1: Start resumable upload to File API
-    setStatus("Uploading video...");
-    setProgress(40);
-    log.info("upload", `Uploading: ${videoFile.name} (${(videoFile.size / 1024 / 1024).toFixed(1)}MB)`);
-
-    const startRes = await fetch(`https://generativelanguage.googleapis.com/upload/v1beta/files?key=${apiKey}`, {
-      method: "POST",
-      headers: {
-        "X-Goog-Upload-Protocol": "resumable",
-        "X-Goog-Upload-Command": "start",
-        "X-Goog-Upload-Header-Content-Length": String(videoFile.size),
-        "X-Goog-Upload-Header-Content-Type": mimeType,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ file: { display_name: "routine_" + Date.now() } }),
-    });
-
-    if (!startRes.ok) {
-      const errText = await startRes.text().catch(() => "");
-      throw new Error(`Upload init failed (${startRes.status}): ${errText}`);
-    }
-
-    const uploadUrl = startRes.headers.get("X-Goog-Upload-URL") || startRes.headers.get("x-goog-upload-url");
-    if (!uploadUrl) throw new Error("No upload URL returned from File API");
-
-    // Step 2: Upload the video bytes
-    setStatus("Sending video to analysis engine...");
-    setProgress(50);
-
-    const uploadRes = await fetch(uploadUrl, {
-      method: "POST",
-      headers: {
-        "X-Goog-Upload-Command": "upload, finalize",
-        "X-Goog-Upload-Offset": "0",
-        "Content-Length": String(videoFile.size),
-      },
-      body: videoFile,
-    });
-
-    if (!uploadRes.ok) throw new Error(`Upload failed (${uploadRes.status})`);
-    const fileInfo = await uploadRes.json();
-    const fileUri = fileInfo.file?.uri;
-    const fileName = fileInfo.file?.name;
-    if (!fileUri) throw new Error("No file URI returned");
-    log.info("upload", `Video uploaded: ${fileName} URI: ${fileUri}`);
-
-    // Step 3: Poll until video is processed
-    setStatus("Processing video (this may take 30-60 seconds)...");
-    setProgress(58);
-
-    let fileReady = false;
-    for (let i = 0; i < 40; i++) {
-      await new Promise(r => setTimeout(r, 2000));
-      try {
-        const checkRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/${fileName}?key=${apiKey}`);
-        if (checkRes.ok) {
-          const checkData = await checkRes.json();
-          log.info("upload", `File state: ${checkData.state} (poll ${i + 1})`);
-          if (checkData.state === "ACTIVE") { fileReady = true; break; }
-          if (checkData.state === "FAILED") throw new Error("Video processing failed on server");
-        }
-      } catch (e) {
-        if (e.message.includes("failed")) throw e;
-      }
-      setProgress(58 + Math.min(15, Math.floor(i / 2)));
-    }
-    if (!fileReady) throw new Error("Video processing timed out after 80 seconds");
-
-    return { fileUri, fileName, mimeType };
-  }, []);
-
-  // ── Gemini Generate (call the model with an already-uploaded file) ──
-  const geminiGenerate = useCallback(async (fileRef, prompt, apiKey, config = {}) => {
-    const {
-      maxOutputTokens = 65536,
-      thinkingBudget = 24576,
-      responseMimeType = "application/json",
-      label = "analysis",
-    } = config;
-
-    log.info("gemini", `[${label}] Sending prompt (${prompt.length} chars) to gemini-2.5-flash`);
-
-    const analysisRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{
-          parts: [
-            { file_data: { file_uri: fileRef.fileUri, mime_type: fileRef.mimeType } },
-            { text: prompt },
-          ],
-        }],
-        generationConfig: {
-          maxOutputTokens,
-          temperature: 0,
-          responseMimeType,
-          thinkingConfig: { thinkingBudget },
-        },
-      }),
-    });
-
-    if (!analysisRes.ok) {
-      const errText = await analysisRes.text().catch(() => "");
-      throw new Error(`${label} failed (${analysisRes.status}): ${errText}`);
-    }
-
-    const analysisData = await analysisRes.json();
-    const candidate = analysisData.candidates?.[0] || {};
-    const finishReason = candidate.finishReason || "UNKNOWN";
-    const allParts = candidate.content?.parts || [];
-    const thinkingChars = allParts.filter(p => p.thought).reduce((s, p) => s + (p.text?.length || 0), 0);
-    log.info("gemini", `[${label}] Response: ${allParts.length} parts (finish: ${finishReason}, thinking: ${thinkingChars} chars)`);
-    const rawText = allParts
-      .filter(p => p.text && !p.thought)
-      .map(p => p.text)
-      .join("\n") || allParts.map(p => p.text || "").join("\n");
-    log.info("gemini", `[${label}] Complete. Length: ${rawText.length}, preview: ${rawText.substring(0, 200)}`);
-    console.log(`[gemini ${label} raw]`, rawText);
-    try { localStorage.setItem(`debug-gemini-${label}`, rawText); } catch {}
-
-    return rawText;
-  }, []);
-
-  // ── Legacy wrapper for backward compatibility ──
-  const analyzeWithGeminiVideo = useCallback(async (videoFile, prompt, apiKey) => {
-    const fileRef = await uploadVideoToGemini(videoFile, apiKey);
-    const rawText = await geminiGenerate(fileRef, prompt, apiKey, { label: "judge" });
-    // Cleanup uploaded file
-    try { fetch(`https://generativelanguage.googleapis.com/v1beta/${fileRef.fileName}?key=${apiKey}`, { method: "DELETE" }); } catch {}
-    return rawText;
-  }, [uploadVideoToGemini, geminiGenerate]);
-
   // ══════════════════════════════════════════════════════════════════
-  // MAIN ORCHESTRATOR — 3-Pass Gemini Pipeline (no Claude fallback)
-  // Pass 1: Skill detection  →  Pass 2: Execution judging  →  Pass 3: Verification
+  // STRIVE 2-PASS GRADING SYSTEM
+  //
+  // Pass 1 — Skill Identification: Watch video, list every skill + timestamp
+  // Pass 2 — Skill Grading:        Grade each skill A-F, one sentence why
+  // Code   — Score Computation:    Grade → deduction → sum → final score
+  //
+  // Gemini observes. Code computes. No contradictions. No fabricated numbers.
   // ══════════════════════════════════════════════════════════════════
+
+  // ── Level context helper ──────────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════
+  // STRIVE DIRECT JUDGING SYSTEM
+  //
+  // Single prompt. Gemini watches the video and returns every skill
+  // with a deduction on a 0.05 scale and a specific reason.
+  // Code sums deductions and computes the final score — never Gemini.
+  //
+  // Prompt is built dynamically from the athlete's profile:
+  //   level → split angle, expected skills, deduction standards
+  //   event → what elements to look for
+  //   compulsory/optional/xcel → judging context
+  // ══════════════════════════════════════════════════════════════════
+
+  const buildJudgingPrompt = useCallback(() => {
+    const level   = profile.level  || "Level 6";
+    const gender  = profile.gender === "female" ? "Women's" : "Men's";
+    const event   = uploadData?.event || "Floor Exercise";
+    const cat     = profile.levelCategory || "optional";
+    const isXcel  = cat === "xcel";
+    const isComp  = cat === "compulsory";
+    const isElite = level === "Elite";
+
+    // ── Split angle minimum by level ────────────────────────────────
+    const splitMin = isXcel
+      ? (level.includes("Bronze") || level.includes("Silver") ? 90
+        : level.includes("Gold") ? 120
+        : level.includes("Platinum") ? 150 : 180)
+      : (["Level 1","Level 2","Level 3","Level 4"].includes(level) ? 90
+        : level === "Level 5" ? 120
+        : (level === "Level 6" || level === "Level 7") ? 150 : 180);
+
+    const splitDed = splitMin <= 90 ? "0.10" : splitMin <= 120 ? "0.10–0.20" : "0.20";
+
+    // ── Score benchmark for this level ─────────────────────────────
+    const bench = SCORE_BENCHMARKS[level];
+    const benchLine = bench
+      ? `Typical ${level} ${event} scores: avg ${bench.avg}, top 10% at ${bench.top10}, range ${bench.low}–${bench.high}.`
+      : "";
+
+    // ── Required skills for this level and event ────────────────────
+    const eventKey = event.toLowerCase().replace("floor exercise","floor").replace("balance beam","beam")
+      .replace("uneven bars","bars").replace("still rings","bars")
+      .replace("parallel bars","bars").replace("high bar","bars")
+      .replace("pommel horse","vault");
+    const levelSkills = LEVEL_SKILLS[level];
+    const skillsLine = levelSkills?.[eventKey]
+      ? `Required/expected skills at ${level} ${event}: ${levelSkills[eventKey]}.`
+      : "";
+
+    // ── Program context ─────────────────────────────────────────────
+    const programContext = isComp
+      ? `COMPULSORY ROUTINE (${level}): Every gymnast performs the identical prescribed choreography. Deduct for ANY deviation from the required choreography, timing, or element order — in addition to all execution faults.`
+      : isXcel
+      ? `XCEL ${level} ROUTINE: Athlete selects their own skills within Xcel program parameters. Verify all 4 Special Requirements are present (−0.50 each if missing). Split leap/jump minimum is ${splitMin}°.`
+      : isElite
+      ? `ELITE ROUTINE (FIG Code of Points): Judge execution from 10.0 E-score base. D-score is separate. Apply FIG deduction standards strictly.`
+      : `${level} OPTIONAL ROUTINE: Athlete selects their own skills. Split leap/jump minimum is ${splitMin}°. ${level === "Level 5" ? "Round-off BHS back tuck is required." : ""}`;
+
+    // ── Execution deduction standards (from USA Gymnastics code) ────
+    const executionStandards = `
+EXECUTION FAULTS — USA Gymnastics official deduction scale (0.05 increments only):
+  Bent arms:                  slight=0.05  noticeable=0.10  significant=0.20  severe=0.30
+  Bent knees / legs:          slight=0.05  noticeable=0.10  significant=0.20  severe=0.30
+  Leg separation (cowboy):    visible=0.10  wide=0.20
+  Flexed / sickled feet:      0.05 per occurrence
+  Insufficient height/amplitude: 0.05–0.30
+  Body alignment (pike/arch): 0.05–0.30
+  Incomplete rotation/twist:  0.05–0.30
+  Head position error:        0.05–0.10`;
+
+    const landingStandards = `
+LANDING FAULTS — judge every landing separately:
+  Small step:                 0.05
+  Medium step:                0.10
+  Large step / lunge:         0.20–0.30
+  Squat (above 90° knee):     0.10–0.20
+  Deep squat (below 90° knee):0.30
+  Hands on floor (no fall):   0.30
+  Fall:                       0.50
+  Chest drop / posture:       0.05–0.20`;
+
+    const artistryStandards = `
+ARTISTRY FAULTS — use "Global" timestamp:
+  Hollow hands / poor finger lines: 0.05
+  No eye contact with judges:       0.05
+  Lack of confidence / hesitation:  0.05–0.10
+  Poor musicality / rhythm (Floor): 0.05–0.20
+  Flat footwork / no releve:        0.05–0.10
+  Insufficient use of space (Floor):0.05–0.10`;
+
+    const splitStandard = `
+SPLIT LEAP/JUMP REQUIREMENT at ${level}: minimum ${splitMin}°
+  ${splitMin - 15}°–${splitMin - 1}° (close): −0.05–0.10
+  ${splitMin - 30}°–${splitMin - 16}° (short): −${splitDed}
+  Below ${splitMin - 30}° (very short): −0.20–0.30`;
+
+    return `You are a Brevet-level USAG Official at a State Championship judging this ${gender} ${event} routine (${level}).
+
+${programContext}
+
+${skillsLine}
+${benchLine}
+
+You are strictly forbidden from giving benefit of the doubt. If the form is not picture-perfect, the deduction is taken. Judge every single skill — no skipping.
+${executionStandards}
+${landingStandards}
+${artistryStandards}
+${splitStandard}
+
+JUDGING INSTRUCTIONS:
+1. Watch the full routine from start to finish
+2. Identify every distinct skill and its timestamp
+3. For tumbling passes: list EACH skill separately (round-off, BHS, tuck = 3 rows, timestamps 1 second apart)
+4. Judge EVERY landing as its own separate row
+5. Use "Global" for artistry faults applying to the whole routine
+6. Assign a deduction in 0.05 increments — 0.00 means genuinely clean
+7. Give one specific reason for each deduction — describe exactly what you saw
+
+DEDUCTION VALUES: 0.00, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.50 ONLY.
+
+Respond with valid JSON only — no markdown, no extra text:
+{
+  "startValue": 10.00,
+  "skills": [
+    {"timestamp": "0:14", "skill": "Dance step",       "deduction": 0.05, "reason": "Flat foot instead of high releve throughout."},
+    {"timestamp": "0:32", "skill": "Round-off",         "deduction": 0.10, "reason": "Knees softened during flight phase — not fully locked."},
+    {"timestamp": "0:33", "skill": "Back handspring",   "deduction": 0.15, "reason": "Head thrown back early on takeoff; arms bent on hand contact."},
+    {"timestamp": "0:34", "skill": "Back tuck",         "deduction": 0.20, "reason": "Cowboy position — knees outside shoulder width throughout tuck."},
+    {"timestamp": "0:35", "skill": "Landing",           "deduction": 0.10, "reason": "Chest dropped forward at impact; not upright."},
+    {"timestamp": "0:44", "skill": "Split leap",        "deduction": 0.20, "reason": "Split reached approximately ${splitMin - 10}° — ${level} requires ${splitMin}° minimum."},
+    {"timestamp": "0:53", "skill": "Full turn",         "deduction": 0.05, "reason": "Heel lowered micro-seconds before rotation fully complete."},
+    {"timestamp": "Global","skill": "Artistry",         "deduction": 0.10, "reason": "Hollow fingertips throughout; limited eye contact with judges."}
+  ]
+}`;
+  }, [profile, uploadData]);
+
+  // ── Main analysis orchestrator — single pass ─────────────────────
   const analyzeWithAI = useCallback(async (extractedFrames) => {
     setStatus("Preparing analysis...");
     setProgress(35);
 
-    // Try user's saved key first, then server-side key
+    // Get API key from storage or server
     let apiKey = null;
-    try {
-      const k = await storage.get("strive-gemini-key");
-      apiKey = k?.value || null;
-    } catch (e) {}
-
-    // If no user key, fetch from server (key stored in Vercel env var, not in code)
+    try { const k = await storage.get("strive-gemini-key"); apiKey = k?.value || null; } catch {}
     if (!apiKey) {
       try {
         const resp = await fetch("/api/gemini-key");
-        if (resp.ok) {
-          const data = await resp.json();
-          apiKey = data.key || null;
-        }
+        if (resp.ok) { const d = await resp.json(); apiKey = d.key || null; }
       } catch {}
     }
+    if (!apiKey) throw new Error("No API key. Go to Settings and paste your Gemini key from aistudio.google.com/apikey");
+    if (!uploadData.video) throw new Error("No video file available.");
 
-    if (!apiKey) {
-      throw new Error("No API key found. Go to Settings → Video Analysis Engine and paste your free Gemini API key from aistudio.google.com/apikey");
-    }
+    try {
+      // Upload video once
+      const fileRef = await uploadVideoToGemini(uploadData.video, apiKey);
 
-    let result = null;
-    let geminiError = null;
+      // ── Single judging pass ──────────────────────────────────────
+      setStatus(`AI judge evaluating ${profile.level} ${uploadData.event} routine...`);
+      setProgress(68);
 
-    if (apiKey && uploadData.video) {
-      try {
-        // ── Load calibration history to compute AI scoring bias ──
-        let calibrationBias = 0;
-        let calibrationNote = "";
+      const prompt = buildJudgingPrompt();
+      log.info("gemini", `Prompt length: ${prompt.length} chars | Level: ${profile.level} | Event: ${uploadData.event}`);
+
+      let rawResponse = null;
+      for (let attempt = 1; attempt <= 2; attempt++) {
         try {
-          const cal = await storage.get("strive-calibration");
-          if (cal) {
-            const calData = JSON.parse(cal.value);
-            // Filter to matching event+level for most accurate bias
-            const relevant = calData.filter(c => c.event === uploadData.event && c.level === profile.level);
-            const allRecords = relevant.length >= 3 ? relevant : calData; // fall back to all data if <3 matching
-            if (allRecords.length >= 2) {
-              const avgDiff = allRecords.reduce((s, c) => s + (c.diff || 0), 0) / allRecords.length;
-              calibrationBias = Math.round(avgDiff * 1000) / 1000;
-              const dir = calibrationBias > 0 ? "high" : "low";
-              calibrationNote = `CALIBRATION DATA: Based on ${allRecords.length} past score corrections${relevant.length >= 3 ? ` for ${uploadData.event} at ${profile.level}` : ""}, the AI has historically scored ${Math.abs(calibrationBias).toFixed(2)} ${dir} compared to actual meet judges. Adjust your scoring ${calibrationBias > 0 ? "downward" : "upward"} by approximately ${Math.abs(calibrationBias).toFixed(2)} to match real judging panels.`;
-              log.info("calibration", `Bias: ${calibrationBias.toFixed(3)} from ${allRecords.length} records (${relevant.length} event-specific)`);
-            }
-          }
-        } catch (e) { log.warn("calibration", "Failed to load calibration data"); }
-
-        log.info("gemini", "Starting 3-pass analysis pipeline (detect → judge → verify)" + (calibrationNote ? " (with calibration)" : ""));
-
-        // ── Upload video once, reuse for both passes ──
-        const fileRef = await uploadVideoToGemini(uploadData.video, apiKey);
-
-        // ── PASS 1: Skill Detection (fast, small output) ──
-        let skillList = [];
-        try {
-          setStatus("Pass 1: Identifying skills in routine...");
-          setProgress(68);
-          const skillPrompt = buildSkillDetectionPrompt();
-          const skillRaw = await geminiGenerate(fileRef, skillPrompt, apiKey, {
+          rawResponse = await geminiGenerate(fileRef, prompt, apiKey, {
             maxOutputTokens: 8192,
-            thinkingBudget: 8192,
-            label: "skill-detect",
+            thinkingBudget:  8192,
+            label: `judge-${profile.level}-attempt${attempt}`,
           });
-          try {
-            const skillMatch = skillRaw.match(/\{[\s\S]*\}/);
-            if (skillMatch) {
-              const skillData = JSON.parse(skillMatch[0]);
-              skillList = safeArray(skillData.skills).filter(s => s.time && s.skill);
-              log.info("skills", `Pass 1 detected ${skillList.length} skills: ${skillList.map(s => s.skill).join(", ")}`);
-              console.log("[pass1 skills]", skillList);
-            }
-          } catch (parseErr) {
-            log.warn("skills", `Skill detection parse failed: ${parseErr.message}. Proceeding without skill list.`);
-          }
-        } catch (skillErr) {
-          log.warn("skills", `Pass 1 failed: ${skillErr.message}. Proceeding with single-pass judging.`);
+          if (rawResponse && rawResponse.length > 100 && rawResponse.includes('"skills"')) break;
+          log.warn("judge", `Attempt ${attempt} short or missing skills (${rawResponse?.length} chars). Retrying...`);
+          await new Promise(r => setTimeout(r, 2000));
+        } catch (e) {
+          log.warn("judge", `Attempt ${attempt} failed: ${e.message}`);
+          if (attempt === 2) throw e;
+          await new Promise(r => setTimeout(r, 2000));
         }
-
-        // ── PASS 2: Execution Judging (anchored by skill list) ──
-        setStatus(skillList.length > 0 ? `Pass 2: Judging ${skillList.length} identified skills...` : "AI judge is watching your routine...");
-        setProgress(75);
-        const judgingPrompt = buildJudgingPrompt(skillList) + (calibrationNote ? "\n\n" + calibrationNote : "");
-
-        // Retry up to 3 times: attempt 1-2 with full prompt, attempt 3 with simplified prompt if truncated
-        let rawAnalysis = null;
-        let lastErr = null;
-        for (let attempt = 1; attempt <= 3; attempt++) {
-          try {
-            const prompt = attempt <= 2 ? judgingPrompt : (buildSimplifiedPrompt() + (calibrationNote ? "\n\n" + calibrationNote : ""));
-            if (attempt === 3) {
-              setStatus("Response was incomplete — retrying with focused prompt...");
-              log.info("gemini", `Response truncated (${rawAnalysis?.length || 0} chars). Retrying with simplified prompt...`);
-            }
-            rawAnalysis = await geminiGenerate(fileRef, prompt, apiKey, {
-              label: attempt <= 2 ? "judge" : "judge-simplified",
-            });
-            if (rawAnalysis && rawAnalysis.length >= 50) {
-              const isTruncated = rawAnalysis.length < 3000 || !rawAnalysis.includes('"finalScore"');
-              if (isTruncated && attempt < 3) {
-                log.warn("gemini", `Attempt ${attempt}: Response appears truncated (${rawAnalysis.length} chars)`);
-              } else {
-                break;
-              }
-            } else {
-              rawAnalysis = null;
-              lastErr = new Error("AI returned empty response");
-            }
-          } catch (retryErr) {
-            lastErr = retryErr;
-            log.warn("gemini", `Attempt ${attempt} failed: ${retryErr.message}`);
-            if (attempt < 3) {
-              setStatus("Retrying analysis...");
-              await new Promise(r => setTimeout(r, 2000));
-            }
-          }
-        }
-
-        // ── PASS 3: Verification (re-watch video, confirm or reject each deduction) ──
-        // Only runs if Pass 2 succeeded and we have deductions to verify
-        if (rawAnalysis && fileRef) {
-          try {
-            const jsonMatch = rawAnalysis.match(/\{[\s\S]*\}/);
-            if (jsonMatch) {
-              const tempParsed = JSON.parse(jsonMatch[0]);
-              const deds = (tempParsed.executionDeductions || []).filter(d => d && d.skill);
-              if (deds.length >= 3) {
-                setStatus("Pass 3: Verifying deductions against video...");
-                setProgress(82);
-                const verifyPrompt = `You are an EXPERT VERIFICATION JUDGE reviewing a gymnastics scoring analysis. A less experienced judge has analyzed this ${profile.gender === "female" ? "Women's" : "Men's"} ${uploadData.event} routine (${profile.level}) and produced the deductions below. Your job is to RE-WATCH THE ENTIRE VIDEO CAREFULLY and verify each one.
-
-VERIFICATION CRITERIA — be STRICT:
-- REJECT any deduction where you CANNOT clearly see the described fault in the video
-- REJECT any deduction where the skill doesn't match what's actually performed at that timestamp
-- REJECT duplicate deductions (same fault counted twice on the same skill)
-- ADJUST the deduction amount DOWN if the severity was exaggerated (e.g. "large" bend when it's actually slight)
-- ADJUST the deduction amount UP if the fault is worse than described
-- CONFIRM only when you can CLEARLY see the specific fault described
-
-COMMON HALLUCINATION PATTERNS TO WATCH FOR:
-- "Flexed feet" on skills where the feet aren't visible
-- "Knee separation" when legs are together in the video
-- Deductions at timestamps where no skill is actually being performed
-- "Balance check" or "wobble" when the gymnast appears stable
-- Deductions for skills that don't exist in this routine
-
-DEDUCTIONS TO VERIFY:
-${deds.map((d, i) => `${i+1}. [${d.timestamp || '?'}s] ${d.skill || '?'}: "${d.fault || '?'}" → -${d.deduction || 0} (${d.severity || '?'})`).join('\n')}
-
-For each, go to that timestamp in the video, watch carefully, and decide.
-
-RESPOND WITH VALID JSON ONLY:
-{"verified":[{"index":0,"status":"confirmed","adjustedDeduction":0.10,"reason":"Clearly visible in video"},{"index":1,"status":"rejected","reason":"Cannot see this fault — knees appear together"}],"overallAccuracy":"brief assessment of how accurate the original judging was","suggestedMissed":"any obvious deductions the original judge MISSED that you can see"}`;
-
-                try {
-                  const verifyRaw = await geminiGenerate(fileRef, verifyPrompt, apiKey, {
-                    maxOutputTokens: 8192,
-                    thinkingBudget: 16384,
-                    label: "verify",
-                  });
-                  const verifyMatch = verifyRaw.match(/\{[\s\S]*\}/);
-                  if (verifyMatch) {
-                    const verifyData = JSON.parse(verifyMatch[0]);
-                    const verified = verifyData.verified || [];
-                    let rejected = 0;
-                    let adjusted = 0;
-                    verified.forEach(v => {
-                      if (v.status === "rejected" && v.index >= 0 && v.index < deds.length) {
-                        deds[v.index]._rejected = true;
-                        rejected++;
-                      } else if (v.status === "confirmed" && v.adjustedDeduction != null && v.index >= 0 && v.index < deds.length) {
-                        const orig = deds[v.index].deduction;
-                        const adj = Math.abs(parseFloat(v.adjustedDeduction));
-                        if (!isNaN(adj) && adj !== orig && adj > 0 && adj <= 2.0) {
-                          deds[v.index].deduction = adj;
-                          adjusted++;
-                        }
-                      }
-                    });
-                    // Remove rejected deductions from the raw analysis JSON
-                    if (rejected > 0) {
-                      tempParsed.executionDeductions = deds.filter(d => !d._rejected);
-                      rawAnalysis = JSON.stringify(tempParsed);
-                      log.info("verify", `Pass 3: ${rejected} deductions rejected, ${adjusted} adjusted. ${tempParsed.executionDeductions.length} remain.`);
-                    } else {
-                      log.info("verify", `Pass 3: All ${deds.length} deductions confirmed. ${adjusted} adjusted.`);
-                    }
-                    if (verifyData.verificationNotes) {
-                      log.info("verify", `Notes: ${verifyData.verificationNotes}`);
-                    }
-                  }
-                } catch (verifyErr) {
-                  log.warn("verify", `Pass 3 failed (non-fatal): ${verifyErr.message}. Using Pass 2 results.`);
-                }
-              }
-            }
-          } catch (e) {
-            log.warn("verify", `Pass 3 parse error (non-fatal): ${e.message}`);
-          }
-        }
-
-        // Cleanup uploaded file (after all passes complete)
-        try { fetch(`https://generativelanguage.googleapis.com/v1beta/${fileRef.fileName}?key=${apiKey}`, { method: "DELETE" }); } catch {}
-
-        if (!rawAnalysis) throw lastErr || new Error("AI returned empty response");
-
-        setStatus("Processing scorecard...");
-        setProgress(85);
-        log.info("parser", `Response length: ${rawAnalysis.length}, preview: ${rawAnalysis.substring(0, 200)}`);
-
-        // Try JSON first (primary path — prompt requests JSON, responseMimeType enforces it)
-        try {
-          const jsonMatch = rawAnalysis.match(/\{[\s\S]*\}/);
-          if (jsonMatch) {
-            const parsed = validateResult(JSON.parse(jsonMatch[0]));
-            if (parsed.executionDeductions.length > 0 && parsed.finalScore != null) {
-              // Map topFixes to corrections on matching deductions
-              parsed.executionDeductions.forEach(d => {
-                if (!d.correction && parsed.topFixes.length > 0) {
-                  const fix = safeArray(parsed.topFixes).find(f => {
-                    const fn = safeStr(f?.name).toLowerCase().split(" ")[0];
-                    return fn && (safeStr(d.skill).toLowerCase().includes(fn) || safeStr(d.fault).toLowerCase().includes(fn));
-                  });
-                  if (fix) d.correction = `${safeStr(fix.name)}: ${safeStr(fix.drill)}`;
-                }
-                // Parse MM:SS timestamps to frameRef
-                let tsNum = 0;
-                const firstTs = safeStr(d.timestamp).split(/[,\-]/)[0].trim();
-                const tsParts = firstTs.split(":");
-                if (tsParts.length === 2) tsNum = parseInt(tsParts[0]) * 60 + parseInt(tsParts[1]);
-                else tsNum = parseFloat(firstTs) || 0;
-                if (!d.frameRef) d.frameRef = Math.min(6, Math.floor(tsNum / 12) + 1);
-              });
-
-              // Use validateResult's computed totals — always derived from actual deductions
-              const topDed = [...parsed.executionDeductions].sort((a, b) => b.deduction - a.deduction)[0];
-
-              result = {
-                startValue: 10.0,
-                executionDeductions: parsed.executionDeductions,
-                executionDeductionsTotal: parsed.executionDeductionsTotal,
-                artistryDeductionsTotal: parsed.artistryDeductionsTotal,
-                neutralDeductionsTotal: 0,
-                totalDeductions: parsed.totalDeductions,
-                finalScore: parsed.finalScore,
-                overallAssessment: safeStr(parsed.truthAnalysis).substring(0, 500) || "Championship-strict evaluation of this routine.",
-                truthAnalysis: safeStr(parsed.truthAnalysis),
-                strengths: parsed.strengths.length > 0 ? parsed.strengths : ["Routine completed without falls"],
-                areasForImprovement: parsed.areasForImprovement.length > 0 ? parsed.areasForImprovement
-                  : parsed.topFixes.length > 0 ? parsed.topFixes.map(f => safeStr(f?.name) + " — saves +" + safeNum(f?.saves, 0).toFixed(2) + " — " + safeStr(f?.drill)).filter(s => s.length > 10)
-                  : ["Review deductions"],
-                rawAnalysis,
-                bodyPositionNotes: parsed.executionDeductions.slice(0, 6).map((d, i) => ({
-                  frameRef: d.frameRef || i + 1,
-                  timestamp: d.timestamp || "0",
-                  observation: `${d.skill}: ${d.fault}`,
-                  annotation: `[${d.engine}] -${safeNum(d.deduction, 0).toFixed(2)}`,
-                  joints: null,
-                  faultJoints: [],
-                })),
-                biomechanics: parsed.biomechanics || null,
-                coachReport: parsed.coachReport || null,
-                athleteDevelopment: parsed.athleteDevelopment || null,
-                skillList: skillList.length > 0 ? skillList : null,
-                diagnostics: {
-                  threePassUsed: skillList.length > 0,
-                  skillsDetected: skillList.length,
-                  toePointIssues: parsed.executionDeductions.filter(d => d.engine === "TPM").length,
-                  kneeTensionIssues: parsed.executionDeductions.filter(d => d.engine === "KTM").length,
-                  splitDeficiency: parsed.executionDeductions.some(d => safeStr(d.fault).toLowerCase().includes("split")),
-                  landingDeductions: parsed.executionDeductions.filter(d => d.category === "landing").reduce((s, d) => s + d.deduction, 0),
-                  artistryDeductions: parsed.artistryDeductionsTotal,
-                  averageConfidence: parsed.executionDeductions.length > 0 ? Math.round(parsed.executionDeductions.reduce((s, d) => s + safeNum(d.confidence, 0.7), 0) / parsed.executionDeductions.length * 100) / 100 : 0,
-                  lowConfidenceCount: parsed.executionDeductions.filter(d => safeNum(d.confidence, 0.7) < 0.5).length,
-                  biggestMathWin: topDed ? "Fix " + topDed.skill + ": saves +" + topDed.deduction.toFixed(2) : "",
-                  consistencyNote: safeStr(parsed.truthAnalysis).substring(0, 200) || "See Truth Analysis",
-                },
-              };
-              if (Math.abs(calibrationBias) >= 0.05 && result.finalScore) {
-                const adjustedScore = Math.round((result.finalScore - calibrationBias) * 1000) / 1000;
-                const clampedScore = Math.max(0, Math.min(10, adjustedScore));
-                log.info("calibration", `Adjusting score: ${result.finalScore} → ${clampedScore} (bias: ${calibrationBias > 0 ? "+" : ""}${calibrationBias.toFixed(3)})`);
-                result.rawAiScore = result.finalScore;
-                result.calibrationBias = calibrationBias;
-                result.finalScore = clampedScore;
-                result.totalDeductions = Math.round((result.startValue - clampedScore) * 1000) / 1000;
-              }
-              log.info("parser", `Parsed as JSON. Score: ${result.finalScore}, ${parsed.executionDeductions.length} deductions`);
-            }
-          }
-        } catch(e) {
-          log.warn("parser", `JSON parse failed: ${e.message}`);
-          // Attempt to repair truncated JSON
-          try {
-            let repaired = rawAnalysis.trim();
-            // Strip markdown fences
-            repaired = repaired.replace(/^```json\s*/i, "").replace(/```\s*$/, "").trim();
-            // Find the start of the JSON object
-            const startIdx = repaired.indexOf("{");
-            if (startIdx >= 0) {
-              repaired = repaired.substring(startIdx);
-              // Close any open strings
-              const quoteCount = (repaired.match(/(?<!\\)"/g) || []).length;
-              if (quoteCount % 2 !== 0) repaired += '"';
-              // Close open brackets/braces
-              const opens = { "{": 0, "[": 0 };
-              const closes = { "}": "{", "]": "[" };
-              for (const ch of repaired) {
-                if (ch in opens) opens[ch]++;
-                if (ch in closes) opens[closes[ch]]--;
-              }
-              // Remove trailing comma or colon before closing
-              repaired = repaired.replace(/[,:\s]+$/, "");
-              for (let i = 0; i < opens["["]; i++) repaired += "]";
-              for (let i = 0; i < opens["{"]; i++) repaired += "}";
-              log.info("parser", `Attempting repaired JSON (added ${opens["["]} ] and ${opens["{"]} })`);
-              const parsed = validateResult(JSON.parse(repaired));
-              if (parsed.executionDeductions.length > 0) {
-                log.info("parser", `Repaired JSON succeeded: ${parsed.executionDeductions.length} deductions found`);
-                // Map topFixes to corrections on matching deductions
-                parsed.executionDeductions.forEach(d => {
-                  if (!d.correction && parsed.topFixes.length > 0) {
-                    const fix = safeArray(parsed.topFixes).find(f => {
-                      const fn = safeStr(f?.name).toLowerCase().split(" ")[0];
-                      return fn && (safeStr(d.skill).toLowerCase().includes(fn) || safeStr(d.fault).toLowerCase().includes(fn));
-                    });
-                    if (fix) d.correction = `${safeStr(fix.name)}: ${safeStr(fix.drill)}`;
-                  }
-                  let tsNum = 0;
-                  const firstTs = safeStr(d.timestamp).split(/[,\-]/)[0].trim();
-                  const tsParts = firstTs.split(":");
-                  if (tsParts.length === 2) tsNum = parseInt(tsParts[0]) * 60 + parseInt(tsParts[1]);
-                  else tsNum = parseFloat(firstTs) || 0;
-                  if (!d.frameRef) d.frameRef = Math.min(6, Math.floor(tsNum / 12) + 1);
-                });
-                // Use validateResult's computed totals
-                const topDed = [...parsed.executionDeductions].sort((a, b) => b.deduction - a.deduction)[0];
-                result = {
-                  startValue: 10.0,
-                  executionDeductions: parsed.executionDeductions,
-                  executionDeductionsTotal: parsed.executionDeductionsTotal,
-                  artistryDeductionsTotal: parsed.artistryDeductionsTotal,
-                  neutralDeductionsTotal: 0,
-                  totalDeductions: parsed.totalDeductions,
-                  finalScore: parsed.finalScore,
-                  overallAssessment: safeStr(parsed.truthAnalysis).substring(0, 500) || "Analysis from repaired truncated response — some data may be missing.",
-                  truthAnalysis: safeStr(parsed.truthAnalysis),
-                  strengths: parsed.strengths.length > 0 ? parsed.strengths : ["Routine analysis recovered from partial response"],
-                  areasForImprovement: parsed.areasForImprovement.length > 0 ? parsed.areasForImprovement : ["Review deductions"],
-                  rawAnalysis,
-                  bodyPositionNotes: parsed.executionDeductions.slice(0, 6).map((d, i) => ({
-                    frameRef: d.frameRef || i + 1, timestamp: d.timestamp || "0",
-                    observation: `${safeStr(d.skill)}: ${safeStr(d.fault)}`, annotation: `[${d.engine}] -${safeNum(d.deduction, 0).toFixed(2)}`,
-                    joints: null, faultJoints: [],
-                  })),
-                  biomechanics: parsed.biomechanics || null,
-                  coachReport: parsed.coachReport || null,
-                  athleteDevelopment: parsed.athleteDevelopment || null,
-                  diagnostics: {
-                    toePointIssues: parsed.executionDeductions.filter(d => d.engine === "TPM").length,
-                    kneeTensionIssues: parsed.executionDeductions.filter(d => d.engine === "KTM").length,
-                    splitDeficiency: parsed.executionDeductions.some(d => d.fault?.toLowerCase().includes("split")),
-                    landingDeductions: parsed.executionDeductions.filter(d => d.category === "landing").reduce((s, d) => s + d.deduction, 0),
-                    artistryDeductions: parsed.artistryDeductionsTotal,
-                    biggestMathWin: topDed ? "Fix " + topDed.skill + ": saves +" + topDed.deduction.toFixed(2) : "",
-                    consistencyNote: "Recovered from truncated response",
-                  },
-                  _repaired: true,
-                };
-                if (Math.abs(calibrationBias) >= 0.05 && result.finalScore) {
-                  const adjustedScore = Math.round((result.finalScore - calibrationBias) * 1000) / 1000;
-                  result.rawAiScore = result.finalScore;
-                  result.calibrationBias = calibrationBias;
-                  result.finalScore = Math.max(0, Math.min(10, adjustedScore));
-                  result.totalDeductions = Math.round((result.startValue - result.finalScore) * 1000) / 1000;
-                }
-                log.info("parser", `Repaired result. Score: ${result.finalScore}, ${parsed.executionDeductions.length} deductions`);
-              }
-            }
-          } catch(repairErr) {
-            log.warn("parser", `JSON repair also failed: ${repairErr.message}`);
-          }
-        }
-
-        // Fallback: Parse as text table
-        if (!result) {
-          const rawDeductions = parseGeminiTable(rawAnalysis);
-
-          if (rawDeductions.length === 0) {
-            throw new Error("No deductions found in Gemini response. First 300 chars: " + rawAnalysis.substring(0, 300));
-          }
-
-          // Group micro-faults into skills (merge within 3 seconds of each other)
-          const artistryDeds = rawDeductions.filter(d => d.category === "artistry");
-          const execRaw = rawDeductions.filter(d => d.category !== "artistry");
-          const sorted = [...execRaw].sort((a, b) => (parseFloat(a.timestamp)||0) - (parseFloat(b.timestamp)||0));
-          const grouped = [];
-          let current = null;
-
-          for (const d of sorted) {
-            const t = parseFloat(d.timestamp) || 0;
-            const ct = current ? (parseFloat(current.timestamp) || 0) : -999;
-            if (current && Math.abs(t - ct) <= 3) {
-              current.deduction = Math.round((current.deduction + d.deduction) * 100) / 100;
-              current.fault = current.fault + "; " + d.fault;
-              current.details = "Combined " + current.deduction.toFixed(2) + " across multiple faults on this skill";
-              if (d.skill.length > current.skill.length && !d.skill.toLowerCase().match(/landing|foot|arms|entry|exit/)) {
-                current.skill = d.skill;
-              }
-              if (current.deduction >= 0.30) current.severity = "large";
-              else if (current.deduction >= 0.15) current.severity = "medium";
-              if (d.deduction >= current.deduction * 0.5) current.engine = d.engine;
-            } else {
-              if (current) grouped.push(current);
-              current = { ...d };
-            }
-          }
-          if (current) grouped.push(current);
-          artistryDeds.forEach(a => grouped.push(a));
-
-          // Add corrections based on fault keywords
-          grouped.forEach(d => {
-            const f = d.fault.toLowerCase();
-            const corr = [];
-            if (f.includes("knee") && (f.includes("sep") || f.includes("cowboy"))) corr.push("Foam block between knees during tuck drills");
-            if (f.includes("flex") || f.includes("toe") || f.includes("foot") || f.includes("plantar")) corr.push("Theraband ankle exercises 3x20 daily");
-            if (f.includes("step") || f.includes("land") || f.includes("chest drop") || f.includes("chest")) corr.push("Stick drill: 20 reps off low block, freeze 3 seconds");
-            if (f.includes("split") || f.includes("leap") || f.includes("angle")) corr.push("Hold split at peak for a full beat");
-            if (f.includes("arm") || f.includes("elbow") || f.includes("bent")) corr.push("Wall handstand holds 3x30sec, locked elbows");
-            if (f.includes("align") || f.includes("vertical") || f.includes("pike") || f.includes("deviation")) corr.push("Partner-checked handstand shape holds");
-            if (f.match(/soft knee|17[0-5]|locked/)) corr.push("Releve walks focusing on locked knees");
-            if (f.includes("flat") || f.includes("releve") || f.includes("musicality")) corr.push("Practice choreo on high releve");
-            if (corr.length === 0) corr.push("Video review with coach targeting this skill");
-            d.correction = corr.join(". ");
-            d.ideal = "Full extension, pointed toes, locked knees, tight body line, controlled landing with chest up.";
-          });
-
-          const skillDeductions = grouped;
-          log.info("grouper", `Grouped into ${skillDeductions.length} skill cards`);
-
-          // Use Gemini's stated score — most accurate since it sees full video
-          const finalMatch = rawAnalysis.match(/Final\s*(?:Calculated\s*)?Score[:\s]*([\d.]+)/i);
-          const execMatch = rawAnalysis.match(/Total\s*Execution[^:\n]*[:\s]*-?([\d.]+)/i);
-          const artMatch = rawAnalysis.match(/Total\s*Artistry[^:\n]*[:\s]*-?([\d.]+)/i);
-
-          // Always compute totals from actual deductions — never trust AI text totals
-          const execTotal = Math.round(skillDeductions.filter(d => d.category !== "artistry").reduce((s, d) => s + d.deduction, 0) * 1000) / 1000;
-          const artTotal = Math.round(skillDeductions.filter(d => d.category === "artistry").reduce((s, d) => s + d.deduction, 0) * 1000) / 1000;
-          const totalDed = Math.round((execTotal + artTotal) * 1000) / 1000;
-          const finalScore = Math.max(0, Math.round((10.0 - totalDed) * 1000) / 1000);
-
-          // Extract narrative sections
-          const truthIdx = rawAnalysis.indexOf("TRUTH ANALYSIS");
-          const fixesIdx = rawAnalysis.indexOf("TOP 3 FIXES");
-          const strengthsIdx = rawAnalysis.indexOf("STRENGTHS");
-
-          const truthText = truthIdx >= 0
-            ? rawAnalysis.slice(truthIdx + 15, fixesIdx > 0 ? fixesIdx : truthIdx + 600).replace(/^[:\s\n]+/, "").trim() : "";
-          const fixesText = fixesIdx >= 0
-            ? rawAnalysis.slice(fixesIdx + 12, strengthsIdx > 0 ? strengthsIdx : fixesIdx + 400).replace(/^[:\s\n]+/, "").trim() : "";
-          const strengthsText = strengthsIdx >= 0
-            ? rawAnalysis.slice(strengthsIdx + 10).replace(/^[:\s\n]+/, "").trim() : "";
-
-          const improvements = fixesText
-            ? fixesText.split('\n').filter(l => l.trim().match(/^\d/)).slice(0, 3).map(l => l.replace(/^\d+[\.\)]\s*/, "").trim())
-            : ["Review deductions for improvement areas"];
-          const strengths = strengthsText
-            ? strengthsText.split('\n').filter(l => l.trim().length > 5).slice(0, 3).map(l => l.replace(/^[-\u2022]\s*/, "").trim())
-            : ["Routine completed without falls"];
-
-          const topDed = [...skillDeductions].sort((a, b) => b.deduction - a.deduction)[0];
-
-          result = {
-            startValue: 10.0,
-            executionDeductions: skillDeductions,
-            executionDeductionsTotal: execTotal,
-            artistryDeductionsTotal: artTotal,
-            neutralDeductionsTotal: 0,
-            totalDeductions: totalDed,
-            finalScore,
-            overallAssessment: truthText.substring(0, 500) || "Championship-strict evaluation of this routine.",
-            truthAnalysis: truthText,
-            strengths,
-            areasForImprovement: improvements,
-            rawAnalysis,
-            diagnostics: {
-              toePointIssues: skillDeductions.filter(d => d.engine === "TPM").length,
-              kneeTensionIssues: skillDeductions.filter(d => d.engine === "KTM").length,
-              splitDeficiency: skillDeductions.some(d => d.fault?.toLowerCase().includes("split")),
-              landingDeductions: skillDeductions.filter(d => d.category === "landing").reduce((s, d) => s + d.deduction, 0),
-              artistryDeductions: artTotal,
-              biggestMathWin: topDed ? "Fix " + topDed.skill + ": saves +" + topDed.deduction.toFixed(2) : (improvements[0] || ""),
-              consistencyNote: truthText.substring(0, 200) || "See Truth Analysis",
-            },
-          };
-          log.info("pipeline", `Complete. Score: ${result.finalScore}, Skills: ${skillDeductions.length}`);
-        }
-
-      } catch (err) {
-        geminiError = err.message || String(err);
-        log.error("gemini", "Pipeline failed: " + geminiError);
-        setStatus("Video analysis error...");
-        setProgress(50);
       }
-    } else if (!apiKey) {
-      geminiError = "No API key configured";
-    } else if (!uploadData.video) {
-      geminiError = "No video file available";
+
+      // Cleanup uploaded file
+      try { fetch(`https://generativelanguage.googleapis.com/v1beta/${fileRef.fileName}?key=${apiKey}`, { method: "DELETE" }); } catch {}
+
+      if (!rawResponse) throw new Error("Gemini returned empty response.");
+
+      // ── Parse Gemini response ────────────────────────────────────
+      setStatus("Computing score...");
+      setProgress(88);
+
+      let parsedSkills = [];
+      try {
+        const match = rawResponse.match(/\{[\s\S]*\}/);
+        if (match) {
+          const parsed = JSON.parse(match[0]);
+          parsedSkills = safeArray(parsed.skills).filter(s => s.skill && s.deduction !== undefined);
+        }
+      } catch (e) {
+        log.warn("parse", `JSON parse failed: ${e.message}. Attempting repair...`);
+        try {
+          let rep = rawResponse.replace(/^```json\s*/i,"").replace(/```\s*$/,"").trim();
+          const si = rep.indexOf("{"); if (si > 0) rep = rep.substring(si);
+          let braces = 0, brackets = 0;
+          for (const ch of rep) {
+            if (ch==="{") braces++;   if (ch==="}") braces--;
+            if (ch==="[") brackets++; if (ch==="]") brackets--;
+          }
+          if (brackets > 0) rep += "]".repeat(brackets);
+          if (braces   > 0) rep += "}".repeat(braces);
+          const parsed = JSON.parse(rep);
+          parsedSkills = safeArray(parsed.skills).filter(s => s.skill && s.deduction !== undefined);
+          log.info("parse", `Repaired — ${parsedSkills.length} skills recovered`);
+        } catch (re) {
+          throw new Error(`Could not parse response: ${re.message}. Raw: ${rawResponse.substring(0,300)}`);
+        }
+      }
+
+      if (parsedSkills.length === 0) {
+        throw new Error("No skills found in response. Raw: " + rawResponse.substring(0,300));
+      }
+
+      // ── CODE COMPUTES THE SCORE — not Gemini ────────────────────
+      const processedSkills = parsedSkills.map((s, idx) => {
+        // Clamp to nearest valid 0.05 increment
+        const raw = Math.abs(parseFloat(s.deduction) || 0);
+        const deduction = Math.round(Math.min(raw, 2.0) / 0.05) * 0.05;
+        const sec = parseTimestampToSec(s.timestamp || "0:00");
+        const isGlobal  = (s.timestamp || "").toLowerCase() === "global";
+        const isLanding = /^landing/i.test(s.skill);
+        const isDance   = /artistry|choreo|presentation|dance|rhythm|space|musicality/i.test(s.skill);
+        const category  = isDance || isGlobal ? "artistry" : "execution";
+        const severity  = deduction >= 0.50 ? "fall"
+          : deduction >= 0.30 ? "veryLarge"
+          : deduction >= 0.20 ? "large"
+          : deduction >= 0.10 ? "medium"
+          : "small";
+
+        return {
+          id:             `skill_${idx}`,
+          index:          idx + 1,
+          skill:          safeStr(s.skill),
+          timestamp:      s.timestamp || "0:00",
+          timestampSec:   sec,
+          type:           isLanding ? "landing" : isDance ? "dance" : "acro",
+          category,
+          deduction,
+          reason:         safeStr(s.reason),
+          isGlobal,
+          // Legacy fields for existing tabs
+          fault:          safeStr(s.reason),
+          engine:         isLanding ? "Landing" : isDance ? "General" : "KTM",
+          severity,
+          confidence:     0.92,
+          correction:     null,
+          skeleton:       null,
+          // Frame capture — populated later by VideoReviewPlayer
+          frameDataUrl:   null,
+          skeletonJoints: null,
+          // Graded skills view compatibility
+          grade:          deduction === 0 ? "A" : deduction <= 0.05 ? "A-" : deduction <= 0.10 ? "B" : deduction <= 0.20 ? "C" : deduction <= 0.30 ? "D+" : "F",
+          gradeDeduction: deduction,
+          gradeColor:     deduction === 0 ? "#22C55E" : deduction <= 0.05 ? "#4ADE80" : deduction <= 0.10 ? "#F59E0B" : deduction <= 0.20 ? "#F97316" : "#EF4444",
+          strength:       deduction === 0 ? "Clean execution." : null,
+          coachNote:      null,
+        };
+      });
+
+      // ── Sum deductions — only place math happens ─────────────────
+      const execSkills = processedSkills.filter(s => s.category !== "artistry");
+      const artSkills  = processedSkills.filter(s => s.category === "artistry");
+      const execTotal  = Math.round(execSkills.reduce((sum, s) => sum + s.deduction, 0) * 1000) / 1000;
+      const artTotal   = Math.round(artSkills.reduce( (sum, s) => sum + s.deduction, 0) * 1000) / 1000;
+      const totalDed   = Math.round((execTotal + artTotal) * 1000) / 1000;
+      const finalScore = Math.max(0, Math.round((10.0 - totalDed) * 1000) / 1000);
+
+      log.info("score", `FINAL: ${finalScore} | Deductions: ${totalDed} | Exec: ${execTotal} | Artistry: ${artTotal} | Skills: ${processedSkills.length} | Level: ${profile.level}`);
+
+      // Top issues and strengths
+      const withDeds   = [...processedSkills].filter(s => s.deduction > 0).sort((a,b) => b.deduction - a.deduction);
+      const cleanSkills = processedSkills.filter(s => s.deduction === 0);
+
+      const topFixes = withDeds.slice(0,3).map(s => ({
+        name:  s.skill,
+        saves: s.deduction,
+        drill: s.reason?.split(".")[0] || s.skill,
+      }));
+
+      const strengths = cleanSkills.map(s => `${s.skill}: Clean.`);
+
+      const bench = SCORE_BENCHMARKS[profile.level];
+      const benchContext = bench
+        ? `${profile.level} ${uploadData.event} typical range: ${bench.low}–${bench.high} (avg ${bench.avg}).`
+        : "";
+
+      return {
+        // ── Core score ──
+        startValue:               10.0,
+        finalScore,
+        totalDeductions:          totalDed,
+        executionDeductionsTotal: execTotal,
+        artistryDeductionsTotal:  artTotal,
+        neutralDeductionsTotal:   0,
+
+        // ── Skill list — drives both Skills tab and legacy tabs ──
+        gradedSkills:        processedSkills,
+        executionDeductions: processedSkills.filter(s => s.deduction > 0).map(s => ({
+          timestamp:  s.timestamp,
+          skill:      s.skill,
+          deduction:  s.deduction,
+          fault:      s.reason,
+          engine:     s.engine,
+          category:   s.category,
+          severity:   s.severity,
+          confidence: s.confidence,
+          skeleton:   null,
+          correction: null,
+        })),
+
+        // ── Summaries ──
+        overallAssessment: `${profile.level} ${uploadData.event} — ${processedSkills.length} skills judged. ${benchContext}`,
+        truthAnalysis:     `${processedSkills.length} skills evaluated at ${profile.level} standard. ${withDeds[0] ? `Biggest deduction: ${withDeds[0].skill} (-${withDeds[0].deduction.toFixed(2)}): ${withDeds[0].reason}` : ""}`,
+        strengths:         strengths.length > 0 ? strengths : ["Routine completed without falls."],
+        areasForImprovement: withDeds.slice(0,4).map(s => `${s.skill}: ${s.reason}`),
+        topFixes,
+
+        // ── Diagnostics ──
+        diagnostics: {
+          directJudging:     true,
+          skillsEvaluated:   processedSkills.length,
+          levelJudged:       profile.level,
+          eventJudged:       uploadData.event,
+          splitMinRequired:  (() => {
+            const lv = profile.level; const xc = profile.levelCategory === "xcel";
+            return xc ? (lv.includes("Bronze")||lv.includes("Silver")?90:lv.includes("Gold")?120:lv.includes("Platinum")?150:180)
+              : (["Level 1","Level 2","Level 3","Level 4"].includes(lv)?90:lv==="Level 5"?120:(lv==="Level 6"||lv==="Level 7")?150:180);
+          })(),
+          landingDeductions: execSkills.filter(s => s.type==="landing").reduce((sum,s) => sum+s.deduction, 0),
+          artistryDeductions: artTotal,
+          biggestIssue:      withDeds[0] ? `${withDeds[0].skill}: ${withDeds[0].reason}` : "",
+          averageGrade:      computeAverageGrade(processedSkills),
+        },
+
+        // ── Pass-through ──
+        frames:   extractedFrames,
+        event:    uploadData.event,
+        level:    profile.level,
+        videoUrl: uploadData.videoUrl,
+        rawResponse,
+      };
+
+    } catch (err) {
+      log.error("pipeline", `Analysis failed: ${err.message}`);
+      throw err;
     }
+  }, [buildJudgingPrompt, uploadVideoToGemini, geminiGenerate, uploadData, profile]);
 
-    if (!result && extractedFrames.length > 0 && !apiKey) {
-      throw new Error("API key error. Please try again or check Settings → Video Analysis Engine.");
-    }
 
-    if (!result && geminiError) {
-      // Gemini failed — show the actual error, don't mask it with a bad fallback
-      throw new Error("Analysis failed: " + geminiError + ". Try again or check your API key in Settings.");
-    }
 
-    if (!result) {
-      throw new Error(geminiError || "No analysis method available");
-    }
 
-    result.frames = extractedFrames;
-    result.event = uploadData.event;
-    result.level = profile.level;
-    result.videoUrl = uploadData.videoUrl;
-
-    // Enhanced diagnostic summary
-    log.info("pipeline", `Analysis complete — Score: ${result.finalScore}, Deductions: ${result.executionDeductions?.length || 0}, Frames: ${extractedFrames.length}, Three-pass: ${result.diagnostics?.threePassUsed}, Skills detected: ${result.diagnostics?.skillsDetected || 0}, Avg confidence: ${result.diagnostics?.averageConfidence || "N/A"}, Low confidence filtered: ${result.diagnostics?.lowConfidenceCount || 0}`);
-    console.log("[pipeline-result]", { score: result.finalScore, deductions: result.executionDeductions?.length, frames: extractedFrames.length, diagnostics: result.diagnostics });
-
-    return result;
-  }, [buildJudgingPrompt, buildSimplifiedPrompt, buildSkillDetectionPrompt, uploadVideoToGemini, geminiGenerate, analyzeWithGeminiVideo, uploadData, profile]);
   useEffect(() => {
     if (hasStarted.current) return;
     hasStarted.current = true;
@@ -4084,11 +3636,74 @@ RESPOND WITH VALID JSON ONLY:
 
 // ─── VIDEO REVIEW PLAYER ────────────────────────────────────────────
 // ── Client-side deduction grouper ──
+// ─── SKELETON CANVAS — SVG overlay for live MediaPipe joints ─────────────────
+// Renders as an absolutely positioned SVG over an image/canvas.
+// joints: { name: { x, y } } — normalized 0-1 coordinates.
+function SkeletonCanvas({ joints }) {
+  if (!joints) return null;
+
+  const CONNECTIONS = [
+    ["leftShoulder", "rightShoulder"],
+    ["leftShoulder", "leftElbow"], ["leftElbow", "leftWrist"],
+    ["rightShoulder", "rightElbow"], ["rightElbow", "rightWrist"],
+    ["leftShoulder", "leftHip"], ["rightShoulder", "rightHip"],
+    ["leftHip", "rightHip"],
+    ["leftHip", "leftKnee"], ["leftKnee", "leftAnkle"],
+    ["rightHip", "rightKnee"], ["rightKnee", "rightAnkle"],
+  ];
+
+  const JOINT_COLOR = {
+    leftShoulder: "#C4982A", rightShoulder: "#C4982A",
+    leftElbow: "#E8C35A",   rightElbow: "#E8C35A",
+    leftWrist: "#F5E6B8",   rightWrist: "#F5E6B8",
+    leftHip: "#3B82F6",     rightHip: "#3B82F6",
+    leftKnee: "#60A5FA",    rightKnee: "#60A5FA",
+    leftAnkle: "#93C5FD",   rightAnkle: "#93C5FD",
+  };
+
+  return (
+    <svg
+      viewBox="0 0 1 1"
+      preserveAspectRatio="none"
+      style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", pointerEvents: "none" }}
+    >
+      {/* Bones */}
+      {CONNECTIONS.map(([a, b]) => {
+        const p1 = joints[a]; const p2 = joints[b];
+        if (!p1 || !p2) return null;
+        return (
+          <line key={`${a}-${b}`}
+            x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y}
+            stroke="rgba(196,152,42,0.85)" strokeWidth="0.008" strokeLinecap="round" />
+        );
+      })}
+      {/* Joints */}
+      {Object.entries(joints).filter(([n]) => JOINT_COLOR[n]).map(([name, j]) => (
+        <g key={name}>
+          <circle cx={j.x} cy={j.y} r="0.014" fill={JOINT_COLOR[name] || "#fff"} />
+          <circle cx={j.x} cy={j.y} r="0.005" fill="rgba(255,255,255,0.9)" />
+        </g>
+      ))}
+    </svg>
+  );
+}
+
 function VideoReviewPlayer({ videoUrl: propUrl, result }) {
   const videoRef = useRef(null);
+  const captureCanvasRef = useRef(null);
   const [activeIdx, setActiveIdx] = useState(-1);
   const [showSkeleton, setShowSkeleton] = useState(true);
   const [showCompare, setShowCompare] = useState(true);
+  const [capturedFrame, setCapturedFrame] = useState(null);   // on-demand frame grab
+  const [capturingFrame, setCapturingFrame] = useState(false);
+  const [skelData, setSkelData] = useState(null);             // pose joints from MediaPipe
+
+  // Ensure video loads when URL changes
+  React.useEffect(() => {
+    const v = videoRef.current;
+    if (!v || !propUrl) return;
+    v.load();
+  }, [propUrl]);
 
   const videoUrl = propUrl || result.videoUrl;
   const deds = result.executionDeductions || [];
@@ -4108,16 +3723,108 @@ function VideoReviewPlayer({ videoUrl: propUrl, result }) {
   const sorted = [...deds].sort((a, b) => (tsToSec(a.timestamp) || 0) - (tsToSec(b.timestamp) || 0));
   const fmt = (t) => !t || !isFinite(t) ? "0:00" : `${Math.floor(t/60)}:${String(Math.floor(t%60)).padStart(2,"0")}`;
 
-  const jumpTo = (i) => {
+  const jumpTo = async (i) => {
     if (i < 0 || i >= sorted.length) return;
     setActiveIdx(i);
+    setCapturedFrame(null);
+    setSkelData(null);
+
     const v = videoRef.current;
-    if (v) {
-      const sec = tsToSec(sorted[i].timestamp);
-      if (isFinite(sec)) {
-        v.currentTime = Math.max(0, sec - 1);
-        v.pause();
+    if (!v) return;
+
+    const sec = tsToSec(sorted[i].timestamp);
+    const seekSec = isFinite(sec) ? Math.max(0, sec - 0.5) : 0;
+
+    // 1 — Seek the visible review video
+    v.pause();
+    v.currentTime = seekSec;
+
+    // 2 — Capture frame after seeked event
+    setCapturingFrame(true);
+    const captureFrame = () => {
+      try {
+        const canvas = captureCanvasRef.current || document.createElement("canvas");
+        const vw = v.videoWidth || 640;
+        const vh = v.videoHeight || 480;
+        canvas.width = Math.min(vw, 960);
+        canvas.height = Math.round(canvas.width * (vh / vw));
+        const ctx = canvas.getContext("2d", { willReadFrequently: true });
+        ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.90);
+
+        // Check it's not blank
+        const px = ctx.getImageData(canvas.width >> 1, canvas.height >> 1, 1, 1).data;
+        const isBlank = px[0] < 5 && px[1] < 5 && px[2] < 5;
+
+        if (!isBlank) {
+          setCapturedFrame(dataUrl);
+          // 3 — Run MediaPipe on canvas for skeleton
+          runSkeletonDetection(canvas).then(j => {
+            if (j) setSkelData(j);
+          });
+        }
+      } catch (e) {
+        console.warn("[VideoReviewPlayer] frame capture failed:", e.message);
+      } finally {
+        setCapturingFrame(false);
       }
+    };
+
+    const onSeeked = () => { v.removeEventListener("seeked", onSeeked); captureFrame(); };
+    const timeout = setTimeout(() => { v.removeEventListener("seeked", onSeeked); captureFrame(); }, 2000);
+    v.addEventListener("seeked", onSeeked, { once: true });
+
+    // Fallback: capture even if seeked doesn't fire (some mobile browsers)
+    setTimeout(() => {
+      clearTimeout(timeout);
+      captureFrame();
+    }, 1500);
+  };
+
+  // ── MediaPipe skeleton detection on a canvas ─────────────────────────────
+  const mid = (a, b) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, visibility: Math.min(a.visibility || 0, b.visibility || 0) });
+
+  const runSkeletonDetection = async (canvas) => {
+    try {
+      const { PoseLandmarker, FilesetResolver } = await import("@mediapipe/tasks-vision");
+      const vision = await FilesetResolver.forVisionTasks(
+        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
+      );
+      const landmarker = await PoseLandmarker.createFromOptions(vision, {
+        baseOptions: {
+          modelAssetPath: "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
+          delegate: "GPU",
+        },
+        runningMode: "IMAGE",
+        numPoses: 1,
+      });
+      const result = landmarker.detect(canvas);
+      const raw = result.landmarks?.[0];
+      if (!raw) return null;
+
+      const JOINT_MAP = {
+        leftShoulder: 11, rightShoulder: 12, leftElbow: 13, rightElbow: 14,
+        leftWrist: 15, rightWrist: 16, leftHip: 23, rightHip: 24,
+        leftKnee: 25, rightKnee: 26, leftAnkle: 27, rightAnkle: 28,
+      };
+      const joints = {};
+      for (const [name, idx] of Object.entries(JOINT_MAP)) {
+        const lm = raw[idx];
+        if (lm && (lm.visibility || 0) > 0.3) {
+          joints[name] = { x: lm.x, y: lm.y, visibility: lm.visibility };
+        }
+      }
+      // Midpoints
+      if (joints.leftHip && joints.rightHip) joints.hip = mid(joints.leftHip, joints.rightHip);
+      if (joints.leftShoulder && joints.rightShoulder) joints.shoulder = mid(joints.leftShoulder, joints.rightShoulder);
+      if (joints.leftKnee && joints.rightKnee) joints.knee = mid(joints.leftKnee, joints.rightKnee);
+      if (joints.leftAnkle && joints.rightAnkle) joints.ankle = mid(joints.leftAnkle, joints.rightAnkle);
+      if (joints.leftElbow && joints.rightElbow) joints.elbow = mid(joints.leftElbow, joints.rightElbow);
+      landmarker.close();
+      return joints;
+    } catch (e) {
+      console.warn("[skeleton]", e.message);
+      return null;
     }
   };
 
@@ -4125,20 +3832,24 @@ function VideoReviewPlayer({ videoUrl: propUrl, result }) {
     const v = videoRef.current;
     if (!v || activeIdx < 0) return;
     const sec = tsToSec(sorted[activeIdx].timestamp);
-    if (!isFinite(sec)) return;
-    v.currentTime = Math.max(0, sec - 1);
+    const start = isFinite(sec) ? Math.max(0, sec - 0.5) : 0;
+    v.currentTime = start;
     v.playbackRate = 0.25;
-    v.play().catch(()=>{});
-    setTimeout(() => { if (v) { v.pause(); v.playbackRate = 1; } }, 4000);
+    v.play().catch(() => {});
+    setTimeout(() => { if (v) { v.pause(); v.playbackRate = 1; } }, 5000);
   };
 
   const ad = activeIdx >= 0 ? sorted[activeIdx] : null;
   const adColor = ad ? (DEDUCTION_SCALE[ad.severity]?.color || "#f59e0b") : "transparent";
-  const adFrame = ad ? result.frames?.find((f, i) => ad.frameRef === i + 1) : null;
-  // Skeleton: prefer skill-level skeleton data from AI, fall back to bodyPositionNotes
+
+  // Frame: prefer live capture, fall back to pre-captured result.frames match
+  const adFrameFromResult = ad ? result.frames?.find((f, i) => ad.frameRef === i + 1) : null;
+  const displayFrame = capturedFrame || adFrameFromResult?.dataUrl || null;
+
+  // Skeleton: prefer live MediaPipe joints, fall back to AI-returned skeleton
   const adSkeleton = ad?.skeleton || null;
   const adNote = ad ? result.bodyPositionNotes?.find(n => n.frameRef === ad.frameRef) : null;
-  const skelJoints = adSkeleton?.joints || adNote?.joints || null;
+  const skelJoints = skelData || adSkeleton?.joints || adNote?.joints || null;
   const skelFaults = adSkeleton?.faultJoints || adNote?.faultJoints || [];
   const skelAngles = adSkeleton?.angles || [];
   const correctRef = ad ? getCorrectFormRef(ad.skill, ad.subFaults?.[0]?.fault || ad.fault) : null;
@@ -4165,7 +3876,8 @@ function VideoReviewPlayer({ videoUrl: propUrl, result }) {
         boxShadow: "0 4px 24px rgba(0,0,0,0.6)",
       }}>
         <video ref={videoRef} src={videoUrl} controls controlsList="nodownload" playsInline
-          webkit-playsinline="" muted preload="auto"
+          webkit-playsinline="" preload="auto"
+          onLoadedMetadata={() => { if (videoRef.current) videoRef.current.pause(); }}
           style={{ width: "100%", display: "block", maxHeight: 400 }} />
         {ad && (
           <div style={{
@@ -4219,20 +3931,32 @@ function VideoReviewPlayer({ videoUrl: propUrl, result }) {
           {/* Frame capture with skeleton overlay + perfect form reference */}
           {showCompare && (
             <div style={{ marginTop: 10 }}>
-              {/* Actual frame — full width with skeleton overlay */}
+              {/* Actual frame — live capture with skeleton overlay */}
               <div style={{ borderRadius: 12, overflow: "hidden", position: "relative", border: `2px solid ${adColor}40`, background: "#000", marginBottom: 8 }}>
-                {adFrame ? (
-                  <img src={adFrame.dataUrl} alt="Deduction" style={{ width: "100%", display: "block" }} />
+                {capturingFrame ? (
+                  <div style={{ width: "100%", aspectRatio: "16/9", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 8 }}>
+                    <div style={{ width: 28, height: 28, borderRadius: "50%", border: "2px solid rgba(196,152,42,0.2)", borderTopColor: "#C4982A", animation: "rotate 1s linear infinite" }} />
+                    <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>Capturing frame…</span>
+                  </div>
+                ) : displayFrame ? (
+                  <div style={{ position: "relative" }}>
+                    <img src={displayFrame} alt="Deduction frame" style={{ width: "100%", display: "block" }} />
+                    {showSkeleton && skelJoints && (
+                      <SkeletonCanvas joints={skelJoints} />
+                    )}
+                  </div>
                 ) : (
-                  <div style={{ width: "100%", aspectRatio: "16/9", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <span style={{ fontSize: 13, color: "rgba(255,255,255,0.3)" }}>Frame {ad.frameRef} — tap a deduction to see frame</span>
+                  <div style={{ width: "100%", aspectRatio: "16/9", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 6 }}>
+                    <span style={{ fontSize: 20 }}>🎬</span>
+                    <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", textAlign: "center", padding: "0 16px" }}>
+                      Tap a skill below to capture frame
+                    </span>
                   </div>
                 )}
-                {showSkeleton && skelJoints && (
-                  <SkeletonOverlay skeleton={{ joints: skelJoints, faultJoints: skelFaults, angles: skelAngles }} />
+                {displayFrame && !capturingFrame && (
+                  <div style={{ position: "absolute", top: 8, left: 8, background: "rgba(239,68,68,0.9)", padding: "3px 10px", borderRadius: 6, fontSize: 11, fontWeight: 700, color: "white" }}>✗ ACTUAL</div>
                 )}
-                <div style={{ position: "absolute", top: 8, left: 8, background: "rgba(239,68,68,0.9)", padding: "3px 10px", borderRadius: 6, fontSize: 11, fontWeight: 700, color: "white" }}>✗ ACTUAL</div>
-                {ad.fault && (
+                {ad?.fault && displayFrame && (
                   <div style={{ position: "absolute", bottom: 8, left: 8, right: 8, background: "rgba(0,0,0,0.8)", padding: "6px 10px", borderRadius: 6, fontSize: 11, color: "rgba(255,255,255,0.8)", lineHeight: 1.4 }}>
                     {ad.fault}
                   </div>
@@ -4346,6 +4070,295 @@ function VideoReviewPlayer({ videoUrl: propUrl, result }) {
     </div>
   );
 }
+// ─── GRADE DISPLAY HELPERS ──────────────────────────────────────────────────
+
+const GRADE_COLOR = {
+  "A+":"#22C55E","A":"#22C55E","A-":"#4ADE80",
+  "B+":"#86EFAC","B":"#F59E0B","B-":"#F59E0B",
+  "C+":"#FB923C","C":"#F97316","C-":"#EF4444",
+  "D+":"#DC2626","D":"#DC2626","F":"#7C3AED",
+};
+
+const GRADE_LABEL_MAP = {
+  "A+":"Perfect","A":"Excellent","A-":"Very Good",
+  "B+":"Good+","B":"Good","B-":"Good−",
+  "C+":"Average+","C":"Average","C-":"Below Avg",
+  "D+":"Needs Work","D":"Poor","F":"Fall",
+};
+
+function GradeCircle({ grade, size = 52 }) {
+  const color = GRADE_COLOR[grade] || "#C4982A";
+  return (
+    <div style={{ width: size, height: size, borderRadius: "50%", flexShrink: 0,
+      border: `2.5px solid ${color}`, background: `${color}14`,
+      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+    }}>
+      <div style={{ fontSize: size * 0.30, fontWeight: 900, color,
+        fontFamily: "'Space Mono', monospace", lineHeight: 1 }}>
+        {grade}
+      </div>
+      <div style={{ fontSize: size * 0.13, color: `${color}AA`, fontWeight: 600, marginTop: 1 }}>
+        {GRADE_LABEL_MAP[grade] || ""}
+      </div>
+    </div>
+  );
+}
+
+// ─── GRADED SKILL CARD ───────────────────────────────────────────────────────
+
+function GradedSkillCard({ skill, onSeek }) {
+  const [expanded, setExpanded] = useState(false);
+  const color   = GRADE_COLOR[skill.grade] || "#C4982A";
+  const isClean = !skill.fault || skill.gradeDeduction === 0;
+
+  return (
+    <div style={{
+      background: "rgba(255,255,255,0.03)",
+      border: `1px solid ${expanded ? color + "40" : "rgba(255,255,255,0.06)"}`,
+      borderRadius: 14, marginBottom: 10, overflow: "hidden", transition: "border-color 0.2s",
+    }}>
+      {/* ── Header ── */}
+      <button onClick={() => setExpanded(v => !v)}
+        style={{ width: "100%", textAlign: "left", padding: "14px 16px",
+          background: "transparent", border: "none", cursor: "pointer",
+          display: "flex", alignItems: "center", gap: 14 }}>
+
+        <GradeCircle grade={skill.grade} size={48} />
+
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: "#E2E8F0", marginBottom: 3 }}>
+            {skill.skill}
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)",
+              fontFamily: "'Space Mono', monospace" }}>{skill.timestamp}</span>
+            <span style={{ fontSize: 10, fontWeight: 600, padding: "1px 8px", borderRadius: 10,
+              background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.35)",
+              textTransform: "uppercase" }}>{skill.type}</span>
+          </div>
+          {!expanded && skill.fault && (
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginTop: 4,
+              lineHeight: 1.4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {skill.fault}
+            </div>
+          )}
+        </div>
+
+        {/* Deduction or clean badge */}
+        <div style={{ textAlign: "right", flexShrink: 0 }}>
+          {isClean ? (
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#22C55E", padding: "4px 10px",
+              borderRadius: 20, background: "rgba(34,197,94,0.1)",
+              border: "1px solid rgba(34,197,94,0.2)" }}>
+              ✓ Clean
+            </div>
+          ) : (
+            <div style={{ fontSize: 18, fontWeight: 800, color,
+              fontFamily: "'Space Mono', monospace" }}>
+              -{(skill.gradeDeduction || 0).toFixed(2)}
+            </div>
+          )}
+        </div>
+
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"
+          stroke="rgba(255,255,255,0.3)" strokeWidth="1.8"
+          style={{ transform: expanded ? "rotate(180deg)" : "none",
+            transition: "transform 0.2s", flexShrink: 0 }}>
+          <path d="M2 5l5 4 5-4"/>
+        </svg>
+      </button>
+
+      {/* ── Expanded detail ── */}
+      {expanded && (
+        <div style={{ padding: "0 16px 16px" }}>
+
+          {/* Jump to timestamp */}
+          {onSeek && (
+            <button onClick={() => onSeek(skill.timestampSec || 0)}
+              style={{ display: "flex", alignItems: "center", gap: 6,
+                padding: "7px 14px", borderRadius: 8, marginBottom: 14,
+                background: "rgba(196,152,42,0.1)",
+                border: "1px solid rgba(196,152,42,0.2)",
+                color: "#C4982A", fontSize: 12, fontWeight: 600,
+                cursor: "pointer", fontFamily: "'Outfit', sans-serif" }}>
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+                <path d="M3 2l7 4-7 4V2z"/>
+              </svg>
+              Jump to {skill.timestamp}
+            </button>
+          )}
+
+          {/* Fault */}
+          {skill.fault && (
+            <div style={{ marginBottom: 12, padding: "10px 14px", borderRadius: 10,
+              background: `${color}08`, borderLeft: `3px solid ${color}`,
+              border: `1px solid ${color}25` }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color,
+                letterSpacing: 1, textTransform: "uppercase", marginBottom: 4 }}>
+                Fault Observed
+              </div>
+              <div style={{ fontSize: 13, color: "#E2E8F0", lineHeight: 1.6 }}>
+                {skill.fault}
+              </div>
+            </div>
+          )}
+
+          {/* Strength */}
+          {skill.strength && (
+            <div style={{ marginBottom: 12, padding: "10px 14px", borderRadius: 10,
+              background: "rgba(34,197,94,0.05)",
+              border: "1px solid rgba(34,197,94,0.2)",
+              borderLeft: "3px solid #22C55E" }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "#22C55E",
+                letterSpacing: 1, textTransform: "uppercase", marginBottom: 4 }}>
+                Strength
+              </div>
+              <div style={{ fontSize: 13, color: "#E2E8F0", lineHeight: 1.6 }}>
+                {skill.strength}
+              </div>
+            </div>
+          )}
+
+          {/* Coach note */}
+          {skill.coachNote && (
+            <div style={{ padding: "8px 12px", borderRadius: 8,
+              background: "rgba(59,130,246,0.06)",
+              border: "1px solid rgba(59,130,246,0.15)" }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "#3B82F6",
+                letterSpacing: 1, textTransform: "uppercase", marginBottom: 3 }}>
+                Coach Note
+              </div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", lineHeight: 1.6 }}>
+                {skill.coachNote}
+              </div>
+            </div>
+          )}
+
+          {/* Clean skill confirmation */}
+          {isClean && (
+            <div style={{ padding: "10px 14px", borderRadius: 10,
+              background: "rgba(34,197,94,0.06)",
+              border: "1px solid rgba(34,197,94,0.2)",
+              display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ fontSize: 20 }}>✓</span>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#22C55E" }}>
+                  Clean execution — no deduction
+                </div>
+                {skill.strength && (
+                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginTop: 2 }}>
+                    {skill.strength}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── GRADED SKILLS VIEW ──────────────────────────────────────────────────────
+// Primary results tab: one card per skill, grade badge, fault if any.
+
+function GradedSkillsView({ result, videoUrl }) {
+  const videoRef   = useRef(null);
+  const skills     = result.gradedSkills || [];
+  const cleanCount = skills.filter(s => !s.fault || s.gradeDeduction === 0).length;
+  const dedCount   = skills.filter(s => s.fault  && s.gradeDeduction  > 0).length;
+
+  // Best grade in the routine
+  const RANK = {"A+":12,"A":11,"A-":10,"B+":9,"B":8,"B-":7,"C+":6,"C":5,"C-":4,"D+":3,"D":2,"F":1};
+  const bestGrade = skills.reduce(
+    (best, s) => (RANK[s.grade] || 0) > (RANK[best] || 0) ? s.grade : best, "F"
+  );
+
+  const handleSeek = (sec) => {
+    const v = videoRef.current;
+    if (!v) return;
+    v.currentTime = Math.max(0, sec - 0.3);
+    v.pause();
+  };
+
+  if (skills.length === 0) {
+    return (
+      <div style={{ padding: "40px 0", textAlign: "center" }}>
+        <div style={{ fontSize: 36, marginBottom: 12 }}>🤸</div>
+        <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 6 }}>
+          No graded skills yet
+        </div>
+        <div style={{ fontSize: 13, color: "rgba(255,255,255,0.4)" }}>
+          Re-analyze the routine to use the new grading system.
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      {/* ── Summary row ── */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+        {[
+          ["Skills", skills.length, "#C4982A", "rgba(255,255,255,0.03)", "rgba(255,255,255,0.06)"],
+          ["Clean",  cleanCount,   "#22C55E", "rgba(34,197,94,0.05)",   "rgba(34,197,94,0.2)"],
+          ["Faults", dedCount,     "#EF4444", "rgba(239,68,68,0.05)",   "rgba(239,68,68,0.2)"],
+          ["Best",   bestGrade,    GRADE_COLOR[bestGrade] || "#C4982A", "rgba(196,152,42,0.05)", "rgba(196,152,42,0.15)"],
+        ].map(([label, val, color, bg, border]) => (
+          <div key={label} style={{ flex: 1, padding: "12px 6px", background: bg,
+            border: `1px solid ${border}`, borderRadius: 12, textAlign: "center" }}>
+            <div style={{ fontSize: 22, fontWeight: 900, color,
+              fontFamily: "'Space Mono', monospace" }}>{val}</div>
+            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)",
+              textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Biggest fix banner ── */}
+      {result.diagnostics?.biggestFix && (
+        <div style={{ marginBottom: 16, padding: "12px 14px", borderRadius: 12,
+          background: "rgba(196,152,42,0.06)",
+          border: "1px solid rgba(196,152,42,0.2)",
+          borderLeft: "3px solid #C4982A" }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: "#C4982A",
+            letterSpacing: 1, textTransform: "uppercase", marginBottom: 4 }}>
+            #1 Focus Area
+          </div>
+          <div style={{ fontSize: 13, color: "#E2E8F0", lineHeight: 1.6 }}>
+            {result.diagnostics.biggestFix}
+          </div>
+        </div>
+      )}
+
+      {/* ── Compact video player (sticky) ── */}
+      {videoUrl && (
+        <div style={{ position: "sticky", top: 0, zIndex: 10,
+          borderRadius: 12, overflow: "hidden", background: "#000",
+          marginBottom: 16, border: "1px solid rgba(255,255,255,0.08)" }}>
+          <video ref={videoRef} src={videoUrl} controls controlsList="nodownload"
+            playsInline webkit-playsinline="" preload="metadata"
+            style={{ width: "100%", display: "block", maxHeight: 220 }} />
+        </div>
+      )}
+
+      {/* ── Skill cards ── */}
+      <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.3)",
+        letterSpacing: 1, textTransform: "uppercase", marginBottom: 12 }}>
+        Skill-by-Skill Breakdown
+      </div>
+
+      {skills.map((skill, idx) => (
+        <GradedSkillCard
+          key={skill.id || idx}
+          skill={skill}
+          onSeek={videoUrl ? handleSeek : null}
+        />
+      ))}
+    </div>
+  );
+}
+
 // ─── RESULTS SCREEN ─────────────────────────────────────────────────
 function ResultsScreen({ result, profile, history, videoUrl, onBack, onDrills }) {
   const [activeTab, setActiveTab] = useState("overview");
@@ -4370,13 +4383,14 @@ function ResultsScreen({ result, profile, history, videoUrl, onBack, onDrills })
   const isPro = (() => { try { return localStorage.getItem("strive-tier") === "pro"; } catch { return false; } })();
   
   const tabs = [
-    { id: "overview", label: "Overview" },
+    { id: "overview",   label: "Overview" },
+    { id: "skills",     label: "🏅 Skills" },
     ...(hasVideo ? [{ id: "review", label: "▶ Video" }] : []),
     { id: "deductions", label: "Deductions" },
     { id: "biomechanics", label: "🦴 Bio", pro: true },
-    { id: "coach", label: "🏅 Program", pro: true },
-    { id: "diagnostics", label: "Diagnostics", pro: true },
-    { id: "whatif", label: "What If?", pro: true },
+    { id: "coach",      label: "Program",  pro: true },
+    { id: "diagnostics",label: "Diagnostics", pro: true },
+    { id: "whatif",     label: "What If?", pro: true },
   ];
 
   return (
@@ -4718,6 +4732,11 @@ function ResultsScreen({ result, profile, history, videoUrl, onBack, onDrills })
       )}
 
       {/* ─── VIDEO REVIEW TAB ─── */}
+      {/* ─── SKILLS TAB — primary graded view ─── */}
+      {activeTab === "skills" && (
+        <GradedSkillsView result={result} videoUrl={videoUrl} />
+      )}
+
       {activeTab === "review" && hasVideo && (
         <VideoReviewPlayer videoUrl={videoUrl} result={result} />
       )}
