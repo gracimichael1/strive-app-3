@@ -3190,12 +3190,14 @@ ${splitStandard}
 
 JUDGING INSTRUCTIONS:
 1. Watch the full routine from start to finish
-2. Identify every distinct skill and its timestamp
+2. Identify EVERY distinct skill — including skills done perfectly (deduction = 0.00)
 3. For tumbling passes: list EACH skill separately (round-off, BHS, tuck = 3 rows, timestamps 1 second apart)
 4. Judge EVERY landing as its own separate row
 5. Use "Global" for artistry faults applying to the whole routine
-6. Assign a deduction in 0.05 increments — 0.00 means genuinely clean
-7. Give one specific reason for each deduction — describe exactly what you saw
+6. Assign a deduction in 0.05 increments — 0.00 means genuinely clean, celebrate it
+7. Give one specific reason for each deduction AND a strength note for clean skills
+
+IMPORTANT: Include skills with 0.00 deduction — a clean skill deserves recognition. The gymnast and parent need to know what's working, not just what's wrong.
 
 DEDUCTION VALUES: 0.00, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.50 ONLY.
 
@@ -3203,15 +3205,31 @@ Respond with valid JSON only — no markdown, no extra text:
 {
   "startValue": 10.00,
   "skills": [
-    {"timestamp": "0:14", "skill": "Dance step",       "deduction": 0.05, "reason": "Flat foot instead of high releve throughout."},
-    {"timestamp": "0:32", "skill": "Round-off",         "deduction": 0.10, "reason": "Knees softened during flight phase — not fully locked."},
-    {"timestamp": "0:33", "skill": "Back handspring",   "deduction": 0.15, "reason": "Head thrown back early on takeoff; arms bent on hand contact."},
-    {"timestamp": "0:34", "skill": "Back tuck",         "deduction": 0.20, "reason": "Cowboy position — knees outside shoulder width throughout tuck."},
-    {"timestamp": "0:35", "skill": "Landing",           "deduction": 0.10, "reason": "Chest dropped forward at impact; not upright."},
-    {"timestamp": "0:44", "skill": "Split leap",        "deduction": 0.20, "reason": "Split reached approximately ${splitMin - 10}° — ${level} requires ${splitMin}° minimum."},
-    {"timestamp": "0:53", "skill": "Full turn",         "deduction": 0.05, "reason": "Heel lowered micro-seconds before rotation fully complete."},
-    {"timestamp": "Global","skill": "Artistry",         "deduction": 0.10, "reason": "Hollow fingertips throughout; limited eye contact with judges."}
-  ]
+    {"timestamp": "0:04", "skill": "Opening pose",     "deduction": 0.00, "reason": null,        "strength": "Confident presentation — immediate connection with judges."},
+    {"timestamp": "0:14", "skill": "Dance step",       "deduction": 0.05, "reason": "Flat foot instead of high releve throughout.", "strength": null},
+    {"timestamp": "0:32", "skill": "Round-off",        "deduction": 0.10, "reason": "Knees softened during flight phase.", "strength": "Strong power generation."},
+    {"timestamp": "0:33", "skill": "Back handspring",  "deduction": 0.15, "reason": "Head thrown back early; arms bent on hand contact.", "strength": null},
+    {"timestamp": "0:34", "skill": "Back tuck",        "deduction": 0.20, "reason": "Cowboy position — knees outside shoulder width.", "strength": null},
+    {"timestamp": "0:35", "skill": "Landing",          "deduction": 0.10, "reason": "Chest dropped forward at impact.", "strength": null},
+    {"timestamp": "0:44", "skill": "Split leap",       "deduction": 0.20, "reason": "Split ~${splitMin - 10}° — ${level} requires ${splitMin}° minimum.", "strength": null},
+    {"timestamp": "0:53", "skill": "Full turn",        "deduction": 0.00, "reason": null, "strength": "Excellent center of gravity — no wobble, full rotation completed."},
+    {"timestamp": "Global","skill": "Artistry",        "deduction": 0.10, "reason": "Hollow fingertips; limited eye contact with judges.", "strength": null}
+  ],
+  "artistry": {
+    "fingerLines":   {"deduction": 0.05, "note": "Fingertips hollow rather than engaged throughout."},
+    "eyeContact":    {"deduction": 0.05, "note": "Limited eye contact with judges panel."},
+    "musicality":    {"deduction": 0.00, "note": "Good connection to music tempo."},
+    "confidence":    {"deduction": 0.00, "note": "Strong stage presence — routine performed not just executed."},
+    "footwork":      {"deduction": 0.05, "note": "Flat footwork in dance sections — needs releve."},
+    "spaceUsage":    {"deduction": 0.00, "note": "Good use of floor space."}
+  },
+  "celebrations": [
+    {"timestamp": "0:53", "skill": "Full turn", "note": "Most ${level} gymnasts wobble or hop out of a full turn. Her center of gravity was perfectly controlled — this shows real core strength and balance training."},
+    {"timestamp": "0:32", "skill": "Round-off snap-down", "note": "Excellent power generation for her size. The snap-down created real momentum into the tumbling pass."},
+    {"timestamp": "1:05", "skill": "Final pose", "note": "Held with confidence and maturity. She did not rush off the floor — this shows respect for the judges and performance experience."}
+  ],
+  "whyThisScore": "Two to three sentences explaining specifically why this routine earned this score at ${level}. Reference the biggest deductions, the accumulated micro-faults, and what separates this from a 9.0+ routine.",
+  "pathToNinePointO": "Two to three sentences on exactly what needs to change to break 9.0 at ${level}. Be specific — name the skills and the fixes."
 }`;
   }, [profile, uploadData]);
 
@@ -3271,11 +3289,20 @@ Respond with valid JSON only — no markdown, no extra text:
       setProgress(88);
 
       let parsedSkills = [];
+      let parsedArtistry = null;
+      let parsedCelebrations = [];
+      let whyThisScore = "";
+      let pathToGoal = "";
+
       try {
         const match = rawResponse.match(/\{[\s\S]*\}/);
         if (match) {
           const parsed = JSON.parse(match[0]);
-          parsedSkills = safeArray(parsed.skills).filter(s => s.skill && s.deduction !== undefined);
+          parsedSkills       = safeArray(parsed.skills).filter(s => s.skill && s.deduction !== undefined);
+          parsedArtistry     = parsed.artistry     || null;
+          parsedCelebrations = safeArray(parsed.celebrations);
+          whyThisScore       = safeStr(parsed.whyThisScore);
+          pathToGoal         = safeStr(parsed.pathToNinePointO || parsed.pathToGoal);
         }
       } catch (e) {
         log.warn("parse", `JSON parse failed: ${e.message}. Attempting repair...`);
@@ -3290,7 +3317,11 @@ Respond with valid JSON only — no markdown, no extra text:
           if (brackets > 0) rep += "]".repeat(brackets);
           if (braces   > 0) rep += "}".repeat(braces);
           const parsed = JSON.parse(rep);
-          parsedSkills = safeArray(parsed.skills).filter(s => s.skill && s.deduction !== undefined);
+          parsedSkills       = safeArray(parsed.skills).filter(s => s.skill && s.deduction !== undefined);
+          parsedArtistry     = parsed.artistry     || null;
+          parsedCelebrations = safeArray(parsed.celebrations);
+          whyThisScore       = safeStr(parsed.whyThisScore);
+          pathToGoal         = safeStr(parsed.pathToNinePointO || parsed.pathToGoal);
           log.info("parse", `Repaired — ${parsedSkills.length} skills recovered`);
         } catch (re) {
           throw new Error(`Could not parse response: ${re.message}. Raw: ${rawResponse.substring(0,300)}`);
@@ -3327,6 +3358,7 @@ Respond with valid JSON only — no markdown, no extra text:
           category,
           deduction,
           reason:         safeStr(s.reason),
+          strength:       safeStr(s.strength),   // ← what Gemini praised about this skill
           isGlobal,
           // Legacy fields for existing tabs
           fault:          safeStr(s.reason),
@@ -3342,7 +3374,6 @@ Respond with valid JSON only — no markdown, no extra text:
           grade:          deduction === 0 ? "A" : deduction <= 0.05 ? "A-" : deduction <= 0.10 ? "B" : deduction <= 0.20 ? "C" : deduction <= 0.30 ? "D+" : "F",
           gradeDeduction: deduction,
           gradeColor:     deduction === 0 ? "#22C55E" : deduction <= 0.05 ? "#4ADE80" : deduction <= 0.10 ? "#F59E0B" : deduction <= 0.20 ? "#F97316" : "#EF4444",
-          strength:       deduction === 0 ? "Clean execution." : null,
           coachNote:      null,
         };
       });
@@ -3398,10 +3429,15 @@ Respond with valid JSON only — no markdown, no extra text:
           correction: null,
         })),
 
-        // ── Summaries ──
-        overallAssessment: `${profile.level} ${uploadData.event} — ${processedSkills.length} skills judged. ${benchContext}`,
-        truthAnalysis:     `${processedSkills.length} skills evaluated at ${profile.level} standard. ${withDeds[0] ? `Biggest deduction: ${withDeds[0].skill} (-${withDeds[0].deduction.toFixed(2)}): ${withDeds[0].reason}` : ""}`,
-        strengths:         strengths.length > 0 ? strengths : ["Routine completed without falls."],
+        // ── Full report — everything Gemini gave us ──
+        overallAssessment: whyThisScore || `${profile.level} ${uploadData.event} — ${processedSkills.length} skills judged. ${benchContext}`,
+        truthAnalysis:     whyThisScore || `${processedSkills.length} skills evaluated at ${profile.level} standard.`,
+        pathToGoal,
+        celebrations:      parsedCelebrations,
+        artistryBreakdown: parsedArtistry,
+        strengths: parsedCelebrations.length > 0
+          ? parsedCelebrations.map(c => `${c.timestamp ? c.timestamp + " — " : ""}${c.skill}: ${c.note}`)
+          : cleanSkills.map(s => `${s.skill}: ${s.strength || "Clean execution."}`),
         areasForImprovement: withDeds.slice(0,4).map(s => `${s.skill}: ${s.reason}`),
         topFixes,
 
@@ -4234,19 +4270,19 @@ function GradedSkillCard({ skill, onSeek }) {
             </div>
           )}
 
-          {/* Clean skill confirmation */}
+          {/* Clean skill — show Gemini's celebration note */}
           {isClean && (
             <div style={{ padding: "10px 14px", borderRadius: 10,
               background: "rgba(34,197,94,0.06)",
               border: "1px solid rgba(34,197,94,0.2)",
-              display: "flex", alignItems: "center", gap: 10 }}>
-              <span style={{ fontSize: 20 }}>✓</span>
+              display: "flex", alignItems: "flex-start", gap: 10 }}>
+              <span style={{ fontSize: 20, flexShrink: 0 }}>✓</span>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: "#22C55E" }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#22C55E", marginBottom: skill.strength ? 3 : 0 }}>
                   Clean execution — no deduction
                 </div>
                 {skill.strength && (
-                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginTop: 2 }}>
+                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", lineHeight: 1.6 }}>
                     {skill.strength}
                   </div>
                 )}
@@ -4748,28 +4784,119 @@ function ResultsScreen({ result, profile, history, videoUrl, onBack, onDrills })
           {/* Deduction timeline on overview */}
           <DeductionTimeline deductions={result.executionDeductions} />
 
-          {/* Assessment */}
-          <div className="card" style={{ marginBottom: 16 }}>
-            <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 10, color: "#C4982A" }}>
-              <Icon name="note" size={14} /> Judge's Assessment
-            </h3>
-            <p style={{ fontSize: 14, color: "rgba(255,255,255,0.7)", lineHeight: 1.7 }}>
-              {safeStr(result.overallAssessment)}
-            </p>
-          </div>
+          {/* ── Judge's Assessment (Why This Score) ── */}
+          {result.overallAssessment && (
+            <div className="card" style={{ marginBottom: 16 }}>
+              <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 10, color: "#C4982A" }}>
+                ⚖️ Judge's Assessment
+              </h3>
+              <p style={{ fontSize: 14, color: "rgba(255,255,255,0.7)", lineHeight: 1.75 }}>
+                {safeStr(result.overallAssessment)}
+              </p>
+              {result.pathToGoal && (
+                <div style={{ marginTop: 12, padding: "10px 14px", borderRadius: 10,
+                  background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.2)" }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "#22C55E",
+                    letterSpacing: 1, textTransform: "uppercase", marginBottom: 6 }}>
+                    Path to 9.0+
+                  </div>
+                  <p style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", lineHeight: 1.65, margin: 0 }}>
+                    {safeStr(result.pathToGoal)}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
 
-          {/* Strengths */}
-          <div className="card" style={{ marginBottom: 16 }}>
-            <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12 }}>
-              <span style={{ color: "#22c55e" }}>✓</span> Strengths
-            </h3>
-            {safeArray(result.strengths).map((s, i) => (
-              <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start", marginBottom: 8 }}>
-                <span style={{ color: "#22c55e", fontWeight: 700, fontSize: 12, marginTop: 2 }}>●</span>
-                <span style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", lineHeight: 1.5 }}>{safeStr(s)}</span>
-              </div>
-            ))}
-          </div>
+          {/* ── Celebrations — what was genuinely good ── */}
+          {safeArray(result.celebrations).length > 0 && (
+            <div className="card" style={{ marginBottom: 16,
+              background: "linear-gradient(135deg, rgba(34,197,94,0.04), rgba(34,197,94,0.02))",
+              borderColor: "rgba(34,197,94,0.15)" }}>
+              <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, color: "#22C55E" }}>
+                🌟 What Was Excellent
+              </h3>
+              {safeArray(result.celebrations).map((c, i) => (
+                <div key={i} style={{ display: "flex", gap: 12, alignItems: "flex-start",
+                  marginBottom: i < result.celebrations.length - 1 ? 12 : 0,
+                  paddingBottom: i < result.celebrations.length - 1 ? 12 : 0,
+                  borderBottom: i < result.celebrations.length - 1 ? "1px solid rgba(34,197,94,0.1)" : "none" }}>
+                  <div style={{ width: 36, height: 36, borderRadius: "50%", flexShrink: 0,
+                    background: "rgba(34,197,94,0.12)", border: "1px solid rgba(34,197,94,0.3)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 10, fontWeight: 700, color: "#22C55E",
+                    fontFamily: "'Space Mono', monospace" }}>
+                    {safeStr(c.timestamp) || "✓"}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#22C55E", marginBottom: 3 }}>
+                      {safeStr(c.skill)}
+                    </div>
+                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", lineHeight: 1.6 }}>
+                      {safeStr(c.note)}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* ── Artistry Breakdown ── */}
+          {result.artistryBreakdown && (
+            <div className="card" style={{ marginBottom: 16 }}>
+              <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, color: "#C4982A" }}>
+                🎭 Artistry Breakdown
+              </h3>
+              {Object.entries(result.artistryBreakdown).map(([key, val]) => {
+                if (!val || typeof val !== "object") return null;
+                const ded = safeNum(val.deduction, 0);
+                const label = {
+                  fingerLines: "Finger / Hand Lines",
+                  eyeContact:  "Eye Contact with Judges",
+                  musicality:  "Musicality & Rhythm",
+                  confidence:  "Confidence & Stage Presence",
+                  footwork:    "Footwork & Releve",
+                  spaceUsage:  "Use of Floor Space",
+                }[key] || key;
+                const isClean = ded === 0;
+                return (
+                  <div key={key} style={{ display: "flex", alignItems: "flex-start", gap: 12,
+                    marginBottom: 10, paddingBottom: 10,
+                    borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                    <div style={{ width: 28, flexShrink: 0, textAlign: "right",
+                      fontFamily: "'Space Mono', monospace", fontSize: 12, fontWeight: 700,
+                      color: isClean ? "#22C55E" : "#F97316", paddingTop: 1 }}>
+                      {isClean ? "✓" : `-${ded.toFixed(2)}`}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600,
+                        color: isClean ? "#22C55E" : "#E2E8F0", marginBottom: 2 }}>
+                        {label}
+                      </div>
+                      <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: 1.5 }}>
+                        {safeStr(val.note)}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Fallback strengths if no celebrations returned */}
+          {safeArray(result.celebrations).length === 0 && safeArray(result.strengths).length > 0 && (
+            <div className="card" style={{ marginBottom: 16 }}>
+              <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12 }}>
+                <span style={{ color: "#22c55e" }}>✓</span> Strengths
+              </h3>
+              {safeArray(result.strengths).map((s, i) => (
+                <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start", marginBottom: 8 }}>
+                  <span style={{ color: "#22c55e", fontWeight: 700, fontSize: 12, marginTop: 2 }}>●</span>
+                  <span style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", lineHeight: 1.5 }}>{safeStr(s)}</span>
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Improvement Potential — the conversion hook */}
           {groupedDeds.length >= 2 && (() => {
