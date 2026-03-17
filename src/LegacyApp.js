@@ -3066,6 +3066,108 @@ function AnalyzingScreen({ uploadData, profile, onComplete, onBack }) {
 
   // (runPoseDetection removed — AI provides joint data directly)
 
+  // ── Gemini File Upload — uploads video to File API, returns reference ──
+  const uploadVideoToGemini = useCallback(async (videoFile, apiKey) => {
+    const mimeType = videoFile.type || "video/mp4";
+    setStatus("Uploading video...");
+    setProgress(40);
+    log.info("upload", `Uploading: ${videoFile.name} (${(videoFile.size/1024/1024).toFixed(1)}MB)`);
+
+    const startRes = await fetch(`https://generativelanguage.googleapis.com/upload/v1beta/files?key=${apiKey}`, {
+      method: "POST",
+      headers: {
+        "X-Goog-Upload-Protocol": "resumable",
+        "X-Goog-Upload-Command": "start",
+        "X-Goog-Upload-Header-Content-Length": String(videoFile.size),
+        "X-Goog-Upload-Header-Content-Type": mimeType,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ file: { display_name: "routine_" + Date.now() } }),
+    });
+    if (!startRes.ok) throw new Error(`Upload init failed (${startRes.status})`);
+
+    const uploadUrl = startRes.headers.get("X-Goog-Upload-URL") || startRes.headers.get("x-goog-upload-url");
+    if (!uploadUrl) throw new Error("No upload URL returned");
+
+    setStatus("Sending video to AI judge...");
+    setProgress(50);
+
+    const uploadRes = await fetch(uploadUrl, {
+      method: "POST",
+      headers: {
+        "X-Goog-Upload-Command": "upload, finalize",
+        "X-Goog-Upload-Offset": "0",
+        "Content-Length": String(videoFile.size),
+      },
+      body: videoFile,
+    });
+    if (!uploadRes.ok) throw new Error(`Upload failed (${uploadRes.status})`);
+
+    const fileInfo = await uploadRes.json();
+    const fileUri  = fileInfo.file?.uri;
+    const fileName = fileInfo.file?.name;
+    if (!fileUri) throw new Error("No file URI returned");
+    log.info("upload", `Uploaded: ${fileName}`);
+
+    // Poll until ACTIVE
+    setStatus("Processing video...");
+    setProgress(58);
+    for (let i = 0; i < 40; i++) {
+      await new Promise(r => setTimeout(r, 2000));
+      try {
+        const check = await fetch(`https://generativelanguage.googleapis.com/v1beta/${fileName}?key=${apiKey}`);
+        if (check.ok) {
+          const data = await check.json();
+          log.info("upload", `File state: ${data.state} (poll ${i+1})`);
+          if (data.state === "ACTIVE") break;
+          if (data.state === "FAILED") throw new Error("Video processing failed on server");
+        }
+      } catch (e) { if (e.message.includes("failed")) throw e; }
+      setProgress(58 + Math.min(10, Math.floor(i / 2)));
+      if (i === 39) throw new Error("Video processing timed out");
+    }
+    return { fileUri, fileName, mimeType };
+  }, []);
+
+  // ── Gemini Generate — call the model with an uploaded file ──
+  const geminiGenerate = useCallback(async (fileRef, prompt, apiKey, config = {}) => {
+    const { maxOutputTokens = 65536, thinkingBudget = 24576, label = "analysis" } = config;
+    log.info("gemini", `[${label}] Sending prompt (${prompt.length} chars)`);
+
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{
+          parts: [
+            { file_data: { file_uri: fileRef.fileUri, mime_type: fileRef.mimeType } },
+            { text: prompt },
+          ],
+        }],
+        generationConfig: {
+          maxOutputTokens,
+          temperature: 0,
+          responseMimeType: "application/json",
+          thinkingConfig: { thinkingBudget },
+        },
+      }),
+    });
+
+    if (!res.ok) {
+      const errText = await res.text().catch(() => "");
+      throw new Error(`${label} failed (${res.status}): ${errText}`);
+    }
+
+    const data = await res.json();
+    const parts = data.candidates?.[0]?.content?.parts || [];
+    const rawText = parts.filter(p => p.text && !p.thought).map(p => p.text).join("\n")
+      || parts.map(p => p.text || "").join("\n");
+
+    log.info("gemini", `[${label}] Response: ${rawText.length} chars`);
+    try { localStorage.setItem(`debug-gemini-${label}`, rawText); } catch {}
+    return rawText;
+  }, []);
+
   // ── State Official judging prompt — returns JSON directly ──
   // skillList: optional array from Pass 1 skill detection [{time, skill, type}]
   // ══════════════════════════════════════════════════════════════════
@@ -3198,6 +3300,12 @@ JUDGING INSTRUCTIONS:
 7. Give one specific reason for each deduction AND a strength note for clean skills
 
 IMPORTANT: Include skills with 0.00 deduction — a clean skill deserves recognition. The gymnast and parent need to know what's working, not just what's wrong.
+
+TIMESTAMP RULES:
+- The video starts at exactly 0:00. All timestamps must be relative to the start of the video.
+- Use M:SS format exactly — "0:04", "0:32", "1:02"
+- If the gymnast walks on at 0:00 and the first skill starts at 0:08, use "0:08"
+- Do NOT offset or adjust timestamps — use exactly what you see on the video timeline
 
 DEDUCTION VALUES: 0.00, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.50 ONLY.
 
