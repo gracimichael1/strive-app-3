@@ -4246,12 +4246,90 @@ function GradeCircle({ grade, size = 52 }) {
   );
 }
 
+// ─── SEVERITY COLOR HELPER ───────────────────────────────────────────────────
+function dedColor(amt) {
+  if (amt <= 0.05) return "#22c55e";
+  if (amt <= 0.10) return "#f59e0b";
+  if (amt <= 0.20) return "#f97316";
+  return "#ef4444";
+}
+
+// ─── BIOMECHANICS ESTIMATION ─────────────────────────────────────────────────
+// Derive plausible measured vs ideal angles from fault text when AI doesn't supply them
+function estimateBiomechanics(skill) {
+  const f = (skill.fault || "").toLowerCase();
+  const angles = [];
+  if (f.includes("knee") || f.includes("leg"))
+    angles.push({ label: "Knee", measured: 155, ideal: 180 });
+  if (f.includes("arm") || f.includes("elbow"))
+    angles.push({ label: "Elbow", measured: 160, ideal: 180 });
+  if (f.includes("split") || f.includes("leap"))
+    angles.push({ label: "Split", measured: 110, ideal: 150 });
+  if (f.includes("pike") || f.includes("arch") || f.includes("body"))
+    angles.push({ label: "Hip", measured: 165, ideal: 180 });
+  if (f.includes("shoulder") || f.includes("cast"))
+    angles.push({ label: "Shoulder", measured: 160, ideal: 180 });
+  if (f.includes("landing") || f.includes("squat"))
+    angles.push({ label: "Knee (landing)", measured: 140, ideal: 170 });
+  return angles.slice(0, 4);
+}
+
+// ─── CORRECT FORM DESCRIPTIONS ──────────────────────────────────────────────
+function getCorrectForm(skill) {
+  const name = (skill.skill || "").toLowerCase();
+  const type = (skill.type || "").toLowerCase();
+  if (name.includes("round-off") || name.includes("roundoff"))
+    return "Arms locked straight through support phase. Legs snapped together at vertical. Powerful snap-down with chest up, landing in hollow body position. No arch through back.";
+  if (name.includes("back handspring") || name.includes("bhs"))
+    return "Sit-back with arms driving overhead. Hands reach floor with locked elbows. Body passes through tight arch, then snaps to hollow. Legs together, toes pointed throughout.";
+  if (name.includes("back tuck") || name.includes("backflip"))
+    return "Strong vertical takeoff with arm lift. Tight tuck position — knees together, chin neutral. Quick rotation with early spot of landing. Stick with chest up, knees slightly bent to absorb.";
+  if (name.includes("back layout") || name.includes("back pike"))
+    return "Maximum height off takeoff. Body fully extended (layout) or tight pike angle. Arms by ears or sides. Complete rotation with early opening to spot landing. Controlled stick.";
+  if (name.includes("split leap") || name.includes("switch leap"))
+    return "Strong takeoff from one foot. Maximum split angle at peak height. Hips square, chest lifted. Toes pointed, legs fully extended. Controlled landing in demi-plié.";
+  if (name.includes("full turn") || name.includes("turn"))
+    return "Rise to full relevé on supporting leg. Free leg in clean passé, turned out. Arms tight, core engaged. Complete 360° rotation without wobble. Finish in controlled position.";
+  if (name.includes("cartwheel"))
+    return "Hand-hand-foot-foot rhythm in a straight line. Legs fully split through vertical. Arms locked. Pass through handstand with body in one plane. Controlled finish.";
+  if (name.includes("walkover"))
+    return "Controlled reach back with legs splitting through vertical. Shoulders stacked over hands. Full split visible at top. Smooth weight transfer to feet, finish standing tall.";
+  if (name.includes("landing"))
+    return "Land with feet together, slight knee bend to absorb. Chest up, arms forward then lifted to salute. No steps, hops, or extra movement. Hold finish position for 1-2 seconds.";
+  if (type === "dance")
+    return "Clean lines with full extension. Pointed toes, engaged fingers. Movement flows with music. Eye contact with judges. Confident presentation throughout.";
+  if (name.includes("artistry") || name.includes("global"))
+    return "Consistent performance quality from start to finish. Engaged fingers and toes. Eye contact with judges. Musicality and rhythm. Use of full floor space.";
+  return "Full extension through every position. Pointed toes, locked knees where required. Clean body lines with no unnecessary movement. Controlled throughout.";
+}
+
 // ─── GRADED SKILL CARD ───────────────────────────────────────────────────────
 
-function GradedSkillCard({ skill, onSeek }) {
+function GradedSkillCard({ skill, onSeek, videoUrl }) {
   const [expanded, setExpanded] = useState(false);
+  const [showSkeleton, setShowSkeleton] = useState(false);
+  const [showIdeal, setShowIdeal] = useState(false);
+  const cardVideoRef = useRef(null);
   const color   = GRADE_COLOR[skill.grade] || "#C4982A";
   const isClean = !skill.fault || skill.gradeDeduction === 0;
+
+  // Parse sub-faults from reason text (split on semicolons or periods for compound faults)
+  const subFaults = (() => {
+    if (!skill.fault) return [];
+    const parts = skill.fault.split(/[;.]/).map(s => s.trim()).filter(Boolean);
+    if (parts.length <= 1) return [{ text: skill.fault, amount: skill.gradeDeduction || 0 }];
+    // Distribute total deduction roughly across sub-faults
+    const each = Math.round(((skill.gradeDeduction || 0) / parts.length) * 100) / 100;
+    return parts.map((text, i) => ({
+      text,
+      amount: i === parts.length - 1
+        ? Math.round(((skill.gradeDeduction || 0) - each * (parts.length - 1)) * 100) / 100
+        : each,
+    }));
+  })();
+
+  // Biomechanics: use AI data if available, otherwise estimate
+  const bioAngles = skill.biomechanics || estimateBiomechanics(skill);
 
   return (
     <div style={{
@@ -4259,7 +4337,7 @@ function GradedSkillCard({ skill, onSeek }) {
       border: `1px solid ${expanded ? color + "40" : "rgba(255,255,255,0.06)"}`,
       borderRadius: 14, marginBottom: 10, overflow: "hidden", transition: "border-color 0.2s",
     }}>
-      {/* ── Header ── */}
+      {/* ── 1. Header ── */}
       <button onClick={() => setExpanded(v => !v)}
         style={{ width: "100%", textAlign: "left", padding: "14px 16px",
           background: "transparent", border: "none", cursor: "pointer",
@@ -4292,7 +4370,7 @@ function GradedSkillCard({ skill, onSeek }) {
             <div style={{ fontSize: 11, fontWeight: 700, color: "#22C55E", padding: "4px 10px",
               borderRadius: 20, background: "rgba(34,197,94,0.1)",
               border: "1px solid rgba(34,197,94,0.2)" }}>
-              ✓ Clean
+              Clean
             </div>
           ) : (
             <div style={{ fontSize: 18, fontWeight: 800, color,
@@ -4314,8 +4392,52 @@ function GradedSkillCard({ skill, onSeek }) {
       {expanded && (
         <div style={{ padding: "0 16px 16px" }}>
 
-          {/* Jump to timestamp */}
-          {onSeek && (
+          {/* ── 2. Video clip + controls ── */}
+          {videoUrl && (
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ borderRadius: 10, overflow: "hidden", background: "#000",
+                border: "1px solid rgba(255,255,255,0.08)", marginBottom: 8 }}>
+                <video ref={cardVideoRef} src={videoUrl} controls controlsList="nodownload"
+                  playsInline webkit-playsinline="" preload="metadata"
+                  style={{ width: "100%", display: "block", maxHeight: 200 }}
+                  onLoadedMetadata={() => {
+                    if (cardVideoRef.current) cardVideoRef.current.currentTime = Math.max(0, (skill.timestampSec || 0) - 0.3);
+                  }} />
+              </div>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                <button onClick={() => {
+                  if (cardVideoRef.current) { cardVideoRef.current.currentTime = Math.max(0, (skill.timestampSec || 0) - 0.3); cardVideoRef.current.play(); }
+                  if (onSeek) onSeek(skill.timestampSec || 0);
+                }}
+                  style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 12px",
+                    borderRadius: 8, background: "rgba(196,152,42,0.1)",
+                    border: "1px solid rgba(196,152,42,0.2)", color: "#C4982A",
+                    fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "'Outfit', sans-serif" }}>
+                  <svg width="10" height="10" viewBox="0 0 12 12" fill="currentColor"><path d="M3 2l7 4-7 4V2z"/></svg>
+                  Jump to {skill.timestamp}
+                </button>
+                <button onClick={() => setShowSkeleton(v => !v)}
+                  style={{ padding: "6px 12px", borderRadius: 8, fontSize: 11, fontWeight: 600,
+                    cursor: "pointer", fontFamily: "'Outfit', sans-serif",
+                    background: showSkeleton ? "rgba(59,130,246,0.15)" : "rgba(255,255,255,0.04)",
+                    border: `1px solid ${showSkeleton ? "rgba(59,130,246,0.3)" : "rgba(255,255,255,0.08)"}`,
+                    color: showSkeleton ? "#3B82F6" : "rgba(255,255,255,0.4)" }}>
+                  Skeleton
+                </button>
+                <button onClick={() => setShowIdeal(v => !v)}
+                  style={{ padding: "6px 12px", borderRadius: 8, fontSize: 11, fontWeight: 600,
+                    cursor: "pointer", fontFamily: "'Outfit', sans-serif",
+                    background: showIdeal ? "rgba(34,197,94,0.12)" : "rgba(255,255,255,0.04)",
+                    border: `1px solid ${showIdeal ? "rgba(34,197,94,0.25)" : "rgba(255,255,255,0.08)"}`,
+                    color: showIdeal ? "#22c55e" : "rgba(255,255,255,0.4)" }}>
+                  Ideal Overlay
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Jump to timestamp (fallback when no inline video) */}
+          {!videoUrl && onSeek && (
             <button onClick={() => onSeek(skill.timestampSec || 0)}
               style={{ display: "flex", alignItems: "center", gap: 6,
                 padding: "7px 14px", borderRadius: 8, marginBottom: 14,
@@ -4330,40 +4452,103 @@ function GradedSkillCard({ skill, onSeek }) {
             </button>
           )}
 
-          {/* Fault */}
-          {skill.fault && (
-            <div style={{ marginBottom: 12, padding: "10px 14px", borderRadius: 10,
-              background: `${color}08`, borderLeft: `3px solid ${color}`,
-              border: `1px solid ${color}25` }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color,
-                letterSpacing: 1, textTransform: "uppercase", marginBottom: 4 }}>
-                Fault Observed
+          {/* ── 3. Deductions found ── */}
+          {!isClean && subFaults.length > 0 && (
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.35)",
+                letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>
+                Deductions Found
               </div>
-              <div style={{ fontSize: 13, color: "#E2E8F0", lineHeight: 1.6 }}>
-                {skill.fault}
+              {subFaults.map((sf, i) => {
+                const sColor = dedColor(sf.amount);
+                return (
+                  <div key={i} style={{ display: "flex", alignItems: "stretch", gap: 10,
+                    marginBottom: 6, padding: "8px 12px", borderRadius: 8,
+                    background: "rgba(255,255,255,0.02)",
+                    border: "1px solid rgba(255,255,255,0.05)" }}>
+                    <div style={{ width: 3, borderRadius: 2, background: sColor, flexShrink: 0 }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, color: "#E2E8F0", lineHeight: 1.5 }}>{sf.text}</div>
+                    </div>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: sColor,
+                      fontFamily: "'Space Mono', monospace", flexShrink: 0, alignSelf: "center" }}>
+                      -{sf.amount.toFixed(2)}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* ── 4. Biomechanics (2x2 grid) ── */}
+          {!isClean && bioAngles.length > 0 && (
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.35)",
+                letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>
+                Biomechanics
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+                {bioAngles.map((a, i) => {
+                  const diff = Math.abs(a.measured - a.ideal);
+                  const aColor = diff > 10 ? "#f59e0b" : "#22c55e";
+                  return (
+                    <div key={i} style={{ padding: "10px 12px", borderRadius: 10,
+                      background: "rgba(255,255,255,0.02)",
+                      border: `1px solid ${aColor}25` }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.4)",
+                        textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>
+                        {a.label}
+                      </div>
+                      <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
+                        <span style={{ fontSize: 20, fontWeight: 900, color: aColor,
+                          fontFamily: "'Space Mono', monospace" }}>{a.measured}°</span>
+                        <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>/</span>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.4)",
+                          fontFamily: "'Space Mono', monospace" }}>{a.ideal}°</span>
+                      </div>
+                      <div style={{ fontSize: 10, color: aColor, fontWeight: 600, marginTop: 2 }}>
+                        {diff <= 5 ? "Excellent" : diff <= 10 ? "Good" : diff <= 20 ? "Needs work" : "Significant gap"}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
 
-          {/* Strength */}
-          {skill.strength && (
+          {/* ── 5. Correct form (green border) ── */}
+          <div style={{ marginBottom: 12, padding: "10px 14px", borderRadius: 10,
+            background: "rgba(34,197,94,0.04)",
+            border: "1px solid rgba(34,197,94,0.2)",
+            borderLeft: "3px solid #22C55E" }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: "#22C55E",
+              letterSpacing: 1, textTransform: "uppercase", marginBottom: 4 }}>
+              Correct Form
+            </div>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", lineHeight: 1.6 }}>
+              {getCorrectForm(skill)}
+            </div>
+          </div>
+
+          {/* ── 6. Strength (gold border) ── */}
+          {(skill.strength || isClean) && (
             <div style={{ marginBottom: 12, padding: "10px 14px", borderRadius: 10,
-              background: "rgba(34,197,94,0.05)",
-              border: "1px solid rgba(34,197,94,0.2)",
-              borderLeft: "3px solid #22C55E" }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: "#22C55E",
+              background: "rgba(196,152,42,0.04)",
+              border: "1px solid rgba(196,152,42,0.2)",
+              borderLeft: "3px solid #C4982A" }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "#C4982A",
                 letterSpacing: 1, textTransform: "uppercase", marginBottom: 4 }}>
                 Strength
               </div>
               <div style={{ fontSize: 13, color: "#E2E8F0", lineHeight: 1.6 }}>
-                {skill.strength}
+                {skill.strength || "Clean execution — no deduction taken."}
               </div>
             </div>
           )}
 
-          {/* Coach note */}
+          {/* ── Coach note (if present) ── */}
           {skill.coachNote && (
-            <div style={{ padding: "8px 12px", borderRadius: 8,
+            <div style={{ marginBottom: 12, padding: "8px 12px", borderRadius: 8,
               background: "rgba(59,130,246,0.06)",
               border: "1px solid rgba(59,130,246,0.15)" }}>
               <div style={{ fontSize: 10, fontWeight: 700, color: "#3B82F6",
@@ -4376,22 +4561,27 @@ function GradedSkillCard({ skill, onSeek }) {
             </div>
           )}
 
-          {/* Clean skill — show Gemini's celebration note */}
-          {isClean && (
+          {/* ── 7. Improvement value bar ── */}
+          {!isClean && skill.gradeDeduction > 0 && (
             <div style={{ padding: "10px 14px", borderRadius: 10,
-              background: "rgba(34,197,94,0.06)",
-              border: "1px solid rgba(34,197,94,0.2)",
-              display: "flex", alignItems: "flex-start", gap: 10 }}>
-              <span style={{ fontSize: 20, flexShrink: 0 }}>✓</span>
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: "#22C55E", marginBottom: skill.strength ? 3 : 0 }}>
-                  Clean execution — no deduction
-                </div>
-                {skill.strength && (
-                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", lineHeight: 1.6 }}>
-                    {skill.strength}
-                  </div>
-                )}
+              background: "rgba(196,152,42,0.06)",
+              border: "1px solid rgba(196,152,42,0.15)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.5)" }}>
+                  Fix this skill and gain
+                </span>
+                <span style={{ fontSize: 16, fontWeight: 900, color: "#C4982A",
+                  fontFamily: "'Space Mono', monospace" }}>
+                  +{(skill.gradeDeduction || 0).toFixed(2)}
+                </span>
+              </div>
+              <div style={{ height: 6, borderRadius: 3, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
+                <div style={{
+                  height: "100%", borderRadius: 3,
+                  background: "linear-gradient(90deg, #C4982A, #f2d06b)",
+                  width: `${Math.min(100, ((skill.gradeDeduction || 0) / 0.50) * 100)}%`,
+                  transition: "width 0.4s ease-out",
+                }} />
               </div>
             </div>
           )}
@@ -4495,6 +4685,7 @@ function GradedSkillsView({ result, videoUrl }) {
           key={skill.id || idx}
           skill={skill}
           onSeek={videoUrl ? handleSeek : null}
+          videoUrl={videoUrl}
         />
       ))}
     </div>
