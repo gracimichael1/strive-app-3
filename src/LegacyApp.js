@@ -570,126 +570,43 @@ const Icon = ({ name, size = 20, color }) => {
 };
 
 // ─── SKELETON OVERLAY COMPONENT ─────────────────────────────────────
-// SkeletonOverlay accepts either legacy {joints, faultJoints} or new skeleton data format
-// New format: skeleton = {joints, faultJoints, angles: [{joint, measured, ideal, label}]}
+// Simplified SkeletonOverlay — thin lines, red only on fault joints, no clutter
 function SkeletonOverlay({ joints, faultJoints, skeleton, angles: anglesFromProp }) {
-  // Support both old flat props and new grouped skeleton object
   const j = skeleton?.joints || joints;
   const faultList = skeleton?.faultJoints || faultJoints || [];
-  const angleData = skeleton?.angles || anglesFromProp || [];
-
   if (!j) return null;
   const faults = new Set(faultList);
-
-  // Build angle lookup by joint name
-  const angleByJoint = {};
-  angleData.forEach(a => { if (a.joint) angleByJoint[a.joint] = a; });
-
-  // Also compute geometric angles for joints that don't have AI-provided data
-  const calcAngle = (a, b, c) => {
-    if (!a || !b || !c) return null;
-    const v1 = [a[0]-b[0], a[1]-b[1]], v2 = [c[0]-b[0], c[1]-b[1]];
-    const dot = v1[0]*v2[0]+v1[1]*v2[1];
-    const mag = Math.sqrt(v1[0]**2+v1[1]**2)*Math.sqrt(v2[0]**2+v2[1]**2);
-    return mag > 0 ? Math.round(Math.acos(Math.max(-1,Math.min(1,dot/mag)))*180/Math.PI) : null;
-  };
-  const computedAngles = {};
-  if (j.lHip && j.lKnee && j.lAnkle) computedAngles.lKnee = calcAngle(j.lHip, j.lKnee, j.lAnkle);
-  if (j.rHip && j.rKnee && j.rAnkle) computedAngles.rKnee = calcAngle(j.rHip, j.rKnee, j.rAnkle);
-  if (j.lShoulder && j.lElbow && j.lWrist) computedAngles.lElbow = calcAngle(j.lShoulder, j.lElbow, j.lWrist);
-  if (j.rShoulder && j.rElbow && j.rWrist) computedAngles.rElbow = calcAngle(j.rShoulder, j.rElbow, j.rWrist);
-
-  // Draw angle arc at a joint
-  const AngleArc = ({ pos, measured, ideal }) => {
-    if (!pos || !measured) return null;
-    const r = 0.03;
-    const startAngle = -0.4, endAngle = startAngle + (measured / 180) * Math.PI;
-    const x1 = pos[0] + r * Math.cos(startAngle), y1 = pos[1] + r * Math.sin(startAngle);
-    const x2 = pos[0] + r * Math.cos(endAngle), y2 = pos[1] + r * Math.sin(endAngle);
-    const large = (measured > 90) ? 1 : 0;
-    return (
-      <path d={`M ${pos[0]} ${pos[1]} L ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} Z`}
-        fill="rgba(239,68,68,0.15)" stroke="#ef4444" strokeWidth={0.003} />
-    );
-  };
 
   return (
     <svg viewBox="0 0 1 1" preserveAspectRatio="none" style={{
       position: "absolute", top: 0, left: 0, width: "100%", height: "100%", pointerEvents: "none",
     }}>
-      <defs>
-        <filter id="glow"><feGaussianBlur stdDeviation="0.008" result="blur" /><feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
-      </defs>
-
-      {/* Ghost motion trail for fault joints */}
-      {faultList.map((name) => {
-        const pos = j[name];
-        if (!pos) return null;
-        return [0.008, 0.016].map((off, oi) => (
-          <circle key={`trail-${name}-${oi}`} cx={pos[0] + off} cy={pos[1] - off * 0.5}
-            r={0.012} fill="#ef4444" opacity={0.12 - oi * 0.04} />
-        ));
-      })}
-
-      {/* Draw connections */}
+      {/* Connections — thin, subtle for OK limbs, highlighted for faults */}
       {SKELETON_CONNECTIONS.map(([a, b], i) => {
         const ja = j[a], jb = j[b];
         if (!ja || !jb) return null;
         const hasFault = faults.has(a) || faults.has(b);
         return (
           <line key={i} x1={ja[0]} y1={ja[1]} x2={jb[0]} y2={jb[1]}
-            stroke={hasFault ? "#ef4444" : "#22c55e"}
-            strokeWidth={hasFault ? 0.015 : 0.007}
-            strokeLinecap="round" opacity={0.9}
-            filter={hasFault ? "url(#glow)" : undefined}
+            stroke={hasFault ? "#ef4444" : "rgba(255,255,255,0.25)"}
+            strokeWidth={hasFault ? 0.008 : 0.004}
+            strokeLinecap="round" opacity={hasFault ? 0.9 : 0.5}
           />
         );
       })}
 
-      {/* Draw joints */}
+      {/* Joints — small dots, red only on faults */}
       {Object.entries(j).map(([name, pos]) => {
         if (!pos || pos.length < 2) return null;
         const isFault = faults.has(name);
-        const aiAngle = angleByJoint[name];
-        const compAngle = computedAngles[name];
         return (
-          <g key={name}>
-            {isFault && aiAngle && <AngleArc pos={pos} measured={aiAngle.measured} ideal={aiAngle.ideal} />}
-            <circle cx={pos[0]} cy={pos[1]} r={isFault ? 0.018 : 0.01}
-              fill={isFault ? "#ef4444" : "#22c55e"} opacity={0.95}
-              filter={isFault ? "url(#glow)" : undefined} />
-            {isFault && (
-              <circle cx={pos[0]} cy={pos[1]} r={0.025}
-                fill="none" stroke="#ef4444" strokeWidth={0.005} opacity={0.7}>
-                <animate attributeName="r" values="0.02;0.04;0.02" dur="1.2s" repeatCount="indefinite" />
-                <animate attributeName="opacity" values="0.7;0.2;0.7" dur="1.2s" repeatCount="indefinite" />
-              </circle>
-            )}
-            {isFault && (aiAngle || compAngle) && (() => {
-              const m = aiAngle?.measured ?? compAngle;
-              const ideal = aiAngle?.ideal ?? 180;
-              const badgeX = pos[0] > 0.7 ? pos[0] - 0.13 : pos[0] + 0.02;
-              const badgeY = pos[1] - 0.025;
-              return (
-                <g>
-                  <rect x={badgeX} y={badgeY} width={0.13} height={0.038} rx={0.005} fill="rgba(0,0,0,0.88)" />
-                  <text x={badgeX + 0.065} y={badgeY + 0.014} textAnchor="middle"
-                    fill="#ef4444" fontSize="0.018" fontWeight="bold" fontFamily="monospace">{m}°</text>
-                  <text x={badgeX + 0.065} y={badgeY + 0.03} textAnchor="middle"
-                    fill="#22c55e" fontSize="0.015" fontFamily="monospace">/{ideal}°</text>
-                </g>
-              );
-            })()}
-          </g>
+          <circle key={name} cx={pos[0]} cy={pos[1]}
+            r={isFault ? 0.014 : 0.006}
+            fill={isFault ? "#ef4444" : "rgba(255,255,255,0.35)"}
+            opacity={isFault ? 0.95 : 0.6}
+          />
         );
       })}
-
-      {/* Legend */}
-      <rect x={0.02} y={0.92} width={0.22} height={0.06} rx={0.01} fill="rgba(0,0,0,0.75)" />
-      <circle cx={0.04} cy={0.95} r={0.008} fill="#22c55e" />
-      <text x={0.055} y={0.955} fill="#22c55e" fontSize="0.018" fontFamily="sans-serif">OK</text>
-      <circle cx={0.11} cy={0.95} r={0.008} fill="#ef4444" />
-      <text x={0.125} y={0.955} fill="#ef4444" fontSize="0.018" fontFamily="sans-serif">Fault</text>
     </svg>
   );
 }
@@ -4186,7 +4103,9 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFileRef, onBac
   const [videoLoading, setVideoLoading] = useState(true);
   const [videoPlayError, setVideoPlayError] = useState(false);
   const [freshVideoUrl, setFreshVideoUrl] = useState(null);
+  const [videoOverlay, setVideoOverlay] = useState(null); // {skill, fault, deduction} shown on video
   const videoRef = useRef(null);
+  const skillCardRefs = useRef({});
 
   // Generate fresh blob URL from stored File ref (fixes blob URL death on navigation)
   useEffect(() => {
@@ -4197,6 +4116,14 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFileRef, onBac
       setVideoPlayError(false);
     }
   }, [videoFileRef]);
+
+  // Auto-dismiss video overlay after 4 seconds
+  useEffect(() => {
+    if (videoOverlay) {
+      const t = setTimeout(() => setVideoOverlay(null), 4000);
+      return () => clearTimeout(t);
+    }
+  }, [videoOverlay]);
 
   if (!result) return null;
 
@@ -4223,11 +4150,91 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFileRef, onBac
     }
   };
 
+  // Estimated angle ranges when AI doesn't provide exact angles
+  const ESTIMATED_ANGLES = {
+    "Bent knees": { joint: "Knee", measured: "~162°", ideal: "180°", deviation: "~18°", severity: "medium" },
+    "Soft knees": { joint: "Knee", measured: "~168°", ideal: "180°", deviation: "~12°", severity: "small" },
+    "Knee bend": { joint: "Knee", measured: "~165°", ideal: "180°", deviation: "~15°", severity: "small-medium" },
+    "Leg separation": { joint: "Hips", measured: "~15° apart", ideal: "0° (together)", deviation: "~15°", severity: "small-medium" },
+    "Pike": { joint: "Hip", measured: "~155°", ideal: "180°", deviation: "~25°", severity: "medium" },
+    "Arch": { joint: "Spine", measured: "~160°", ideal: "180°", deviation: "~20°", severity: "medium" },
+    "Flexed feet": { joint: "Ankle", measured: "~95°", ideal: "140°+ (pointed)", deviation: "~45°", severity: "small" },
+    "Toe point": { joint: "Ankle", measured: "~100°", ideal: "140°+", deviation: "~40°", severity: "small" },
+    "Balance check": { joint: "Core/CoG", measured: "shifted", ideal: "centered", deviation: "visible", severity: "small" },
+    "Steps on landing": { joint: "Ankle/Knee", measured: "unstable", ideal: "stuck", deviation: "1-2 steps", severity: "small-medium" },
+    "Deep squat": { joint: "Knee", measured: "~90°", ideal: "135°+", deviation: "~45°", severity: "medium-large" },
+    "Insufficient split": { joint: "Hip", measured: "~140°", ideal: "180°", deviation: "~40°", severity: "medium" },
+    "Short handstand": { joint: "Shoulder", measured: "~160°", ideal: "180°", deviation: "~20°", severity: "small" },
+    "Off vertical": { joint: "Body line", measured: "~170°", ideal: "180°", deviation: "~10°", severity: "small" },
+    "Cowboy": { joint: "Knees", measured: ">1.2× shoulder width", ideal: "shoulder width", deviation: "wide", severity: "medium" },
+    "Head position": { joint: "Neck", measured: "tucked/thrown", ideal: "neutral", deviation: "visible", severity: "small" },
+  };
+
+  const getEstimatedAngles = (fault, engine) => {
+    const text = `${fault || ""} ${engine || ""}`.toLowerCase();
+    for (const [key, data] of Object.entries(ESTIMATED_ANGLES)) {
+      if (text.includes(key.toLowerCase())) return data;
+    }
+    return null;
+  };
+
+  const getSeverityExplanation = (deduction) => {
+    const d = safeNum(deduction, 0);
+    if (d <= 0.05) return "Barely visible fault — judges may or may not take this.";
+    if (d <= 0.10) return "Small but noticeable — most judges will deduct.";
+    if (d <= 0.20) return "Clear deviation from correct form — consistent deduction.";
+    if (d <= 0.30) return "Significant fault — clearly visible to all judges.";
+    if (d <= 0.50) return "Major execution error — large impact on score.";
+    return "Fall or very large fault — maximum deduction category.";
+  };
+
+  // Drill recommendations per fault type
+  const FAULT_DRILLS = {
+    "Bent knees": "Wall sits (3×30s) — slide down wall, press knees straight. Focus on locking out during every skill.",
+    "Soft knees": "Relevé walks (2 min) with squeezed legs. Cue: 'laser beams from kneecaps.'",
+    "Knee bend": "Straight-leg pulses on a panel mat — 3×15 reps emphasizing full extension.",
+    "Leg separation": "Squeeze drills: hold a foam block between ankles during jumps and casts. 3×10.",
+    "Pike": "Hollow body holds (4×20s). Progress from tuck to full hollow, pressing low back to floor.",
+    "Arch": "Superman-to-hollow rolls (3×8). Maintain tension throughout the roll.",
+    "Flexed feet": "Toe-point band exercises (3×20). Loop band around toes, point against resistance.",
+    "Toe point": "Ankle circles + pointed walks (2 min each). Point through every landing.",
+    "Steps on landing": "Stick drills from low box (3×10). Master each height before progressing.",
+    "Deep squat": "Eccentric squats (3×10, 4-sec descent). Same absorption pattern as landing.",
+    "Insufficient split": "Oversplit stretches (3×30s each side) on a raised surface. Daily flexibility work.",
+    "Short handstand": "Wall handstand holds (3×30s). Focus on open shoulder angle and stacked alignment.",
+    "Off vertical": "Handstand line drills against wall — heel, hip, shoulder, wrist in one line.",
+    "Balance check": "Single-leg relevé holds (3×20s each foot). Close eyes to increase challenge.",
+    "Cowboy": "Band walks (2×20 steps). Strengthen hip adductors to keep knees in line.",
+    "Head position": "Tennis ball chin drill (5 min). Hold ball under chin during rolls/handstands.",
+  };
+
+  const getFaultDrill = (fault, engine) => {
+    const text = `${fault || ""} ${engine || ""}`.toLowerCase();
+    for (const [key, drill] of Object.entries(FAULT_DRILLS)) {
+      if (text.includes(key.toLowerCase())) return drill;
+    }
+    return null;
+  };
+
   const handleSkillTap = (idx) => {
     const wasActive = activeSkill === idx;
     setActiveSkill(wasActive ? null : idx);
-    if (!wasActive && skills[idx]?.timestamp) {
-      jumpVideo(skills[idx].timestamp);
+    if (!wasActive && skills[idx]) {
+      const s = skills[idx];
+      if (s.timestamp) jumpVideo(s.timestamp);
+      // Show overlay on video with skill info
+      if (s.deduction > 0) {
+        setVideoOverlay({ skill: safeStr(s.skill), fault: safeStr(s.fault), deduction: safeNum(s.deduction, 0) });
+      } else {
+        setVideoOverlay({ skill: safeStr(s.skill), fault: "Clean execution", deduction: 0 });
+      }
+      // Scroll the card into view (just below the sticky header)
+      setTimeout(() => {
+        const el = skillCardRefs.current[idx];
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }, 100);
+    } else {
+      setVideoOverlay(null);
     }
   };
 
@@ -4250,6 +4257,31 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFileRef, onBac
               onLoadedData={() => setVideoLoading(false)}
               onError={() => { setVideoLoading(false); setVideoPlayError(true); }}
               style={{ width: "100%", maxHeight: 220, display: "block" }} />
+            {/* Deduction overlay on video — shows when a card is tapped */}
+            {videoOverlay && (
+              <div onClick={() => setVideoOverlay(null)} style={{
+                position: "absolute", bottom: 36, left: 12, right: 12,
+                padding: "8px 12px", borderRadius: 10,
+                background: "rgba(0,0,0,0.85)", backdropFilter: "blur(8px)",
+                border: `1px solid ${videoOverlay.deduction > 0 ? "rgba(239,68,68,0.3)" : "rgba(34,197,94,0.3)"}`,
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                animation: "fadeIn 0.15s ease-out", cursor: "pointer", zIndex: 3,
+              }}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#e2e8f0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {videoOverlay.skill}
+                  </div>
+                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", marginTop: 1 }}>
+                    {videoOverlay.fault.substring(0, 50)}
+                  </div>
+                </div>
+                {videoOverlay.deduction > 0 && (
+                  <span style={{ fontSize: 16, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: "#ef4444", flexShrink: 0, marginLeft: 8 }}>
+                    -{videoOverlay.deduction.toFixed(2)}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         )}
         {videoPlayError && (
@@ -4380,14 +4412,18 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFileRef, onBac
           const bio = safeArray(result.biomechanics?.keyMoments).find(m => m.timestamp === s.timestamp || m.skill === s.skill);
           const landing = safeArray(result.biomechanics?.landingAnalysis).find(l => l.timestamp === s.timestamp);
           const injury = safeArray(result.biomechanics?.injuryRiskFlags).find(f => f.timestamp === s.timestamp);
+          const estimated = hasDed ? getEstimatedAngles(s.fault, s.engine) : null;
+          const drill = hasDed ? getFaultDrill(s.fault, s.engine) : null;
 
           return (
             <div key={i}
+              ref={el => { skillCardRefs.current[i] = el; }}
               onClick={() => handleSkillTap(i)}
               style={{
                 marginBottom: 6, borderRadius: 16, cursor: "pointer",
-                background: isActive ? `${c}08` : "rgba(255,255,255,0.015)",
-                border: `1px solid ${isActive ? `${c}20` : "rgba(255,255,255,0.03)"}`,
+                background: isActive ? `${c}0C` : "rgba(255,255,255,0.015)",
+                border: `1px solid ${isActive ? `${c}35` : "rgba(255,255,255,0.03)"}`,
+                boxShadow: isActive ? `0 0 12px ${c}15, inset 0 0 0 1px ${c}10` : "none",
                 overflow: "hidden", transition: "all 0.15s",
                 animation: `floatIn 0.25s ease-out ${i * 0.03}s both`,
               }}
@@ -4433,11 +4469,74 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFileRef, onBac
                         </span>
                       </div>
                       <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>{safeStr(s.fault)}</div>
-                      {s.measuredVsIdeal && (
-                        <div style={{ marginTop: 6, padding: "6px 8px", borderRadius: 6, background: "rgba(255,255,255,0.02)", fontSize: 11, color: "rgba(255,255,255,0.35)", fontFamily: "'Space Mono', monospace" }}>
-                          {s.measuredVsIdeal}
+                      {/* Severity explanation */}
+                      <div style={{ marginTop: 6, fontSize: 11, color: "rgba(255,255,255,0.3)", fontStyle: "italic" }}>
+                        {getSeverityExplanation(s.deduction)}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Measured vs Ideal angles — from AI or estimated */}
+                  {hasDed && (() => {
+                    const hasAIAngles = s.measuredVsIdeal || (bio?.jointAngles && Object.keys(bio.jointAngles).length > 0);
+                    const est = !hasAIAngles ? estimated : null;
+                    return (hasAIAngles || est) ? (
+                      <div style={{ padding: "8px 10px", borderRadius: 8, marginBottom: 8, background: "rgba(59,130,246,0.03)", border: "1px solid rgba(59,130,246,0.06)" }}>
+                        <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(59,130,246,0.6)", letterSpacing: 0.5, marginBottom: 6 }}>
+                          BIOMECHANICS{!hasAIAngles && est ? " (ESTIMATED)" : ""}
                         </div>
-                      )}
+                        {/* AI-provided angles */}
+                        {s.measuredVsIdeal && (
+                          <div style={{ padding: "5px 8px", borderRadius: 6, background: "rgba(255,255,255,0.02)", fontSize: 11, color: "rgba(255,255,255,0.5)", fontFamily: "'Space Mono', monospace", marginBottom: 4 }}>
+                            {s.measuredVsIdeal}
+                          </div>
+                        )}
+                        {bio?.jointAngles && Object.entries(bio.jointAngles).map(([joint, angle]) => (
+                          <div key={joint} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "3px 8px", borderRadius: 4, marginBottom: 2, background: "rgba(59,130,246,0.04)" }}>
+                            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>{joint}</span>
+                            <span style={{ fontSize: 11, fontFamily: "'Space Mono', monospace", color: "rgba(239,68,68,0.8)" }}>
+                              {typeof angle === "number" ? `${angle}°` : angle}
+                            </span>
+                          </div>
+                        ))}
+                        {/* Estimated angles when AI doesn't provide them */}
+                        {est && (
+                          <>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 8px", borderRadius: 4, background: "rgba(59,130,246,0.04)", marginBottom: 2 }}>
+                              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>{est.joint}</span>
+                              <div style={{ textAlign: "right" }}>
+                                <span style={{ fontSize: 11, fontFamily: "'Space Mono', monospace", color: "#ef4444" }}>{est.measured}</span>
+                                <span style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", margin: "0 4px" }}>vs</span>
+                                <span style={{ fontSize: 11, fontFamily: "'Space Mono', monospace", color: "#22c55e" }}>{est.ideal}</span>
+                              </div>
+                            </div>
+                            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginTop: 4, lineHeight: 1.5 }}>
+                              This {est.deviation} deviation is a {est.severity} deduction per USAG standards.
+                            </div>
+                          </>
+                        )}
+                        {bio?.notes && <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", lineHeight: 1.5, marginTop: 4 }}>{bio.notes}</div>}
+                      </div>
+                    ) : null;
+                  })()}
+
+                  {/* What correct looks like */}
+                  {hasDed && estimated && (
+                    <div style={{ padding: "8px 10px", borderRadius: 8, marginBottom: 8, background: "rgba(34,197,94,0.02)", border: "1px solid rgba(34,197,94,0.05)" }}>
+                      <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(34,197,94,0.5)", letterSpacing: 0.5, marginBottom: 4 }}>WHAT CORRECT LOOKS LIKE</div>
+                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", lineHeight: 1.6 }}>
+                        {estimated.joint === "Knee" && "Legs completely straight with kneecaps locked back. No visible bend when viewed from the side."}
+                        {estimated.joint === "Hips" && "Legs pressed together with no visible gap. Inner thighs, knees, and ankles touching throughout."}
+                        {estimated.joint === "Hip" && "Full 180° split or flat body line with no visible pike at the hips."}
+                        {estimated.joint === "Spine" && "Straight body line from shoulders through hips — no visible arch in the lower back."}
+                        {estimated.joint === "Ankle" && "Toes fully extended, creating a smooth line from shin through the top of the foot."}
+                        {estimated.joint === "Core/CoG" && "Body centered over base of support with no visible wobble or shift."}
+                        {estimated.joint === "Ankle/Knee" && "Land with feet together, absorb with a slight knee bend, and hold position with no steps."}
+                        {estimated.joint === "Shoulder" && "Full vertical handstand — ears between arms, body stacked in a straight line."}
+                        {estimated.joint === "Body line" && "Perfectly vertical body line with no visible lean or deviation from 180°."}
+                        {estimated.joint === "Knees" && "Knees tracking directly over toes, no wider than shoulder width apart."}
+                        {estimated.joint === "Neck" && "Head in neutral position — chin neither tucked to chest nor thrown back."}
+                      </div>
                     </div>
                   )}
 
@@ -4449,28 +4548,11 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFileRef, onBac
                     </div>
                   )}
 
-                  {/* Skeleton overlay */}
+                  {/* Skeleton overlay — simplified, only when data exists */}
                   {s.skeleton && s.skeleton.joints && (
-                    <div style={{ marginBottom: 8, borderRadius: 10, overflow: "hidden", background: "rgba(0,0,0,0.3)", padding: 8 }}>
-                      <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.2)", letterSpacing: 0.5, marginBottom: 6 }}>BODY POSITION</div>
+                    <div style={{ marginBottom: 8, borderRadius: 10, overflow: "hidden", background: "rgba(0,0,0,0.2)", padding: 8, position: "relative", height: 120 }}>
+                      <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.15)", letterSpacing: 0.5, marginBottom: 4 }}>BODY POSITION</div>
                       <SkeletonOverlay skeleton={s.skeleton} />
-                    </div>
-                  )}
-
-                  {/* Biomechanics data */}
-                  {bio && (
-                    <div style={{ padding: "8px 10px", borderRadius: 8, marginBottom: 8, background: "rgba(59,130,246,0.03)", border: "1px solid rgba(59,130,246,0.06)" }}>
-                      <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(59,130,246,0.6)", letterSpacing: 0.5, marginBottom: 4 }}>BIOMECHANICS · {bio.phase || ""}</div>
-                      {bio.jointAngles && (
-                        <div style={{ display: "flex", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
-                          {Object.entries(bio.jointAngles).map(([joint, angle]) => (
-                            <span key={joint} style={{ fontSize: 10, padding: "2px 8px", borderRadius: 4, background: "rgba(59,130,246,0.06)", color: "rgba(59,130,246,0.7)", fontFamily: "'Space Mono', monospace" }}>
-                              {joint}: {typeof angle === "number" ? angle + "°" : angle}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                      {bio.notes && <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", lineHeight: 1.5 }}>{bio.notes}</div>}
                     </div>
                   )}
 
@@ -4490,7 +4572,7 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFileRef, onBac
                   {/* Injury flag */}
                   {injury && (
                     <div style={{ padding: "6px 10px", borderRadius: 8, marginBottom: 8, background: "rgba(239,68,68,0.04)", border: "1px solid rgba(239,68,68,0.08)", fontSize: 11, color: "rgba(239,68,68,0.7)" }}>
-                      ⚠ {injury.reason} — {injury.recommendation}
+                      {injury.reason} — {injury.recommendation}
                     </div>
                   )}
 
@@ -4502,30 +4584,31 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFileRef, onBac
                     </div>
                   )}
 
-                  {/* Action buttons */}
-                  <div style={{ display: "flex", gap: 6 }}>
-                    {hasVideo && s.timestamp && s.timestamp !== "Global" && (
-                      <button onClick={(e) => { e.stopPropagation(); jumpVideo(s.timestamp); }} style={{
-                        flex: 1, padding: "8px 10px", borderRadius: 8, border: "1px solid rgba(196,152,42,0.12)",
-                        background: "rgba(196,152,42,0.03)", cursor: "pointer", fontSize: 10, fontWeight: 600,
-                        color: "#C4982A", fontFamily: "'Outfit', sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
-                      }}>
-                        <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 1l7 4-7 4V1z" fill="currentColor"/></svg>
-                        {s.timestamp}
-                      </button>
-                    )}
-                    {/* Correction tip inline */}
-                    {hasDed && s.correction && (
-                      <div style={{
-                        flex: 1, padding: "8px 10px", borderRadius: 8, border: "1px solid rgba(34,197,94,0.1)",
-                        background: "rgba(34,197,94,0.03)", fontSize: 10, fontWeight: 500,
-                        color: "rgba(255,255,255,0.4)", fontFamily: "'Outfit', sans-serif",
-                        display: "flex", alignItems: "center", gap: 4,
-                      }}>
-                        <Icon name="sparkle" size={10} color="#22c55e" /> {safeStr(s.correction).substring(0, 50)}
+                  {/* Specific drill recommendation */}
+                  {hasDed && (drill || s.correction) && (
+                    <div style={{ padding: "8px 10px", borderRadius: 8, marginBottom: 8, background: "rgba(139,92,246,0.03)", border: "1px solid rgba(139,92,246,0.06)" }}>
+                      <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(139,92,246,0.6)", letterSpacing: 0.5, marginBottom: 4 }}>DRILL FOR THIS FAULT</div>
+                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", lineHeight: 1.6 }}>
+                        {drill || `Practice this skill with focus on ${safeStr(s.fault).substring(0, 40)}. Film and compare.`}
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
+
+                  {/* Jump to timestamp button */}
+                  {hasVideo && s.timestamp && s.timestamp !== "Global" && (
+                    <button onClick={(e) => {
+                      e.stopPropagation();
+                      jumpVideo(s.timestamp);
+                      setVideoOverlay({ skill: safeStr(s.skill), fault: safeStr(s.fault), deduction: safeNum(s.deduction, 0) });
+                    }} style={{
+                      width: "100%", padding: "8px 10px", borderRadius: 8, border: "1px solid rgba(196,152,42,0.12)",
+                      background: "rgba(196,152,42,0.03)", cursor: "pointer", fontSize: 10, fontWeight: 600,
+                      color: "#C4982A", fontFamily: "'Outfit', sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
+                    }}>
+                      <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 1l7 4-7 4V1z" fill="currentColor"/></svg>
+                      Jump to {s.timestamp}
+                    </button>
+                  )}
                 </div>
               )}
             </div>
