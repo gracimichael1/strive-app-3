@@ -4311,34 +4311,25 @@ function getCorrectForm(skill) {
   return "Full extension through every position. Pointed toes, locked knees where required. Clean body lines with no unnecessary movement. Controlled throughout.";
 }
 
-// ─── DRILL MATCHER — finds relevant drills from DRILLS_DATABASE for a fault ──
-function getDrillsForFault(fault) {
-  if (!fault) return [];
-  for (const [key, drills] of Object.entries(DRILLS_DATABASE)) {
-    if (fault.toLowerCase().includes(key.toLowerCase())) return drills;
-  }
-  return DRILLS_DATABASE["default"] || [];
-}
-
 // ─── GRADED SKILL CARD ───────────────────────────────────────────────────────
 
-function GradedSkillCard({ skill, onSeek, videoUrl }) {
+function GradedSkillCard({ skill, onSeek }) {
   const [expanded, setExpanded] = useState(false);
-  const [showSkeleton, setShowSkeleton] = useState(false);
-  const [showIdeal, setShowIdeal] = useState(false);
-  const [slowMo, setSlowMo] = useState(false);
   const color   = GRADE_COLOR[skill.grade] || "#C4982A";
   const isClean = !skill.fault || skill.gradeDeduction === 0;
-  const sevColor = isClean ? "#22c55e" : dedColor(skill.gradeDeduction || 0);
 
-  // Parse sub-faults — split on "; " or sentence-ending ". " but not decimals/parens
+  // Parse sub-faults from reason text.
+  // Split on semicolons or sentence-ending periods, but NOT periods inside parentheses
+  // like "(-0.05)" or decimal numbers like "0.10".
   const subFaults = (() => {
     if (!skill.fault) return [];
+    // Split on "; " or ". " but only when the period is NOT inside parentheses or a number
     const parts = skill.fault
       .split(/;\s*|(?<!\d)\.(?!\d)(?![^(]*\))\s+/)
       .map(s => s.trim().replace(/\.$/, ""))
       .filter(s => s.length > 3);
     if (parts.length <= 1) return [{ text: skill.fault, amount: skill.gradeDeduction || 0 }];
+    // Distribute total deduction roughly across sub-faults
     const each = Math.round(((skill.gradeDeduction || 0) / parts.length) * 100) / 100;
     return parts.map((text, i) => ({
       text,
@@ -4348,34 +4339,25 @@ function GradedSkillCard({ skill, onSeek, videoUrl }) {
     }));
   })();
 
+  // Biomechanics: use AI data if available, otherwise estimate
   const bioAngles = skill.biomechanics || estimateBiomechanics(skill);
-
-  // Timestamp range estimate (skill duration ~2-3 sec)
-  const startSec = skill.timestampSec || 0;
-  const endSec = startSec + 3;
-  const fmtTs = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
-
-  // Targeted drills for this skill's faults
-  const drills = !isClean ? getDrillsForFault(skill.fault).slice(0, 3) : [];
 
   return (
     <div style={{
       background: "rgba(255,255,255,0.03)",
-      borderRadius: 14, marginBottom: 10, overflow: "hidden",
       border: `1px solid ${expanded ? color + "40" : "rgba(255,255,255,0.06)"}`,
-      borderLeft: `4px solid ${sevColor}`,
-      transition: "border-color 0.2s, max-height 0.35s ease-out",
+      borderRadius: 14, marginBottom: 10, overflow: "hidden", transition: "border-color 0.2s",
     }}>
-      {/* ── 1. HEADER (collapsed & expanded) ── */}
+      {/* ── 1. Header ── */}
       <button onClick={() => setExpanded(v => !v)}
-        style={{ width: "100%", textAlign: "left", padding: "14px 14px 14px 12px",
+        style={{ width: "100%", textAlign: "left", padding: "14px 16px",
           background: "transparent", border: "none", cursor: "pointer",
-          display: "flex", alignItems: "center", gap: 12 }}>
+          display: "flex", alignItems: "center", gap: 14 }}>
 
-        <GradeCircle grade={skill.grade} size={46} />
+        <GradeCircle grade={skill.grade} size={48} />
 
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: "#E2E8F0", marginBottom: 2 }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: "#E2E8F0", marginBottom: 3 }}>
             {skill.skill}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
@@ -4383,21 +4365,24 @@ function GradedSkillCard({ skill, onSeek, videoUrl }) {
               fontFamily: "'Space Mono', monospace" }}>{skill.timestamp}</span>
             <span style={{ fontSize: 10, fontWeight: 600, padding: "1px 8px", borderRadius: 10,
               background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.35)",
-              textTransform: "uppercase", letterSpacing: 0.3 }}>{skill.type}</span>
+              textTransform: "uppercase" }}>{skill.type}</span>
           </div>
           {!expanded && skill.fault && (
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginTop: 3,
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginTop: 4,
               lineHeight: 1.4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {skill.fault}
             </div>
           )}
         </div>
 
+        {/* Deduction or clean badge */}
         <div style={{ textAlign: "right", flexShrink: 0 }}>
           {isClean ? (
             <div style={{ fontSize: 11, fontWeight: 700, color: "#22C55E", padding: "4px 10px",
               borderRadius: 20, background: "rgba(34,197,94,0.1)",
-              border: "1px solid rgba(34,197,94,0.2)" }}>Clean</div>
+              border: "1px solid rgba(34,197,94,0.2)" }}>
+              Clean
+            </div>
           ) : (
             <div style={{ fontSize: 18, fontWeight: 800, color,
               fontFamily: "'Space Mono', monospace" }}>
@@ -4414,61 +4399,42 @@ function GradedSkillCard({ skill, onSeek, videoUrl }) {
         </svg>
       </button>
 
-      {/* ── EXPANDED SECTIONS ── */}
+      {/* ── Expanded detail ── */}
       {expanded && (
-        <div style={{ padding: "0 14px 16px", animation: "fadeIn 0.25s ease-out" }}>
+        <div style={{ padding: "0 16px 16px" }}>
 
-          {/* ── 2. VIDEO CLIP ── */}
-          {(videoUrl || onSeek) && (
+          {/* ── 2. Jump to timestamp — seeks the sticky player ── */}
+          {onSeek && (
+            <button onClick={() => onSeek(skill.timestampSec || 0)}
+              style={{ display: "flex", alignItems: "center", gap: 6,
+                padding: "7px 14px", borderRadius: 8, marginBottom: 14,
+                background: "rgba(196,152,42,0.1)",
+                border: "1px solid rgba(196,152,42,0.2)",
+                color: "#C4982A", fontSize: 12, fontWeight: 600,
+                cursor: "pointer", fontFamily: "'Outfit', sans-serif" }}>
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+                <path d="M3 2l7 4-7 4V2z"/>
+              </svg>
+              Jump to {skill.timestamp}
+            </button>
+          )}
+
+          {/* Frame thumbnail for saved analyses without video */}
+          {!onSeek && skill.frameDataUrl && (
             <div style={{ marginBottom: 14 }}>
-              {/* Timestamp range + controls */}
-              <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
-                <button onClick={() => { if (onSeek) onSeek(startSec); }}
-                  style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 12px",
-                    borderRadius: 8, background: "rgba(196,152,42,0.1)",
-                    border: "1px solid rgba(196,152,42,0.2)", color: "#C4982A",
-                    fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "'Outfit', sans-serif" }}>
-                  <svg width="10" height="10" viewBox="0 0 12 12" fill="currentColor"><path d="M3 2l7 4-7 4V2z"/></svg>
-                  {fmtTs(startSec)} — {fmtTs(endSec)}
-                </button>
-                <button onClick={() => setSlowMo(v => !v)}
-                  style={{ padding: "5px 10px", borderRadius: 8, fontSize: 10, fontWeight: 700,
-                    cursor: "pointer", fontFamily: "'Space Mono', monospace", letterSpacing: 0.3,
-                    background: slowMo ? "rgba(196,152,42,0.15)" : "rgba(255,255,255,0.04)",
-                    border: `1px solid ${slowMo ? "rgba(196,152,42,0.3)" : "rgba(255,255,255,0.08)"}`,
-                    color: slowMo ? "#C4982A" : "rgba(255,255,255,0.4)" }}>
-                  0.25x SLOW-MO
-                </button>
-                <button onClick={() => setShowSkeleton(v => !v)}
-                  style={{ padding: "5px 10px", borderRadius: 8, fontSize: 10, fontWeight: 700,
-                    cursor: "pointer", fontFamily: "'Outfit', sans-serif",
-                    background: showSkeleton ? "rgba(59,130,246,0.15)" : "rgba(255,255,255,0.04)",
-                    border: `1px solid ${showSkeleton ? "rgba(59,130,246,0.3)" : "rgba(255,255,255,0.08)"}`,
-                    color: showSkeleton ? "#3B82F6" : "rgba(255,255,255,0.4)" }}>
-                  Skeleton {showSkeleton ? "ON" : "OFF"}
-                </button>
-                <button onClick={() => setShowIdeal(v => !v)}
-                  style={{ padding: "5px 10px", borderRadius: 8, fontSize: 10, fontWeight: 700,
-                    cursor: "pointer", fontFamily: "'Outfit', sans-serif",
-                    background: showIdeal ? "rgba(34,197,94,0.12)" : "rgba(255,255,255,0.04)",
-                    border: `1px solid ${showIdeal ? "rgba(34,197,94,0.25)" : "rgba(255,255,255,0.08)"}`,
-                    color: showIdeal ? "#22c55e" : "rgba(255,255,255,0.4)" }}>
-                  Ideal {showIdeal ? "ON" : "OFF"}
-                </button>
+              <div style={{ borderRadius: 10, overflow: "hidden", background: "#000",
+                border: "1px solid rgba(255,255,255,0.08)" }}>
+                <img src={skill.frameDataUrl} alt={`Frame at ${skill.timestamp}`}
+                  style={{ width: "100%", display: "block", maxHeight: 200, objectFit: "contain" }} />
+              </div>
+              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginTop: 4,
+                fontFamily: "'Space Mono', monospace" }}>
+                Frame at {skill.timestamp}
               </div>
             </div>
           )}
 
-          {/* Frame thumbnail fallback for saved analyses */}
-          {!onSeek && !videoUrl && skill.frameDataUrl && (
-            <div style={{ marginBottom: 14, borderRadius: 10, overflow: "hidden", background: "#000",
-              border: "1px solid rgba(255,255,255,0.08)" }}>
-              <img src={skill.frameDataUrl} alt={`Frame at ${skill.timestamp}`}
-                style={{ width: "100%", display: "block", maxHeight: 200, objectFit: "contain" }} />
-            </div>
-          )}
-
-          {/* ── 3. DEDUCTIONS FOUND ── */}
+          {/* ── 3. Deductions found ── */}
           {!isClean && subFaults.length > 0 && (
             <div style={{ marginBottom: 14 }}>
               <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.35)",
@@ -4477,29 +4443,16 @@ function GradedSkillCard({ skill, onSeek, videoUrl }) {
               </div>
               {subFaults.map((sf, i) => {
                 const sColor = dedColor(sf.amount);
-                // Split text into bold fault name and description
-                const dashIdx = sf.text.indexOf(" — ");
-                const colonIdx = sf.text.indexOf(": ");
-                const splitAt = dashIdx > 0 ? dashIdx : colonIdx > 0 ? colonIdx : -1;
-                const faultName = splitAt > 0 ? sf.text.slice(0, splitAt) : sf.text;
-                const faultDesc = splitAt > 0 ? sf.text.slice(splitAt + (dashIdx > 0 ? 3 : 2)) : null;
                 return (
                   <div key={i} style={{ display: "flex", alignItems: "stretch", gap: 10,
-                    marginBottom: 6, padding: "9px 12px", borderRadius: 8,
+                    marginBottom: 6, padding: "8px 12px", borderRadius: 8,
                     background: "rgba(255,255,255,0.02)",
                     border: "1px solid rgba(255,255,255,0.05)" }}>
                     <div style={{ width: 3, borderRadius: 2, background: sColor, flexShrink: 0 }} />
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: "#E2E8F0", lineHeight: 1.4 }}>
-                        {faultName}
-                      </div>
-                      {faultDesc && (
-                        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: 1.5, marginTop: 2 }}>
-                          {faultDesc}
-                        </div>
-                      )}
+                      <div style={{ fontSize: 13, color: "#E2E8F0", lineHeight: 1.5 }}>{sf.text}</div>
                     </div>
-                    <div style={{ fontSize: 14, fontWeight: 800, color: sColor,
+                    <div style={{ fontSize: 13, fontWeight: 800, color: sColor,
                       fontFamily: "'Space Mono', monospace", flexShrink: 0, alignSelf: "center" }}>
                       -{sf.amount.toFixed(2)}
                     </div>
@@ -4509,7 +4462,7 @@ function GradedSkillCard({ skill, onSeek, videoUrl }) {
             </div>
           )}
 
-          {/* ── 4. BIOMECHANICS (2x2 grid) ── */}
+          {/* ── 4. Biomechanics (2x2 grid) ── */}
           {!isClean && bioAngles.length > 0 && (
             <div style={{ marginBottom: 14 }}>
               <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.35)",
@@ -4518,8 +4471,8 @@ function GradedSkillCard({ skill, onSeek, videoUrl }) {
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
                 {bioAngles.map((a, i) => {
-                  const gap = Math.abs(a.measured - a.ideal);
-                  const aColor = gap > 10 ? "#f59e0b" : "#22c55e";
+                  const diff = Math.abs(a.measured - a.ideal);
+                  const aColor = diff > 10 ? "#f59e0b" : "#22c55e";
                   return (
                     <div key={i} style={{ padding: "10px 12px", borderRadius: 10,
                       background: "rgba(255,255,255,0.02)",
@@ -4530,13 +4483,13 @@ function GradedSkillCard({ skill, onSeek, videoUrl }) {
                       </div>
                       <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
                         <span style={{ fontSize: 20, fontWeight: 900, color: aColor,
-                          fontFamily: "'Space Mono', monospace" }}>{a.measured}\u00B0</span>
-                        <span style={{ fontSize: 11, color: "rgba(255,255,255,0.25)" }}>/</span>
+                          fontFamily: "'Space Mono', monospace" }}>{a.measured}°</span>
+                        <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>/</span>
                         <span style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.4)",
-                          fontFamily: "'Space Mono', monospace" }}>{a.ideal}\u00B0</span>
+                          fontFamily: "'Space Mono', monospace" }}>{a.ideal}°</span>
                       </div>
                       <div style={{ fontSize: 10, color: aColor, fontWeight: 600, marginTop: 2 }}>
-                        {gap <= 5 ? "Excellent" : gap <= 10 ? "Good" : gap <= 20 ? "Needs work" : "Significant gap"}
+                        {diff <= 5 ? "Excellent" : diff <= 10 ? "Good" : diff <= 20 ? "Needs work" : "Significant gap"}
                       </div>
                     </div>
                   );
@@ -4545,22 +4498,23 @@ function GradedSkillCard({ skill, onSeek, videoUrl }) {
             </div>
           )}
 
-          {/* ── 5. INJURY AWARENESS ── */}
+          {/* ── 4b. Injury Awareness ── */}
           {(() => {
             const f = (skill.fault || "").toLowerCase();
             const risks = [];
+            // Check biomechanics angles for significant knee deviation
             const kneeAngle = bioAngles.find(a => a.label.toLowerCase().includes("knee"));
             if (kneeAngle && Math.abs(kneeAngle.measured - kneeAngle.ideal) > 15)
-              risks.push(`Repeated landing at ${kneeAngle.measured}\u00B0 knee flexion increases ACL strain risk. Focus on building quad strength and landing mechanics.`);
+              risks.push("Repeated landing with knee flexion at " + kneeAngle.measured + "\u00B0 increases ACL strain risk. Focus on building quad strength and landing mechanics.");
             else if (f.includes("knee") || f.includes("squat") || f.includes("deep"))
               risks.push("Repeated landing with excess knee bend increases ACL strain risk. Focus on building quad strength and landing mechanics.");
-            if (f.includes("arch") || f.includes("hyperext") || f.includes("back handspring"))
+            if (f.includes("arch") || f.includes("hyperext") || f.includes("back"))
               risks.push("Repeated hyperextension in back handsprings can stress lumbar vertebrae. Hollow body conditioning recommended.");
             if (f.includes("cowboy") || f.includes("leg separation") || f.includes("asymmetric"))
               risks.push("Asymmetric leg positions during rotation increase ankle roll risk on landing.");
             const hasRisk = risks.length > 0;
             return (
-              <div style={{ marginBottom: 14, padding: "10px 14px", borderRadius: 10,
+              <div style={{ marginBottom: 12, padding: "10px 14px", borderRadius: 10,
                 background: hasRisk ? "rgba(249,115,22,0.05)" : "rgba(34,197,94,0.04)",
                 border: `1px solid ${hasRisk ? "rgba(249,115,22,0.2)" : "rgba(34,197,94,0.15)"}`,
                 borderLeft: `3px solid ${hasRisk ? "#f97316" : "#22c55e"}` }}>
@@ -4583,7 +4537,9 @@ function GradedSkillCard({ skill, onSeek, videoUrl }) {
                 </div>
                 {hasRisk ? risks.map((r, i) => (
                   <div key={i} style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", lineHeight: 1.6,
-                    marginTop: i === 0 ? 2 : 6 }}>{r}</div>
+                    marginTop: i === 0 ? 2 : 6 }}>
+                    {r}
+                  </div>
                 )) : (
                   <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.6, marginTop: 2 }}>
                     All clear — no elevated injury risk detected for this skill.
@@ -4593,8 +4549,8 @@ function GradedSkillCard({ skill, onSeek, videoUrl }) {
             );
           })()}
 
-          {/* ── 6. CORRECT FORM (green border) ── */}
-          <div style={{ marginBottom: 14, padding: "10px 14px", borderRadius: 10,
+          {/* ── 5. Correct form (green border) ── */}
+          <div style={{ marginBottom: 12, padding: "10px 14px", borderRadius: 10,
             background: "rgba(34,197,94,0.04)",
             border: "1px solid rgba(34,197,94,0.2)",
             borderLeft: "3px solid #22C55E" }}>
@@ -4607,9 +4563,9 @@ function GradedSkillCard({ skill, onSeek, videoUrl }) {
             </div>
           </div>
 
-          {/* ── 7. STRENGTH (gold border) ── */}
+          {/* ── 6. Strength (gold border) ── */}
           {(skill.strength || isClean) && (
-            <div style={{ marginBottom: 14, padding: "10px 14px", borderRadius: 10,
+            <div style={{ marginBottom: 12, padding: "10px 14px", borderRadius: 10,
               background: "rgba(196,152,42,0.04)",
               border: "1px solid rgba(196,152,42,0.2)",
               borderLeft: "3px solid #C4982A" }}>
@@ -4623,39 +4579,18 @@ function GradedSkillCard({ skill, onSeek, videoUrl }) {
             </div>
           )}
 
-          {/* ── 8. TARGETED DRILLS ── */}
-          {drills.length > 0 && (
-            <div style={{ marginBottom: 4 }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.35)",
-                letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>
-                Targeted Drills
+          {/* ── Coach note (if present) ── */}
+          {skill.coachNote && (
+            <div style={{ marginBottom: 12, padding: "8px 12px", borderRadius: 8,
+              background: "rgba(59,130,246,0.06)",
+              border: "1px solid rgba(59,130,246,0.15)" }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "#3B82F6",
+                letterSpacing: 1, textTransform: "uppercase", marginBottom: 3 }}>
+                Coach Note
               </div>
-              {drills.map((drill, i) => (
-                <div key={i} style={{ display: "flex", gap: 10, marginBottom: 8,
-                  padding: "10px 12px", borderRadius: 10,
-                  background: "rgba(255,255,255,0.02)",
-                  border: "1px solid rgba(255,255,255,0.05)" }}>
-                  <div style={{ width: 24, height: 24, borderRadius: "50%", flexShrink: 0,
-                    background: "rgba(196,152,42,0.1)", border: "1px solid rgba(196,152,42,0.2)",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: 12, fontWeight: 800, color: "#C4982A",
-                    fontFamily: "'Space Mono', monospace" }}>
-                    {i + 1}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: "#E2E8F0", marginBottom: 2 }}>
-                      {drill.name}
-                    </div>
-                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: 1.5 }}>
-                      {drill.description}
-                    </div>
-                    <div style={{ fontSize: 11, color: "#C4982A", fontWeight: 600, marginTop: 4,
-                      fontFamily: "'Space Mono', monospace" }}>
-                      {drill.duration}
-                    </div>
-                  </div>
-                </div>
-              ))}
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", lineHeight: 1.6 }}>
+                {skill.coachNote}
+              </div>
             </div>
           )}
 
@@ -4762,7 +4697,6 @@ function GradedSkillsView({ result, videoUrl }) {
           key={skill.id || idx}
           skill={skill}
           onSeek={videoUrl ? handleSeek : null}
-          videoUrl={videoUrl}
         />
       ))}
     </div>
