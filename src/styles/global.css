@@ -81,6 +81,16 @@ body {
   100% { background-position: 200% 0; }
 }
 
+@keyframes floatIn {
+  from { opacity: 0; transform: translateY(6px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 /* ─── GLOBAL COMPONENTS ─── */
 .btn-gold {
   background: linear-gradient(135deg, var(--strive-gold-500), var(--strive-gold-300));
