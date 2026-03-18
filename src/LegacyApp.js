@@ -4489,6 +4489,57 @@ function GradedSkillCard({ skill, onSeek }) {
             </div>
           )}
 
+          {/* ── 4b. Injury Awareness ── */}
+          {(() => {
+            const f = (skill.fault || "").toLowerCase();
+            const risks = [];
+            // Check biomechanics angles for significant knee deviation
+            const kneeAngle = bioAngles.find(a => a.label.toLowerCase().includes("knee"));
+            if (kneeAngle && Math.abs(kneeAngle.measured - kneeAngle.ideal) > 15)
+              risks.push("Repeated landing with knee flexion at " + kneeAngle.measured + "\u00B0 increases ACL strain risk. Focus on building quad strength and landing mechanics.");
+            else if (f.includes("knee") || f.includes("squat") || f.includes("deep"))
+              risks.push("Repeated landing with excess knee bend increases ACL strain risk. Focus on building quad strength and landing mechanics.");
+            if (f.includes("arch") || f.includes("hyperext") || f.includes("back"))
+              risks.push("Repeated hyperextension in back handsprings can stress lumbar vertebrae. Hollow body conditioning recommended.");
+            if (f.includes("cowboy") || f.includes("leg separation") || f.includes("asymmetric"))
+              risks.push("Asymmetric leg positions during rotation increase ankle roll risk on landing.");
+            const hasRisk = risks.length > 0;
+            return (
+              <div style={{ marginBottom: 12, padding: "10px 14px", borderRadius: 10,
+                background: hasRisk ? "rgba(249,115,22,0.05)" : "rgba(34,197,94,0.04)",
+                border: `1px solid ${hasRisk ? "rgba(249,115,22,0.2)" : "rgba(34,197,94,0.15)"}`,
+                borderLeft: `3px solid ${hasRisk ? "#f97316" : "#22c55e"}` }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                  {hasRisk ? (
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                      <circle cx="7" cy="7" r="6" stroke="#f97316" strokeWidth="1.5"/>
+                      <path d="M7 4v3.5M7 9.5v.5" stroke="#f97316" strokeWidth="1.5" strokeLinecap="round"/>
+                    </svg>
+                  ) : (
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                      <circle cx="7" cy="7" r="6" stroke="#22c55e" strokeWidth="1.5"/>
+                      <path d="M4.5 7l2 2 3-3.5" stroke="#22c55e" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  )}
+                  <div style={{ fontSize: 10, fontWeight: 700, color: hasRisk ? "#f97316" : "#22c55e",
+                    letterSpacing: 1, textTransform: "uppercase" }}>
+                    Injury Awareness
+                  </div>
+                </div>
+                {hasRisk ? risks.map((r, i) => (
+                  <div key={i} style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", lineHeight: 1.6,
+                    marginTop: i === 0 ? 2 : 6 }}>
+                    {r}
+                  </div>
+                )) : (
+                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.6, marginTop: 2 }}>
+                    All clear — no elevated injury risk detected for this skill.
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
           {/* ── 5. Correct form (green border) ── */}
           <div style={{ marginBottom: 12, padding: "10px 14px", borderRadius: 10,
             background: "rgba(34,197,94,0.04)",
@@ -4549,13 +4600,16 @@ function GradedSkillsView({ result, videoUrl: propVideoUrl, videoFileRef }) {
   const skills     = result.gradedSkills || [];
 
   // Create a fresh blob URL from the raw File ref — survives component re-mounts
+  // propVideoUrl as dependency ensures we re-evaluate when the parent URL changes
   useEffect(() => {
     if (videoFileRef?.current) {
       const url = URL.createObjectURL(videoFileRef.current);
       setFreshVideoUrl(url);
       return () => URL.revokeObjectURL(url);
+    } else if (propVideoUrl) {
+      setFreshVideoUrl(null); // fall through to propVideoUrl
     }
-  }, [videoFileRef]);
+  }, [videoFileRef, propVideoUrl]);
 
   const videoUrl = freshVideoUrl || propVideoUrl;
   const cleanCount = skills.filter(s => !s.fault || s.gradeDeduction === 0).length;
@@ -4627,10 +4681,11 @@ function GradedSkillsView({ result, videoUrl: propVideoUrl, videoFileRef }) {
       {/* ── Compact video player (sticky) ── */}
       {videoUrl && (
         <div style={{ position: "sticky", top: 0, zIndex: 10,
-          borderRadius: 12, overflow: "hidden", background: "#000",
-          marginBottom: 16, border: "1px solid rgba(255,255,255,0.08)" }}>
+          borderRadius: 12, overflow: "hidden", background: "#0a0e27",
+          marginBottom: 16, border: "1px solid rgba(255,255,255,0.08)",
+          boxShadow: "0 4px 20px rgba(0,0,0,0.5)" }}>
           <video ref={videoRef} src={videoUrl} controls controlsList="nodownload"
-            playsInline webkit-playsinline="" preload="metadata"
+            playsInline webkit-playsinline="" preload="metadata" muted
             style={{ width: "100%", display: "block", maxHeight: 220 }} />
         </div>
       )}
