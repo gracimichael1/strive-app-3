@@ -50,7 +50,7 @@ class ErrorBoundary extends React.Component {
         <div style={{ minHeight: '100vh', padding: '40px 20px', maxWidth: 540, margin: '0 auto', textAlign: 'center' }}>
           <div style={{ fontSize: 32, marginBottom: 16 }}>!</div>
           <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8, color: '#e2e8f0' }}>Something went wrong</h2>
-          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', lineHeight: 1.6, marginBottom: 24 }}>
+          <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.4)', lineHeight: 1.6, marginBottom: 24 }}>
             {this.props.screenName ? `The ${this.props.screenName} screen encountered an error.` : 'An unexpected error occurred.'} Try going back or reloading.
           </p>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
@@ -236,7 +236,7 @@ function parseGeminiTable(rawText) {
     const tsNum = parseInt(timestamp) || 0;
 
     let engine = "General";
-    const engineStr = (engineRaw + " " + faults).toLowerCase();
+    const engineStr = (String(engineRaw || '') + " " + String(faults || '')).toLowerCase();
     if (engineStr.includes("tpm") || engineStr.includes("toe point")) engine = "TPM";
     else if (engineStr.includes("ktm") || engineStr.includes("knee tension")) engine = "KTM";
     else if (engineStr.includes("vae") || engineStr.includes("vertical")) engine = "VAE";
@@ -285,7 +285,7 @@ function parseGeminiTable(rawText) {
       const tsNum = parseInt(timestamp) || 0;
 
       let engine = "General";
-      const engineStr = (engineRaw + " " + faults).toLowerCase();
+      const engineStr = (String(engineRaw || '') + " " + String(faults || '')).toLowerCase();
       if (engineStr.includes("tpm") || engineStr.includes("toe point")) engine = "TPM";
       else if (engineStr.includes("ktm") || engineStr.includes("knee tension")) engine = "KTM";
       else if (engineStr.includes("vae") || engineStr.includes("vertical")) engine = "VAE";
@@ -660,12 +660,12 @@ function ScoreBenchmark({ score, level }) {
           display: "flex", alignItems: "center", justifyContent: "center",
           boxShadow: `0 0 10px ${pColor}50`,
         }}>
-          <span style={{ fontSize: 12, fontWeight: 900, color: "#0B1024", fontFamily: "'Space Mono', monospace" }}>
+          <span style={{ fontSize: 16, fontWeight: 900, color: "#0B1024", fontFamily: "'Space Mono', monospace" }}>
             {score.toFixed(1)}
           </span>
         </div>
       </div>
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "rgba(255,255,255,0.25)", fontFamily: "'Space Mono', monospace" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 16, color: "rgba(255,255,255,0.25)", fontFamily: "'Space Mono', monospace" }}>
         <span>{bench.low.toFixed(1)}</span>
         <span style={{ color: "rgba(245,158,11,0.5)" }}>avg {bench.avg.toFixed(1)}</span>
         <span style={{ color: "rgba(196,152,42,0.5)" }}>top10% {bench.top10.toFixed(1)}</span>
@@ -710,17 +710,17 @@ function SkillsRequiredCard({ profile }) {
         <h3 style={{ fontSize: 14, fontWeight: 700 }}>
           <Icon name="star" size={14} /> Skills Required — {profile.level}
         </h3>
-        <span style={{ color: "#C4982A", fontSize: 13, fontWeight: 600 }}>{expanded ? "▲" : "▼"}</span>
+        <span style={{ color: "#C4982A", fontSize: 16, fontWeight: 600 }}>{expanded ? "▲" : "▼"}</span>
       </div>
       {expanded && (
         <div style={{ marginTop: 12 }}>
           {events.map(([label, key]) => skills[key] && (
             <div key={key} style={{ marginBottom: 10 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "#C4982A", letterSpacing: 1, marginBottom: 4 }}>{String(label || "").toUpperCase()}</div>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", lineHeight: 1.7 }}>{skills[key]}</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "#C4982A", letterSpacing: 1, marginBottom: 4 }}>{String(label || "").toUpperCase()}</div>
+              <div style={{ fontSize: 16, color: "rgba(255,255,255,0.6)", lineHeight: 1.7 }}>{skills[key]}</div>
             </div>
           ))}
-          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginTop: 8, fontStyle: "italic" }}>
+          <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)", marginTop: 8, fontStyle: "italic" }}>
             These are the key skills your gymnast needs for this level. Each skill is judged on execution, form, and amplitude.
           </div>
         </div>
@@ -753,14 +753,14 @@ function GlossaryCard() {
         <h3 style={{ fontSize: 14, fontWeight: 700 }}>
           <Icon name="note" size={14} /> Parent's Glossary — Key Terms
         </h3>
-        <span style={{ color: "#C4982A", fontSize: 13, fontWeight: 600 }}>{expanded ? "▲" : "▼"}</span>
+        <span style={{ color: "#C4982A", fontSize: 16, fontWeight: 600 }}>{expanded ? "▲" : "▼"}</span>
       </div>
       {expanded && (
         <div style={{ marginTop: 12 }}>
           {terms.map(([term, def], i) => (
             <div key={i} style={{ marginBottom: 10, paddingBottom: 10, borderBottom: i < terms.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "#C4982A", marginBottom: 3 }}>{term}</div>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", lineHeight: 1.6 }}>{def}</div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: "#C4982A", marginBottom: 3 }}>{term}</div>
+              <div style={{ fontSize: 16, color: "rgba(255,255,255,0.55)", lineHeight: 1.6 }}>{def}</div>
             </div>
           ))}
         </div>
@@ -795,7 +795,7 @@ function MeetDayChecklist({ gender }) {
         <h3 style={{ fontSize: 14, fontWeight: 700 }}>
           <Icon name="check" size={14} /> Meet Day Checklist
         </h3>
-        <span style={{ color: "#C4982A", fontSize: 13, fontWeight: 600 }}>{expanded ? "▲" : "▼"}</span>
+        <span style={{ color: "#C4982A", fontSize: 16, fontWeight: 600 }}>{expanded ? "▲" : "▼"}</span>
       </div>
       {expanded && (
         <div style={{ marginTop: 12 }}>
@@ -811,10 +811,10 @@ function MeetDayChecklist({ gender }) {
                 display: "flex", alignItems: "center", justifyContent: "center",
                 transition: "all 0.2s",
               }}>
-                {checked[i] && <span style={{ color: "#22c55e", fontSize: 12, fontWeight: 700 }}>✓</span>}
+                {checked[i] && <span style={{ color: "#22c55e", fontSize: 16, fontWeight: 700 }}>✓</span>}
               </div>
               <span style={{
-                fontSize: 13, color: checked[i] ? "rgba(255,255,255,0.35)" : "rgba(255,255,255,0.6)",
+                fontSize: 16, color: checked[i] ? "rgba(255,255,255,0.35)" : "rgba(255,255,255,0.6)",
                 lineHeight: 1.5, textDecoration: checked[i] ? "line-through" : "none",
                 transition: "all 0.2s",
               }}>
@@ -1124,13 +1124,13 @@ export default function LegacyApp() {
               {/* Show basic stats as teaser */}
               {history.length > 0 && (
                 <div className="card" style={{ padding: 16, marginBottom: 16 }}>
-                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>Total analyses: <span style={{ color: "#C4982A", fontWeight: 700 }}>{history.length}</span></div>
+                  <div style={{ fontSize: 16, color: "rgba(255,255,255,0.4)" }}>Total analyses: <span style={{ color: "#C4982A", fontWeight: 700 }}>{history.length}</span></div>
                 </div>
               )}
               <div style={{ border: "1.5px solid rgba(139,92,246,0.25)", borderRadius: 16, padding: 24, textAlign: "center", background: "rgba(139,92,246,0.04)" }}>
                 <div style={{ marginBottom: 8 }}><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#A78BFA" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg></div>
                 <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>Score History & Trends</div>
-                <div style={{ fontSize: 12, color: "#8890AB", lineHeight: 1.6, marginBottom: 16 }}>Score charts over time, event-by-event trends, deduction pattern tracking, and improvement velocity — see exactly where you're getting better and what still needs work.</div>
+                <div style={{ fontSize: 16, color: "#8890AB", lineHeight: 1.6, marginBottom: 16 }}>Score charts over time, event-by-event trends, deduction pattern tracking, and improvement velocity — see exactly where you're getting better and what still needs work.</div>
                 <button onClick={() => { try { localStorage.setItem("strive-tier", "pro"); } catch {} window.location.reload(); }} style={{ background: "linear-gradient(135deg, #8B5CF6, #A78BFA)", color: "#FFF", border: "none", padding: "12px 32px", borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: "'Outfit', sans-serif" }}>
                   Upgrade to STRIVE Pro
                 </button>
@@ -1161,14 +1161,14 @@ export default function LegacyApp() {
               <div className="card" style={{ padding: 20, marginBottom: 16, borderColor: "rgba(196,152,42,0.15)" }}>
                 <h3 style={{ fontSize: 14, fontWeight: 700, color: "#C4982A", marginBottom: 10 }}>The 4 Pillars</h3>
                 {["Visualization — mentally rehearse routines", "Breathing — control nerves before competing", "Confidence — replace negative self-talk", "Pressure Management — make meets feel familiar"].map((p, i) => (
-                  <div key={i} style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", padding: "6px 0", borderBottom: i < 3 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>{p}</div>
+                  <div key={i} style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", padding: "6px 0", borderBottom: i < 3 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>{p}</div>
                 ))}
               </div>
               {/* Pro gate */}
               <div style={{ border: "1.5px solid rgba(139,92,246,0.25)", borderRadius: 16, padding: 24, textAlign: "center", background: "rgba(139,92,246,0.04)" }}>
                 <div style={{ marginBottom: 8 }}><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#A78BFA" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg></div>
                 <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>Full Mental Training Suite</div>
-                <div style={{ fontSize: 12, color: "#8890AB", lineHeight: 1.6, marginBottom: 16 }}>
+                <div style={{ fontSize: 16, color: "#8890AB", lineHeight: 1.6, marginBottom: 16 }}>
                   Guided visualization scripts, breathing techniques (4-7-8, box breathing, power breath), confidence-building exercises, competition day protocols, and parent coaching tips.
                 </div>
                 <button onClick={() => { try { localStorage.setItem("strive-tier", "pro"); } catch {} window.location.reload(); }} style={{ background: "linear-gradient(135deg, #8B5CF6, #A78BFA)", color: "#FFF", border: "none", padding: "12px 32px", borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: "'Outfit', sans-serif" }}>
@@ -1192,7 +1192,7 @@ export default function LegacyApp() {
               <div style={{ border: "1.5px solid rgba(139,92,246,0.25)", borderRadius: 16, padding: 24, textAlign: "center", background: "rgba(139,92,246,0.04)" }}>
                 <div style={{ marginBottom: 8 }}><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#A78BFA" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg></div>
                 <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>Season Goal Tracking</div>
-                <div style={{ fontSize: 12, color: "#8890AB", lineHeight: 1.6, marginBottom: 16 }}>
+                <div style={{ fontSize: 16, color: "#8890AB", lineHeight: 1.6, marginBottom: 16 }}>
                   Set event-specific score targets, track your progress over time, identify trends in your training, and get personalized recommendations for reaching your goals.
                 </div>
                 <button onClick={() => { try { localStorage.setItem("strive-tier", "pro"); } catch {} window.location.reload(); }} style={{ background: "linear-gradient(135deg, #8B5CF6, #A78BFA)", color: "#FFF", border: "none", padding: "12px 32px", borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: "'Outfit', sans-serif" }}>
@@ -1230,7 +1230,7 @@ export default function LegacyApp() {
                     display: "flex", flexDirection: "column", alignItems: "center", gap: 2,
                     padding: "8px 14px",
                     borderRadius: 14, border: "none", cursor: "pointer",
-                    fontFamily: "'Outfit', sans-serif", fontSize: 12, fontWeight: 600,
+                    fontFamily: "'Outfit', sans-serif", fontSize: 16, fontWeight: 600,
                     background: tab.primary ? "rgba(196,152,42,0.08)" : "transparent",
                     color,
                     transition: "all 0.15s", WebkitTapHighlightColor: "transparent",
@@ -1323,7 +1323,7 @@ function SplashScreen({ onStart }) {
           }}>STRIVE</span>
         </h1>
         <div style={{
-          fontSize: 10, fontWeight: 600, letterSpacing: 3,
+          fontSize: 14, fontWeight: 600, letterSpacing: 3,
           color: "rgba(255,255,255,0.2)", marginTop: 10,
           textTransform: "uppercase",
         }}>
@@ -1362,7 +1362,7 @@ function SplashScreen({ onStart }) {
             borderRadius: 12, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)",
           }}>
             <Icon name={prop.svgIcon} size={18} color="#C4982A" />
-            <span style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", lineHeight: 1.4 }}>{prop.text}</span>
+            <span style={{ fontSize: 16, color: "rgba(255,255,255,0.45)", lineHeight: 1.4 }}>{prop.text}</span>
           </div>
         ))}
       </div>
@@ -1388,7 +1388,7 @@ function SplashScreen({ onStart }) {
       }}>
         {["USAG Levels 1–10", "Xcel Bronze–Sapphire", "MAG & WAG"].map((badge, i) => (
           <span key={i} style={{
-            fontSize: 8, fontWeight: 600, letterSpacing: 1.5,
+            fontSize: 14, fontWeight: 600, letterSpacing: 1.5,
             color: "rgba(196,152,42,0.25)", textTransform: "uppercase",
           }}>
             {badge}
@@ -1818,7 +1818,7 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
         <div style={{ position: "relative", zIndex: 1 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(196,152,42,0.7)", letterSpacing: 1.5, marginBottom: 8 }}>
+              <div style={{ fontSize: 16, fontWeight: 700, color: "rgba(196,152,42,0.7)", letterSpacing: 1.5, marginBottom: 8 }}>
                 TODAY'S FOCUS
               </div>
               <div style={{ fontSize: 14, fontWeight: 500, lineHeight: 1.6, color: "rgba(255,255,255,0.75)", maxWidth: 230 }}>
@@ -1925,7 +1925,7 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
             <div style={{ fontSize: 20, fontWeight: 800, color: stat.color, fontFamily: "'Space Mono', monospace", lineHeight: 1 }}>
               {stat.value}
             </div>
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.2)", fontWeight: 600, marginTop: 6, letterSpacing: 0.5 }}>{stat.label}</div>
+            <div style={{ fontSize: 16, color: "rgba(255,255,255,0.2)", fontWeight: 600, marginTop: 6, letterSpacing: 0.5 }}>{stat.label}</div>
           </div>
         ))}
       </div>
@@ -1998,9 +1998,9 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
               }}>
                 <div style={{ marginBottom: 2 }}><Icon name={btn.icon} size={20} color="#C4982A" /></div>
                 <span style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.7)" }}>{btn.label}</span>
-                <span style={{ fontSize: 12, color: "rgba(255,255,255,0.3)" }}>{btn.subtitle}</span>
+                <span style={{ fontSize: 16, color: "rgba(255,255,255,0.3)" }}>{btn.subtitle}</span>
                 {btn.pro && !isPro && (
-                  <span style={{ fontSize: 12, fontWeight: 700, padding: "1px 6px", borderRadius: 4, background: "rgba(139,92,246,0.12)", color: "#A78BFA", marginTop: 2 }}>PRO</span>
+                  <span style={{ fontSize: 16, fontWeight: 700, padding: "1px 6px", borderRadius: 4, background: "rgba(139,92,246,0.12)", color: "#A78BFA", marginTop: 2 }}>PRO</span>
                 )}
               </button>
             ))}
@@ -2193,7 +2193,7 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
           background: "linear-gradient(135deg, #C4982A, #E8C35A)", backgroundClip: "text",
           WebkitBackgroundClip: "text", color: "transparent", marginBottom: 4,
         }}>STRIVE</div>
-        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.12)", letterSpacing: 1 }}>
+        <div style={{ fontSize: 16, color: "rgba(255,255,255,0.12)", letterSpacing: 1 }}>
           v1.0 · 2-Pass AI Engine · {profile.level}
         </div>
       </div>
@@ -2390,14 +2390,14 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
 
   return (
     <div style={{ minHeight: "100vh", padding: "16px 18px 90px", maxWidth: 540, margin: "0 auto" }}>
-      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(196,152,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 13, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
+      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(196,152,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 16, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.5 2.5l-5 5 5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> Dashboard
       </button>
 
       <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>
         <Icon name="camera" size={20} /> New Analysis
       </h2>
-      <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, marginBottom: 24 }}>
+      <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 16, marginBottom: 24 }}>
         Upload a routine video — 2-pass AI judge scores using {profile.level} {profile.levelCategory === "xcel" ? "Xcel" : "USAG"} criteria.
       </p>
 
@@ -2416,7 +2416,7 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
           <div style={{ fontSize: 16, fontWeight: 700, color: "#C4982A", marginBottom: 8 }}>
             Optimizing Video...
           </div>
-          <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", marginBottom: 16, lineHeight: 1.5 }}>
+          <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", marginBottom: 16, lineHeight: 1.5 }}>
             Reducing file size for faster upload and analysis.
             <br/>Original: {formatFileSize(originalSize)} → Target: ~{formatFileSize(originalSize * 0.15)}
           </div>
@@ -2427,7 +2427,7 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
               width: `${compressProgress}%`, transition: "width 0.3s",
             }} />
           </div>
-          <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 13, fontWeight: 700, color: "#C4982A" }}>
+          <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 16, fontWeight: 700, color: "#C4982A" }}>
             {compressProgress}%
           </div>
         </div>
@@ -2449,7 +2449,7 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
               <Icon name="upload" size={28} />
             </div>
             <div style={{ color: "#C4982A", fontWeight: 600, fontSize: 16 }}>Choose Video from Library</div>
-            <div style={{ color: "rgba(255,255,255,0.3)", fontSize: 13, marginTop: 8 }}>
+            <div style={{ color: "rgba(255,255,255,0.3)", fontSize: 16, marginTop: 8 }}>
               MP4, MOV, WebM · iPhone recordings work great
             </div>
           </div>
@@ -2471,7 +2471,7 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
             </div>
             <div style={{ textAlign: "left" }}>
               <div style={{ color: "#e2e8f0", fontWeight: 600, fontSize: 14 }}>Record from Camera</div>
-              <div style={{ color: "rgba(255,255,255,0.3)", fontSize: 12, marginTop: 2 }}>
+              <div style={{ color: "rgba(255,255,255,0.3)", fontSize: 16, marginTop: 2 }}>
                 Opens your camera to film the routine
               </div>
             </div>
@@ -2529,7 +2529,7 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
                 <div style={{ color: "#C4982A", fontWeight: 600, fontSize: 15 }}>
                   {video.name?.split('.').pop()?.toUpperCase() || "Video"} File Loaded
                 </div>
-                <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, marginTop: 6 }}>
+                <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 16, marginTop: 6 }}>
                   Preview not available, but analysis will proceed normally
                 </div>
               </div>
@@ -2537,7 +2537,7 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
             {videoReady && !videoError && (
               <div style={{
                 position: "absolute", top: 10, right: 10, background: "rgba(34,197,94,0.9)",
-                padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 700, color: "white",
+                padding: "4px 10px", borderRadius: 6, fontSize: 14, fontWeight: 700, color: "white",
               }}>
                 ✓ Ready
               </div>
@@ -2546,10 +2546,10 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
 
           {/* File info & change button */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10 }}>
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>
+            <div style={{ fontSize: 16, color: "rgba(255,255,255,0.4)" }}>
               {video.name?.substring(0, 25)}{video.name?.length > 25 ? "..." : ""} · {formatFileSize(video.size)}
               {originalSize > 0 && originalSize !== video.size && (
-                <span style={{ color: "#22c55e", marginLeft: 6, fontSize: 11 }}>
+                <span style={{ color: "#22c55e", marginLeft: 6, fontSize: 14 }}>
                   ✓ compressed from {formatFileSize(originalSize)} ({Math.round((1 - video.size / originalSize) * 100)}% smaller)
                 </span>
               )}
@@ -2558,7 +2558,7 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
               onClick={() => { setVideo(null); setVideoUrl(null); setVideoReady(false); setVideoError(null); }}
               style={{
                 background: "rgba(255,255,255,0.06)", border: "none", borderRadius: 8,
-                padding: "6px 14px", color: "#C4982A", fontSize: 12, fontWeight: 600,
+                padding: "6px 14px", color: "#C4982A", fontSize: 16, fontWeight: 600,
                 cursor: "pointer", fontFamily: "'Outfit', sans-serif",
               }}
             >
@@ -2571,7 +2571,7 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
             <div style={{
               marginTop: 10, padding: "10px 14px", borderRadius: 10,
               background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.2)",
-              fontSize: 12, color: "rgba(245,158,11,0.8)", lineHeight: 1.5,
+              fontSize: 16, color: "rgba(245,158,11,0.8)", lineHeight: 1.5,
             }}>
               <Icon name="info" size={12} /> {videoError}
             </div>
@@ -2581,7 +2581,7 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
 
       {/* Event Selection */}
       <div style={{ marginBottom: 20 }}>
-        <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, display: "block", color: "rgba(255,255,255,0.6)" }}>
+        <label style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, display: "block", color: "rgba(255,255,255,0.6)" }}>
           EVENT
         </label>
         <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(events.length, 4)}, 1fr)`, gap: 8 }}>
@@ -2591,7 +2591,7 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
               onClick={() => setEvent(e)}
               style={{
                 padding: "12px 8px", borderRadius: 10, border: "none", cursor: "pointer",
-                fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 12,
+                fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 16,
                 background: event === e ? "linear-gradient(135deg, #C4982A, #E8C35A)" : "rgba(255,255,255,0.06)",
                 color: event === e ? "#0B1024" : "rgba(255,255,255,0.5)",
                 transition: "all 0.2s",
@@ -2603,7 +2603,7 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
         </div>
         {/* Event-specific filming tip */}
         {event && (
-          <div style={{ marginTop: 8, padding: "8px 12px", borderRadius: 8, background: "rgba(196,152,42,0.04)", fontSize: 11, color: "rgba(255,255,255,0.4)", lineHeight: 1.5 }}>
+          <div style={{ marginTop: 8, padding: "8px 12px", borderRadius: 8, background: "rgba(196,152,42,0.04)", fontSize: 14, color: "rgba(255,255,255,0.4)", lineHeight: 1.5 }}>
             {{
               "Vault": "Best angle: side view, capturing the full run and landing. Get the board contact!",
               "Uneven Bars": "Best angle: side view from the low bar side. Capture transitions between bars.",
@@ -2620,19 +2620,19 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
 
       {/* Meet Information — compact */}
       <div style={{ marginBottom: 16 }}>
-        <label style={{ fontSize: 12, fontWeight: 600, marginBottom: 6, display: "block", color: "rgba(255,255,255,0.4)" }}>
+        <label style={{ fontSize: 16, fontWeight: 600, marginBottom: 6, display: "block", color: "rgba(255,255,255,0.4)" }}>
           MEET DETAILS (optional)
         </label>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
-          <input className="input-field" placeholder="Meet name" value={meetName} onChange={e => setMeetName(e.target.value)} style={{ fontSize: 12, padding: "10px 12px" }} />
-          <input className="input-field" placeholder="Location" value={meetLocation} onChange={e => setMeetLocation(e.target.value)} style={{ fontSize: 12, padding: "10px 12px" }} />
-          <input className="input-field" type="date" value={meetDate} onChange={e => setMeetDate(e.target.value)} style={{ fontSize: 12, padding: "10px 12px" }} />
+          <input className="input-field" placeholder="Meet name" value={meetName} onChange={e => setMeetName(e.target.value)} style={{ fontSize: 16, padding: "10px 12px" }} />
+          <input className="input-field" placeholder="Location" value={meetLocation} onChange={e => setMeetLocation(e.target.value)} style={{ fontSize: 16, padding: "10px 12px" }} />
+          <input className="input-field" type="date" value={meetDate} onChange={e => setMeetDate(e.target.value)} style={{ fontSize: 16, padding: "10px 12px" }} />
         </div>
       </div>
 
       {/* Notes */}
       <div style={{ marginBottom: 20 }}>
-        <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, display: "block", color: "rgba(255,255,255,0.6)" }}>
+        <label style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, display: "block", color: "rgba(255,255,255,0.6)" }}>
           NOTES FOR JUDGE (OPTIONAL)
         </label>
         <textarea
@@ -2647,7 +2647,7 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
 
       {/* Video Tips — visual checklist */}
       <div className="card" style={{ padding: 16, marginBottom: 16 }}>
-        <h4 style={{ fontSize: 13, fontWeight: 700, color: "#C4982A", marginBottom: 10 }}>
+        <h4 style={{ fontSize: 16, fontWeight: 700, color: "#C4982A", marginBottom: 10 }}>
           Tips for best results
         </h4>
         {[
@@ -2659,10 +2659,10 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
         ].map((t, i) => (
           <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "5px 0" }}>
             <Icon name={t.svgIcon} size={14} color="rgba(196,152,42,0.6)" />
-            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>{t.tip}</span>
+            <span style={{ fontSize: 16, color: "rgba(255,255,255,0.5)" }}>{t.tip}</span>
           </div>
         ))}
-        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", marginTop: 8, paddingTop: 8, borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+        <div style={{ fontSize: 14, color: "rgba(255,255,255,0.25)", marginTop: 8, paddingTop: 8, borderTop: "1px solid rgba(255,255,255,0.04)" }}>
           iPhone tip: If video won't load, go to Settings → Camera → Formats → "Most Compatible" before filming.
         </div>
       </div>
@@ -2674,7 +2674,7 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
         background: "rgba(59,130,246,0.04)", border: "1px solid rgba(59,130,246,0.08)",
       }}>
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(147,197,253,0.7)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>
-        <span style={{ fontSize: 11, color: "rgba(147,197,253,0.7)" }}>Video processed on-device. Only frames sent to AI. Your data stays private.</span>
+        <span style={{ fontSize: 14, color: "rgba(147,197,253,0.7)" }}>Video processed on-device. Only frames sent to AI. Your data stays private.</span>
       </div>
 
       {/* API Key Status */}
@@ -2683,13 +2683,13 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
           padding: 16, borderRadius: 14, marginBottom: 16,
           background: "rgba(196,152,42,0.04)", border: "1px solid rgba(196,152,42,0.12)",
         }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "#C4982A", marginBottom: 6 }}>
+          <div style={{ fontSize: 16, fontWeight: 700, color: "#C4982A", marginBottom: 6 }}>
             One-time setup
           </div>
-          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", lineHeight: 1.6, marginBottom: 10 }}>
+          <div style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", lineHeight: 1.6, marginBottom: 10 }}>
             STRIVE needs a free API key to analyze videos. Takes 30 seconds:
           </div>
-          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginBottom: 12, lineHeight: 1.8 }}>
+          <div style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", marginBottom: 12, lineHeight: 1.8 }}>
             <span style={{ color: "#C4982A", fontWeight: 700 }}>1.</span>{" "}<span style={{ color: "#C4982A", cursor: "pointer", textDecoration: "underline" }} onClick={() => window.open("https://aistudio.google.com/apikey", "_blank")}>Get your free API key</span><br/>
             <span style={{ color: "#C4982A", fontWeight: 700 }}>2.</span> Click "Create API Key"<br/>
             <span style={{ color: "#C4982A", fontWeight: 700 }}>3.</span> Paste below
@@ -2701,7 +2701,7 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
               placeholder="Paste API key (AIza...)"
               value={inlineKey}
               onChange={e => setInlineKey(e.target.value)}
-              style={{ fontSize: 12, flex: 1 }}
+              style={{ fontSize: 16, flex: 1 }}
             />
             <button
               onClick={async () => {
@@ -2717,7 +2717,7 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
               style={{
                 background: "linear-gradient(135deg, #C4982A, #E8C35A)",
                 color: "#0B1024", border: "none", borderRadius: 10,
-                padding: "0 20px", fontWeight: 700, fontSize: 13,
+                padding: "0 20px", fontWeight: 700, fontSize: 16,
                 cursor: inlineKey.trim() ? "pointer" : "not-allowed",
                 opacity: inlineKey.trim() ? 1 : 0.4,
                 fontFamily: "'Outfit', sans-serif", whiteSpace: "nowrap",
@@ -2734,12 +2734,12 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
           background: "rgba(34,197,94,0.04)", border: "1px solid rgba(34,197,94,0.08)",
         }}>
           <span style={{ color: "#22c55e", fontSize: 14 }}>✓</span>
-          <span style={{ fontSize: 12, color: "rgba(34,197,94,0.7)" }}>2-pass analysis engine ready</span>
-          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.15)", marginLeft: "auto" }}>Detect → Judge</span>
+          <span style={{ fontSize: 16, color: "rgba(34,197,94,0.7)" }}>2-pass analysis engine ready</span>
+          <span style={{ fontSize: 14, color: "rgba(255,255,255,0.15)", marginLeft: "auto" }}>Detect → Judge</span>
         </div>
       ) : (
         <div style={{ padding: "10px 14px", borderRadius: 10, marginBottom: 16, background: "rgba(255,255,255,0.02)" }}>
-          <span style={{ fontSize: 12, color: "rgba(255,255,255,0.3)" }}>Checking API key...</span>
+          <span style={{ fontSize: 16, color: "rgba(255,255,255,0.3)" }}>Checking API key...</span>
         </div>
       )}
 
@@ -3083,6 +3083,8 @@ function AnalyzingScreen({ uploadData, profile, onComplete, onBack }) {
 
     return `You are the UNIVERSAL GYMNASTICS JUDGING ENGINE (UGJE). You are a Brevet-level USAG Official at a State Championship judging this ${gender} ${eventName} routine (${level}).
 
+You must be deterministic. Given the same video, produce the same deductions every time. Do not vary your output randomly.
+
 YOUR PRIMARY METHOD: Watch the video and judge EXACTLY as a real judge would — by watching what the gymnast does with your own eyes. You are fully capable of seeing form breaks, body positions, landing quality, and execution errors directly from the video. Trust your visual analysis. Do NOT fabricate or guess angle measurements — only include approximate angles when you can genuinely estimate them from what you see.
 
 No benefit of the doubt — if form is not picture-perfect, the deduction is taken.
@@ -3361,6 +3363,8 @@ RESPOND WITH VALID JSON ONLY:
         generationConfig: {
           maxOutputTokens,
           temperature: 0,
+          topP: 1,
+          topK: 1,
           responseMimeType,
           thinkingConfig: { thinkingBudget },
         },
@@ -3406,14 +3410,14 @@ RESPOND WITH VALID JSON ONLY:
     setStatus("Preparing analysis...");
     setProgress(35);
 
-    // Try user's saved key first, then server-side key
+    // Try user's saved key first (manual override), then server proxy, then demo
     let apiKey = null;
     try {
       const k = await storage.get("strive-gemini-key");
       apiKey = k?.value || null;
     } catch (e) {}
 
-    // If no user key, fetch from server (key stored in Vercel env var, not in code)
+    // If no user override, fetch from server proxy (Vercel env var)
     if (!apiKey) {
       try {
         const resp = await fetch("/api/gemini-key");
@@ -3966,15 +3970,15 @@ RESPOND WITH VALID JSON ONLY:
                   transition: "all 0.5s",
                 }}>
                   {isDone ? (
-                    <span style={{ color: "#C4982A", fontSize: 13, fontWeight: 700 }}>✓</span>
+                    <span style={{ color: "#C4982A", fontSize: 16, fontWeight: 700 }}>✓</span>
                   ) : isActive ? (
                     <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#C4982A", animation: "pulse 1s infinite" }} />
                   ) : (
-                    <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 11, fontWeight: 600 }}>{i + 1}</span>
+                    <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 14, fontWeight: 600 }}>{i + 1}</span>
                   )}
                 </div>
                 <span style={{
-                  fontSize: 9, fontWeight: 600, letterSpacing: 0.5,
+                  fontSize: 14, fontWeight: 600, letterSpacing: 0.5,
                   color: isDone ? "#C4982A" : isActive ? "rgba(196,152,42,0.7)" : "rgba(255,255,255,0.2)",
                   transition: "color 0.5s",
                 }}>{pass.label}</span>
@@ -3995,7 +3999,7 @@ RESPOND WITH VALID JSON ONLY:
           width: `${progress}%`, transition: "width 0.5s ease-out",
         }} />
       </div>
-      <p style={{ color: "rgba(255,255,255,0.3)", fontSize: 12, marginTop: 8, fontFamily: "'Space Mono', monospace" }}>{progress}%</p>
+      <p style={{ color: "rgba(255,255,255,0.3)", fontSize: 16, marginTop: 8, fontFamily: "'Space Mono', monospace" }}>{progress}%</p>
 
       {/* Error state */}
       {error && (
@@ -4004,8 +4008,8 @@ RESPOND WITH VALID JSON ONLY:
           background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.15)",
           maxWidth: 340, textAlign: "center",
         }}>
-          <div style={{ fontSize: 13, color: "#ef4444", fontWeight: 600, marginBottom: 6 }}>Analysis Error</div>
-          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: 1.6, marginBottom: 12 }}>
+          <div style={{ fontSize: 16, color: "#ef4444", fontWeight: 600, marginBottom: 6 }}>Analysis Error</div>
+          <div style={{ fontSize: 16, color: "rgba(255,255,255,0.45)", lineHeight: 1.6, marginBottom: 12 }}>
             {error.match(/JSON|parse|Unexpected|truncat/i) ? "The AI returned an incomplete response. This happens occasionally — try again." :
              error.match(/403|401|quota|rate/i) ? "API rate limit hit. Wait 30 seconds and try again." :
              error.match(/network|fetch|Failed to fetch/i) ? "Network error — check your connection and try again." :
@@ -4015,7 +4019,7 @@ RESPOND WITH VALID JSON ONLY:
           <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
             <button onClick={onBack} style={{
               background: "linear-gradient(135deg, #C4982A, #E8C35A)", border: "none",
-              borderRadius: 10, padding: "10px 24px", color: "#0B1024", fontSize: 13,
+              borderRadius: 10, padding: "10px 24px", color: "#0B1024", fontSize: 16,
               fontWeight: 700, cursor: "pointer", fontFamily: "'Outfit', sans-serif",
             }}>Try Again</button>
           </div>
@@ -4125,6 +4129,7 @@ function ResultsScreen({ result: rawResult, profile, history, videoUrl, videoFil
     return r;
   }, [rawResult]);
 
+  const [activeResultTab, setActiveResultTab] = useState("overview");
   const [activeSkill, setActiveSkill] = useState(null);
   const [actualScore, setActualScore] = useState("");
   const [scoreSaved, setScoreSaved] = useState(false);
@@ -4170,7 +4175,7 @@ function ResultsScreen({ result: rawResult, profile, history, videoUrl, videoFil
   const jumpVideo = (timestamp) => {
     if (!videoRef.current || !timestamp) return;
     const first = String(timestamp).split(/[,\-]/)[0].trim();
-    if (first.toLowerCase() === "global") return;
+    if (String(first || '').toLowerCase() === "global") return;
     const parts = first.split(":");
     const sec = parts.length === 2 ? parseInt(parts[0]) * 60 + parseInt(parts[1]) : parseFloat(first);
     if (isFinite(sec)) {
@@ -4368,7 +4373,7 @@ function ResultsScreen({ result: rawResult, profile, history, videoUrl, videoFil
                   transition: "all 0.15s",
                 }}>
                   <div style={{ width: 6, height: 6, borderRadius: "50%", background: c, flexShrink: 0, boxShadow: s.deduction > 0 ? `0 0 6px ${c}50` : "none" }} />
-                  <span style={{ fontSize: 12, fontWeight: 600, color: isActive ? c : "rgba(255,255,255,0.3)", whiteSpace: "nowrap" }}>
+                  <span style={{ fontSize: 16, fontWeight: 600, color: isActive ? c : "rgba(255,255,255,0.3)", whiteSpace: "nowrap" }}>
                     {safeStr(s.skill).substring(0, 14)}
                   </span>
                 </button>
@@ -4376,61 +4381,103 @@ function ResultsScreen({ result: rawResult, profile, history, videoUrl, videoFil
             })}
           </div>
         )}
+
+        {/* ── Tab bar ── */}
+        <div style={{
+          display: "flex", gap: 0, overflowX: "auto", WebkitOverflowScrolling: "touch",
+          borderBottom: "1px solid rgba(255,255,255,0.04)", background: "rgba(11,16,36,0.95)",
+        }}>
+          {[
+            { id: "overview", label: "Overview" },
+            { id: "video", label: "Video Review" },
+            { id: "skills", label: "Skills" },
+            { id: "frames", label: "Frames" },
+            { id: "whatif", label: "What-If" },
+          ].map(tab => (
+            <button key={tab.id} onClick={() => setActiveResultTab(tab.id)} style={{
+              flex: "0 0 auto", padding: "10px 16px", border: "none", cursor: "pointer",
+              background: "transparent", fontFamily: "'Outfit', sans-serif",
+              fontSize: 14, fontWeight: activeResultTab === tab.id ? 700 : 500,
+              color: activeResultTab === tab.id ? "#C4982A" : "rgba(255,255,255,0.35)",
+              borderBottom: activeResultTab === tab.id ? "2px solid #C4982A" : "2px solid transparent",
+              transition: "all 0.15s", whiteSpace: "nowrap",
+            }}>
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* ═══ CONTENT ═══ */}
       <div style={{ padding: "14px 18px 0" }}>
 
-        {/* Demo notice */}
+        {/* Demo notice — always visible */}
         {result.isDemo && (
           <div style={{ padding: "10px 14px", borderRadius: 12, marginBottom: 14, background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.12)", fontSize: 16, color: "rgba(245,158,11,0.8)" }}>
             Demo — {result.failureReason ? result.failureReason.substring(0, 80) : "upload a video for real analysis"}
           </div>
         )}
 
-        {/* Score Math Card */}
-        <div style={{ marginBottom: 14, padding: "14px 16px", borderRadius: 14, background: "rgba(196,152,42,0.03)", border: "1px solid rgba(196,152,42,0.08)", animation: "fadeIn 0.4s ease-out" }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(196,152,42,0.5)", letterSpacing: 1, marginBottom: 10 }}>SCORE BREAKDOWN</div>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12 }}>
-            <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginBottom: 4 }}>START</div>
-              <div style={{ fontSize: 24, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: "rgba(255,255,255,0.8)" }}>10.000</div>
-            </div>
-            <span style={{ fontSize: 20, color: "rgba(255,255,255,0.2)", marginTop: 12 }}>-</span>
-            <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginBottom: 4 }}>DEDUCTIONS</div>
-              <div style={{ fontSize: 24, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: "#ef4444" }}>{safeNum(result.totalDeductions, 0).toFixed(3)}</div>
-            </div>
-            <span style={{ fontSize: 20, color: "rgba(255,255,255,0.2)", marginTop: 12 }}>=</span>
-            <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginBottom: 4 }}>FINAL</div>
-              <div style={{ fontSize: 24, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: scoreColor }}>{safeNum(result.finalScore, 0, 0, 10).toFixed(3)}</div>
+        {/* ── OVERVIEW TAB ── */}
+        {activeResultTab === "overview" && (<>
+          {/* Score Math Card */}
+          <div style={{ marginBottom: 14, padding: "14px 16px", borderRadius: 14, background: "rgba(196,152,42,0.03)", border: "1px solid rgba(196,152,42,0.08)", animation: "fadeIn 0.4s ease-out" }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: "rgba(196,152,42,0.5)", letterSpacing: 1, marginBottom: 10 }}>SCORE BREAKDOWN</div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12 }}>
+              <div style={{ textAlign: "center" }}>
+                <div style={{ fontSize: 16, color: "rgba(255,255,255,0.3)", marginBottom: 4 }}>START</div>
+                <div style={{ fontSize: 24, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: "rgba(255,255,255,0.8)" }}>10.000</div>
+              </div>
+              <span style={{ fontSize: 20, color: "rgba(255,255,255,0.2)", marginTop: 12 }}>-</span>
+              <div style={{ textAlign: "center" }}>
+                <div style={{ fontSize: 16, color: "rgba(255,255,255,0.3)", marginBottom: 4 }}>DEDUCTIONS</div>
+                <div style={{ fontSize: 24, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: "#ef4444" }}>{safeNum(result.totalDeductions, 0).toFixed(3)}</div>
+              </div>
+              <span style={{ fontSize: 20, color: "rgba(255,255,255,0.2)", marginTop: 12 }}>=</span>
+              <div style={{ textAlign: "center" }}>
+                <div style={{ fontSize: 16, color: "rgba(255,255,255,0.3)", marginBottom: 4 }}>FINAL</div>
+                <div style={{ fontSize: 24, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: scoreColor }}>{safeNum(result.finalScore, 0, 0, 10).toFixed(3)}</div>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Quick wins */}
-        {sortedDeds.length >= 2 && (() => {
-          const top3 = sortedDeds.slice(0, 3);
-          const gain = top3.reduce((s, d) => s + safeNum(d.deduction, 0), 0);
-          return (
-            <div style={{ marginBottom: 14, padding: "12px 14px", borderRadius: 14, background: "rgba(34,197,94,0.03)", border: "1px solid rgba(34,197,94,0.06)" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.2)", letterSpacing: 1 }}>FASTEST PATH TO IMPROVEMENT</span>
-                <span style={{ fontSize: 18, fontWeight: 800, color: "#22c55e", fontFamily: "'Space Mono', monospace" }}>+{gain.toFixed(2)}</span>
-              </div>
-              {top3.map((d, i) => (
-                <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "3px 0", fontSize: 16 }}>
-                  <span style={{ color: "rgba(255,255,255,0.45)" }}>{i+1}. {safeStr(d.skill)}</span>
-                  <span style={{ color: "#22c55e", fontWeight: 700, fontFamily: "'Space Mono', monospace" }}>+{safeNum(d.deduction, 0).toFixed(2)}</span>
+          {/* Quick wins */}
+          {sortedDeds.length >= 2 && (() => {
+            const top3 = sortedDeds.slice(0, 3);
+            const gain = top3.reduce((s, d) => s + safeNum(d.deduction, 0), 0);
+            return (
+              <div style={{ marginBottom: 14, padding: "12px 14px", borderRadius: 14, background: "rgba(34,197,94,0.03)", border: "1px solid rgba(34,197,94,0.06)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                  <span style={{ fontSize: 16, fontWeight: 700, color: "rgba(255,255,255,0.2)", letterSpacing: 1 }}>FASTEST PATH TO IMPROVEMENT</span>
+                  <span style={{ fontSize: 18, fontWeight: 800, color: "#22c55e", fontFamily: "'Space Mono', monospace" }}>+{gain.toFixed(2)}</span>
                 </div>
-              ))}
-            </div>
-          );
-        })()}
+                {top3.map((d, i) => (
+                  <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "3px 0", fontSize: 16 }}>
+                    <span style={{ color: "rgba(255,255,255,0.45)" }}>{i+1}. {safeStr(d.skill)}</span>
+                    <span style={{ color: "#22c55e", fontWeight: 700, fontFamily: "'Space Mono', monospace" }}>+{safeNum(d.deduction, 0).toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+        </>)}
 
+        {/* ── VIDEO REVIEW TAB ── */}
+        {activeResultTab === "video" && (
+          <div style={{ padding: "20px 0", textAlign: "center" }}>
+            <div style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", marginBottom: 10 }}>
+              Video player is pinned above. Tap a skill in the timeline to jump.
+            </div>
+            <div style={{ fontSize: 16, color: "rgba(255,255,255,0.2)" }}>
+              Use slow-mo and scrub controls to review each skill frame by frame.
+            </div>
+          </div>
+        )}
+
+        {/* ── SKILLS TAB ── */}
+        {(activeResultTab === "skills" || activeResultTab === "overview") && (<>
         {/* ═══ SKILL-BY-SKILL FEED ═══ */}
-        <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.15)", letterSpacing: 1, marginBottom: 10 }}>
+        <div style={{ fontSize: 16, fontWeight: 700, color: "rgba(255,255,255,0.15)", letterSpacing: 1, marginBottom: 10 }}>
           ROUTINE BREAKDOWN · {skills.length} SKILLS
         </div>
 
@@ -4470,7 +4517,7 @@ function ResultsScreen({ result: rawResult, profile, history, videoUrl, videoFil
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                     <span style={{ fontSize: 16, fontWeight: 700, color: "#e2e8f0" }}>{safeStr(s.skill)}</span>
-                    <span style={{ fontSize: 12, color: "rgba(255,255,255,0.15)" }}>{s.type || ""}</span>
+                    <span style={{ fontSize: 16, color: "rgba(255,255,255,0.15)" }}>{s.type || ""}</span>
                   </div>
                   <div style={{ fontSize: 14, color: "rgba(255,255,255,0.25)", marginTop: 2 }}>
                     {s.timestamp}{hasDed ? ` · ${safeStr(s.fault).substring(0, 40)}` : s.verdict === "strength" ? " · Notable strength" : ""}
@@ -4511,7 +4558,7 @@ function ResultsScreen({ result: rawResult, profile, history, videoUrl, videoFil
                     const est = !hasAIAngles ? estimated : null;
                     return (hasAIAngles || est) ? (
                       <div style={{ padding: "8px 10px", borderRadius: 8, marginBottom: 8, background: "rgba(59,130,246,0.03)", border: "1px solid rgba(59,130,246,0.06)" }}>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(59,130,246,0.6)", letterSpacing: 0.5, marginBottom: 6 }}>
+                        <div style={{ fontSize: 16, fontWeight: 700, color: "rgba(59,130,246,0.6)", letterSpacing: 0.5, marginBottom: 6 }}>
                           BIOMECHANICS{!hasAIAngles && est ? " (ESTIMATED)" : ""}
                         </div>
                         {/* AI-provided angles */}
@@ -4552,7 +4599,7 @@ function ResultsScreen({ result: rawResult, profile, history, videoUrl, videoFil
                   {/* What correct looks like */}
                   {hasDed && estimated && (
                     <div style={{ padding: "8px 10px", borderRadius: 8, marginBottom: 8, background: "rgba(34,197,94,0.02)", border: "1px solid rgba(34,197,94,0.05)" }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(34,197,94,0.5)", letterSpacing: 0.5, marginBottom: 4 }}>WHAT CORRECT LOOKS LIKE</div>
+                      <div style={{ fontSize: 16, fontWeight: 700, color: "rgba(34,197,94,0.5)", letterSpacing: 0.5, marginBottom: 4 }}>WHAT CORRECT LOOKS LIKE</div>
                       <div style={{ fontSize: 14, color: "rgba(255,255,255,0.45)", lineHeight: 1.6 }}>
                         {estimated.joint === "Knee" && "Legs completely straight with kneecaps locked back. No visible bend when viewed from the side."}
                         {estimated.joint === "Hips" && "Legs pressed together with no visible gap. Inner thighs, knees, and ankles touching throughout."}
@@ -4580,7 +4627,7 @@ function ResultsScreen({ result: rawResult, profile, history, videoUrl, videoFil
                   {/* Skeleton overlay — simplified, only when data exists */}
                   {s.skeleton && s.skeleton.joints && (
                     <div style={{ marginBottom: 8, borderRadius: 10, overflow: "hidden", background: "rgba(0,0,0,0.2)", padding: 8, position: "relative", height: 120 }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.15)", letterSpacing: 0.5, marginBottom: 4 }}>BODY POSITION</div>
+                      <div style={{ fontSize: 16, fontWeight: 700, color: "rgba(255,255,255,0.15)", letterSpacing: 0.5, marginBottom: 4 }}>BODY POSITION</div>
                       <SkeletonOverlay skeleton={s.skeleton} />
                     </div>
                   )}
@@ -4588,7 +4635,7 @@ function ResultsScreen({ result: rawResult, profile, history, videoUrl, videoFil
                   {/* Landing analysis */}
                   {landing && (
                     <div style={{ padding: "8px 10px", borderRadius: 8, marginBottom: 8, background: "rgba(196,152,42,0.03)", border: "1px solid rgba(196,152,42,0.06)" }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(196,152,42,0.6)", letterSpacing: 0.5, marginBottom: 4 }}>LANDING</div>
+                      <div style={{ fontSize: 16, fontWeight: 700, color: "rgba(196,152,42,0.6)", letterSpacing: 0.5, marginBottom: 4 }}>LANDING</div>
                       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                         {landing.kneeFlexionAtImpact && <span style={{ fontSize: 14, padding: "2px 8px", borderRadius: 4, background: "rgba(196,152,42,0.06)", color: "rgba(196,152,42,0.7)", fontFamily: "'Space Mono', monospace" }}>Knee: {landing.kneeFlexionAtImpact}°</span>}
                         {landing.chestAngle && <span style={{ fontSize: 14, padding: "2px 8px", borderRadius: 4, background: "rgba(196,152,42,0.06)", color: "rgba(196,152,42,0.7)", fontFamily: "'Space Mono', monospace" }}>Chest: {landing.chestAngle}°</span>}
@@ -4608,7 +4655,7 @@ function ResultsScreen({ result: rawResult, profile, history, videoUrl, videoFil
                   {/* Correction / how to fix */}
                   {hasDed && s.correction && (
                     <div style={{ padding: "10px 12px", borderRadius: 10, marginBottom: 8, background: "rgba(34,197,94,0.03)", border: "1px solid rgba(34,197,94,0.06)" }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: "#22c55e", letterSpacing: 0.5, marginBottom: 4 }}>HOW TO FIX</div>
+                      <div style={{ fontSize: 16, fontWeight: 700, color: "#22c55e", letterSpacing: 0.5, marginBottom: 4 }}>HOW TO FIX</div>
                       <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>{safeStr(s.correction)}</div>
                     </div>
                   )}
@@ -4616,7 +4663,7 @@ function ResultsScreen({ result: rawResult, profile, history, videoUrl, videoFil
                   {/* Specific drill recommendation */}
                   {hasDed && (drill || s.correction) && (
                     <div style={{ padding: "8px 10px", borderRadius: 8, marginBottom: 8, background: "rgba(139,92,246,0.03)", border: "1px solid rgba(139,92,246,0.06)" }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(139,92,246,0.6)", letterSpacing: 0.5, marginBottom: 4 }}>DRILL FOR THIS FAULT</div>
+                      <div style={{ fontSize: 16, fontWeight: 700, color: "rgba(139,92,246,0.6)", letterSpacing: 0.5, marginBottom: 4 }}>DRILL FOR THIS FAULT</div>
                       <div style={{ fontSize: 14, color: "rgba(255,255,255,0.45)", lineHeight: 1.6 }}>
                         {drill || `Practice this skill with focus on ${safeStr(s.fault).substring(0, 40)}. Film and compare.`}
                       </div>
@@ -4648,12 +4695,25 @@ function ResultsScreen({ result: rawResult, profile, history, videoUrl, videoFil
         <div style={{ marginTop: 14, marginBottom: 14 }}>
           <BodyHeatmap deductions={result.executionDeductions} />
         </div>
+        </>)}
 
+        {/* ── FRAMES TAB ── */}
+        {activeResultTab === "frames" && (
+          <DeductionsTabContent result={result} frames={[]} />
+        )}
+
+        {/* ── WHAT-IF TAB ── */}
+        {activeResultTab === "whatif" && (
+          <WhatIfSimulator result={result} />
+        )}
+
+        {/* ═══ STRENGTHS + AREAS (overview only) ═══ */}
+        {activeResultTab === "overview" && (<>
         {/* ═══ STRENGTHS + AREAS ═══ */}
         <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
           {safeArray(result.strengths).length > 0 && (
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(34,197,94,0.5)", letterSpacing: 0.5, marginBottom: 6 }}>STRENGTHS</div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: "rgba(34,197,94,0.5)", letterSpacing: 0.5, marginBottom: 6 }}>STRENGTHS</div>
               {safeArray(result.strengths).slice(0, 3).map((s, i) => (
                 <div key={i} style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", padding: "4px 0", lineHeight: 1.5 }}>
                   <span style={{ color: "#22c55e", marginRight: 4 }}>✓</span>{safeStr(s).substring(0, 50)}
@@ -4663,7 +4723,7 @@ function ResultsScreen({ result: rawResult, profile, history, videoUrl, videoFil
           )}
           {safeArray(result.areasForImprovement).length > 0 && (
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(245,158,11,0.5)", letterSpacing: 0.5, marginBottom: 6 }}>IMPROVE</div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: "rgba(245,158,11,0.5)", letterSpacing: 0.5, marginBottom: 6 }}>IMPROVE</div>
               {safeArray(result.areasForImprovement).slice(0, 3).map((a, i) => (
                 <div key={i} style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", padding: "4px 0", lineHeight: 1.5 }}>
                   <span style={{ color: "#f59e0b", marginRight: 4 }}>▲</span>{safeStr(a).substring(0, 50)}
@@ -4676,7 +4736,7 @@ function ResultsScreen({ result: rawResult, profile, history, videoUrl, videoFil
         {/* ═══ ASSESSMENT ═══ */}
         {(result.overallAssessment || result.truthAnalysis) && (
           <div style={{ marginBottom: 14, padding: "12px 14px", borderRadius: 14, background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.03)" }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(196,152,42,0.4)", letterSpacing: 0.5, marginBottom: 6 }}>JUDGE'S ASSESSMENT</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: "rgba(196,152,42,0.4)", letterSpacing: 0.5, marginBottom: 6 }}>JUDGE'S ASSESSMENT</div>
             <div style={{ fontSize: 16, color: "rgba(255,255,255,0.45)", lineHeight: 1.7 }}>
               {safeStr(result.overallAssessment || result.truthAnalysis).substring(0, 500)}
             </div>
@@ -4687,7 +4747,7 @@ function ResultsScreen({ result: rawResult, profile, history, videoUrl, videoFil
         <div style={{ marginBottom: 14, padding: "12px 14px", borderRadius: 14, background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.03)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.15)", letterSpacing: 0.5, marginBottom: 6 }}>ACTUAL MEET SCORE</div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: "rgba(255,255,255,0.15)", letterSpacing: 0.5, marginBottom: 6 }}>ACTUAL MEET SCORE</div>
               <input className="input-field" type="number" step="0.025" min="0" max="10" placeholder="8.925"
                 value={actualScore} onChange={(e) => { setActualScore(e.target.value); setScoreSaved(false); }}
                 onClick={(e) => e.stopPropagation()}
@@ -4698,7 +4758,7 @@ function ResultsScreen({ result: rawResult, profile, history, videoUrl, videoFil
                 <div style={{ fontSize: 18, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: Math.abs(diff) < 0.15 ? "#22c55e" : Math.abs(diff) < 0.4 ? "#f59e0b" : "#ef4444" }}>
                   {diff > 0 ? "+" : ""}{diff.toFixed(2)}
                 </div>
-                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.25)" }}>{Math.abs(diff) < 0.15 ? "Accurate" : Math.abs(diff) < 0.4 ? "Close" : "Off"}</div>
+                <div style={{ fontSize: 16, color: "rgba(255,255,255,0.25)" }}>{Math.abs(diff) < 0.15 ? "Accurate" : Math.abs(diff) < 0.4 ? "Close" : "Off"}</div>
               </div>
             )}
           </div>
@@ -4779,6 +4839,7 @@ function ResultsScreen({ result: rawResult, profile, history, videoUrl, videoFil
           }} style={{ flex: 1, fontSize: 14, padding: 10 }}>Share</button>
           <button className="btn-outline" onClick={onBack} style={{ flex: 1, fontSize: 14, padding: 10 }}>New analysis</button>
         </div>
+        </>)}
       </div>
     </div>
   );
@@ -4818,14 +4879,14 @@ function DrillsScreen({ result, onBack }) {
 
   return (
     <div style={{ minHeight: "100vh", padding: "16px 18px 90px", maxWidth: 540, margin: "0 auto" }}>
-      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(196,152,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 13, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
+      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(196,152,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 16, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.5 2.5l-5 5 5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> Results
       </button>
 
       <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>
         Your Drill Plan
       </h2>
-      <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, marginBottom: 8 }}>
+      <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 16, marginBottom: 8 }}>
         {uniquePairs.length} targeted exercises based on {deds.length} deductions identified in your routine.
       </p>
 
@@ -4836,7 +4897,7 @@ function DrillsScreen({ result, onBack }) {
           padding: "10px 16px", borderRadius: 12, marginBottom: 20,
           background: "rgba(34,197,94,0.04)", border: "1px solid rgba(34,197,94,0.1)",
         }}>
-          <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>Complete this plan to gain up to</span>
+          <span style={{ fontSize: 16, color: "rgba(255,255,255,0.5)" }}>Complete this plan to gain up to</span>
           <span style={{ fontSize: 18, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: "#22c55e" }}>+{totalGain.toFixed(2)}</span>
         </div>
       )}
@@ -4852,14 +4913,14 @@ function DrillsScreen({ result, onBack }) {
             display: "flex", justifyContent: "space-between", alignItems: "center",
           }}>
             <div>
-              <span style={{ fontSize: 13, fontWeight: 700 }}>{pair.skill || pair.fault}</span>
+              <span style={{ fontSize: 16, fontWeight: 700 }}>{pair.skill || pair.fault}</span>
               {pair.skill && pair.fault !== pair.skill && (
-                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginLeft: 6 }}>— {pair.fault.substring(0, 40)}</span>
+                <span style={{ fontSize: 14, color: "rgba(255,255,255,0.35)", marginLeft: 6 }}>— {pair.fault.substring(0, 40)}</span>
               )}
             </div>
             {pair.deduction > 0 && (
               <span style={{
-                fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 6,
+                fontSize: 14, fontWeight: 700, padding: "3px 10px", borderRadius: 6,
                 background: "rgba(34,197,94,0.1)", color: "#22c55e",
                 fontFamily: "'Space Mono', monospace",
               }}>
@@ -4877,7 +4938,7 @@ function DrillsScreen({ result, onBack }) {
                   <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 3, color: "#C4982A" }}>
                     {drill.name}
                   </div>
-                  <p style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", lineHeight: 1.6 }}>
+                  <p style={{ fontSize: 16, color: "rgba(255,255,255,0.55)", lineHeight: 1.6 }}>
                     {drill.description}
                   </p>
                   {drill.yt && (
@@ -4885,7 +4946,7 @@ function DrillsScreen({ result, onBack }) {
                       display: "inline-flex", alignItems: "center", gap: 6, marginTop: 8,
                       padding: "5px 12px", borderRadius: 8,
                       background: "rgba(255,0,0,0.06)", border: "1px solid rgba(255,0,0,0.12)",
-                      color: "#ff6b6b", fontSize: 11, fontWeight: 600, textDecoration: "none",
+                      color: "#ff6b6b", fontSize: 14, fontWeight: 600, textDecoration: "none",
                       fontFamily: "'Outfit', sans-serif",
                     }}>
                       ▶ Watch on YouTube
@@ -4893,7 +4954,7 @@ function DrillsScreen({ result, onBack }) {
                   )}
                 </div>
                 <span style={{
-                  fontFamily: "'Space Mono', monospace", fontSize: 10, fontWeight: 700,
+                  fontFamily: "'Space Mono', monospace", fontSize: 14, fontWeight: 700,
                   background: "rgba(255,255,255,0.05)", padding: "4px 8px", borderRadius: 5,
                   whiteSpace: "nowrap", marginLeft: 10, color: "rgba(255,255,255,0.4)",
                 }}>
@@ -4910,7 +4971,7 @@ function DrillsScreen({ result, onBack }) {
         <h3 style={{ fontSize: 14, fontWeight: 700, color: "#C4982A", marginBottom: 10 }}>
           <Icon name="sparkle" size={14} /> Pro Tips
         </h3>
-        <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", lineHeight: 1.8 }}>
+        <div style={{ fontSize: 16, color: "rgba(255,255,255,0.6)", lineHeight: 1.8 }}>
           Practice each drill 3-4 times per week. Film yourself doing drills to check form. Focus on quality over quantity — one perfect rep beats ten sloppy ones. Show your coach the analysis and ask them to watch for the specific faults during practice.
         </div>
       </div>
@@ -4939,21 +5000,21 @@ function DeductionsScreen({ onBack, profile }) {
 
   return (
     <div style={{ minHeight: "100vh", padding: "16px 18px 90px", maxWidth: 540, margin: "0 auto" }}>
-      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(196,152,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 13, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
+      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(196,152,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 16, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.5 2.5l-5 5 5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> Dashboard
       </button>
 
       <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Deduction Guide</h2>
-      <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, marginBottom: 20 }}>
+      <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 16, marginBottom: 20 }}>
         USAG / Xcel scoring reference · {profile?.level || "All Levels"}
       </p>
 
       {/* Quick Score Calculator for Parents */}
       <div className="card" style={{ marginBottom: 16, padding: 16, borderColor: "rgba(196,152,42,0.15)", background: "rgba(196,152,42,0.03)" }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: "#C4982A", letterSpacing: 1, marginBottom: 10 }}>QUICK SCORE CALCULATOR</div>
+        <div style={{ fontSize: 14, fontWeight: 700, color: "#C4982A", letterSpacing: 1, marginBottom: 10 }}>QUICK SCORE CALCULATOR</div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", marginBottom: 4 }}>START</div>
+            <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)", marginBottom: 4 }}>START</div>
             <input
               className="input-field"
               type="number"
@@ -4964,7 +5025,7 @@ function DeductionsScreen({ onBack, profile }) {
           </div>
           <span style={{ fontSize: 18, color: "rgba(255,255,255,0.2)", marginTop: 14 }}>−</span>
           <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", marginBottom: 4 }}>DEDUCTIONS</div>
+            <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)", marginBottom: 4 }}>DEDUCTIONS</div>
             <input
               className="input-field"
               type="number"
@@ -4977,7 +5038,7 @@ function DeductionsScreen({ onBack, profile }) {
           </div>
           <span style={{ fontSize: 18, color: "rgba(255,255,255,0.2)", marginTop: 14 }}>=</span>
           <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", marginBottom: 4 }}>SCORE</div>
+            <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)", marginBottom: 4 }}>SCORE</div>
             <div style={{
               fontSize: 22, fontWeight: 900, fontFamily: "'Space Mono', monospace",
               color: calcResult >= 9.0 ? "#22c55e" : calcResult >= 8.0 ? "#f59e0b" : "#ef4444",
@@ -4987,7 +5048,7 @@ function DeductionsScreen({ onBack, profile }) {
             </div>
           </div>
         </div>
-        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", marginTop: 8 }}>
+        <div style={{ fontSize: 14, color: "rgba(255,255,255,0.25)", marginTop: 8 }}>
           Add up the deductions from the list below to understand how a score is calculated.
         </div>
       </div>
@@ -4996,7 +5057,7 @@ function DeductionsScreen({ onBack, profile }) {
       <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 16 }}>
         {Object.entries(DEDUCTION_SCALE).map(([key, val]) => (
           <span key={key} style={{
-            fontSize: 10, fontWeight: 600, padding: "3px 10px", borderRadius: 6,
+            fontSize: 14, fontWeight: 600, padding: "3px 10px", borderRadius: 6,
             background: `${val.color}15`, color: val.color, letterSpacing: 0.3,
           }}>
             {key}: {val.range}
@@ -5012,7 +5073,7 @@ function DeductionsScreen({ onBack, profile }) {
             onClick={() => setActiveCategory(cat)}
             style={{
               padding: "8px 16px", borderRadius: 8, border: "none", cursor: "pointer",
-              fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 12,
+              fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 16,
               background: activeCategory === cat ? "#C4982A" : "rgba(255,255,255,0.06)",
               color: activeCategory === cat ? "#0B1024" : "rgba(255,255,255,0.5)",
               whiteSpace: "nowrap", transition: "all 0.2s", textTransform: "capitalize",
@@ -5024,7 +5085,7 @@ function DeductionsScreen({ onBack, profile }) {
       </div>
 
       {/* Category description */}
-      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginBottom: 14, lineHeight: 1.5, padding: "0 4px" }}>
+      <div style={{ fontSize: 14, color: "rgba(255,255,255,0.35)", marginBottom: 14, lineHeight: 1.5, padding: "0 4px" }}>
         {catDescriptions[activeCategory]}
       </div>
 
@@ -5041,9 +5102,9 @@ function DeductionsScreen({ onBack, profile }) {
             animation: `fadeIn 0.2s ease-out ${i * 0.03}s both`,
           }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: 13, fontWeight: 600, flex: 1 }}>{ded.fault}</span>
+              <span style={{ fontSize: 16, fontWeight: 600, flex: 1 }}>{ded.fault}</span>
               <span style={{
-                fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize: 12,
+                fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize: 16,
                 color: severityColor, marginLeft: 12, whiteSpace: "nowrap",
               }}>
                 {ded.deduction}
@@ -5075,7 +5136,7 @@ function SettingsScreen({ profile, history, savedResults, onSave, onBack, onRese
 
   return (
     <div style={{ minHeight: "100vh", padding: "16px 18px 90px", maxWidth: 540, margin: "0 auto" }}>
-      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(196,152,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 13, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
+      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(196,152,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 16, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.5 2.5l-5 5 5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> Dashboard
       </button>
 
@@ -5083,12 +5144,12 @@ function SettingsScreen({ profile, history, savedResults, onSave, onBack, onRese
 
       <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
         <div>
-          <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, display: "block", color: "rgba(255,255,255,0.6)" }}>NAME</label>
+          <label style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, display: "block", color: "rgba(255,255,255,0.6)" }}>NAME</label>
           <input className="input-field" value={editProfile.name} onChange={e => setEditProfile({...editProfile, name: e.target.value})} />
         </div>
 
         <div>
-          <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, display: "block", color: "rgba(255,255,255,0.6)" }}>PROGRAM</label>
+          <label style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, display: "block", color: "rgba(255,255,255,0.6)" }}>PROGRAM</label>
           <select className="input-field" value={editProfile.gender} onChange={e => setEditProfile({...editProfile, gender: e.target.value, primaryEvents: []})}>
             <option value="female">Women's Artistic</option>
             <option value="male">Men's Artistic</option>
@@ -5096,7 +5157,7 @@ function SettingsScreen({ profile, history, savedResults, onSave, onBack, onRese
         </div>
 
         <div>
-          <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, display: "block", color: "rgba(255,255,255,0.6)" }}>LEVEL CATEGORY</label>
+          <label style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, display: "block", color: "rgba(255,255,255,0.6)" }}>LEVEL CATEGORY</label>
           <select className="input-field" value={editProfile.levelCategory} onChange={e => setEditProfile({...editProfile, levelCategory: e.target.value, level: ""})}>
             <option value="compulsory">Compulsory</option>
             <option value="optional">Optional</option>
@@ -5106,7 +5167,7 @@ function SettingsScreen({ profile, history, savedResults, onSave, onBack, onRese
 
         {levelOptions.length > 0 && (
           <div>
-            <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, display: "block", color: "rgba(255,255,255,0.6)" }}>LEVEL</label>
+            <label style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, display: "block", color: "rgba(255,255,255,0.6)" }}>LEVEL</label>
             <select className="input-field" value={editProfile.level} onChange={e => setEditProfile({...editProfile, level: e.target.value})}>
               <option value="">Select level...</option>
               {levelOptions.map(l => <option key={l} value={l}>{l}</option>)}
@@ -5115,7 +5176,7 @@ function SettingsScreen({ profile, history, savedResults, onSave, onBack, onRese
         )}
 
         <div>
-          <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, display: "block", color: "rgba(255,255,255,0.6)" }}>EVENTS</label>
+          <label style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, display: "block", color: "rgba(255,255,255,0.6)" }}>EVENTS</label>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
             {events.map(e => (
               <button
@@ -5129,7 +5190,7 @@ function SettingsScreen({ profile, history, savedResults, onSave, onBack, onRese
                 }}
                 style={{
                   padding: "8px 16px", borderRadius: 8, border: "none", cursor: "pointer",
-                  fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 13,
+                  fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 16,
                   background: editProfile.primaryEvents?.includes(e) ? "#C4982A" : "rgba(255,255,255,0.06)",
                   color: editProfile.primaryEvents?.includes(e) ? "#0B1024" : "rgba(255,255,255,0.5)",
                 }}
@@ -5142,12 +5203,12 @@ function SettingsScreen({ profile, history, savedResults, onSave, onBack, onRese
       </div>
 
         <div>
-          <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, display: "block", color: "rgba(255,255,255,0.6)" }}>AGE</label>
+          <label style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, display: "block", color: "rgba(255,255,255,0.6)" }}>AGE</label>
           <input className="input-field" type="number" min="4" max="25" placeholder="e.g. 10" value={editProfile.age || ""} onChange={e => setEditProfile({...editProfile, age: e.target.value ? parseInt(e.target.value) : null})} />
         </div>
 
         <div>
-          <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, display: "block", color: "rgba(255,255,255,0.6)" }}>GOAL</label>
+          <label style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, display: "block", color: "rgba(255,255,255,0.6)" }}>GOAL</label>
           <select className="input-field" value={editProfile.goals || ""} onChange={e => setEditProfile({...editProfile, goals: e.target.value || null})}>
             <option value="">Select a goal...</option>
             <option value="improve scores">Improve meet scores</option>
@@ -5177,8 +5238,8 @@ function SettingsScreen({ profile, history, savedResults, onSave, onBack, onRese
           }}>
             <span style={{ color: "#22c55e", fontSize: 14 }}>✓</span>
             <div>
-              <span style={{ fontSize: 12, color: "rgba(34,197,94,0.8)" }}>API key configured</span>
-              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", marginTop: 2 }}>2-pass engine: Detect → Judge</div>
+              <span style={{ fontSize: 16, color: "rgba(34,197,94,0.8)" }}>API key configured</span>
+              <div style={{ fontSize: 14, color: "rgba(255,255,255,0.25)", marginTop: 2 }}>2-pass engine: Detect → Judge</div>
             </div>
           </div>
         ) : (
@@ -5188,10 +5249,10 @@ function SettingsScreen({ profile, history, savedResults, onSave, onBack, onRese
             background: "rgba(245,158,11,0.04)", border: "1px solid rgba(245,158,11,0.1)",
           }}>
             <span style={{ color: "#f59e0b", fontSize: 14 }}>!</span>
-            <span style={{ fontSize: 12, color: "rgba(245,158,11,0.8)" }}>No API key — add one below to enable analysis</span>
+            <span style={{ fontSize: 16, color: "rgba(245,158,11,0.8)" }}>No API key — add one below to enable analysis</span>
           </div>
         )}
-        <p style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginBottom: 10, lineHeight: 1.5 }}>
+        <p style={{ fontSize: 14, color: "rgba(255,255,255,0.3)", marginBottom: 10, lineHeight: 1.5 }}>
           Get a free API key at <span style={{ color: "#C4982A", cursor: "pointer" }} onClick={() => window.open("https://aistudio.google.com/apikey", "_blank")}>aistudio.google.com/apikey</span>. Create one, copy it, paste below.
         </p>
         <div style={{ display: "flex", gap: 8 }}>
@@ -5201,7 +5262,7 @@ function SettingsScreen({ profile, history, savedResults, onSave, onBack, onRese
             placeholder="Paste your API key (AIza...)"
             value={geminiKey}
             onChange={e => setGeminiKey(e.target.value)}
-            style={{ fontSize: 12, flex: 1 }}
+            style={{ fontSize: 16, flex: 1 }}
           />
           <button className="btn-outline" onClick={async () => {
             try {
@@ -5214,7 +5275,7 @@ function SettingsScreen({ profile, history, savedResults, onSave, onBack, onRese
               }
               setTimeout(() => setKeySaved(false), 3000);
             } catch (e) { alert("Error: " + e.message); }
-          }} style={{ padding: "10px 16px", fontSize: 12, whiteSpace: "nowrap" }}>
+          }} style={{ padding: "10px 16px", fontSize: 16, whiteSpace: "nowrap" }}>
             {keySaved ? "✓ Saved" : "Save"}
           </button>
         </div>
@@ -5231,15 +5292,15 @@ function SettingsScreen({ profile, history, savedResults, onSave, onBack, onRese
           return currentTier === "pro" ? (
             <div style={{ padding: 16, borderRadius: 12, background: "rgba(139,92,246,0.06)", border: "1px solid rgba(139,92,246,0.2)" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                <span style={{ fontSize: 9, fontWeight: 700, padding: "3px 10px", borderRadius: 4, background: "rgba(139,92,246,0.2)", color: "#A78BFA", letterSpacing: 0.5 }}>PRO ACTIVE</span>
+                <span style={{ fontSize: 14, fontWeight: 700, padding: "3px 10px", borderRadius: 4, background: "rgba(139,92,246,0.2)", color: "#A78BFA", letterSpacing: 0.5 }}>PRO ACTIVE</span>
               </div>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>
+              <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>
                 Full access to all features: unlimited analyses, biomechanics, training programs, mental training, what-if simulator, and diagnostics.
               </div>
             </div>
           ) : (
             <div>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", lineHeight: 1.6, marginBottom: 12 }}>
+              <div style={{ fontSize: 16, color: "rgba(255,255,255,0.4)", lineHeight: 1.6, marginBottom: 12 }}>
                 Unlock unlimited analyses, full deduction breakdowns, biomechanics dashboard, personalized 5-pillar training programs, and more.
               </div>
               <button onClick={() => {
@@ -5253,7 +5314,7 @@ function SettingsScreen({ profile, history, savedResults, onSave, onBack, onRese
               }}>
                 Upgrade to STRIVE Pro
               </button>
-              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", marginTop: 6, textAlign: "center" }}>
+              <div style={{ fontSize: 14, color: "rgba(255,255,255,0.2)", marginTop: 6, textAlign: "center" }}>
                 Payment integration coming soon — tap to preview Pro features
               </div>
             </div>
@@ -5269,13 +5330,13 @@ function SettingsScreen({ profile, history, savedResults, onSave, onBack, onRese
             background: "linear-gradient(135deg, #C4982A, #E8C35A)", backgroundClip: "text",
             WebkitBackgroundClip: "text", color: "transparent", marginBottom: 6,
           }}>STRIVE</div>
-          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", letterSpacing: 1, marginBottom: 12 }}>
+          <div style={{ fontSize: 14, color: "rgba(255,255,255,0.2)", letterSpacing: 1, marginBottom: 12 }}>
             SEE YOUR SCORE. OWN YOUR GROWTH.
           </div>
-          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", lineHeight: 1.7, maxWidth: 300, margin: "0 auto" }}>
+          <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)", lineHeight: 1.7, maxWidth: 300, margin: "0 auto" }}>
             AI-powered gymnastics scoring using USAG criteria. Built for athletes, parents, and coaches. Levels 1-10, Xcel Bronze-Sapphire, WAG & MAG.
           </div>
-          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.15)", marginTop: 12, fontFamily: "'Space Mono', monospace" }}>
+          <div style={{ fontSize: 14, color: "rgba(255,255,255,0.15)", marginTop: 12, fontFamily: "'Space Mono', monospace" }}>
             v1.0.0 · 2-Pass Analysis Engine · strive-app-amber.vercel.app
           </div>
         </div>
@@ -5342,7 +5403,7 @@ function WhatIfSimulator({ result }) {
   return (
     <div style={{ animation: "fadeIn 0.4s ease-out" }}>
       <div className="card" style={{ padding: 20, marginBottom: 16, textAlign: "center" }}>
-        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: 4 }}>IF YOU FIXED THE SELECTED DEDUCTIONS</div>
+        <div style={{ fontSize: 16, color: "rgba(255,255,255,0.4)", marginBottom: 4 }}>IF YOU FIXED THE SELECTED DEDUCTIONS</div>
         <div style={{ fontSize: 48, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: projectedScore >= 9.0 ? "#22c55e" : "#f59e0b" }}>
           {projectedScore.toFixed(3)}
         </div>
@@ -5351,7 +5412,7 @@ function WhatIfSimulator({ result }) {
             +{improvement.toFixed(3)} improvement possible
           </div>
         )}
-        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", marginTop: 8 }}>
+        <div style={{ fontSize: 16, color: "rgba(255,255,255,0.35)", marginTop: 8 }}>
           Tap deductions below to see how fixing them would change your score
         </div>
       </div>
@@ -5373,15 +5434,15 @@ function WhatIfSimulator({ result }) {
               background: isOff ? "rgba(34,197,94,0.2)" : "transparent",
               display: "flex", alignItems: "center", justifyContent: "center",
             }}>
-              {isOff && <span style={{ color: "#22c55e", fontSize: 13, fontWeight: 700 }}>✓</span>}
+              {isOff && <span style={{ color: "#22c55e", fontSize: 16, fontWeight: 700 }}>✓</span>}
             </div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: isOff ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.7)", textDecoration: isOff ? "line-through" : "none" }}>
+              <div style={{ fontSize: 16, fontWeight: 600, color: isOff ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.7)", textDecoration: isOff ? "line-through" : "none" }}>
                 {d.skill}
               </div>
-              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>{d.fault}</div>
+              <div style={{ fontSize: 14, color: "rgba(255,255,255,0.35)" }}>{d.fault}</div>
             </div>
-            <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 13, fontWeight: 700, color: isOff ? "#22c55e" : c, textDecoration: isOff ? "line-through" : "none" }}>
+            <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 16, fontWeight: 700, color: isOff ? "#22c55e" : c, textDecoration: isOff ? "line-through" : "none" }}>
               -{d.deduction?.toFixed(2)}
             </span>
           </div>
@@ -5450,7 +5511,7 @@ function ProgressScreen({ history, profile, onBack }) {
 
   return (
     <div style={{ minHeight: "100vh", padding: "16px 18px 90px", maxWidth: 540, margin: "0 auto" }}>
-      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(196,152,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 13, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
+      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(196,152,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 16, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.5 2.5l-5 5 5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> Dashboard
       </button>
       <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Progress Tracking</h2>
@@ -5465,8 +5526,8 @@ function ProgressScreen({ history, profile, onBack }) {
         </div>
       ) : (
         <>
-          {sortedH.length > 2 && (<div className="card" style={{ padding: 16, marginBottom: 16 }}><div style={{ display: "flex", justifyContent: "space-between" }}><div><div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.25)", letterSpacing: 1 }}>IMPROVEMENT TREND</div></div><div style={{ textAlign: "right" }}><div style={{ fontSize: 24, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: scoreDelta >= 0 ? "#22c55e" : "#ef4444" }}>{scoreDelta >= 0 ? "+" : ""}{scoreDelta.toFixed(3)}</div></div></div></div>)}
-          <div style={{ display: "flex", gap: 4, marginBottom: 16, overflowX: "auto" }}><button onClick={() => setSelectedEvent("all")} style={{ padding: "6px 14px", borderRadius: 8, border: "none", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 11, background: selectedEvent === "all" ? "#C4982A" : "rgba(255,255,255,0.06)", color: selectedEvent === "all" ? "#0B1024" : "rgba(255,255,255,0.4)" }}>All</button>{events.filter(e => history.some(h => h.event === e)).map(evt => (<button key={evt} onClick={() => setSelectedEvent(evt)} style={{ padding: "6px 14px", borderRadius: 8, border: "none", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 11, whiteSpace: "nowrap", background: selectedEvent === evt ? (eventColors[evt] || "#C4982A") : "rgba(255,255,255,0.06)", color: selectedEvent === evt ? "#0B1024" : "rgba(255,255,255,0.4)" }}>{evt.replace("Exercise","").replace("Uneven ","").trim()}</button>))}</div>
+          {sortedH.length > 2 && (<div className="card" style={{ padding: 16, marginBottom: 16 }}><div style={{ display: "flex", justifyContent: "space-between" }}><div><div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.25)", letterSpacing: 1 }}>IMPROVEMENT TREND</div></div><div style={{ textAlign: "right" }}><div style={{ fontSize: 24, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: scoreDelta >= 0 ? "#22c55e" : "#ef4444" }}>{scoreDelta >= 0 ? "+" : ""}{scoreDelta.toFixed(3)}</div></div></div></div>)}
+          <div style={{ display: "flex", gap: 4, marginBottom: 16, overflowX: "auto" }}><button onClick={() => setSelectedEvent("all")} style={{ padding: "6px 14px", borderRadius: 8, border: "none", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 14, background: selectedEvent === "all" ? "#C4982A" : "rgba(255,255,255,0.06)", color: selectedEvent === "all" ? "#0B1024" : "rgba(255,255,255,0.4)" }}>All</button>{events.filter(e => history.some(h => h.event === e)).map(evt => (<button key={evt} onClick={() => setSelectedEvent(evt)} style={{ padding: "6px 14px", borderRadius: 8, border: "none", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 14, whiteSpace: "nowrap", background: selectedEvent === evt ? (eventColors[evt] || "#C4982A") : "rgba(255,255,255,0.06)", color: selectedEvent === evt ? "#0B1024" : "rgba(255,255,255,0.4)" }}>{evt.replace("Exercise","").replace("Uneven ","").trim()}</button>))}</div>
           {/* Score Trend Line Chart */}
           <div className="card" style={{ padding: 16, marginBottom: 16 }}>
             <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12 }}>Score Trend</h3>
@@ -5474,14 +5535,14 @@ function ProgressScreen({ history, profile, onBack }) {
               <ResponsiveContainer width="100%" height={200}>
                 <LineChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
-                  <XAxis dataKey="name" tick={{ fill: "rgba(255,255,255,0.3)", fontSize: 10 }} />
-                  <YAxis domain={[7, 10]} tick={{ fill: "rgba(255,255,255,0.3)", fontSize: 10 }} />
-                  <Tooltip contentStyle={{ background: "#111631", border: "1px solid rgba(196,152,42,0.2)", borderRadius: 8, color: "#e2e8f0", fontSize: 12 }} />
+                  <XAxis dataKey="name" tick={{ fill: "rgba(255,255,255,0.3)", fontSize: 14 }} />
+                  <YAxis domain={[7, 10]} tick={{ fill: "rgba(255,255,255,0.3)", fontSize: 14 }} />
+                  <Tooltip contentStyle={{ background: "#111631", border: "1px solid rgba(196,152,42,0.2)", borderRadius: 8, color: "#e2e8f0", fontSize: 16 }} />
                   <Line type="monotone" dataKey="score" stroke="#C4982A" strokeWidth={2} dot={{ fill: "#C4982A", r: 4 }} />
                 </LineChart>
               </ResponsiveContainer>
             ) : (
-              <div style={{ padding: 20, textAlign: "center", color: "rgba(255,255,255,0.3)", fontSize: 13 }}>
+              <div style={{ padding: 20, textAlign: "center", color: "rgba(255,255,255,0.3)", fontSize: 16 }}>
                 {chartData.map((d, i) => (
                   <span key={i} style={{ fontFamily: "'Space Mono', monospace", marginRight: 12 }}>{d.name}: <span style={{ color: "#C4982A" }}>{d.score?.toFixed(3)}</span></span>
                 ))}
@@ -5498,7 +5559,7 @@ function ProgressScreen({ history, profile, onBack }) {
                   padding: "12px 14px", borderRadius: 10,
                   background: "rgba(196,152,42,0.06)", border: "1px solid rgba(196,152,42,0.1)",
                 }}>
-                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>{evt}</div>
+                  <div style={{ fontSize: 14, color: "rgba(255,255,255,0.4)" }}>{evt}</div>
                   <div style={{ fontSize: 22, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: "#C4982A" }}>
                     {score?.toFixed(3)}
                   </div>
@@ -5515,8 +5576,8 @@ function ProgressScreen({ history, profile, onBack }) {
               const avg = count > 0 ? history.filter(h => h.event === evt).reduce((s, h) => s + (h.score || 0), 0) / count : 0;
               return (
                 <div key={evt} style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
-                  <span style={{ fontSize: 13, fontWeight: 600, flex: 1 }}>{evt}</span>
-                  <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, color: "rgba(255,255,255,0.5)" }}>{count} analyzed</span>
+                  <span style={{ fontSize: 16, fontWeight: 600, flex: 1 }}>{evt}</span>
+                  <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 16, color: "rgba(255,255,255,0.5)" }}>{count} analyzed</span>
                   {count > 0 && <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 14, fontWeight: 700, color: "#C4982A" }}>{avg.toFixed(3)} avg</span>}
                 </div>
               );
@@ -5559,11 +5620,11 @@ function MeetsScreen({ history, savedResults, profile, onBack, onViewResult }) {
 
   return (
     <div style={{ minHeight: "100vh", padding: "16px 18px 90px", maxWidth: 540, margin: "0 auto" }}>
-      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(196,152,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 13, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
+      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(196,152,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 16, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.5 2.5l-5 5 5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> Dashboard
       </button>
       <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Competition History</h2>
-      <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, marginBottom: 20 }}>
+      <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 16, marginBottom: 20 }}>
         {history.length} analyses across {Object.keys(meets).length} meets
       </p>
 
@@ -5571,20 +5632,20 @@ function MeetsScreen({ history, savedResults, profile, onBack, onViewResult }) {
       {allScores.length > 0 && (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 20 }}>
           <div className="card" style={{ textAlign: "center", padding: 14 }}>
-            <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", letterSpacing: 0.5 }}>BEST SCORE</div>
+            <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)", letterSpacing: 0.5 }}>BEST SCORE</div>
             <div style={{ fontSize: 20, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: "#22c55e", marginTop: 4 }}>
               {bestScore.toFixed(1)}
             </div>
           </div>
           <div className="card" style={{ textAlign: "center", padding: 14 }}>
-            <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", letterSpacing: 0.5 }}>AVERAGE</div>
+            <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)", letterSpacing: 0.5 }}>AVERAGE</div>
             <div style={{ fontSize: 20, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: "#C4982A", marginTop: 4 }}>
               {avgScore.toFixed(1)}
             </div>
           </div>
           <div className="card" style={{ textAlign: "center", padding: 14 }}>
-            <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", letterSpacing: 0.5 }}>BEST EVENT</div>
-            <div style={{ fontSize: 12, fontWeight: 700, color: "#E2E8F0", marginTop: 6 }}>
+            <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)", letterSpacing: 0.5 }}>BEST EVENT</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: "#E2E8F0", marginTop: 6 }}>
               {bestEvent ? bestEvent.event.replace("Exercise", "").replace("Uneven ", "") : "—"}
             </div>
           </div>
@@ -5595,7 +5656,7 @@ function MeetsScreen({ history, savedResults, profile, onBack, onViewResult }) {
         <div className="card" style={{ padding: "32px 24px", textAlign: "center" }}>
           <div style={{ fontSize: 32, marginBottom: 10 }}>🏆</div>
           <h4 style={{ fontSize: 15, fontWeight: 700, marginBottom: 6 }}>No meets recorded yet</h4>
-          <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, lineHeight: 1.6 }}>
+          <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 16, lineHeight: 1.6 }}>
             When you upload a video, add the meet name to organize your competition history here.
           </p>
         </div>
@@ -5610,13 +5671,13 @@ function MeetsScreen({ history, savedResults, profile, onBack, onViewResult }) {
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div>
                     <div style={{ fontWeight: 700, fontSize: 15 }}>{meet.name || key}</div>
-                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>
+                    <div style={{ fontSize: 14, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>
                       {meet.location && `${meet.location} · `}{meet.date}
                     </div>
                   </div>
                   {meet.entries.length > 1 && (
                     <div style={{ textAlign: "right" }}>
-                      <div style={{ fontSize: 9, color: "rgba(255,255,255,0.25)" }}>ALL-AROUND</div>
+                      <div style={{ fontSize: 14, color: "rgba(255,255,255,0.25)" }}>ALL-AROUND</div>
                       <div style={{ fontSize: 16, fontWeight: 800, fontFamily: "'Space Mono', monospace", color: "#C4982A" }}>
                         {aa.toFixed(2)}
                       </div>
@@ -5639,8 +5700,8 @@ function MeetsScreen({ history, savedResults, profile, onBack, onViewResult }) {
                       transition: "background 0.2s",
                     }}>
                     <div>
-                      <div style={{ fontSize: 13, fontWeight: 600 }}>{h.event}</div>
-                      {hasR && <div style={{ fontSize: 10, color: "#C4982A" }}>tap to review →</div>}
+                      <div style={{ fontSize: 16, fontWeight: 600 }}>{h.event}</div>
+                      {hasR && <div style={{ fontSize: 14, color: "#C4982A" }}>tap to review →</div>}
                     </div>
                     <div style={{ textAlign: "right" }}>
                       <div style={{ fontWeight: 800, fontSize: 17, fontFamily: "'Space Mono', monospace", color: scColor }}>
@@ -5663,13 +5724,13 @@ function MeetsScreen({ history, savedResults, profile, onBack, onViewResult }) {
           <div className="card" style={{ padding: 16, marginTop: 16 }}>
             <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12 }}>Meet-over-Meet Comparison</h3>
             <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 16 }}>
                 <thead>
                   <tr>
-                    <th style={{ textAlign: "left", padding: "6px 8px", color: "rgba(255,255,255,0.3)", fontSize: 10, fontWeight: 700 }}>MEET</th>
-                    <th style={{ textAlign: "center", padding: "6px 8px", color: "rgba(255,255,255,0.3)", fontSize: 10, fontWeight: 700 }}>EVENTS</th>
-                    <th style={{ textAlign: "center", padding: "6px 8px", color: "rgba(255,255,255,0.3)", fontSize: 10, fontWeight: 700 }}>AVG</th>
-                    <th style={{ textAlign: "right", padding: "6px 8px", color: "rgba(255,255,255,0.3)", fontSize: 10, fontWeight: 700 }}>AA</th>
+                    <th style={{ textAlign: "left", padding: "6px 8px", color: "rgba(255,255,255,0.3)", fontSize: 14, fontWeight: 700 }}>MEET</th>
+                    <th style={{ textAlign: "center", padding: "6px 8px", color: "rgba(255,255,255,0.3)", fontSize: 14, fontWeight: 700 }}>EVENTS</th>
+                    <th style={{ textAlign: "center", padding: "6px 8px", color: "rgba(255,255,255,0.3)", fontSize: 14, fontWeight: 700 }}>AVG</th>
+                    <th style={{ textAlign: "right", padding: "6px 8px", color: "rgba(255,255,255,0.3)", fontSize: 14, fontWeight: 700 }}>AA</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -5686,7 +5747,7 @@ function MeetsScreen({ history, savedResults, profile, onBack, onViewResult }) {
                         <td style={{ padding: "8px", textAlign: "center", fontFamily: "'Space Mono', monospace", fontWeight: 700, color: "#C4982A" }}>{meetAvgScore.toFixed(2)}</td>
                         <td style={{ padding: "8px", textAlign: "right" }}>
                           <span style={{ fontFamily: "'Space Mono', monospace", fontWeight: 700 }}>{meet.entries.length > 1 ? meetAA.toFixed(2) : meetAvgScore.toFixed(2)}</span>
-                          {mi > 0 && aaDelta !== 0 && (<span style={{ fontSize: 10, marginLeft: 4, color: aaDelta > 0 ? "#22c55e" : "#ef4444" }}>{aaDelta > 0 ? "+" : ""}{aaDelta.toFixed(2)}</span>)}
+                          {mi > 0 && aaDelta !== 0 && (<span style={{ fontSize: 14, marginLeft: 4, color: aaDelta > 0 ? "#22c55e" : "#ef4444" }}>{aaDelta > 0 ? "+" : ""}{aaDelta.toFixed(2)}</span>)}
                         </td>
                       </tr>
                     );
@@ -5715,7 +5776,7 @@ function MentalTrainingScreen({ profile, onBack }) {
 
   return (
     <div style={{ minHeight: "100vh", padding: "16px 18px 90px", maxWidth: 540, margin: "0 auto" }}>
-      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(196,152,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 13, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
+      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(196,152,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 16, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.5 2.5l-5 5 5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> Dashboard
       </button>
       <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}><Icon name="brain" size={24} /> Mental Training</h2>
@@ -5726,7 +5787,7 @@ function MentalTrainingScreen({ profile, onBack }) {
         {sections.map(s => (
           <button key={s.id} onClick={() => setActiveSection(s.id)} style={{
             flex: 1, padding: "8px 4px", borderRadius: 10, border: "none", cursor: "pointer",
-            fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 11, whiteSpace: "nowrap",
+            fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 14, whiteSpace: "nowrap",
             background: activeSection === s.id ? "linear-gradient(135deg, #C4982A, #E8C35A)" : "transparent",
             color: activeSection === s.id ? "#0B1024" : "rgba(255,255,255,0.4)",
           }}>{s.label}</button>
@@ -5737,7 +5798,7 @@ function MentalTrainingScreen({ profile, onBack }) {
         <div style={{ animation: "fadeIn 0.4s ease-out" }}>
           <div className="card" style={{ padding: 20, marginBottom: 12, borderColor: "rgba(196,152,42,0.15)" }}>
             <h3 style={{ fontSize: 15, fontWeight: 700, color: "#C4982A", marginBottom: 10 }}>Why Mental Training Matters</h3>
-            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", lineHeight: 1.8 }}>
+            <p style={{ fontSize: 16, color: "rgba(255,255,255,0.6)", lineHeight: 1.8 }}>
               The difference between a gymnast who scores 8.5 and one who scores 9.2 is rarely just physical ability. It's mental focus, confidence, and the ability to perform under pressure. Every elite gymnast — from Simone Biles to your child's favorite Level 10 at the gym — uses mental training techniques daily.
             </p>
           </div>
@@ -5752,14 +5813,14 @@ function MentalTrainingScreen({ profile, onBack }) {
               <div key={i} style={{ display: "flex", gap: 12, marginBottom: 12, alignItems: "flex-start" }}>
                 <span style={{ fontSize: 22, flexShrink: 0 }}>{p.icon}</span>
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 700 }}>{p.title}</div>
-                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>{p.desc}</div>
+                  <div style={{ fontSize: 16, fontWeight: 700 }}>{p.title}</div>
+                  <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>{p.desc}</div>
                 </div>
               </div>
             ))}
           </div>
           <div className="card" style={{ padding: 16, background: "rgba(196,152,42,0.04)", borderColor: "rgba(196,152,42,0.1)" }}>
-            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: 1.7, fontStyle: "italic" }}>
+            <p style={{ fontSize: 16, color: "rgba(255,255,255,0.45)", lineHeight: 1.7, fontStyle: "italic" }}>
               <strong style={{ color: "#C4982A" }}>Parent tip:</strong> You can practice these with your child in the car on the way to the gym. Even 5 minutes of visualization before practice makes a measurable difference.
             </p>
           </div>
@@ -5798,13 +5859,13 @@ function MentalTrainingScreen({ profile, onBack }) {
             <div key={i} className="card" style={{ padding: 16, marginBottom: 12 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
                 <h3 style={{ fontSize: 14, fontWeight: 700 }}>👁 {ex.title}</h3>
-                <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700, background: "rgba(255,255,255,0.06)", padding: "3px 8px", borderRadius: 5, color: "rgba(255,255,255,0.4)" }}>{ex.time}</span>
+                <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 14, fontWeight: 700, background: "rgba(255,255,255,0.06)", padding: "3px 8px", borderRadius: 5, color: "rgba(255,255,255,0.4)" }}>{ex.time}</span>
               </div>
-              <div style={{ fontSize: 11, color: "#C4982A", marginBottom: 8 }}>Best time: {ex.when}</div>
+              <div style={{ fontSize: 14, color: "#C4982A", marginBottom: 8 }}>Best time: {ex.when}</div>
               {ex.steps.map((step, j) => (
                 <div key={j} style={{ display: "flex", gap: 8, marginBottom: 6 }}>
-                  <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700, color: "rgba(196,152,42,0.5)", minWidth: 18 }}>{j+1}.</span>
-                  <span style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", lineHeight: 1.6 }}>{step}</span>
+                  <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 14, fontWeight: 700, color: "rgba(196,152,42,0.5)", minWidth: 18 }}>{j+1}.</span>
+                  <span style={{ fontSize: 16, color: "rgba(255,255,255,0.55)", lineHeight: 1.6 }}>{step}</span>
                 </div>
               ))}
             </div>
@@ -5822,11 +5883,11 @@ function MentalTrainingScreen({ profile, onBack }) {
           ].map((ex, i) => (
             <div key={i} className="card" style={{ padding: 16, marginBottom: 12 }}>
               <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 2 }}>🌬 {ex.title}</h3>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>{ex.desc}</div>
+              <div style={{ fontSize: 16, color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>{ex.desc}</div>
               <div style={{ padding: "10px 12px", borderRadius: 8, background: "rgba(59,130,246,0.06)", border: "1px solid rgba(59,130,246,0.12)", marginBottom: 8 }}>
-                <div style={{ fontSize: 13, color: "rgba(147,197,253,0.9)", lineHeight: 1.7 }}>{ex.steps}</div>
+                <div style={{ fontSize: 16, color: "rgba(147,197,253,0.9)", lineHeight: 1.7 }}>{ex.steps}</div>
               </div>
-              <div style={{ fontSize: 11, color: "#C4982A" }}>When to use: {ex.when}</div>
+              <div style={{ fontSize: 14, color: "#C4982A" }}>When to use: {ex.when}</div>
             </div>
           ))}
         </div>
@@ -5836,7 +5897,7 @@ function MentalTrainingScreen({ profile, onBack }) {
         <div style={{ animation: "fadeIn 0.4s ease-out" }}>
           <div className="card" style={{ padding: 16, marginBottom: 12 }}>
             <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 10 }}>💪 Pre-Competition Affirmations</h3>
-            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: 10 }}>Have your child say these (out loud or silently) before competing:</p>
+            <p style={{ fontSize: 16, color: "rgba(255,255,255,0.4)", marginBottom: 10 }}>Have your child say these (out loud or silently) before competing:</p>
             {[
               "I have trained for this. My body knows what to do.",
               "I am strong, I am prepared, I am ready.",
@@ -5850,7 +5911,7 @@ function MentalTrainingScreen({ profile, onBack }) {
               <div key={i} style={{
                 padding: "8px 12px", borderRadius: 8, marginBottom: 4,
                 background: "rgba(196,152,42,0.04)", borderLeft: "3px solid rgba(196,152,42,0.2)",
-                fontSize: 13, color: "rgba(255,255,255,0.6)", lineHeight: 1.5, fontStyle: "italic",
+                fontSize: 16, color: "rgba(255,255,255,0.6)", lineHeight: 1.5, fontStyle: "italic",
               }}>"{a}"</div>
             ))}
           </div>
@@ -5865,10 +5926,10 @@ function MentalTrainingScreen({ profile, onBack }) {
             ].map((ex, i) => (
               <div key={i} style={{ marginBottom: 12, paddingBottom: 12, borderBottom: i < 4 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                  <div style={{ fontSize: 13, fontWeight: 700 }}>{ex.name}</div>
-                  <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, color: "rgba(255,255,255,0.3)", background: "rgba(255,255,255,0.04)", padding: "2px 6px", borderRadius: 4 }}>{ex.freq}</span>
+                  <div style={{ fontSize: 16, fontWeight: 700 }}>{ex.name}</div>
+                  <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 14, color: "rgba(255,255,255,0.3)", background: "rgba(255,255,255,0.04)", padding: "2px 6px", borderRadius: 4 }}>{ex.freq}</span>
                 </div>
-                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.6, marginTop: 4 }}>{ex.desc}</div>
+                <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.6, marginTop: 4 }}>{ex.desc}</div>
               </div>
             ))}
           </div>
@@ -5879,7 +5940,7 @@ function MentalTrainingScreen({ profile, onBack }) {
         <div style={{ animation: "fadeIn 0.4s ease-out" }}>
           <div className="card" style={{ padding: 16, marginBottom: 12 }}>
             <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 10 }}>🏟 Competition Day Timeline</h3>
-            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: 12 }}>What to expect from arrival to awards:</p>
+            <p style={{ fontSize: 16, color: "rgba(255,255,255,0.4)", marginBottom: 12 }}>What to expect from arrival to awards:</p>
             {[
               { time: "60 min before", title: "Arrival", desc: "Check in, find your team area, use the bathroom, get leotard on. No rushing.", color: "rgba(59,130,246,0.8)" },
               { time: "45 min before", title: "Light Warm-Up", desc: "Jog, stretch, handstands, basic skills only. NO new skills on meet day. Keep it familiar.", color: "rgba(59,130,246,0.6)" },
@@ -5892,15 +5953,15 @@ function MentalTrainingScreen({ profile, onBack }) {
               <div key={i} style={{ display: "flex", gap: 12, marginBottom: 10 }}>
                 <div style={{ width: 3, flexShrink: 0, background: step.color, borderRadius: 2 }} />
                 <div>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: step.color, letterSpacing: 0.5 }}>{step.time}</div>
-                  <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 2 }}>{step.title}</div>
-                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>{step.desc}</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: step.color, letterSpacing: 0.5 }}>{step.time}</div>
+                  <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 2 }}>{step.title}</div>
+                  <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>{step.desc}</div>
                 </div>
               </div>
             ))}
           </div>
           <div className="card" style={{ padding: 16, background: "rgba(239,68,68,0.04)", borderColor: "rgba(239,68,68,0.1)" }}>
-            <h3 style={{ fontSize: 13, fontWeight: 700, color: "#ef4444", marginBottom: 8 }}>⚠ Common Meet Day Mistakes (Parents)</h3>
+            <h3 style={{ fontSize: 16, fontWeight: 700, color: "#ef4444", marginBottom: 8 }}>⚠ Common Meet Day Mistakes (Parents)</h3>
             {[
               "Coaching from the stands — your child can hear you and it adds pressure",
               "Comparing scores to other gymnasts out loud",
@@ -5908,7 +5969,7 @@ function MentalTrainingScreen({ profile, onBack }) {
               "Skipping breakfast or eating heavy food before competing",
               "Arriving late and rushing through warm-up",
             ].map((m, i) => (
-              <div key={i} style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.6, marginBottom: 4, paddingLeft: 12, borderLeft: "2px solid rgba(239,68,68,0.2)" }}>{m}</div>
+              <div key={i} style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.6, marginBottom: 4, paddingLeft: 12, borderLeft: "2px solid rgba(239,68,68,0.2)" }}>{m}</div>
             ))}
           </div>
         </div>
@@ -5918,7 +5979,7 @@ function MentalTrainingScreen({ profile, onBack }) {
         <div style={{ animation: "fadeIn 0.4s ease-out" }}>
           <div className="card" style={{ padding: 20, marginBottom: 12, borderColor: "rgba(196,152,42,0.15)" }}>
             <h3 style={{ fontSize: 15, fontWeight: 700, color: "#C4982A", marginBottom: 10 }}>Your Stress Matters Too</h3>
-            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", lineHeight: 1.8 }}>
+            <p style={{ fontSize: 16, color: "rgba(255,255,255,0.6)", lineHeight: 1.8 }}>
               Watching your child compete is one of the most stressful experiences in youth sports. Your heart pounds, your palms sweat, and a wobble on beam feels like it's happening to YOU. This is completely normal — and there are proven techniques to manage it so you can be the calm, supportive presence your child needs.
             </p>
           </div>
@@ -5935,10 +5996,10 @@ function MentalTrainingScreen({ profile, onBack }) {
             ].map((ex, i) => (
               <div key={i} style={{ marginBottom: 14, paddingBottom: 14, borderBottom: i < 5 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
-                  <span style={{ fontSize: 13, fontWeight: 700 }}>{ex.name}</span>
-                  <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, color: "rgba(255,255,255,0.3)", background: "rgba(255,255,255,0.04)", padding: "2px 6px", borderRadius: 4, whiteSpace: "nowrap" }}>{ex.time}</span>
+                  <span style={{ fontSize: 16, fontWeight: 700 }}>{ex.name}</span>
+                  <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 14, color: "rgba(255,255,255,0.3)", background: "rgba(255,255,255,0.04)", padding: "2px 6px", borderRadius: 4, whiteSpace: "nowrap" }}>{ex.time}</span>
                 </div>
-                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", lineHeight: 1.7 }}>{ex.desc}</div>
+                <div style={{ fontSize: 16, color: "rgba(255,255,255,0.55)", lineHeight: 1.7 }}>{ex.desc}</div>
               </div>
             ))}
           </div>
@@ -5954,8 +6015,8 @@ function MentalTrainingScreen({ profile, onBack }) {
               { trap: "Making gymnastics their entire identity", why: "They're a kid who does gymnastics, not 'a gymnast who goes to school.' When sport = identity, pressure becomes unbearable." },
             ].map((item, i) => (
               <div key={i} style={{ marginBottom: 10 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#ef4444", marginBottom: 2 }}>{item.trap}</div>
-                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>{item.why}</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: "#ef4444", marginBottom: 2 }}>{item.trap}</div>
+                <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>{item.why}</div>
               </div>
             ))}
           </div>
@@ -5970,12 +6031,12 @@ function MentalTrainingScreen({ profile, onBack }) {
               "\"I'm proud of you no matter what the scores say.\"",
               "\"Want to grab ice cream?\"",
             ].map((s, i) => (
-              <div key={i} style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", lineHeight: 1.5, marginBottom: 6, paddingLeft: 12, borderLeft: "2px solid rgba(34,197,94,0.2)", fontStyle: "italic" }}>{s}</div>
+              <div key={i} style={{ fontSize: 16, color: "rgba(255,255,255,0.6)", lineHeight: 1.5, marginBottom: 6, paddingLeft: 12, borderLeft: "2px solid rgba(34,197,94,0.2)", fontStyle: "italic" }}>{s}</div>
             ))}
           </div>
 
           <div className="card" style={{ padding: 14, background: "rgba(196,152,42,0.03)", borderColor: "rgba(196,152,42,0.1)" }}>
-            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: 1.7, fontStyle: "italic" }}>
+            <p style={{ fontSize: 16, color: "rgba(255,255,255,0.45)", lineHeight: 1.7, fontStyle: "italic" }}>
               <strong style={{ color: "#C4982A" }}>Remember:</strong> The average competitive gymnastics career lasts 4-8 years. The relationship with your child lasts forever. Protect the relationship — the scores will take care of themselves.
             </p>
           </div>
@@ -6021,7 +6082,7 @@ function SeasonGoalsScreen({ profile, history, onBack }) {
 
   return (
     <div style={{ minHeight: "100vh", padding: "16px 18px 90px", maxWidth: 540, margin: "0 auto" }}>
-      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(196,152,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 13, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
+      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(196,152,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 16, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.5 2.5l-5 5 5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> Dashboard
       </button>
       <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}><Icon name="target" size={24} /> Season Goals</h2>
@@ -6032,7 +6093,7 @@ function SeasonGoalsScreen({ profile, history, onBack }) {
         <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 10 }}>Add a Goal</h3>
         <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
           <select value={newGoalEvent} onChange={e => setNewGoalEvent(e.target.value)}
-            className="input-field" style={{ flex: 2, fontSize: 13, padding: "10px 8px" }}>
+            className="input-field" style={{ flex: 2, fontSize: 16, padding: "10px 8px" }}>
             <option value="">Event...</option>
             {events.map(e => <option key={e} value={e}>{e}</option>)}
             <option value="All-Around">All-Around</option>
@@ -6040,10 +6101,10 @@ function SeasonGoalsScreen({ profile, history, onBack }) {
           <input className="input-field" type="number" step="0.025" min="7" max="10"
             placeholder="Target (e.g. 9.2)" value={newGoalTarget}
             onChange={e => setNewGoalTarget(e.target.value)}
-            style={{ flex: 1, fontSize: 13, fontFamily: "'Space Mono', monospace" }} />
+            style={{ flex: 1, fontSize: 16, fontFamily: "'Space Mono', monospace" }} />
         </div>
         <button onClick={addGoal} disabled={!newGoalEvent || !newGoalTarget}
-          className="btn-gold" style={{ width: "100%", padding: "10px 12px", fontSize: 13, opacity: (!newGoalEvent || !newGoalTarget) ? 0.4 : 1 }}>
+          className="btn-gold" style={{ width: "100%", padding: "10px 12px", fontSize: 16, opacity: (!newGoalEvent || !newGoalTarget) ? 0.4 : 1 }}>
           Set Goal
         </button>
       </div>
@@ -6067,12 +6128,12 @@ function SeasonGoalsScreen({ profile, history, onBack }) {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
               <div>
                 <div style={{ fontSize: 14, fontWeight: 700 }}>{goal.event}</div>
-                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>
+                <div style={{ fontSize: 14, color: "rgba(255,255,255,0.35)" }}>
                   Current best: <span style={{ color: "#C4982A", fontFamily: "'Space Mono', monospace", fontWeight: 700 }}>{current ? current.toFixed(3) : "—"}</span>
                 </div>
               </div>
               <div style={{ textAlign: "right" }}>
-                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>TARGET</div>
+                <div style={{ fontSize: 14, color: "rgba(255,255,255,0.35)" }}>TARGET</div>
                 <div style={{ fontSize: 22, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: achieved ? "#22c55e" : "#C4982A" }}>
                   {goal.target.toFixed(3)}
                 </div>
@@ -6087,11 +6148,11 @@ function SeasonGoalsScreen({ profile, history, onBack }) {
               }} />
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: 11, color: achieved ? "#22c55e" : "rgba(255,255,255,0.35)", fontWeight: achieved ? 700 : 400 }}>
+              <span style={{ fontSize: 14, color: achieved ? "#22c55e" : "rgba(255,255,255,0.35)", fontWeight: achieved ? 700 : 400 }}>
                 {achieved ? "🎉 GOAL ACHIEVED!" : `${progress.toFixed(0)}% of the way there`}
               </span>
               <button onClick={() => removeGoal(goal.id)} style={{
-                background: "none", border: "none", color: "rgba(255,255,255,0.2)", cursor: "pointer", fontSize: 12, fontFamily: "'Outfit', sans-serif",
+                background: "none", border: "none", color: "rgba(255,255,255,0.2)", cursor: "pointer", fontSize: 16, fontFamily: "'Outfit', sans-serif",
               }}>remove</button>
             </div>
           </div>
@@ -6100,7 +6161,7 @@ function SeasonGoalsScreen({ profile, history, onBack }) {
 
       {/* Tip */}
       <div className="card" style={{ padding: 14, marginTop: 12, background: "rgba(196,152,42,0.03)", borderColor: "rgba(196,152,42,0.1)" }}>
-        <p style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: 1.7, fontStyle: "italic" }}>
+        <p style={{ fontSize: 16, color: "rgba(255,255,255,0.45)", lineHeight: 1.7, fontStyle: "italic" }}>
           <strong style={{ color: "#C4982A" }}>Setting good goals:</strong> Aim for 0.2-0.4 improvement per season on each event. That might sound small, but in gymnastics scoring, improving 0.3 on every event means a 1.2 improvement in All-Around — that's the difference between 5th place and 1st.
         </p>
       </div>
@@ -6195,7 +6256,7 @@ function BodyHeatmap({ deductions }) {
 
   return (
     <div className="card" style={{ padding: "16px 14px", marginBottom: 12 }}>
-      <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: 1, marginBottom: 8 }}>
+      <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: 1, marginBottom: 8 }}>
         BODY FAULT MAP
       </div>
       <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
@@ -6289,14 +6350,14 @@ function BodyHeatmap({ deductions }) {
               return (
                 <div key={key} style={{ marginBottom: 8 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 2 }}>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.7)" }}>{r.label}</span>
-                    <span style={{ fontSize: 12, fontWeight: 800, fontFamily: "'Space Mono', monospace", color }}>-{r.total.toFixed(2)}</span>
+                    <span style={{ fontSize: 16, fontWeight: 700, color: "rgba(255,255,255,0.7)" }}>{r.label}</span>
+                    <span style={{ fontSize: 16, fontWeight: 800, fontFamily: "'Space Mono', monospace", color }}>-{r.total.toFixed(2)}</span>
                   </div>
                   {/* Bar */}
                   <div style={{ height: 4, borderRadius: 2, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
                     <div style={{ height: "100%", width: `${intensity * 100}%`, borderRadius: 2, background: color, transition: "width 0.5s ease" }} />
                   </div>
-                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", marginTop: 2, lineHeight: 1.3 }}>
+                  <div style={{ fontSize: 14, color: "rgba(255,255,255,0.35)", marginTop: 2, lineHeight: 1.3 }}>
                     {r.faults.slice(0, 2).join(" · ")}{r.faults.length > 2 ? ` +${r.faults.length - 2} more` : ""}
                   </div>
                 </div>
@@ -6315,7 +6376,7 @@ function DeductionTimeline({ deductions, duration }) {
   // Parse timestamps to seconds
   const timed = deductions.map(d => {
     const ts = safeStr(d.timestamp);
-    if (ts.toLowerCase() === "global") return { ...d, sec: -1 };
+    if (String(ts || '').toLowerCase() === "global") return { ...d, sec: -1 };
     const parts = ts.split(":");
     const sec = parts.length === 2 ? parseInt(parts[0]) * 60 + parseInt(parts[1]) : parseFloat(parts[0]) || 0;
     return { ...d, sec };
@@ -6339,7 +6400,7 @@ function DeductionTimeline({ deductions, duration }) {
 
   return (
     <div className="card" style={{ padding: "12px 14px", marginBottom: 12 }}>
-      <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: 1, marginBottom: 8 }}>
+      <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: 1, marginBottom: 8 }}>
         DEDUCTION TIMELINE
       </div>
       <div style={{ display: "flex", gap: 2, alignItems: "flex-end", height: 40 }}>
@@ -6362,15 +6423,15 @@ function DeductionTimeline({ deductions, duration }) {
         })}
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
-        <span style={{ fontSize: 9, color: "rgba(255,255,255,0.25)", fontFamily: "'Space Mono', monospace" }}>0:00</span>
-        <span style={{ fontSize: 9, color: "rgba(255,255,255,0.25)", fontFamily: "'Space Mono', monospace" }}>
+        <span style={{ fontSize: 14, color: "rgba(255,255,255,0.25)", fontFamily: "'Space Mono', monospace" }}>0:00</span>
+        <span style={{ fontSize: 14, color: "rgba(255,255,255,0.25)", fontFamily: "'Space Mono', monospace" }}>
           {Math.floor(maxTime / 60)}:{String(Math.round(maxTime % 60)).padStart(2, "0")}
         </span>
       </div>
       <div style={{ display: "flex", gap: 12, marginTop: 6, justifyContent: "center" }}>
-        <span style={{ fontSize: 9, color: "rgba(255,255,255,0.3)" }}><span style={{ display: "inline-block", width: 8, height: 8, borderRadius: 2, background: "#22c55e", marginRight: 3, verticalAlign: "middle" }} />Minor</span>
-        <span style={{ fontSize: 9, color: "rgba(255,255,255,0.3)" }}><span style={{ display: "inline-block", width: 8, height: 8, borderRadius: 2, background: "#f59e0b", marginRight: 3, verticalAlign: "middle" }} />Moderate</span>
-        <span style={{ fontSize: 9, color: "rgba(255,255,255,0.3)" }}><span style={{ display: "inline-block", width: 8, height: 8, borderRadius: 2, background: "#ef4444", marginRight: 3, verticalAlign: "middle" }} />Heavy</span>
+        <span style={{ fontSize: 14, color: "rgba(255,255,255,0.3)" }}><span style={{ display: "inline-block", width: 8, height: 8, borderRadius: 2, background: "#22c55e", marginRight: 3, verticalAlign: "middle" }} />Minor</span>
+        <span style={{ fontSize: 14, color: "rgba(255,255,255,0.3)" }}><span style={{ display: "inline-block", width: 8, height: 8, borderRadius: 2, background: "#f59e0b", marginRight: 3, verticalAlign: "middle" }} />Moderate</span>
+        <span style={{ fontSize: 14, color: "rgba(255,255,255,0.3)" }}><span style={{ display: "inline-block", width: 8, height: 8, borderRadius: 2, background: "#ef4444", marginRight: 3, verticalAlign: "middle" }} />Heavy</span>
       </div>
     </div>
   );
@@ -6384,7 +6445,7 @@ function DeductionsTabContent({ result, frames }) {
   const getFrameForDeduction = (d) => {
     if (!frames || frames.length === 0) return null;
     const ts = safeStr(d.timestamp);
-    if (ts.toLowerCase() === "global") return null;
+    if (String(ts || '').toLowerCase() === "global") return null;
     const parts = ts.split(":");
     const sec = parts.length === 2 ? parseInt(parts[0]) * 60 + parseInt(parts[1]) : parseFloat(parts[0]) || 0;
     let closest = null;
@@ -6416,9 +6477,9 @@ function DeductionsTabContent({ result, frames }) {
       <div className="card" style={{ padding: 0, overflow: "hidden", marginBottom: 12 }}>
         {/* Header row */}
         <div style={{ display: "grid", gridTemplateColumns: "50px 1fr auto", gap: 0, padding: "10px 14px", background: "rgba(255,255,255,0.03)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-          <span style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.3)", letterSpacing: 1 }}>TIME</span>
-          <span style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.3)", letterSpacing: 1 }}>SKILL / FAULT</span>
-          <span style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.3)", letterSpacing: 1, textAlign: "right" }}>DED</span>
+          <span style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.3)", letterSpacing: 1 }}>TIME</span>
+          <span style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.3)", letterSpacing: 1 }}>SKILL / FAULT</span>
+          <span style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.3)", letterSpacing: 1, textAlign: "right" }}>DED</span>
         </div>
 
         {/* Deduction rows */}
@@ -6435,24 +6496,24 @@ function DeductionsTabContent({ result, frames }) {
                 background: isExpanded ? `${c}08` : "transparent",
                 animation: `slideUp 0.2s ease-out ${i * 0.03}s both`,
               }}>
-                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: "'Space Mono', monospace" }}>{d.timestamp || "—"}</span>
+                <span style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", fontFamily: "'Space Mono', monospace" }}>{d.timestamp || "—"}</span>
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: "#e2e8f0", lineHeight: 1.3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{d.skill}</div>
-                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 2, lineHeight: 1.3 }}>
+                  <div style={{ fontSize: 16, fontWeight: 600, color: "#e2e8f0", lineHeight: 1.3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{d.skill}</div>
+                  <div style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", marginTop: 2, lineHeight: 1.3 }}>
                     {d.fault || d.details || ""}
                   </div>
                   <div style={{ display: "flex", gap: 4, marginTop: 3, flexWrap: "wrap" }}>
-                    <span style={{ fontSize: 8, padding: "1px 5px", borderRadius: 3, background: `${c}18`, color: c, fontWeight: 700 }}>{d.category?.toUpperCase()}</span>
-                    {d.engine && d.engine !== "General" && <span style={{ fontSize: 8, padding: "1px 5px", borderRadius: 3, background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.35)", fontWeight: 600 }}>{d.engine}</span>}
+                    <span style={{ fontSize: 14, padding: "1px 5px", borderRadius: 3, background: `${c}18`, color: c, fontWeight: 700 }}>{d.category?.toUpperCase()}</span>
+                    {d.engine && d.engine !== "General" && <span style={{ fontSize: 14, padding: "1px 5px", borderRadius: 3, background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.35)", fontWeight: 600 }}>{d.engine}</span>}
                     {d.confidence != null && (
                       <span style={{
-                        fontSize: 8, padding: "1px 5px", borderRadius: 3, fontWeight: 700,
+                        fontSize: 14, padding: "1px 5px", borderRadius: 3, fontWeight: 700,
                         background: d.confidence >= 0.8 ? "rgba(34,197,94,0.12)" : d.confidence >= 0.6 ? "rgba(245,158,11,0.12)" : "rgba(239,68,68,0.12)",
                         color: d.confidence >= 0.8 ? "#22c55e" : d.confidence >= 0.6 ? "#f59e0b" : "#ef4444",
                       }}>{Math.round(d.confidence * 100)}% conf</span>
                     )}
                     {d.lowConfidence && (
-                      <span style={{ fontSize: 8, padding: "1px 5px", borderRadius: 3, background: "rgba(239,68,68,0.12)", color: "#ef4444", fontWeight: 600, fontStyle: "italic" }}>LOW CONF</span>
+                      <span style={{ fontSize: 14, padding: "1px 5px", borderRadius: 3, background: "rgba(239,68,68,0.12)", color: "#ef4444", fontWeight: 600, fontStyle: "italic" }}>LOW CONF</span>
                     )}
                   </div>
                 </div>
@@ -6460,7 +6521,7 @@ function DeductionsTabContent({ result, frames }) {
                   <span style={{ fontFamily: "'Space Mono', monospace", fontWeight: 900, fontSize: 15, color: c }}>
                     -{d.deduction?.toFixed(2)}
                   </span>
-                  <span style={{ fontSize: 9, color: "rgba(255,255,255,0.25)" }}>{isExpanded ? "▲" : "▼"}</span>
+                  <span style={{ fontSize: 14, color: "rgba(255,255,255,0.25)" }}>{isExpanded ? "▲" : "▼"}</span>
                 </div>
               </div>
               {/* Expanded detail panel with frame thumbnail */}
@@ -6478,26 +6539,26 @@ function DeductionsTabContent({ result, frames }) {
                           width: 120, height: 90, objectFit: "cover", borderRadius: 8,
                           border: `2px solid ${c}40`,
                         }} />
-                        <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", textAlign: "center", marginTop: 3, fontFamily: "'Space Mono', monospace" }}>
+                        <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)", textAlign: "center", marginTop: 3, fontFamily: "'Space Mono', monospace" }}>
                           {parseFloat(frame.timestamp).toFixed(1)}s
                         </div>
                       </div>
                     )}
                     <div style={{ flex: 1, minWidth: 0 }}>
                       {d.details && d.details !== d.fault && (
-                        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", lineHeight: 1.5, marginBottom: 6 }}>{d.details}</div>
+                        <div style={{ fontSize: 16, color: "rgba(255,255,255,0.55)", lineHeight: 1.5, marginBottom: 6 }}>{d.details}</div>
                       )}
                       {d.correction && (
-                        <div style={{ fontSize: 11, color: "#22c55e", lineHeight: 1.4, padding: "6px 8px", background: "rgba(34,197,94,0.08)", borderRadius: 6 }}>
+                        <div style={{ fontSize: 14, color: "#22c55e", lineHeight: 1.4, padding: "6px 8px", background: "rgba(34,197,94,0.08)", borderRadius: 6 }}>
                           <span style={{ fontWeight: 700 }}>Fix: </span>{d.correction}
                         </div>
                       )}
                       {d.subFaults && d.subFaults.length > 0 && (
                         <div style={{ marginTop: 6 }}>
                           {d.subFaults.map((sf, si) => (
-                            <div key={si} style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", lineHeight: 1.4, padding: "2px 0", display: "flex", justifyContent: "space-between" }}>
+                            <div key={si} style={{ fontSize: 14, color: "rgba(255,255,255,0.45)", lineHeight: 1.4, padding: "2px 0", display: "flex", justifyContent: "space-between" }}>
                               <span>{sf.fault}</span>
-                              <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, color: c, fontWeight: 600 }}>-{sf.deduction?.toFixed(2)}</span>
+                              <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 14, color: c, fontWeight: 600 }}>-{sf.deduction?.toFixed(2)}</span>
                             </div>
                           ))}
                         </div>
@@ -6517,28 +6578,28 @@ function DeductionsTabContent({ result, frames }) {
         border: "1px solid rgba(196,152,42,0.15)", borderRadius: 12,
         padding: 16, marginTop: 4,
       }}>
-        <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: 1, marginBottom: 10 }}>SCORE MATH</div>
+        <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: 1, marginBottom: 10 }}>SCORE MATH</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           {safeNum(result.executionDeductionsTotal, 0) > 0 && (
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: 12, color: "rgba(255,255,255,0.6)" }}>Execution ({result.executionDeductions?.filter(d => d.category !== "artistry").length || 0} deductions)</span>
-              <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 13, fontWeight: 700, color: "#ef4444" }}>-{safeNum(result.executionDeductionsTotal, 0).toFixed(3)}</span>
+              <span style={{ fontSize: 16, color: "rgba(255,255,255,0.6)" }}>Execution ({result.executionDeductions?.filter(d => d.category !== "artistry").length || 0} deductions)</span>
+              <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 16, fontWeight: 700, color: "#ef4444" }}>-{safeNum(result.executionDeductionsTotal, 0).toFixed(3)}</span>
             </div>
           )}
           {safeNum(result.artistryDeductionsTotal, 0) > 0 && (
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: 12, color: "rgba(255,255,255,0.6)" }}>Artistry ({result.executionDeductions?.filter(d => d.category === "artistry").length || 0} deductions)</span>
-              <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 13, fontWeight: 700, color: "#ef4444" }}>-{safeNum(result.artistryDeductionsTotal, 0).toFixed(3)}</span>
+              <span style={{ fontSize: 16, color: "rgba(255,255,255,0.6)" }}>Artistry ({result.executionDeductions?.filter(d => d.category === "artistry").length || 0} deductions)</span>
+              <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 16, fontWeight: 700, color: "#ef4444" }}>-{safeNum(result.artistryDeductionsTotal, 0).toFixed(3)}</span>
             </div>
           )}
           <div style={{ height: 1, background: "rgba(255,255,255,0.08)", margin: "4px 0" }} />
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.8)" }}>Total Deductions ({result.executionDeductions?.length || 0} items)</span>
+            <span style={{ fontSize: 16, fontWeight: 700, color: "rgba(255,255,255,0.8)" }}>Total Deductions ({result.executionDeductions?.length || 0} items)</span>
             <span style={{ fontFamily: "'Space Mono', monospace", fontWeight: 900, fontSize: 16, color: "#ef4444" }}>-{safeNum(result.totalDeductions, 0).toFixed(3)}</span>
           </div>
           <div style={{ height: 1, background: "rgba(255,255,255,0.08)", margin: "2px 0" }} />
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.5)" }}>
+            <span style={{ fontSize: 16, fontWeight: 600, color: "rgba(255,255,255,0.5)" }}>
               {safeNum(result.startValue, 10).toFixed(1)} - {safeNum(result.totalDeductions, 0).toFixed(3)} =
             </span>
             <span style={{ fontFamily: "'Space Mono', monospace", fontWeight: 900, fontSize: 20, color: result.finalScore >= 9.0 ? "#22c55e" : result.finalScore >= 8.0 ? "#f59e0b" : "#ef4444" }}>
@@ -6573,19 +6634,19 @@ function WeeklyTrainingPlan({ faults }) {
     <div className="card" style={{ padding: 16, marginBottom: 16, borderColor: "rgba(196,152,42,0.12)" }}>
       <div onClick={() => setExpanded(!expanded)} style={{ cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <h3 style={{ fontSize: 14, fontWeight: 700 }}><Icon name="target" size={14} /> Weekly Training Plan</h3>
-        <span style={{ color: "#C4982A", fontSize: 13, fontWeight: 600 }}>{expanded ? "▲" : "▼"}</span>
+        <span style={{ color: "#C4982A", fontSize: 16, fontWeight: 600 }}>{expanded ? "▲" : "▼"}</span>
       </div>
       {expanded && (
         <div style={{ marginTop: 12 }}>
-          <p style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: 12 }}>Based on the faults identified in this analysis:</p>
+          <p style={{ fontSize: 16, color: "rgba(255,255,255,0.4)", marginBottom: 12 }}>Based on the faults identified in this analysis:</p>
           {dayPlans.map((day, i) => (
             <div key={i} style={{ marginBottom: 12, paddingBottom: 12, borderBottom: i < dayPlans.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                <span style={{ fontSize: 13, fontWeight: 700, color: "#C4982A" }}>{day.day}</span>
-                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>{day.focus}</span>
+                <span style={{ fontSize: 16, fontWeight: 700, color: "#C4982A" }}>{day.day}</span>
+                <span style={{ fontSize: 14, color: "rgba(255,255,255,0.35)" }}>{day.focus}</span>
               </div>
               {day.items.map((item, j) => (
-                <div key={j} style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.7, paddingLeft: 12, borderLeft: "2px solid rgba(196,152,42,0.1)" }}>
+                <div key={j} style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.7, paddingLeft: 12, borderLeft: "2px solid rgba(196,152,42,0.1)" }}>
                   {item}
                 </div>
               ))}
@@ -6749,17 +6810,17 @@ function PillarProgress({ history, profile }) {
 
   return (
     <div className="card" style={{ padding: 16, marginBottom: 12, borderColor: "rgba(168,85,247,0.15)" }}>
-      <div style={{ fontSize: 11, fontWeight: 700, color: "#a855f7", letterSpacing: 1, marginBottom: 4 }}>📊 YOUR PROGRESS — {recent.length} Analyses</div>
-      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginBottom: 12 }}>Tracking improvement across all training pillars over time</div>
+      <div style={{ fontSize: 14, fontWeight: 700, color: "#a855f7", letterSpacing: 1, marginBottom: 4 }}>📊 YOUR PROGRESS — {recent.length} Analyses</div>
+      <div style={{ fontSize: 14, color: "rgba(255,255,255,0.35)", marginBottom: 12 }}>Tracking improvement across all training pillars over time</div>
 
       {/* Score trend */}
       {scoreTrend.length >= 2 && (
         <div style={{ marginBottom: 12 }}>
-          <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.6)", marginBottom: 6 }}>Score Trend</div>
+          <div style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.6)", marginBottom: 6 }}>Score Trend</div>
           <ResponsiveContainer width="100%" height={80}>
             <LineChart data={scoreTrend} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
-              <XAxis dataKey="label" tick={{ fill: "rgba(255,255,255,0.2)", fontSize: 9 }} />
-              <YAxis domain={["auto", "auto"]} tick={{ fill: "rgba(255,255,255,0.2)", fontSize: 9 }} />
+              <XAxis dataKey="label" tick={{ fill: "rgba(255,255,255,0.2)", fontSize: 14 }} />
+              <YAxis domain={["auto", "auto"]} tick={{ fill: "rgba(255,255,255,0.2)", fontSize: 14 }} />
               <Line type="monotone" dataKey="score" stroke="#C4982A" strokeWidth={2} dot={{ r: 3, fill: "#C4982A" }} />
             </LineChart>
           </ResponsiveContainer>
@@ -6772,30 +6833,30 @@ function PillarProgress({ history, profile }) {
           <div style={{ fontSize: 16, fontWeight: 900, color: scoreDelta >= 0 ? "#22c55e" : "#ef4444", fontFamily: "'Space Mono', monospace" }}>
             {scoreDelta >= 0 ? "+" : ""}{scoreDelta.toFixed(2)}
           </div>
-          <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)" }}>Score Change</div>
+          <div style={{ fontSize: 14, color: "rgba(255,255,255,0.35)" }}>Score Change</div>
         </div>
         <div style={{ flex: "1 1 30%", minWidth: 80, padding: 10, borderRadius: 8, background: `rgba(${landingImproved ? "34,197,94" : "245,158,11"},0.04)`, textAlign: "center" }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: landingImproved ? "#22c55e" : "#f59e0b" }}>
             {landingImproved ? "Improving" : "Work on it"}
           </div>
-          <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)" }}>Landings</div>
+          <div style={{ fontSize: 14, color: "rgba(255,255,255,0.35)" }}>Landings</div>
         </div>
         <div style={{ flex: "1 1 30%", minWidth: 80, padding: 10, borderRadius: 8, background: `rgba(${fallsImproved ? "34,197,94" : "239,68,68"},0.04)`, textAlign: "center" }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: fallsImproved ? "#22c55e" : avgFallSecond === 0 ? "#22c55e" : "#ef4444" }}>
             {avgFallSecond === 0 ? "No Falls!" : fallsImproved ? "Fewer Falls" : "Watch Falls"}
           </div>
-          <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)" }}>Fall Trend</div>
+          <div style={{ fontSize: 14, color: "rgba(255,255,255,0.35)" }}>Fall Trend</div>
         </div>
       </div>
 
       {/* Deduction pattern trends */}
       {strengthTrend.length >= 2 && (strengthTrend[0].landing > 0 || strengthTrend[0].knees > 0 || strengthTrend[0].toes > 0) && (
         <div style={{ marginTop: 12 }}>
-          <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.6)", marginBottom: 6 }}>Deduction Patterns Over Time</div>
+          <div style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.6)", marginBottom: 6 }}>Deduction Patterns Over Time</div>
           <ResponsiveContainer width="100%" height={80}>
             <LineChart data={strengthTrend} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
-              <XAxis dataKey="label" tick={{ fill: "rgba(255,255,255,0.2)", fontSize: 9 }} />
-              <YAxis tick={{ fill: "rgba(255,255,255,0.2)", fontSize: 9 }} />
+              <XAxis dataKey="label" tick={{ fill: "rgba(255,255,255,0.2)", fontSize: 14 }} />
+              <YAxis tick={{ fill: "rgba(255,255,255,0.2)", fontSize: 14 }} />
               <Line type="monotone" dataKey="landing" name="Landings" stroke="#ef4444" strokeWidth={1.5} dot={{ r: 2 }} />
               <Line type="monotone" dataKey="knees" name="Knees" stroke="#f97316" strokeWidth={1.5} dot={{ r: 2 }} />
               <Line type="monotone" dataKey="toes" name="Toes" stroke="#8b5cf6" strokeWidth={1.5} dot={{ r: 2 }} />
@@ -6803,12 +6864,12 @@ function PillarProgress({ history, profile }) {
           </ResponsiveContainer>
           <div style={{ display: "flex", gap: 12, justifyContent: "center", marginTop: 4 }}>
             {[{label: "Landings", color: "#ef4444"}, {label: "Knees", color: "#f97316"}, {label: "Toes", color: "#8b5cf6"}].map(l => (
-              <div key={l.label} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 9, color: "rgba(255,255,255,0.3)" }}>
+              <div key={l.label} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 14, color: "rgba(255,255,255,0.3)" }}>
                 <div style={{ width: 8, height: 3, background: l.color, borderRadius: 2 }} />{l.label}
               </div>
             ))}
           </div>
-          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginTop: 6, textAlign: "center" }}>
+          <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)", marginTop: 6, textAlign: "center" }}>
             Lines going down = fewer deductions in that area (improvement!)
           </div>
         </div>
@@ -6858,12 +6919,12 @@ function TrainingProgram({ result, profile, history }) {
 
   const pillarCard = (icon, title, color, immediateContent, longTermContent, inspirePillar) => (
     <div className="card" style={{ padding: 16, marginBottom: 12 }}>
-      <div style={{ fontSize: 11, fontWeight: 700, color, letterSpacing: 1, marginBottom: 10 }}>{icon} {title}</div>
+      <div style={{ fontSize: 14, fontWeight: 700, color, letterSpacing: 1, marginBottom: 10 }}>{icon} {title}</div>
       {viewMode === "thisWeek" ? immediateContent : longTermContent}
       {/* Daily Inspiration */}
       <div style={{ marginTop: 10, padding: 10, borderRadius: 8, background: `${color}08`, borderLeft: `2px solid ${color}30` }}>
-        <div style={{ fontSize: 10, fontWeight: 700, color, letterSpacing: 0.5, marginBottom: 3 }}>TODAY'S INSPIRATION</div>
-        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", lineHeight: 1.6, fontStyle: "italic" }}>{getDailyInspiration(inspirePillar)}</div>
+        <div style={{ fontSize: 14, fontWeight: 700, color, letterSpacing: 0.5, marginBottom: 3 }}>TODAY'S INSPIRATION</div>
+        <div style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", lineHeight: 1.6, fontStyle: "italic" }}>{getDailyInspiration(inspirePillar)}</div>
       </div>
     </div>
   );
@@ -6872,20 +6933,20 @@ function TrainingProgram({ result, profile, history }) {
     <div style={{ animation: "fadeIn 0.4s ease-out" }}>
       {/* Header */}
       <div className="card" style={{ padding: 16, marginBottom: 12, background: "linear-gradient(135deg, rgba(196,152,42,0.06), rgba(196,152,42,0.02))", borderColor: "rgba(196,152,42,0.15)" }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: "#C4982A", letterSpacing: 1, marginBottom: 8 }}>YOUR PERSONALIZED TRAINING PROGRAM</div>
-        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.7 }}>
+        <div style={{ fontSize: 14, fontWeight: 700, color: "#C4982A", letterSpacing: 1, marginBottom: 8 }}>YOUR PERSONALIZED TRAINING PROGRAM</div>
+        <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.7 }}>
           Built from {deds.length} deductions, {risks.length} injury risk flag{risks.length !== 1 ? "s" : ""}, biomechanical analysis
           {profile?.goals ? `, and goal of "${profile.goals}"` : ""} at {result.level || profile?.level || "your level"}.
           {profile?.age ? ` Age-appropriate for ${profile.age}-year-old athletes.` : ""}
         </div>
-        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", marginTop: 8 }}>Sources: USAG Athlete Wellness · NSCA Youth Training · ACSM Guidelines · ISSN Position Stands</div>
+        <div style={{ fontSize: 14, color: "rgba(255,255,255,0.25)", marginTop: 8 }}>Sources: USAG Athlete Wellness · NSCA Youth Training · ACSM Guidelines · ISSN Position Stands</div>
       </div>
 
       {/* This Week / Season Toggle */}
       <div style={{ display: "flex", gap: 4, marginBottom: 12, padding: 3, borderRadius: 10, background: "rgba(255,255,255,0.04)" }}>
         {[{ id: "thisWeek", label: "This Week" }, { id: "season", label: "Season Plan" }].map(m => (
           <button key={m.id} onClick={() => setViewMode(m.id)} style={{
-            flex: 1, padding: "10px 0", borderRadius: 8, border: "none", fontSize: 12, fontWeight: 700, cursor: "pointer",
+            flex: 1, padding: "10px 0", borderRadius: 8, border: "none", fontSize: 16, fontWeight: 700, cursor: "pointer",
             background: viewMode === m.id ? "rgba(196,152,42,0.15)" : "transparent",
             color: viewMode === m.id ? "#C4982A" : "rgba(255,255,255,0.35)",
             transition: "all 0.2s",
@@ -6899,12 +6960,12 @@ function TrainingProgram({ result, profile, history }) {
       {/* Persistent issues alert (season view) */}
       {viewMode === "season" && persistentIssues.length > 0 && (
         <div className="card" style={{ padding: 16, marginBottom: 12, borderColor: "rgba(249,115,22,0.2)" }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: "#f97316", letterSpacing: 1, marginBottom: 8 }}>🔄 RECURRING PATTERNS</div>
-          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", marginBottom: 10 }}>Issues that keep appearing across multiple analyses — these need focused long-term attention</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: "#f97316", letterSpacing: 1, marginBottom: 8 }}>🔄 RECURRING PATTERNS</div>
+          <div style={{ fontSize: 14, color: "rgba(255,255,255,0.35)", marginBottom: 10 }}>Issues that keep appearing across multiple analyses — these need focused long-term attention</div>
           {persistentIssues.map((p, i) => (
             <div key={i} style={{ padding: 10, marginBottom: 6, borderRadius: 8, background: "rgba(249,115,22,0.04)", borderLeft: "3px solid #f97316" }}>
-              <div style={{ fontSize: 12, fontWeight: 700 }}>{p.area} <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", fontWeight: 400 }}>avg {p.avg} per analysis</span></div>
-              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginTop: 4, lineHeight: 1.5 }}>{p.tip}</div>
+              <div style={{ fontSize: 16, fontWeight: 700 }}>{p.area} <span style={{ fontSize: 14, color: "rgba(255,255,255,0.3)", fontWeight: 400 }}>avg {p.avg} per analysis</span></div>
+              <div style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", marginTop: 4, lineHeight: 1.5 }}>{p.tip}</div>
             </div>
           ))}
         </div>
@@ -6920,24 +6981,24 @@ function TrainingProgram({ result, profile, history }) {
             return (
               <div key={i} style={{ padding: 10, marginBottom: 8, borderRadius: 8, background: "rgba(255,255,255,0.02)", borderLeft: `3px solid ${i === 0 ? "#ef4444" : i === 1 ? "#f59e0b" : "#22c55e"}` }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-                  <span style={{ fontSize: 13, fontWeight: 700 }}>{p.label}</span>
-                  <span style={{ fontSize: 10, fontFamily: "'Space Mono', monospace", color: "rgba(255,255,255,0.3)" }}>{p.count} deduction{p.count !== 1 ? "s" : ""}</span>
+                  <span style={{ fontSize: 16, fontWeight: 700 }}>{p.label}</span>
+                  <span style={{ fontSize: 14, fontFamily: "'Space Mono', monospace", color: "rgba(255,255,255,0.3)" }}>{p.count} deduction{p.count !== 1 ? "s" : ""}</span>
                 </div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: "#e2e8f0" }}>{drill.drill}</div>
-                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>{drill.prescription}</div>
-                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginTop: 4 }}>{drill.why}</div>
-                <div style={{ fontSize: 9, color: "rgba(255,255,255,0.2)", marginTop: 3 }}>Source: {drill.source}</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "#e2e8f0" }}>{drill.drill}</div>
+                <div style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>{drill.prescription}</div>
+                <div style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", marginTop: 4 }}>{drill.why}</div>
+                <div style={{ fontSize: 14, color: "rgba(255,255,255,0.2)", marginTop: 3 }}>Source: {drill.source}</div>
               </div>
             );
           })}
           {priorities.filter(p => p.count > 0).length === 0 && (
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", padding: 10 }}>No specific drill priorities from this analysis — maintain current drill routine!</div>
+            <div style={{ fontSize: 16, color: "rgba(255,255,255,0.4)", padding: 10 }}>No specific drill priorities from this analysis — maintain current drill routine!</div>
           )}
           {coach?.preemptiveCorrections?.length > 0 && (
             <div style={{ marginTop: 8 }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.35)", marginBottom: 6 }}>COACH CORRECTIONS THIS WEEK:</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.35)", marginBottom: 6 }}>COACH CORRECTIONS THIS WEEK:</div>
               {coach.preemptiveCorrections.slice(0, 3).map((c, i) => (
-                <div key={i} style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", lineHeight: 1.6, marginBottom: 4, paddingLeft: 10, borderLeft: `2px solid ${c?.priority === "high" ? "rgba(239,68,68,0.3)" : "rgba(239,68,68,0.15)"}` }}>
+                <div key={i} style={{ fontSize: 14, color: "rgba(255,255,255,0.45)", lineHeight: 1.6, marginBottom: 4, paddingLeft: 10, borderLeft: `2px solid ${c?.priority === "high" ? "rgba(239,68,68,0.3)" : "rgba(239,68,68,0.15)"}` }}>
                   {typeof c === "string" ? c : <><strong style={{ color: "rgba(255,255,255,0.6)" }}>{safeStr(c.skill)}:</strong> {safeStr(c.correction || c.currentFault)}{c.riskIfUncorrected ? ` — ${safeStr(c.riskIfUncorrected)}` : ""}</>}
                 </div>
               ))}
@@ -6946,20 +7007,20 @@ function TrainingProgram({ result, profile, history }) {
         </>,
         // SEASON: long-term drill development
         <>
-          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.7, marginBottom: 10 }}>
+          <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.7, marginBottom: 10 }}>
             Build drill consistency across the full season. Add each drill to your daily warm-up until it becomes automatic.
           </div>
           {Object.entries(EVIDENCE_PROGRAMS.drills).map(([key, drill], i) => (
             <div key={key} style={{ padding: 10, marginBottom: 6, borderRadius: 8, background: "rgba(255,255,255,0.02)" }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: "#e2e8f0" }}>{drill.drill}</div>
-              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>Daily: {drill.prescription}</div>
-              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", marginTop: 2 }}>Source: {drill.source}</div>
+              <div style={{ fontSize: 16, fontWeight: 600, color: "#e2e8f0" }}>{drill.drill}</div>
+              <div style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>Daily: {drill.prescription}</div>
+              <div style={{ fontSize: 14, color: "rgba(255,255,255,0.25)", marginTop: 2 }}>Source: {drill.source}</div>
             </div>
           ))}
           {coach?.techniqueProgressionNotes && (
             <div style={{ marginTop: 10, padding: 10, borderRadius: 8, background: "rgba(34,197,94,0.04)", borderLeft: "3px solid #22c55e" }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: "#22c55e", marginBottom: 4 }}>NEXT SKILLS TO DEVELOP</div>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", lineHeight: 1.7 }}>{safeStr(coach.techniqueProgressionNotes)}</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "#22c55e", marginBottom: 4 }}>NEXT SKILLS TO DEVELOP</div>
+              <div style={{ fontSize: 16, color: "rgba(255,255,255,0.55)", lineHeight: 1.7 }}>{safeStr(coach.techniqueProgressionNotes)}</div>
             </div>
           )}
         </>,
@@ -6973,10 +7034,10 @@ function TrainingProgram({ result, profile, history }) {
           {coach?.conditioningPlan?.length > 0 ? (
             coach.conditioningPlan.map((c, i) => (
               <div key={i} style={{ padding: 8, marginBottom: 6, borderRadius: 6, background: "rgba(255,255,255,0.02)", display: "flex", gap: 8, alignItems: "flex-start" }}>
-                <div style={{ width: 22, height: 22, borderRadius: "50%", background: "rgba(59,130,246,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 900, color: "#3b82f6", fontFamily: "'Space Mono', monospace", flexShrink: 0 }}>{i + 1}</div>
+                <div style={{ width: 22, height: 22, borderRadius: "50%", background: "rgba(59,130,246,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 900, color: "#3b82f6", fontFamily: "'Space Mono', monospace", flexShrink: 0 }}>{i + 1}</div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 12, fontWeight: 600 }}>{safeStr(c.exercise)} <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>({safeStr(c.sets)} · {safeStr(c.frequency)})</span></div>
-                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>{safeStr(c.why)}</div>
+                  <div style={{ fontSize: 16, fontWeight: 600 }}>{safeStr(c.exercise)} <span style={{ fontSize: 14, color: "rgba(255,255,255,0.3)" }}>({safeStr(c.sets)} · {safeStr(c.frequency)})</span></div>
+                  <div style={{ fontSize: 14, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>{safeStr(c.why)}</div>
                 </div>
               </div>
             ))
@@ -6984,16 +7045,16 @@ function TrainingProgram({ result, profile, history }) {
             <>
               {landCount > 0 && EVIDENCE_PROGRAMS.strength.lowerBody.map((ex, i) => (
                 <div key={`lb-${i}`} style={{ padding: 8, marginBottom: 4, borderRadius: 6, background: "rgba(255,255,255,0.02)" }}>
-                  <div style={{ fontSize: 12, fontWeight: 600 }}>{ex.exercise} <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>({ex.prescription})</span></div>
-                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>{ex.why}</div>
-                  <div style={{ fontSize: 9, color: "rgba(255,255,255,0.2)", marginTop: 2 }}>Source: {ex.source}</div>
+                  <div style={{ fontSize: 16, fontWeight: 600 }}>{ex.exercise} <span style={{ fontSize: 14, color: "rgba(255,255,255,0.3)" }}>({ex.prescription})</span></div>
+                  <div style={{ fontSize: 14, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>{ex.why}</div>
+                  <div style={{ fontSize: 14, color: "rgba(255,255,255,0.2)", marginTop: 2 }}>Source: {ex.source}</div>
                 </div>
               ))}
               {EVIDENCE_PROGRAMS.strength.core.slice(0, 2).map((ex, i) => (
                 <div key={`core-${i}`} style={{ padding: 8, marginBottom: 4, borderRadius: 6, background: "rgba(255,255,255,0.02)" }}>
-                  <div style={{ fontSize: 12, fontWeight: 600 }}>{ex.exercise} <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>({ex.prescription})</span></div>
-                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>{ex.why}</div>
-                  <div style={{ fontSize: 9, color: "rgba(255,255,255,0.2)", marginTop: 2 }}>Source: {ex.source}</div>
+                  <div style={{ fontSize: 16, fontWeight: 600 }}>{ex.exercise} <span style={{ fontSize: 14, color: "rgba(255,255,255,0.3)" }}>({ex.prescription})</span></div>
+                  <div style={{ fontSize: 14, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>{ex.why}</div>
+                  <div style={{ fontSize: 14, color: "rgba(255,255,255,0.2)", marginTop: 2 }}>Source: {ex.source}</div>
                 </div>
               ))}
             </>
@@ -7001,17 +7062,17 @@ function TrainingProgram({ result, profile, history }) {
         </>,
         // SEASON: full strength program
         <>
-          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.7, marginBottom: 10 }}>
+          <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.7, marginBottom: 10 }}>
             Complete strength program for {ageGroup === "young" ? "growing athletes" : ageGroup === "teen" ? "teen performers" : "adult athletes"}. Train 2-3x per week, progressively increasing difficulty.
           </div>
           {["core", "lowerBody", "upperBody", "flexibility"].map(group => (
             <div key={group} style={{ marginBottom: 10 }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.35)", letterSpacing: 0.5, marginBottom: 6 }}>{group === "lowerBody" ? "LOWER BODY" : group === "upperBody" ? "UPPER BODY" : group.toUpperCase()}</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.35)", letterSpacing: 0.5, marginBottom: 6 }}>{group === "lowerBody" ? "LOWER BODY" : group === "upperBody" ? "UPPER BODY" : String(group || '').toUpperCase()}</div>
               {EVIDENCE_PROGRAMS.strength[group].map((ex, i) => (
                 <div key={i} style={{ padding: 8, marginBottom: 4, borderRadius: 6, background: "rgba(255,255,255,0.02)" }}>
-                  <div style={{ fontSize: 12, fontWeight: 600 }}>{ex.exercise} <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>({ex.prescription})</span></div>
-                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>{ex.why}</div>
-                  <div style={{ fontSize: 9, color: "rgba(255,255,255,0.2)", marginTop: 2 }}>Source: {ex.source}</div>
+                  <div style={{ fontSize: 16, fontWeight: 600 }}>{ex.exercise} <span style={{ fontSize: 14, color: "rgba(255,255,255,0.3)" }}>({ex.prescription})</span></div>
+                  <div style={{ fontSize: 14, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>{ex.why}</div>
+                  <div style={{ fontSize: 14, color: "rgba(255,255,255,0.2)", marginTop: 2 }}>Source: {ex.source}</div>
                 </div>
               ))}
             </div>
@@ -7023,12 +7084,12 @@ function TrainingProgram({ result, profile, history }) {
       {/* ── INJURY PREVENTION ── */}
       {risks.length > 0 && (
         <div className="card" style={{ padding: 16, marginBottom: 12, borderColor: risks.some(r => r.risk === "high") ? "rgba(239,68,68,0.2)" : "rgba(245,158,11,0.15)" }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: risks.some(r => r.risk === "high") ? "#ef4444" : "#f59e0b", letterSpacing: 1, marginBottom: 10 }}>⚠️ INJURY PREVENTION</div>
-          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginBottom: 10 }}>Based on biomechanical analysis. Not medical advice — consult a sports medicine professional for concerns.</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: risks.some(r => r.risk === "high") ? "#ef4444" : "#f59e0b", letterSpacing: 1, marginBottom: 10 }}>⚠️ INJURY PREVENTION</div>
+          <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)", marginBottom: 10 }}>Based on biomechanical analysis. Not medical advice — consult a sports medicine professional for concerns.</div>
           {risks.map((r, i) => (
             <div key={i} style={{ padding: 10, marginBottom: 6, borderRadius: 8, background: `${r.risk === "high" ? "rgba(239,68,68,0.04)" : "rgba(245,158,11,0.04)"}`, borderLeft: `3px solid ${r.risk === "high" ? "#ef4444" : r.risk === "moderate" ? "#f59e0b" : "#22c55e"}` }}>
-              <div style={{ fontSize: 12, fontWeight: 600 }}>{safeStr(r.reason)}</div>
-              <div style={{ fontSize: 11, color: "#22c55e", marginTop: 4 }}>Rx: {safeStr(r.recommendation)}</div>
+              <div style={{ fontSize: 16, fontWeight: 600 }}>{safeStr(r.reason)}</div>
+              <div style={{ fontSize: 14, color: "#22c55e", marginTop: 4 }}>Rx: {safeStr(r.recommendation)}</div>
             </div>
           ))}
         </div>
@@ -7040,39 +7101,39 @@ function TrainingProgram({ result, profile, history }) {
         <>
           {hasFall && (
             <div style={{ padding: 10, marginBottom: 8, borderRadius: 8, background: "rgba(239,68,68,0.04)", borderLeft: "3px solid #ef4444" }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "#ef4444", marginBottom: 4 }}>FALL RECOVERY — Priority This Week</div>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", lineHeight: 1.6 }}>{EVIDENCE_PROGRAMS.mental.fallRecovery}</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "#ef4444", marginBottom: 4 }}>FALL RECOVERY — Priority This Week</div>
+              <div style={{ fontSize: 16, color: "rgba(255,255,255,0.55)", lineHeight: 1.6 }}>{EVIDENCE_PROGRAMS.mental.fallRecovery}</div>
             </div>
           )}
           <div style={{ padding: 10, marginBottom: 6, borderRadius: 8, background: "rgba(255,255,255,0.02)" }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: "#a78bfa", marginBottom: 4 }}>VISUALIZATION</div>
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>{EVIDENCE_PROGRAMS.mental.visualization}</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "#a78bfa", marginBottom: 4 }}>VISUALIZATION</div>
+            <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>{EVIDENCE_PROGRAMS.mental.visualization}</div>
           </div>
           {deds.length > 8 && (
             <div style={{ padding: 10, marginBottom: 6, borderRadius: 8, background: "rgba(255,255,255,0.02)" }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "#a78bfa", marginBottom: 4 }}>ERROR RECOVERY</div>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>{EVIDENCE_PROGRAMS.mental.errorRecovery}</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "#a78bfa", marginBottom: 4 }}>ERROR RECOVERY</div>
+              <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>{EVIDENCE_PROGRAMS.mental.errorRecovery}</div>
             </div>
           )}
           {safeArray(dev?.mentalTraining).map((tip, i) => (
-            <div key={i} style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: 1.6, marginTop: 6, paddingLeft: 10, borderLeft: "2px solid rgba(139,92,246,0.15)" }}>{safeStr(tip)}</div>
+            <div key={i} style={{ fontSize: 16, color: "rgba(255,255,255,0.45)", lineHeight: 1.6, marginTop: 6, paddingLeft: 10, borderLeft: "2px solid rgba(139,92,246,0.15)" }}>{safeStr(tip)}</div>
           ))}
         </>,
         // SEASON
         <>
-          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.7, marginBottom: 10 }}>
+          <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.7, marginBottom: 10 }}>
             Build a complete mental performance toolkit over the season. Add one technique per month until all become habit.
           </div>
           {Object.entries(EVIDENCE_PROGRAMS.mental).map(([key, content]) => (
             <div key={key} style={{ padding: 10, marginBottom: 6, borderRadius: 8, background: "rgba(255,255,255,0.02)" }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "#a78bfa", marginBottom: 4 }}>{key.replace(/([A-Z])/g, " $1").toUpperCase()}</div>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>{content}</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "#a78bfa", marginBottom: 4 }}>{String(key || '').replace(/([A-Z])/g, " $1").toUpperCase()}</div>
+              <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>{content}</div>
             </div>
           ))}
           {profile?.goals === "build confidence" && (
             <div style={{ padding: 10, borderRadius: 8, background: "rgba(139,92,246,0.04)", borderLeft: "3px solid #8b5cf6", marginTop: 8 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "#a78bfa", marginBottom: 4 }}>SEASON CONFIDENCE GOAL</div>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "#a78bfa", marginBottom: 4 }}>SEASON CONFIDENCE GOAL</div>
+              <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>
                 Start a confidence journal. Each week, review and celebrate progress. By mid-season, you'll have documented proof of how far you've come.
               </div>
             </div>
@@ -7086,28 +7147,28 @@ function TrainingProgram({ result, profile, history }) {
         // THIS WEEK
         <>
           {EVIDENCE_PROGRAMS.nutrition[ageGroup].map((tip, i) => (
-            <div key={i} style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.7, marginBottom: 8, paddingLeft: 10, borderLeft: "2px solid rgba(34,197,94,0.15)" }}>{tip}</div>
+            <div key={i} style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.7, marginBottom: 8, paddingLeft: 10, borderLeft: "2px solid rgba(34,197,94,0.15)" }}>{tip}</div>
           ))}
         </>,
         // SEASON
         <>
-          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.7, marginBottom: 10 }}>
+          <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.7, marginBottom: 10 }}>
             Nutrition evolves across the season: building phase early on, maintenance mid-season, and peak fueling for competition.
           </div>
           <div style={{ padding: 10, marginBottom: 8, borderRadius: 8, background: "rgba(255,255,255,0.02)" }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: "#22c55e", marginBottom: 4 }}>PRE-SEASON (Building)</div>
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>Focus on protein intake for muscle building. Increase calories slightly above maintenance to support new skill development and conditioning.</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "#22c55e", marginBottom: 4 }}>PRE-SEASON (Building)</div>
+            <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>Focus on protein intake for muscle building. Increase calories slightly above maintenance to support new skill development and conditioning.</div>
           </div>
           <div style={{ padding: 10, marginBottom: 8, borderRadius: 8, background: "rgba(255,255,255,0.02)" }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: "#22c55e", marginBottom: 4 }}>MID-SEASON (Maintenance)</div>
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>Maintain consistent fueling. Focus on timing: pre-practice snack 1-2 hrs before, recovery meal within 30 min after. Hydrate aggressively.</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "#22c55e", marginBottom: 4 }}>MID-SEASON (Maintenance)</div>
+            <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>Maintain consistent fueling. Focus on timing: pre-practice snack 1-2 hrs before, recovery meal within 30 min after. Hydrate aggressively.</div>
           </div>
           <div style={{ padding: 10, marginBottom: 8, borderRadius: 8, background: "rgba(255,255,255,0.02)" }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: "#22c55e", marginBottom: 4 }}>COMPETITION (Peak)</div>
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>Only familiar foods on meet days. Carb-focused meals before competition. Light, easy-to-digest snacks between events. Electrolytes for all-day meets.</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "#22c55e", marginBottom: 4 }}>COMPETITION (Peak)</div>
+            <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>Only familiar foods on meet days. Carb-focused meals before competition. Light, easy-to-digest snacks between events. Electrolytes for all-day meets.</div>
           </div>
           {EVIDENCE_PROGRAMS.nutrition[ageGroup].map((tip, i) => (
-            <div key={i} style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", lineHeight: 1.6, marginBottom: 6, paddingLeft: 10, borderLeft: "2px solid rgba(34,197,94,0.1)" }}>{tip}</div>
+            <div key={i} style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", lineHeight: 1.6, marginBottom: 6, paddingLeft: 10, borderLeft: "2px solid rgba(34,197,94,0.1)" }}>{tip}</div>
           ))}
         </>,
         "nutrition"
@@ -7117,32 +7178,32 @@ function TrainingProgram({ result, profile, history }) {
       {pillarCard("😴", viewMode === "thisWeek" ? "RECOVERY — This Week" : "RECOVERY — Season Habits", "#06b6d4",
         // THIS WEEK
         <>
-          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.7, marginBottom: 8, paddingLeft: 10, borderLeft: "2px solid rgba(6,182,212,0.15)" }}>
+          <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.7, marginBottom: 8, paddingLeft: 10, borderLeft: "2px solid rgba(6,182,212,0.15)" }}>
             {EVIDENCE_PROGRAMS.recovery.sleep[ageGroup]}
           </div>
-          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.7, marginBottom: 8, paddingLeft: 10, borderLeft: "2px solid rgba(6,182,212,0.15)" }}>
+          <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.7, marginBottom: 8, paddingLeft: 10, borderLeft: "2px solid rgba(6,182,212,0.15)" }}>
             {EVIDENCE_PROGRAMS.recovery.active}
           </div>
-          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.7, paddingLeft: 10, borderLeft: "2px solid rgba(6,182,212,0.15)" }}>
+          <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.7, paddingLeft: 10, borderLeft: "2px solid rgba(6,182,212,0.15)" }}>
             {EVIDENCE_PROGRAMS.recovery.foam}
           </div>
         </>,
         // SEASON
         <>
-          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.7, marginBottom: 10 }}>
+          <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.7, marginBottom: 10 }}>
             Recovery is what turns hard training into actual improvement. Build these habits month by month.
           </div>
           <div style={{ padding: 10, marginBottom: 8, borderRadius: 8, background: "rgba(255,255,255,0.02)" }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: "#06b6d4", marginBottom: 4 }}>MONTH 1: Sleep Foundation</div>
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>{EVIDENCE_PROGRAMS.recovery.sleep[ageGroup]} Set a consistent bedtime and track sleep quality.</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "#06b6d4", marginBottom: 4 }}>MONTH 1: Sleep Foundation</div>
+            <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>{EVIDENCE_PROGRAMS.recovery.sleep[ageGroup]} Set a consistent bedtime and track sleep quality.</div>
           </div>
           <div style={{ padding: 10, marginBottom: 8, borderRadius: 8, background: "rgba(255,255,255,0.02)" }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: "#06b6d4", marginBottom: 4 }}>MONTH 2: Add Active Recovery</div>
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>{EVIDENCE_PROGRAMS.recovery.active}</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "#06b6d4", marginBottom: 4 }}>MONTH 2: Add Active Recovery</div>
+            <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>{EVIDENCE_PROGRAMS.recovery.active}</div>
           </div>
           <div style={{ padding: 10, marginBottom: 8, borderRadius: 8, background: "rgba(255,255,255,0.02)" }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: "#06b6d4", marginBottom: 4 }}>MONTH 3: Mobility & Soft Tissue</div>
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>{EVIDENCE_PROGRAMS.recovery.foam}</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "#06b6d4", marginBottom: 4 }}>MONTH 3: Mobility & Soft Tissue</div>
+            <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>{EVIDENCE_PROGRAMS.recovery.foam}</div>
           </div>
         </>,
         "recovery"
@@ -7151,15 +7212,15 @@ function TrainingProgram({ result, profile, history }) {
       {/* ── GOAL-SPECIFIC ── */}
       {(dev?.goalSpecificAdvice || coach?.idealComparison) && (
         <div className="card" style={{ padding: 16, marginBottom: 12, background: "rgba(196,152,42,0.03)", borderColor: "rgba(196,152,42,0.12)" }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: "#C4982A", letterSpacing: 1, marginBottom: 8 }}>🏆 {profile?.goals ? profile.goals.toUpperCase() : "DEVELOPMENT ADVICE"}</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: "#C4982A", letterSpacing: 1, marginBottom: 8 }}>🏆 {profile?.goals ? String(profile.goals || '').toUpperCase() : "DEVELOPMENT ADVICE"}</div>
           {viewMode === "thisWeek" ? (
             <>
-              {dev?.goalSpecificAdvice && <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", lineHeight: 1.7, marginBottom: 8 }}>{safeStr(dev.goalSpecificAdvice)}</div>}
-              {coach?.idealComparison && <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.7 }}>{safeStr(coach.idealComparison)}</div>}
+              {dev?.goalSpecificAdvice && <div style={{ fontSize: 16, color: "rgba(255,255,255,0.55)", lineHeight: 1.7, marginBottom: 8 }}>{safeStr(dev.goalSpecificAdvice)}</div>}
+              {coach?.idealComparison && <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.7 }}>{safeStr(coach.idealComparison)}</div>}
             </>
           ) : (
             <>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", lineHeight: 1.7, marginBottom: 8 }}>
+              <div style={{ fontSize: 16, color: "rgba(255,255,255,0.55)", lineHeight: 1.7, marginBottom: 8 }}>
                 {profile?.goals === "move up levels" && "Moving up requires mastering all skills at current level with minimal deductions. Focus on consistency before adding difficulty."}
                 {profile?.goals === "qualify regionals" && "Regional qualification requires consistent competitive scores. Focus on reducing deductions below 1.5 total and building start value."}
                 {profile?.goals === "college gymnastics" && "College coaches look for clean execution, consistency, and coachability. Build a highlight reel showing clean routines and personality."}
@@ -7169,7 +7230,7 @@ function TrainingProgram({ result, profile, history }) {
                 {profile?.goals === "have fun" && "Fun comes from feeling competent and connected. Master the skills you enjoy, perform for yourself, and remember why you love this sport."}
                 {!profile?.goals && "Set a specific goal for this season to help focus your training. Even small goals give direction and motivation."}
               </div>
-              {dev?.goalSpecificAdvice && <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: 1.7 }}>{safeStr(dev.goalSpecificAdvice)}</div>}
+              {dev?.goalSpecificAdvice && <div style={{ fontSize: 16, color: "rgba(255,255,255,0.45)", lineHeight: 1.7 }}>{safeStr(dev.goalSpecificAdvice)}</div>}
             </>
           )}
         </div>
@@ -7280,8 +7341,8 @@ function BiomechanicsDashboard({ result }) {
 
   const sectionHead = (title, subtitle) => (
     <div style={{ marginBottom: 10 }}>
-      <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.85)" }}>{title}</div>
-      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", lineHeight: 1.5, marginTop: 2 }}>{subtitle}</div>
+      <div style={{ fontSize: 16, fontWeight: 700, color: "rgba(255,255,255,0.85)" }}>{title}</div>
+      <div style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", lineHeight: 1.5, marginTop: 2 }}>{subtitle}</div>
     </div>
   );
 
@@ -7289,8 +7350,8 @@ function BiomechanicsDashboard({ result }) {
     <div style={{ animation: "fadeIn 0.4s ease-out" }}>
       {/* What This Tab Shows */}
       <div className="card" style={{ padding: 16, marginBottom: 12, borderLeft: "3px solid #3b82f6" }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: "#3b82f6", marginBottom: 6 }}>What is Biomechanics?</div>
-        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", lineHeight: 1.7 }}>
+        <div style={{ fontSize: 16, fontWeight: 700, color: "#3b82f6", marginBottom: 6 }}>What is Biomechanics?</div>
+        <div style={{ fontSize: 16, color: "rgba(255,255,255,0.55)", lineHeight: 1.7 }}>
           This tab shows how the body moves during the routine — joint angles, landing impact, rotational speed, and where the body may be under stress.
           Think of it as a "body report card" that helps you understand <strong style={{ color: "rgba(255,255,255,0.8)" }}>what's working well</strong> and <strong style={{ color: "rgba(255,255,255,0.8)" }}>what to train</strong> to improve scores and stay injury-free.
         </div>
@@ -7304,8 +7365,8 @@ function BiomechanicsDashboard({ result }) {
             {bodyGrades.map((g, i) => (
               <div key={i} style={{ flex: "1 1 30%", minWidth: 90, padding: 12, borderRadius: 10, background: "rgba(255,255,255,0.02)", textAlign: "center" }}>
                 <div style={{ fontSize: 28, fontWeight: 900, color: g.color, fontFamily: "'Space Mono', monospace" }}>{g.grade}</div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.6)", marginBottom: 4 }}>{g.area}</div>
-                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", lineHeight: 1.4 }}>{g.tip}</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.6)", marginBottom: 4 }}>{g.area}</div>
+                <div style={{ fontSize: 14, color: "rgba(255,255,255,0.35)", lineHeight: 1.4 }}>{g.tip}</div>
               </div>
             ))}
           </div>
@@ -7317,15 +7378,15 @@ function BiomechanicsDashboard({ result }) {
         {sectionHead("Power & Flight", "How much explosive energy is generated and how high skills go in the air")}
         <div style={{ display: "flex", gap: 12, marginBottom: 10 }}>
           <div style={{ flex: 1, textAlign: "center", padding: 12, borderRadius: 10, background: "rgba(59,130,246,0.06)" }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: 1, marginBottom: 4 }}>POWER</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: 1, marginBottom: 4 }}>POWER</div>
             <div style={{ fontSize: 24, fontWeight: 900, color: "#3b82f6", fontFamily: "'Space Mono', monospace" }}>{bio?.overallPowerRating || "—"}</div>
           </div>
           <div style={{ flex: 1, textAlign: "center", padding: 12, borderRadius: 10, background: "rgba(168,85,247,0.06)" }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: 1, marginBottom: 4 }}>FLIGHT</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: 1, marginBottom: 4 }}>FLIGHT</div>
             <div style={{ fontSize: 14, fontWeight: 700, color: "#a855f7", textTransform: "capitalize" }}>{bio?.overallFlightHeight || "—"}</div>
           </div>
           <div style={{ flex: 1, textAlign: "center", padding: 12, borderRadius: 10, background: risks.some(r => r.risk === "high") ? "rgba(239,68,68,0.06)" : "rgba(34,197,94,0.06)" }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: 1, marginBottom: 4 }}>INJURY RISK</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: 1, marginBottom: 4 }}>INJURY RISK</div>
             <div style={{ fontSize: 14, fontWeight: 700, color: risks.some(r => r.risk === "high") ? "#ef4444" : risks.some(r => r.risk === "moderate") ? "#f59e0b" : "#22c55e" }}>
               {risks.some(r => r.risk === "high") ? "HIGH" : risks.some(r => r.risk === "moderate") ? "MODERATE" : risks.length > 0 ? "LOW" : "—"}
             </div>
@@ -7333,8 +7394,8 @@ function BiomechanicsDashboard({ result }) {
         </div>
         {(explainPower(bio?.overallPowerRating) || explainFlight(bio?.overallFlightHeight)) && (
           <div style={{ padding: 10, borderRadius: 8, background: "rgba(59,130,246,0.04)", marginTop: 4 }}>
-            {explainPower(bio?.overallPowerRating) && <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", lineHeight: 1.6, marginBottom: 4 }}>💪 {explainPower(bio?.overallPowerRating)}</div>}
-            {explainFlight(bio?.overallFlightHeight) && <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>🕊 {explainFlight(bio?.overallFlightHeight)}</div>}
+            {explainPower(bio?.overallPowerRating) && <div style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", lineHeight: 1.6, marginBottom: 4 }}>💪 {explainPower(bio?.overallPowerRating)}</div>}
+            {explainFlight(bio?.overallFlightHeight) && <div style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>🕊 {explainFlight(bio?.overallFlightHeight)}</div>}
           </div>
         )}
       </div>
@@ -7346,17 +7407,17 @@ function BiomechanicsDashboard({ result }) {
           <ResponsiveContainer width="100%" height={140}>
             <LineChart data={timelineData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
-              <XAxis dataKey="time" tick={{ fill: "rgba(255,255,255,0.3)", fontSize: 10 }} tickFormatter={v => `${Math.floor(v / 60)}:${String(v % 60).padStart(2, "0")}`} />
-              <YAxis tick={{ fill: "rgba(255,255,255,0.3)", fontSize: 10 }} domain={[0, "auto"]} tickFormatter={v => `-${v}`} />
+              <XAxis dataKey="time" tick={{ fill: "rgba(255,255,255,0.3)", fontSize: 14 }} tickFormatter={v => `${Math.floor(v / 60)}:${String(v % 60).padStart(2, "0")}`} />
+              <YAxis tick={{ fill: "rgba(255,255,255,0.3)", fontSize: 14 }} domain={[0, "auto"]} tickFormatter={v => `-${v}`} />
               <Tooltip
-                contentStyle={{ background: "#1a1a2e", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, fontSize: 12 }}
+                contentStyle={{ background: "#1a1a2e", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, fontSize: 16 }}
                 labelFormatter={v => `${Math.floor(v / 60)}:${String(v % 60).padStart(2, "0")}`}
                 formatter={(val, name, props) => [`-${val.toFixed(2)} (${props.payload.skill})`, "Deduction"]}
               />
               <Line type="stepAfter" dataKey="deduction" stroke="#ef4444" strokeWidth={2} dot={{ r: 4, fill: "#ef4444" }} activeDot={{ r: 6 }} />
             </LineChart>
           </ResponsiveContainer>
-          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginTop: 8, lineHeight: 1.5 }}>
+          <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)", marginTop: 8, lineHeight: 1.5 }}>
             {timelineData.length > 3 && timelineData.slice(-2).reduce((s, d) => s + d.deduction, 0) > timelineData.slice(0, 2).reduce((s, d) => s + d.deduction, 0)
               ? "📊 More errors happen toward the end of the routine — this often means fatigue. Endurance conditioning can help."
               : "📊 Errors are spread throughout the routine — focus on cleaning up the specific skills where deductions happen."
@@ -7372,9 +7433,9 @@ function BiomechanicsDashboard({ result }) {
           <ResponsiveContainer width="100%" height={160}>
             <LineChart data={angleData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
-              <XAxis dataKey="time" tick={{ fill: "rgba(255,255,255,0.3)", fontSize: 10 }} tickFormatter={v => `${Math.floor(v / 60)}:${String(v % 60).padStart(2, "0")}`} />
-              <YAxis tick={{ fill: "rgba(255,255,255,0.3)", fontSize: 10 }} domain={[0, 200]} label={{ value: "degrees", angle: -90, position: "insideLeft", fill: "rgba(255,255,255,0.2)", fontSize: 9 }} />
-              <Tooltip contentStyle={{ background: "#1a1a2e", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, fontSize: 11 }}
+              <XAxis dataKey="time" tick={{ fill: "rgba(255,255,255,0.3)", fontSize: 14 }} tickFormatter={v => `${Math.floor(v / 60)}:${String(v % 60).padStart(2, "0")}`} />
+              <YAxis tick={{ fill: "rgba(255,255,255,0.3)", fontSize: 14 }} domain={[0, 200]} label={{ value: "degrees", angle: -90, position: "insideLeft", fill: "rgba(255,255,255,0.2)", fontSize: 14 }} />
+              <Tooltip contentStyle={{ background: "#1a1a2e", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, fontSize: 14 }}
                 labelFormatter={v => `${Math.floor(v / 60)}:${String(v % 60).padStart(2, "0")}`} />
               <Line type="monotone" dataKey="lKnee" name="L Knee" stroke="#ef4444" strokeWidth={2} dot={{ r: 3 }} connectNulls />
               <Line type="monotone" dataKey="rKnee" name="R Knee" stroke="#f97316" strokeWidth={2} dot={{ r: 3 }} connectNulls />
@@ -7384,13 +7445,13 @@ function BiomechanicsDashboard({ result }) {
           </ResponsiveContainer>
           <div style={{ display: "flex", gap: 12, marginTop: 6, justifyContent: "center" }}>
             {[{label: "L Knee", color: "#ef4444"}, {label: "R Knee", color: "#f97316"}, {label: "L Hip", color: "#3b82f6"}, {label: "R Hip", color: "#8b5cf6"}].map(l => (
-              <div key={l.label} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10, color: "rgba(255,255,255,0.4)" }}>
+              <div key={l.label} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 14, color: "rgba(255,255,255,0.4)" }}>
                 <div style={{ width: 8, height: 3, background: l.color, borderRadius: 2 }} />{l.label}
               </div>
             ))}
           </div>
           <div style={{ padding: 10, borderRadius: 8, background: "rgba(255,255,255,0.02)", marginTop: 10 }}>
-            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", lineHeight: 1.6 }}>
+            <div style={{ fontSize: 14, color: "rgba(255,255,255,0.45)", lineHeight: 1.6 }}>
               <strong style={{ color: "rgba(255,255,255,0.65)" }}>How to read this:</strong> Lines close to 180° mean the body is straight (good for most skills). Dips below 150° during jumps or tumbling passes mean bent knees or pike hips — common deduction causes.
             </div>
           </div>
@@ -7405,18 +7466,18 @@ function BiomechanicsDashboard({ result }) {
             <div key={i} style={{ padding: "10px 12px", marginBottom: 6, borderRadius: 8, background: "rgba(255,255,255,0.02)" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 12, fontWeight: 600 }}>{d.skill} <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>({d.phase})</span></div>
+                  <div style={{ fontSize: 16, fontWeight: 600 }}>{d.skill} <span style={{ fontSize: 14, color: "rgba(255,255,255,0.3)" }}>({d.phase})</span></div>
                 </div>
                 {d.hipVel && <div style={{ textAlign: "center", padding: "4px 8px", borderRadius: 6, background: "rgba(59,130,246,0.08)" }}>
-                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>Hip</div>
+                  <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)" }}>Hip</div>
                   <div style={{ fontSize: 14, fontWeight: 700, color: "#3b82f6", fontFamily: "'Space Mono', monospace" }}>{d.hipVel}°/s</div>
                 </div>}
                 {d.kneeVel && <div style={{ textAlign: "center", padding: "4px 8px", borderRadius: 6, background: "rgba(249,115,22,0.08)" }}>
-                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>Knee</div>
+                  <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)" }}>Knee</div>
                   <div style={{ fontSize: 14, fontWeight: 700, color: "#f97316", fontFamily: "'Space Mono', monospace" }}>{d.kneeVel}°/s</div>
                 </div>}
               </div>
-              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", lineHeight: 1.4 }}>
+              <div style={{ fontSize: 14, color: "rgba(255,255,255,0.35)", lineHeight: 1.4 }}>
                 {d.hipVel ? explainVelocity(d.hipVel) : explainVelocity(d.kneeVel)}
               </div>
             </div>
@@ -7431,32 +7492,32 @@ function BiomechanicsDashboard({ result }) {
           {landings.map((l, i) => (
             <div key={i} style={{ padding: 12, marginBottom: 8, borderRadius: 10, background: "rgba(255,255,255,0.02)", borderLeft: `3px solid ${riskColor(l.impactRisk)}` }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                <span style={{ fontSize: 13, fontWeight: 600 }}>{safeStr(l.skill)}</span>
-                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>{safeStr(l.timestamp)}</span>
+                <span style={{ fontSize: 16, fontWeight: 600 }}>{safeStr(l.skill)}</span>
+                <span style={{ fontSize: 14, color: "rgba(255,255,255,0.3)" }}>{safeStr(l.timestamp)}</span>
               </div>
               <div style={{ display: "flex", gap: 8, marginBottom: 6 }}>
                 <div style={{ flex: 1, padding: "6px 8px", borderRadius: 6, background: "rgba(255,255,255,0.03)", textAlign: "center" }}>
-                  <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)" }}>Knee Bend</div>
+                  <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)" }}>Knee Bend</div>
                   <div style={{ fontSize: 14, fontWeight: 700, fontFamily: "'Space Mono', monospace", color: safeNum(l.kneeFlexionAtImpact, 0) < 120 ? "#ef4444" : "#22c55e" }}>{safeNum(l.kneeFlexionAtImpact, 0)}°</div>
                 </div>
                 <div style={{ flex: 1, padding: "6px 8px", borderRadius: 6, background: "rgba(255,255,255,0.03)", textAlign: "center" }}>
-                  <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)" }}>Chest</div>
+                  <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)" }}>Chest</div>
                   <div style={{ fontSize: 14, fontWeight: 700, fontFamily: "'Space Mono', monospace", color: safeNum(l.chestAngle, 0) < 70 ? "#f59e0b" : "#22c55e" }}>{safeNum(l.chestAngle, 0)}°</div>
                 </div>
                 <div style={{ flex: 1, padding: "6px 8px", borderRadius: 6, background: "rgba(255,255,255,0.03)", textAlign: "center" }}>
-                  <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)" }}>Steps</div>
+                  <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)" }}>Steps</div>
                   <div style={{ fontSize: 14, fontWeight: 700, fontFamily: "'Space Mono', monospace", color: safeNum(l.stepsAfter, 0) > 0 ? "#f59e0b" : "#22c55e" }}>{safeNum(l.stepsAfter, 0)}</div>
                 </div>
                 <div style={{ flex: 1, padding: "6px 8px", borderRadius: 6, background: `${riskColor(l.impactRisk)}08`, textAlign: "center" }}>
-                  <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)" }}>Impact</div>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: riskColor(l.impactRisk), textTransform: "uppercase" }}>{l.impactRisk}</div>
+                  <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)" }}>Impact</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: riskColor(l.impactRisk), textTransform: "uppercase" }}>{l.impactRisk}</div>
                 </div>
               </div>
-              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", lineHeight: 1.5, padding: "6px 0" }}>
+              <div style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", lineHeight: 1.5, padding: "6px 0" }}>
                 {explainKneeAngle(safeNum(l.kneeFlexionAtImpact, 0))} • {explainChestAngle(safeNum(l.chestAngle, 0))}
                 {safeNum(l.stepsAfter, 0) > 0 && ` • ${safeNum(l.stepsAfter, 0)} step${safeNum(l.stepsAfter, 0) > 1 ? "s" : ""} after landing = -${(safeNum(l.stepsAfter, 0) * 0.1).toFixed(1)} deduction`}
               </div>
-              {l.notes && <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", lineHeight: 1.5 }}>{safeStr(l.notes)}</div>}
+              {l.notes && <div style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", lineHeight: 1.5 }}>{safeStr(l.notes)}</div>}
             </div>
           ))}
         </div>
@@ -7473,15 +7534,15 @@ function BiomechanicsDashboard({ result }) {
             return (
               <div key={i} style={{ marginBottom: 10, padding: "10px 12px", borderRadius: 8, background: "rgba(255,255,255,0.02)" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                  <span style={{ fontSize: 13, fontWeight: 600 }}>{safeStr(h.skill)} <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>{safeStr(h.timestamp)}</span></span>
-                  <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, fontWeight: 700, color: h.met ? "#22c55e" : "#ef4444" }}>
+                  <span style={{ fontSize: 16, fontWeight: 600 }}>{safeStr(h.skill)} <span style={{ fontSize: 14, color: "rgba(255,255,255,0.3)" }}>{safeStr(h.timestamp)}</span></span>
+                  <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 16, fontWeight: 700, color: h.met ? "#22c55e" : "#ef4444" }}>
                     {(durMs / 1000).toFixed(1)}s / {(reqMs / 1000).toFixed(1)}s
                   </span>
                 </div>
                 <div style={{ height: 6, borderRadius: 3, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
                   <div style={{ height: "100%", width: `${pct}%`, borderRadius: 3, background: h.met ? "#22c55e" : "#ef4444", transition: "width 0.5s" }} />
                 </div>
-                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", marginTop: 4 }}>
+                <div style={{ fontSize: 14, color: "rgba(255,255,255,0.35)", marginTop: 4 }}>
                   {h.met ? "Held long enough — no deduction" : `Released ${shortBy}s too early — practice holding longer with core/arm conditioning`}
                 </div>
               </div>
@@ -7504,15 +7565,15 @@ function BiomechanicsDashboard({ result }) {
               borderLeft: `3px solid ${riskColor(r.risk)}`,
             }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-                <span style={{ fontSize: 13, fontWeight: 600 }}>{r.joint?.replace("l", "Left ").replace("r", "Right ").replace("Knee", "Knee").replace("Ankle", "Ankle").replace("Elbow", "Elbow")}</span>
+                <span style={{ fontSize: 16, fontWeight: 600 }}>{r.joint?.replace("l", "Left ").replace("r", "Right ").replace("Knee", "Knee").replace("Ankle", "Ankle").replace("Elbow", "Elbow")}</span>
                 <span style={{
-                  fontSize: 10, fontWeight: 700, textTransform: "uppercase", padding: "2px 8px", borderRadius: 4,
+                  fontSize: 14, fontWeight: 700, textTransform: "uppercase", padding: "2px 8px", borderRadius: 4,
                   background: `${riskColor(r.risk)}15`, color: riskColor(r.risk),
                 }}>{r.risk} risk</span>
               </div>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", marginBottom: 4 }}>{safeStr(r.reason)}</div>
+              <div style={{ fontSize: 16, color: "rgba(255,255,255,0.6)", marginBottom: 4 }}>{safeStr(r.reason)}</div>
               {r.recommendation && (
-                <div style={{ fontSize: 11, color: "#22c55e", marginTop: 4, lineHeight: 1.5 }}>What to do: {safeStr(r.recommendation)}</div>
+                <div style={{ fontSize: 14, color: "#22c55e", marginTop: 4, lineHeight: 1.5 }}>What to do: {safeStr(r.recommendation)}</div>
               )}
             </div>
           ))}
@@ -7524,7 +7585,7 @@ function BiomechanicsDashboard({ result }) {
         <div className="card" style={{ padding: 24, textAlign: "center" }}>
           <div style={{ fontSize: 32, marginBottom: 12 }}>🦴</div>
           <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 6 }}>Body Movement Analysis</div>
-          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", lineHeight: 1.6 }}>
+          <div style={{ fontSize: 16, color: "rgba(255,255,255,0.4)", lineHeight: 1.6 }}>
             After analyzing a video, this tab will show how the body moves during the routine — including joint positions, landing safety, hold strength, and areas to watch for injury prevention.
           </div>
         </div>
@@ -7559,12 +7620,12 @@ function DiagnosticsDashboard({ result }) {
       {/* Biggest Math Win */}
       {biggestWin && (
         <div className="card" style={{ padding: 16, marginBottom: 12, borderColor: "rgba(34,197,94,0.2)", background: "rgba(34,197,94,0.04)" }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: "#22c55e", letterSpacing: 1, marginBottom: 6 }}>🎯 BIGGEST MATH WIN</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: "#22c55e", letterSpacing: 1, marginBottom: 6 }}>🎯 BIGGEST MATH WIN</div>
           <div style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.8)", lineHeight: 1.7 }}>
             {biggestWin}
           </div>
           {sortedDeds.length >= 3 && (
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginTop: 8, lineHeight: 1.6 }}>
+            <div style={{ fontSize: 16, color: "rgba(255,255,255,0.4)", marginTop: 8, lineHeight: 1.6 }}>
               Fixing the top 3 deductions alone would save <span style={{ color: "#C4982A", fontWeight: 700, fontFamily: "'Space Mono', monospace" }}>+{sortedDeds.slice(0, 3).reduce((s, d) => s + safeNum(d.deduction, 0), 0).toFixed(2)}</span> — that's the difference between {safeNum(result.finalScore, 0).toFixed(1)} and {(safeNum(result.finalScore, 0) + sortedDeds.slice(0, 3).reduce((s, d) => s + safeNum(d.deduction, 0), 0)).toFixed(1)}.
             </div>
           )}
@@ -7574,22 +7635,22 @@ function DiagnosticsDashboard({ result }) {
       {/* Consistency Analysis */}
       {diag.consistencyNote && (
         <div className="card" style={{ padding: 16, marginBottom: 12 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: "#C4982A", letterSpacing: 1, marginBottom: 6 }}>🔍 WHERE DOES FOCUS BREAK?</div>
-          <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", lineHeight: 1.7 }}>{diag.consistencyNote}</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: "#C4982A", letterSpacing: 1, marginBottom: 6 }}>🔍 WHERE DOES FOCUS BREAK?</div>
+          <div style={{ fontSize: 16, color: "rgba(255,255,255,0.6)", lineHeight: 1.7 }}>{diag.consistencyNote}</div>
         </div>
       )}
 
       {/* Deduction Heatmap by Category */}
       <div className="card" style={{ padding: 16, marginBottom: 12 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: 1, marginBottom: 12 }}>DEDUCTION BREAKDOWN BY TYPE</div>
+        <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: 1, marginBottom: 12 }}>DEDUCTION BREAKDOWN BY TYPE</div>
         {Object.entries(categoryTotals).sort((a, b) => b[1] - a[1]).map(([cat, total], i) => {
           const pct = result.totalDeductions > 0 ? (total / result.totalDeductions) * 100 : 0;
           const count = deds.filter(d => (d.category || "execution") === cat).length;
           return (
             <div key={i} style={{ marginBottom: 10 }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                <span style={{ fontSize: 13, fontWeight: 600, textTransform: "capitalize" }}>{cat}</span>
-                <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, fontWeight: 700, color: "#ef4444" }}>-{total.toFixed(2)} <span style={{ color: "rgba(255,255,255,0.3)", fontWeight: 400 }}>({count})</span></span>
+                <span style={{ fontSize: 16, fontWeight: 600, textTransform: "capitalize" }}>{cat}</span>
+                <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 16, fontWeight: 700, color: "#ef4444" }}>-{total.toFixed(2)} <span style={{ color: "rgba(255,255,255,0.3)", fontWeight: 400 }}>({count})</span></span>
               </div>
               <div style={{ height: 6, borderRadius: 3, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
                 <div style={{ height: "100%", width: `${pct}%`, borderRadius: 3, background: cat === "execution" ? "#ef4444" : cat === "landing" ? "#f97316" : cat === "artistry" ? "#a855f7" : "#f59e0b", transition: "width 0.5s" }} />
@@ -7601,7 +7662,7 @@ function DiagnosticsDashboard({ result }) {
 
       {/* Detection Engine Report */}
       <div className="card" style={{ padding: 16, marginBottom: 12 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: 1, marginBottom: 12 }}>DETECTION ENGINE REPORT</div>
+        <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: 1, marginBottom: 12 }}>DETECTION ENGINE REPORT</div>
         {[
           { name: "Toe Point (TPM)", count: diag.toePointIssues || deds.filter(d => (d.fault || "").toLowerCase().includes("toe") || (d.fault || "").toLowerCase().includes("flex") || (d.fault || "").toLowerCase().includes("foot") || (d.engine || "") === "TPM").length, color: "#ef4444", icon: "🦶" },
           { name: "Knee Tension (KTM)", count: diag.kneeTensionIssues || deds.filter(d => (d.fault || "").toLowerCase().includes("knee") || (d.fault || "").toLowerCase().includes("soft") || (d.engine || "") === "KTM").length, color: "#f97316", icon: "🦵" },
@@ -7615,9 +7676,9 @@ function DiagnosticsDashboard({ result }) {
           }}>
             <span style={{ fontSize: 18 }}>{eng.icon}</span>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: eng.count > 0 ? "rgba(255,255,255,0.8)" : "rgba(255,255,255,0.4)" }}>{eng.name}</div>
+              <div style={{ fontSize: 16, fontWeight: 600, color: eng.count > 0 ? "rgba(255,255,255,0.8)" : "rgba(255,255,255,0.4)" }}>{eng.name}</div>
               {eng.total !== undefined && eng.total > 0 && (
-                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>-{eng.total.toFixed(2)} total</div>
+                <div style={{ fontSize: 14, color: "rgba(255,255,255,0.35)" }}>-{eng.total.toFixed(2)} total</div>
               )}
             </div>
             <div style={{
@@ -7635,34 +7696,34 @@ function DiagnosticsDashboard({ result }) {
       {/* Biomechanical Summary */}
       {result.biomechanics && (
         <div className="card" style={{ padding: 16, marginBottom: 12, borderColor: "rgba(59,130,246,0.15)" }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: "#3b82f6", letterSpacing: 1, marginBottom: 10 }}>🦴 BIOMECHANICAL SUMMARY</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: "#3b82f6", letterSpacing: 1, marginBottom: 10 }}>🦴 BIOMECHANICAL SUMMARY</div>
           <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
             <div style={{ flex: 1, padding: "8px 6px", borderRadius: 8, background: "rgba(59,130,246,0.06)", textAlign: "center" }}>
-              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)" }}>Power</div>
+              <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)" }}>Power</div>
               <div style={{ fontSize: 14, fontWeight: 700, color: "#3b82f6", fontFamily: "'Space Mono', monospace" }}>{result.biomechanics.overallPowerRating || "—"}</div>
             </div>
             <div style={{ flex: 1, padding: "8px 6px", borderRadius: 8, background: "rgba(168,85,247,0.06)", textAlign: "center" }}>
-              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)" }}>Flight</div>
-              <div style={{ fontSize: 11, fontWeight: 600, color: "#a855f7", textTransform: "capitalize" }}>{result.biomechanics.overallFlightHeight || "—"}</div>
+              <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)" }}>Flight</div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: "#a855f7", textTransform: "capitalize" }}>{result.biomechanics.overallFlightHeight || "—"}</div>
             </div>
             <div style={{ flex: 1, padding: "8px 6px", borderRadius: 8, background: (result.biomechanics.injuryRiskFlags || []).some(r => r.risk === "high") ? "rgba(239,68,68,0.06)" : "rgba(34,197,94,0.06)", textAlign: "center" }}>
-              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)" }}>Risk Flags</div>
+              <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)" }}>Risk Flags</div>
               <div style={{ fontSize: 14, fontWeight: 700, color: (result.biomechanics.injuryRiskFlags || []).length > 0 ? ((result.biomechanics.injuryRiskFlags || []).some(r => r.risk === "high") ? "#ef4444" : "#f59e0b") : "#22c55e", fontFamily: "'Space Mono', monospace" }}>
                 {(result.biomechanics.injuryRiskFlags || []).length}
               </div>
             </div>
             <div style={{ flex: 1, padding: "8px 6px", borderRadius: 8, background: "rgba(245,158,11,0.06)", textAlign: "center" }}>
-              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)" }}>Landings</div>
+              <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)" }}>Landings</div>
               <div style={{ fontSize: 14, fontWeight: 700, color: "#f59e0b", fontFamily: "'Space Mono', monospace" }}>{(result.biomechanics.landingAnalysis || []).length}</div>
             </div>
           </div>
-          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", textAlign: "center" }}>Full biomechanics analysis in the 🦴 Biomechanics tab</div>
+          <div style={{ fontSize: 14, color: "rgba(255,255,255,0.35)", textAlign: "center" }}>Full biomechanics analysis in the 🦴 Biomechanics tab</div>
         </div>
       )}
 
       {/* Severity Distribution */}
       <div className="card" style={{ padding: 16, marginBottom: 12 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: 1, marginBottom: 12 }}>SEVERITY DISTRIBUTION</div>
+        <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: 1, marginBottom: 12 }}>SEVERITY DISTRIBUTION</div>
         <div style={{ display: "flex", gap: 8 }}>
           {[
             { key: "small", label: "Micro/Small", color: "#22c55e" },
@@ -7675,7 +7736,7 @@ function DiagnosticsDashboard({ result }) {
             return (
               <div key={s.key} style={{ flex: 1, textAlign: "center", padding: "10px 4px", borderRadius: 10, background: count > 0 ? `${s.color}10` : "rgba(255,255,255,0.02)" }}>
                 <div style={{ fontSize: 20, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: count > 0 ? s.color : "rgba(255,255,255,0.15)" }}>{count}</div>
-                <div style={{ fontSize: 9, color: count > 0 ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.2)", marginTop: 2 }}>{s.label}</div>
+                <div style={{ fontSize: 14, color: count > 0 ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.2)", marginTop: 2 }}>{s.label}</div>
               </div>
             );
           })}
@@ -7684,20 +7745,20 @@ function DiagnosticsDashboard({ result }) {
 
       {/* Top 3 Score Drains */}
       <div className="card" style={{ padding: 16, marginBottom: 12 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: 1, marginBottom: 12 }}>TOP SCORE DRAINS</div>
+        <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: 1, marginBottom: 12 }}>TOP SCORE DRAINS</div>
         {sortedDeds.slice(0, 5).map((d, i) => {
           const c = DEDUCTION_SCALE[d.severity]?.color || "#f59e0b";
           return (
             <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8, padding: "8px 10px", borderRadius: 8, background: "rgba(255,255,255,0.02)" }}>
               <div style={{
                 width: 24, height: 24, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
-                background: `${c}15`, fontSize: 12, fontWeight: 900, color: c, fontFamily: "'Space Mono', monospace",
+                background: `${c}15`, fontSize: 16, fontWeight: 900, color: c, fontFamily: "'Space Mono', monospace",
               }}>
                 {i + 1}
               </div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 12, fontWeight: 600 }}>{safeStr(d.skill)}</div>
-                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>{safeStr(d.fault)}</div>
+                <div style={{ fontSize: 16, fontWeight: 600 }}>{safeStr(d.skill)}</div>
+                <div style={{ fontSize: 14, color: "rgba(255,255,255,0.4)" }}>{safeStr(d.fault)}</div>
               </div>
               <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 14, fontWeight: 700, color: c }}>-{safeNum(d.deduction, 0).toFixed(2)}</span>
             </div>
@@ -7707,8 +7768,8 @@ function DiagnosticsDashboard({ result }) {
 
       {/* Coach Talking Points */}
       <div className="card" style={{ padding: 16, background: "rgba(196,152,42,0.03)", borderColor: "rgba(196,152,42,0.12)" }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: "#C4982A", letterSpacing: 1, marginBottom: 8 }}>💬 TALKING POINTS FOR COACH</div>
-        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.7 }}>
+        <div style={{ fontSize: 14, fontWeight: 700, color: "#C4982A", letterSpacing: 1, marginBottom: 8 }}>💬 TALKING POINTS FOR COACH</div>
+        <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.7 }}>
           {sortedDeds.length > 0 && `"The analysis identified ${deds.length} deductions totaling -${safeNum(result.totalDeductions, 0).toFixed(2)}. `}
           {sortedDeds[0] && `The biggest single item was ${safeStr(sortedDeds[0].skill)} (${safeStr(sortedDeds[0].fault)}, -${safeNum(sortedDeds[0].deduction, 0).toFixed(2)}). `}
           {diag.biggestMathWin && `The single biggest score improvement would come from: ${diag.biggestMathWin}. `}
