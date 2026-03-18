@@ -3114,8 +3114,10 @@ function AnalyzingScreen({ uploadData, profile, onComplete, onBack }) {
           ],
         }],
         generationConfig: {
-          maxOutputTokens,
           temperature: 0,
+          topP: 1,
+          topK: 1,
+          maxOutputTokens: 8000,
           responseMimeType: "application/json",
           thinkingConfig: { thinkingBudget },
         },
@@ -3246,7 +3248,20 @@ SPLIT LEAP/JUMP REQUIREMENT at ${level}: minimum ${splitMin}°
   ${splitMin - 30}°–${splitMin - 16}° (short): −${splitDed}
   Below ${splitMin - 30}° (very short): −0.20–0.30`;
 
-    return `You are a Brevet-level USAG Official at a State Championship judging this ${gender} ${event} routine (${level}).
+    return `IMPORTANT: You must be completely deterministic. Given the same video, you must identify the EXACT same skills, the EXACT same faults, and produce the EXACT same deductions and score every time. Do not introduce any randomness or variation in your analysis.
+
+CALIBRATION: Your score should land 0.05 to 0.15 BELOW what a real competition panel would give. You are slightly stricter than a real judge, but not dramatically stricter.
+
+Reference ranges:
+- If a real panel would give 9.0-9.2, you should give 8.85-9.10
+- If a real panel would give 8.7-8.9, you should give 8.60-8.85
+- If a real panel would give 8.3-8.6, you should give 8.20-8.50
+
+A typical Xcel Gold floor routine has 1.00-1.30 in total deductions. If your total deductions exceed 1.50, you are being too harsh — review and remove your weakest deductions until you are in range.
+
+Do NOT over-deduct. Only deduct for faults you can clearly see. If a fault is borderline or unclear from the video angle, do NOT deduct for it.
+
+You are a Brevet-level USAG Official at a State Championship judging this ${gender} ${event} routine (${level}).
 
 ${programContext}
 
