@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { LineChart, XAxis, YAxis, CartesianGrid, Tooltip, Line, ResponsiveContainer } from "recharts";
+import { LineChart, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Line, ResponsiveContainer, RadarChart, Radar, PolarGrid, PolarAngleAxis, Cell } from "recharts";
 
 // ─── STORAGE WRAPPER — works in Claude artifacts AND real browsers ──
 const storage = {
@@ -25,44 +25,17 @@ const storage = {
 };
 
 // ─── STRUCTURED LOGGING ─────────────────────────────────────────────
-const DEBUG_MODE = process.env.NODE_ENV === 'development' || (typeof window !== 'undefined' && window.location?.search?.includes('debug=true'));
 const log = {
   _fmt(level, stage, msg, data) {
-    if (!DEBUG_MODE) return;
     const ts = new Date().toISOString().slice(11, 23);
     const prefix = `[${ts}] [${level}] [${stage}]`;
-    if (data !== undefined) console.log(prefix, msg, data); // eslint-disable-line no-console
-    else console.log(prefix, msg); // eslint-disable-line no-console
+    if (data !== undefined) console.log(prefix, msg, data);
+    else console.log(prefix, msg);
   },
   info(stage, msg, data) { log._fmt("INFO", stage, msg, data); },
   warn(stage, msg, data) { log._fmt("WARN", stage, msg, data); },
   error(stage, msg, data) { log._fmt("ERROR", stage, msg, data); },
 };
-
-// ─── ERROR BOUNDARY (wraps screens to prevent crashes) ──────────────
-class ErrorBoundary extends React.Component {
-  constructor(props) { super(props); this.state = { hasError: false }; }
-  static getDerivedStateFromError() { return { hasError: true }; }
-  componentDidCatch() {}
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div style={{ minHeight: '100vh', padding: '40px 20px', maxWidth: 540, margin: '0 auto', textAlign: 'center' }}>
-          <div style={{ fontSize: 32, marginBottom: 16 }}>!</div>
-          <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8, color: '#e2e8f0' }}>Something went wrong</h2>
-          <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.4)', lineHeight: 1.6, marginBottom: 24 }}>
-            {this.props.screenName ? `The ${this.props.screenName} screen encountered an error.` : 'An unexpected error occurred.'} Try going back or reloading.
-          </p>
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
-            <button onClick={() => { this.setState({ hasError: false }); if (this.props.onBack) this.props.onBack(); }} style={{ background: 'linear-gradient(135deg, #C4982A, #E8C35A)', color: '#0B1024', border: 'none', padding: '12px 28px', borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: "'Outfit', sans-serif" }}>Go Back</button>
-            <button onClick={() => window.location.reload()} style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)', border: '1px solid rgba(255,255,255,0.08)', padding: '12px 28px', borderRadius: 12, fontWeight: 600, fontSize: 14, cursor: 'pointer', fontFamily: "'Outfit', sans-serif" }}>Reload</button>
-          </div>
-        </div>
-      );
-    }
-    return this.props.children;
-  }
-}
 
 // ─── SAFETY UTILITIES (prevent crashes from unexpected Gemini response shapes) ──
 function safeStr(val, fallback = "") {
@@ -81,6 +54,24 @@ function safeArray(val) {
   if (typeof val === "object") return Object.values(val);
   return [val];
 }
+function parseTimestampToSec(ts) {
+  if (!ts || typeof ts !== "string") return 0;
+  const first = ts.split(/[,\-]/)[0].trim();
+  if (!first || String(first || '').toLowerCase() === "global") return 0;
+  const parts = first.split(":");
+  if (parts.length === 2) return parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+  const n = parseFloat(first);
+  return isNaN(n) ? 0 : n;
+}
+
+function computeAverageGrade(skills) {
+  if (!skills || skills.length === 0) return "B";
+  const GRADE_RANK = { "A+":12,"A":11,"A-":10,"B+":9,"B":8,"B-":7,"C+":6,"C":5,"C-":4,"D+":3,"D":2,"F":1 };
+  const RANK_GRADE = { 12:"A+",11:"A",10:"A-",9:"B+",8:"B",7:"B-",6:"C+",5:"C",4:"C-",3:"D+",2:"D",1:"F" };
+  const avg = skills.reduce((s, sk) => s + (GRADE_RANK[sk.grade] || 8), 0) / skills.length;
+  return RANK_GRADE[Math.round(avg)] || "B";
+}
+
 function safeNum(val, fallback = 0, min = -Infinity, max = Infinity) {
   const n = typeof val === "number" ? val : parseFloat(val);
   if (isNaN(n)) return fallback;
@@ -128,42 +119,6 @@ function validateResult(parsed) {
 
   // Validate string fields
   parsed.truthAnalysis = safeStr(parsed.truthAnalysis);
-  parsed.overallAssessment = safeStr(parsed.overallAssessment || parsed.truthAnalysis);
-
-  // Validate and build skillAnalysis — the unified per-skill view
-  parsed.skillAnalysis = safeArray(parsed.skillAnalysis)
-    .filter(s => s && typeof s === "object" && s.skill)
-    .map(s => ({
-      ...s,
-      timestamp: safeStr(s.timestamp, "0:00"),
-      skill: safeStr(s.skill),
-      type: s.type || "acro",
-      verdict: ["clean", "deduction", "strength"].includes(s.verdict) ? s.verdict : (s.deduction > 0 ? "deduction" : "clean"),
-      score: ["clean", "minor", "moderate", "major"].includes(s.score) ? s.score : "clean",
-      deduction: safeNum(s.deduction, 0, 0, 2.0),
-      fault: safeStr(s.fault || ""),
-      correction: safeStr(s.correction || ""),
-      engine: safeStr(s.engine || ""),
-      measuredVsIdeal: safeStr(s.measuredVsIdeal || ""),
-      skeleton: s.skeleton && typeof s.skeleton === "object" ? s.skeleton : null,
-    }));
-
-  // If AI didn't return skillAnalysis, build it from executionDeductions + pass1 skills
-  if (parsed.skillAnalysis.length === 0 && parsed.executionDeductions.length > 0) {
-    parsed.skillAnalysis = parsed.executionDeductions.map(d => ({
-      timestamp: d.timestamp,
-      skill: d.skill,
-      type: d.category === "landing" ? "landing" : d.category === "artistry" ? "dance" : "acro",
-      verdict: "deduction",
-      score: d.severity === "small" ? "minor" : d.severity === "medium" ? "moderate" : "major",
-      deduction: d.deduction,
-      fault: d.fault,
-      correction: d.correction || "",
-      engine: d.engine,
-      measuredVsIdeal: safeStr(d.details || ""),
-      skeleton: d.skeleton,
-    }));
-  }
 
   // Validate biomechanics
   if (parsed.biomechanics && typeof parsed.biomechanics === "object") {
@@ -232,7 +187,7 @@ function parseGeminiTable(rawText) {
       else timestamp = String(parseFloat(tsParts[0]) || 0);
     }
 
-    const isArtistry = tsRaw.match(/Global/i) || String(skill || "").toLowerCase().includes("artistry");
+    const isArtistry = tsRaw.match(/Global/i) || String(skill || '').toLowerCase().includes("artistry");
     const tsNum = parseInt(timestamp) || 0;
 
     let engine = "General";
@@ -281,7 +236,7 @@ function parseGeminiTable(rawText) {
         else timestamp = String(parseFloat(tsParts[0]) || 0);
       }
 
-      const isArtistry = tsClean.match(/Global/i) || String(skill || "").toLowerCase().includes("artistry");
+      const isArtistry = tsClean.match(/Global/i) || String(skill || '').toLowerCase().includes("artistry");
       const tsNum = parseInt(timestamp) || 0;
 
       let engine = "General";
@@ -421,13 +376,6 @@ const DRILLS_DATABASE = {
     { name: "Superman Holds", duration: "4 × 15 sec", description: "Lie prone, lift arms and legs. Full extension from fingertips to toes.", yt: "https://www.youtube.com/results?search_query=superman+hold+gymnastics+conditioning" },
     { name: "Open Shoulder Flexibility", duration: "Daily stretching", description: "Wall slides and shoulder dislocates to improve overhead extension range.", yt: "https://www.youtube.com/results?search_query=shoulder+flexibility+gymnastics+dislocate+stretch" },
   ],
-  "Pike / arch": [{ name: "Hollow Body Progressions", duration: "4x20s", description: "Start tucked, progress to full hollow. Press lower back to floor." },{ name: "Superman to Hollow Rolls", duration: "3x8", description: "Roll hollow to superman maintaining tension." }],
-  "Incomplete turn": [{ name: "Releve Turn Drills", duration: "10 reps", description: "Full turn on floor line. Spotting and staying on releve." },{ name: "Core Rotation", duration: "3x12", description: "Russian twists. Build rotational power." }],
-  "Head position": [{ name: "Tennis Ball Chin Drill", duration: "5 min", description: "Hold ball under chin during rolls/handstands. Builds neutral head." }],
-  "Fall on landing": [{ name: "Landing Progressions", duration: "3x10", description: "Start low, increase height. Master each level." },{ name: "Post-Fall Reset", duration: "In practice", description: "Simulate fall, stand, breathe, execute next skill." }],
-  "Squat on landing": [{ name: "Eccentric Squats", duration: "3x10 slow", description: "4-sec descent squats. Same pattern as landing absorption." }],
-  "Lack of confidence": [{ name: "Confidence Runs", duration: "3x per practice", description: "Reduced difficulty, PERFECT presentation." }],
-  "Poor musicality": [{ name: "Dance-Through Only", duration: "3x", description: "Floor with only dance. Hit musical accents." }],
   "default": [
     { name: "Full Routine Run-Through", duration: "3 × per practice", description: "Practice complete routine with focus on identified weak points. Film and review.", yt: "https://www.youtube.com/results?search_query=gymnastics+full+routine+practice+tips" },
     { name: "Core Conditioning Circuit", duration: "15 min", description: "Hollow holds, V-ups, planks, and leg lifts. Strong core = better body control.", yt: "https://www.youtube.com/results?search_query=gymnastics+core+conditioning+circuit+workout" },
@@ -535,78 +483,140 @@ const fonts = `
 `;
 
 // ─── HELPER COMPONENTS ──────────────────────────────────────────────
-const Icon = ({ name, size = 20, color }) => {
-  const s = size;
-  const c = color || "currentColor";
-  const p = { width: s, height: s, viewBox: "0 0 24 24", fill: "none", stroke: c, strokeWidth: "1.8", strokeLinecap: "round", strokeLinejoin: "round", style: { display: "inline-block", verticalAlign: "middle", flexShrink: 0 } };
-  switch (name) {
-    case "camera": return <svg {...p}><rect x="2" y="5" width="20" height="15" rx="2"/><circle cx="12" cy="13" r="4"/><path d="M8 5l1-2h6l1 2"/></svg>;
-    case "chart": return <svg {...p}><path d="M3 20h18"/><path d="M5 20V10"/><path d="M9 20V6"/><path d="M13 20V12"/><path d="M17 20V4"/></svg>;
-    case "user": return <svg {...p}><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>;
-    case "target": return <svg {...p}><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1" fill={c}/></svg>;
-    case "check": return <svg {...p}><path d="M5 12l5 5L20 7"/></svg>;
-    case "star": return <svg {...p}><path d="M12 2l3 7h7l-5.5 4.5 2 7L12 16l-6.5 4.5 2-7L2 9h7z" fill={c} stroke="none"/></svg>;
-    case "play": return <svg {...p}><path d="M6 4l14 8-14 8V4z" fill={c} stroke="none"/></svg>;
-    case "upload": return <svg {...p}><path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M20 16v4H4v-4"/></svg>;
-    case "close": return <svg {...p}><path d="M6 6l12 12M18 6L6 18"/></svg>;
-    case "drill": case "drills": return <svg {...p}><path d="M6 18L18 6"/><circle cx="8" cy="8" r="3"/><circle cx="16" cy="16" r="3"/></svg>;
-    case "note": return <svg {...p}><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8M8 10h6M8 14h4"/></svg>;
-    case "clock": case "meets": return <svg {...p}><circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 2"/></svg>;
-    case "eye": return <svg {...p}><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>;
-    case "sparkle": return <svg {...p}><path d="M12 2l2 6h6l-5 4 2 6-5-4-5 4 2-6-5-4h6z" fill={c} stroke="none"/></svg>;
-    case "warning": return <svg {...p}><path d="M12 2L2 20h20L12 2z"/><path d="M12 10v4"/><circle cx="12" cy="17" r="0.5" fill={c}/></svg>;
-    case "info": return <svg {...p}><circle cx="12" cy="12" r="9"/><path d="M12 12v4"/><circle cx="12" cy="8" r="0.5" fill={c}/></svg>;
-    case "back": return <svg {...p}><path d="M15 4l-8 8 8 8"/></svg>;
-    case "save": return <svg {...p}><path d="M5 3h14l2 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z"/><path d="M8 3v5h8V3"/><rect x="6" y="14" width="12" height="6" rx="1"/></svg>;
-    case "trophy": return <svg {...p}><path d="M6 4h12v4a6 6 0 11-12 0V4z"/><path d="M12 14v3"/><path d="M8 21h8"/><path d="M18 4h2a2 2 0 012 2v1a3 3 0 01-3 3h-1"/><path d="M6 4H4a2 2 0 00-2 2v1a3 3 0 003 3h1"/></svg>;
-    case "brain": case "mental": return <svg {...p}><path d="M12 2a7 7 0 00-5 12l2 3v3h6v-3l2-3a7 7 0 00-5-12z"/><path d="M9 20h6"/><path d="M10 23h4"/></svg>;
-    case "guide": return <svg {...p}><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8M8 10h8M8 14h5"/></svg>;
-    case "goals": return <svg {...p}><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1" fill={c}/></svg>;
-    case "progress": return <svg {...p}><path d="M3 20l5-6 4 4 9-12"/></svg>;
-    case "home": return <svg {...p}><path d="M3 12l9-8 9 8"/><path d="M5 10v10h14V10"/><rect x="9" y="14" width="6" height="6"/></svg>;
-    case "settings": return <svg {...p}><circle cx="12" cy="12" r="3"/><path d="M12 1v3M12 20v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M1 12h3M20 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>;
-    default: return <svg {...p}><circle cx="12" cy="12" r="4" fill={c}/></svg>;
-  }
+const Icon = ({ name, size = 20 }) => {
+  const icons = {
+    medal: "🥇", camera: "📹", chart: "📊", user: "👤", target: "🎯",
+    check: "✓", arrow: "→", star: "⭐", play: "▶", pause: "⏸",
+    upload: "⬆", close: "✕", gym: "🤸", drill: "💪", note: "📝",
+    flag: "🚩", clock: "⏱", eye: "👁", sparkle: "✨", bar: "═",
+    beam: "━", vault: "🏋", floor: "🟫", rings: "⭕", horse: "🐴",
+    warning: "⚠️", info: "ℹ️", back: "←", save: "💾", trophy: "🏆",
+    bone: "🦴", brain: "🧠",
+  };
+  return <span style={{ fontSize: size }}>{icons[name] || "•"}</span>;
 };
 
 // ─── SKELETON OVERLAY COMPONENT ─────────────────────────────────────
-// Simplified SkeletonOverlay — thin lines, red only on fault joints, no clutter
+// SkeletonOverlay accepts either legacy {joints, faultJoints} or new skeleton data format
+// New format: skeleton = {joints, faultJoints, angles: [{joint, measured, ideal, label}]}
 function SkeletonOverlay({ joints, faultJoints, skeleton, angles: anglesFromProp }) {
+  // Support both old flat props and new grouped skeleton object
   const j = skeleton?.joints || joints;
   const faultList = skeleton?.faultJoints || faultJoints || [];
+  const angleData = skeleton?.angles || anglesFromProp || [];
+
   if (!j) return null;
   const faults = new Set(faultList);
+
+  // Build angle lookup by joint name
+  const angleByJoint = {};
+  angleData.forEach(a => { if (a.joint) angleByJoint[a.joint] = a; });
+
+  // Also compute geometric angles for joints that don't have AI-provided data
+  const calcAngle = (a, b, c) => {
+    if (!a || !b || !c) return null;
+    const v1 = [a[0]-b[0], a[1]-b[1]], v2 = [c[0]-b[0], c[1]-b[1]];
+    const dot = v1[0]*v2[0]+v1[1]*v2[1];
+    const mag = Math.sqrt(v1[0]**2+v1[1]**2)*Math.sqrt(v2[0]**2+v2[1]**2);
+    return mag > 0 ? Math.round(Math.acos(Math.max(-1,Math.min(1,dot/mag)))*180/Math.PI) : null;
+  };
+  const computedAngles = {};
+  if (j.lHip && j.lKnee && j.lAnkle) computedAngles.lKnee = calcAngle(j.lHip, j.lKnee, j.lAnkle);
+  if (j.rHip && j.rKnee && j.rAnkle) computedAngles.rKnee = calcAngle(j.rHip, j.rKnee, j.rAnkle);
+  if (j.lShoulder && j.lElbow && j.lWrist) computedAngles.lElbow = calcAngle(j.lShoulder, j.lElbow, j.lWrist);
+  if (j.rShoulder && j.rElbow && j.rWrist) computedAngles.rElbow = calcAngle(j.rShoulder, j.rElbow, j.rWrist);
+
+  // Draw angle arc at a joint
+  const AngleArc = ({ pos, measured, ideal }) => {
+    if (!pos || !measured) return null;
+    const r = 0.03;
+    const startAngle = -0.4, endAngle = startAngle + (measured / 180) * Math.PI;
+    const x1 = pos[0] + r * Math.cos(startAngle), y1 = pos[1] + r * Math.sin(startAngle);
+    const x2 = pos[0] + r * Math.cos(endAngle), y2 = pos[1] + r * Math.sin(endAngle);
+    const large = (measured > 90) ? 1 : 0;
+    return (
+      <path d={`M ${pos[0]} ${pos[1]} L ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} Z`}
+        fill="rgba(239,68,68,0.15)" stroke="#ef4444" strokeWidth={0.003} />
+    );
+  };
 
   return (
     <svg viewBox="0 0 1 1" preserveAspectRatio="none" style={{
       position: "absolute", top: 0, left: 0, width: "100%", height: "100%", pointerEvents: "none",
     }}>
-      {/* Connections — thin, subtle for OK limbs, highlighted for faults */}
+      <defs>
+        <filter id="glow"><feGaussianBlur stdDeviation="0.008" result="blur" /><feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
+      </defs>
+
+      {/* Ghost motion trail for fault joints */}
+      {faultList.map((name) => {
+        const pos = j[name];
+        if (!pos) return null;
+        return [0.008, 0.016].map((off, oi) => (
+          <circle key={`trail-${name}-${oi}`} cx={pos[0] + off} cy={pos[1] - off * 0.5}
+            r={0.012} fill="#ef4444" opacity={0.12 - oi * 0.04} />
+        ));
+      })}
+
+      {/* Draw connections */}
       {SKELETON_CONNECTIONS.map(([a, b], i) => {
         const ja = j[a], jb = j[b];
         if (!ja || !jb) return null;
         const hasFault = faults.has(a) || faults.has(b);
         return (
           <line key={i} x1={ja[0]} y1={ja[1]} x2={jb[0]} y2={jb[1]}
-            stroke={hasFault ? "#ef4444" : "rgba(255,255,255,0.25)"}
-            strokeWidth={hasFault ? 0.008 : 0.004}
-            strokeLinecap="round" opacity={hasFault ? 0.9 : 0.5}
+            stroke={hasFault ? "#ef4444" : "#22c55e"}
+            strokeWidth={hasFault ? 0.015 : 0.007}
+            strokeLinecap="round" opacity={0.9}
+            filter={hasFault ? "url(#glow)" : undefined}
           />
         );
       })}
 
-      {/* Joints — small dots, red only on faults */}
+      {/* Draw joints */}
       {Object.entries(j).map(([name, pos]) => {
         if (!pos || pos.length < 2) return null;
         const isFault = faults.has(name);
+        const aiAngle = angleByJoint[name];
+        const compAngle = computedAngles[name];
         return (
-          <circle key={name} cx={pos[0]} cy={pos[1]}
-            r={isFault ? 0.014 : 0.006}
-            fill={isFault ? "#ef4444" : "rgba(255,255,255,0.35)"}
-            opacity={isFault ? 0.95 : 0.6}
-          />
+          <g key={name}>
+            {isFault && aiAngle && <AngleArc pos={pos} measured={aiAngle.measured} ideal={aiAngle.ideal} />}
+            <circle cx={pos[0]} cy={pos[1]} r={isFault ? 0.018 : 0.01}
+              fill={isFault ? "#ef4444" : "#22c55e"} opacity={0.95}
+              filter={isFault ? "url(#glow)" : undefined} />
+            {isFault && (
+              <circle cx={pos[0]} cy={pos[1]} r={0.025}
+                fill="none" stroke="#ef4444" strokeWidth={0.005} opacity={0.7}>
+                <animate attributeName="r" values="0.02;0.04;0.02" dur="1.2s" repeatCount="indefinite" />
+                <animate attributeName="opacity" values="0.7;0.2;0.7" dur="1.2s" repeatCount="indefinite" />
+              </circle>
+            )}
+            {isFault && (aiAngle || compAngle) && (() => {
+              const m = aiAngle?.measured ?? compAngle;
+              const ideal = aiAngle?.ideal ?? 180;
+              const badgeX = pos[0] > 0.7 ? pos[0] - 0.13 : pos[0] + 0.02;
+              const badgeY = pos[1] - 0.025;
+              return (
+                <g>
+                  <rect x={badgeX} y={badgeY} width={0.13} height={0.038} rx={0.005} fill="rgba(0,0,0,0.88)" />
+                  <text x={badgeX + 0.065} y={badgeY + 0.014} textAnchor="middle"
+                    fill="#ef4444" fontSize="0.018" fontWeight="bold" fontFamily="monospace">{m}°</text>
+                  <text x={badgeX + 0.065} y={badgeY + 0.03} textAnchor="middle"
+                    fill="#22c55e" fontSize="0.015" fontFamily="monospace">/{ideal}°</text>
+                </g>
+              );
+            })()}
+          </g>
         );
       })}
+
+      {/* Legend */}
+      <rect x={0.02} y={0.92} width={0.22} height={0.06} rx={0.01} fill="rgba(0,0,0,0.75)" />
+      <circle cx={0.04} cy={0.95} r={0.008} fill="#22c55e" />
+      <text x={0.055} y={0.955} fill="#22c55e" fontSize="0.018" fontFamily="sans-serif">OK</text>
+      <circle cx={0.11} cy={0.95} r={0.008} fill="#ef4444" />
+      <text x={0.125} y={0.955} fill="#ef4444" fontSize="0.018" fontFamily="sans-serif">Fault</text>
     </svg>
   );
 }
@@ -634,10 +644,10 @@ function ScoreBenchmark({ score, level }) {
   return (
     <div className="card" style={{ padding: 14, marginBottom: 16 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-        <span style={{ fontSize: 16, fontWeight: 700, color: "rgba(255,255,255,0.5)" }}>
+        <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.5)" }}>
           SCORE BENCHMARK — {level}
         </span>
-        <span style={{ fontSize: 16, fontWeight: 800, color: pColor, fontFamily: "'Space Mono', monospace" }}>
+        <span style={{ fontSize: 13, fontWeight: 800, color: pColor, fontFamily: "'Space Mono', monospace" }}>
           {percentile}
         </span>
       </div>
@@ -660,12 +670,12 @@ function ScoreBenchmark({ score, level }) {
           display: "flex", alignItems: "center", justifyContent: "center",
           boxShadow: `0 0 10px ${pColor}50`,
         }}>
-          <span style={{ fontSize: 16, fontWeight: 900, color: "#0B1024", fontFamily: "'Space Mono', monospace" }}>
+          <span style={{ fontSize: 8, fontWeight: 900, color: "#0B1024", fontFamily: "'Space Mono', monospace" }}>
             {score.toFixed(1)}
           </span>
         </div>
       </div>
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 16, color: "rgba(255,255,255,0.25)", fontFamily: "'Space Mono', monospace" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 9, color: "rgba(255,255,255,0.25)", fontFamily: "'Space Mono', monospace" }}>
         <span>{bench.low.toFixed(1)}</span>
         <span style={{ color: "rgba(245,158,11,0.5)" }}>avg {bench.avg.toFixed(1)}</span>
         <span style={{ color: "rgba(196,152,42,0.5)" }}>top10% {bench.top10.toFixed(1)}</span>
@@ -710,17 +720,17 @@ function SkillsRequiredCard({ profile }) {
         <h3 style={{ fontSize: 14, fontWeight: 700 }}>
           <Icon name="star" size={14} /> Skills Required — {profile.level}
         </h3>
-        <span style={{ color: "#C4982A", fontSize: 16, fontWeight: 600 }}>{expanded ? "▲" : "▼"}</span>
+        <span style={{ color: "#C4982A", fontSize: 13, fontWeight: 600 }}>{expanded ? "▲" : "▼"}</span>
       </div>
       {expanded && (
         <div style={{ marginTop: 12 }}>
           {events.map(([label, key]) => skills[key] && (
             <div key={key} style={{ marginBottom: 10 }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: "#C4982A", letterSpacing: 1, marginBottom: 4 }}>{String(label || "").toUpperCase()}</div>
-              <div style={{ fontSize: 16, color: "rgba(255,255,255,0.6)", lineHeight: 1.7 }}>{skills[key]}</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#C4982A", letterSpacing: 1, marginBottom: 4 }}>{String(label || '').toUpperCase()}</div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", lineHeight: 1.7 }}>{skills[key]}</div>
             </div>
           ))}
-          <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)", marginTop: 8, fontStyle: "italic" }}>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginTop: 8, fontStyle: "italic" }}>
             These are the key skills your gymnast needs for this level. Each skill is judged on execution, form, and amplitude.
           </div>
         </div>
@@ -753,14 +763,14 @@ function GlossaryCard() {
         <h3 style={{ fontSize: 14, fontWeight: 700 }}>
           <Icon name="note" size={14} /> Parent's Glossary — Key Terms
         </h3>
-        <span style={{ color: "#C4982A", fontSize: 16, fontWeight: 600 }}>{expanded ? "▲" : "▼"}</span>
+        <span style={{ color: "#C4982A", fontSize: 13, fontWeight: 600 }}>{expanded ? "▲" : "▼"}</span>
       </div>
       {expanded && (
         <div style={{ marginTop: 12 }}>
           {terms.map(([term, def], i) => (
             <div key={i} style={{ marginBottom: 10, paddingBottom: 10, borderBottom: i < terms.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>
-              <div style={{ fontSize: 16, fontWeight: 700, color: "#C4982A", marginBottom: 3 }}>{term}</div>
-              <div style={{ fontSize: 16, color: "rgba(255,255,255,0.55)", lineHeight: 1.6 }}>{def}</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#C4982A", marginBottom: 3 }}>{term}</div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", lineHeight: 1.6 }}>{def}</div>
             </div>
           ))}
         </div>
@@ -795,7 +805,7 @@ function MeetDayChecklist({ gender }) {
         <h3 style={{ fontSize: 14, fontWeight: 700 }}>
           <Icon name="check" size={14} /> Meet Day Checklist
         </h3>
-        <span style={{ color: "#C4982A", fontSize: 16, fontWeight: 600 }}>{expanded ? "▲" : "▼"}</span>
+        <span style={{ color: "#C4982A", fontSize: 13, fontWeight: 600 }}>{expanded ? "▲" : "▼"}</span>
       </div>
       {expanded && (
         <div style={{ marginTop: 12 }}>
@@ -811,10 +821,10 @@ function MeetDayChecklist({ gender }) {
                 display: "flex", alignItems: "center", justifyContent: "center",
                 transition: "all 0.2s",
               }}>
-                {checked[i] && <span style={{ color: "#22c55e", fontSize: 16, fontWeight: 700 }}>✓</span>}
+                {checked[i] && <span style={{ color: "#22c55e", fontSize: 12, fontWeight: 700 }}>✓</span>}
               </div>
               <span style={{
-                fontSize: 16, color: checked[i] ? "rgba(255,255,255,0.35)" : "rgba(255,255,255,0.6)",
+                fontSize: 13, color: checked[i] ? "rgba(255,255,255,0.35)" : "rgba(255,255,255,0.6)",
                 lineHeight: 1.5, textDecoration: checked[i] ? "line-through" : "none",
                 transition: "all 0.2s",
               }}>
@@ -843,7 +853,6 @@ export default function LegacyApp() {
   const [analysisProgress, setAnalysisProgress] = useState(0);
   const [history, setHistory] = useState([]);
   const [liveVideoUrl, setLiveVideoUrl] = useState(null); // STATE so it triggers re-renders
-  const videoFileRef = useRef(null); // Store raw File object to regenerate blob URLs
   const [savedResults, setSavedResults] = useState({}); // Store past results by ID
 
   // Load profile, history, and saved results from storage
@@ -855,13 +864,7 @@ export default function LegacyApp() {
           setProfile(JSON.parse(stored.value));
           setScreen("dashboard");
         } else {
-          // If AppShell already showed splash and user clicked Get Started, skip to onboarding
-          if (window.__striveSkipSplash) {
-            window.__striveSkipSplash = false;
-            setScreen("onboarding");
-          } else {
-            setScreen("splash");
-          }
+          setScreen("splash");
         }
       } catch {
         setScreen("splash");
@@ -1021,7 +1024,6 @@ export default function LegacyApp() {
       {screen === "splash" && <SplashScreen onStart={() => setScreen("onboarding")} />}
       {screen === "onboarding" && <OnboardingScreen onComplete={(p) => { saveProfile(p); setScreen("dashboard"); }} />}
       {screen === "dashboard" && (
-        <ErrorBoundary screenName="Dashboard" onBack={() => setScreen("dashboard")}>
         <DashboardScreen
           profile={profile}
           history={history}
@@ -1035,81 +1037,60 @@ export default function LegacyApp() {
           onGoals={() => setScreen("goals")}
           onViewResult={(r) => { setAnalysisResult(r); setLiveVideoUrl(null); setScreen("results"); }}
         />
-        </ErrorBoundary>
       )}
       {screen === "upload" && (
-        <ErrorBoundary screenName="Upload" onBack={() => setScreen("dashboard")}>
         <UploadScreen
           profile={profile}
           onBack={() => setScreen("dashboard")}
           onAnalyze={(data) => {
-            if (data.videoFile) videoFileRef.current = data.videoFile;
-            setLiveVideoUrl(data.videoUrl);
+            setLiveVideoUrl(data.videoUrl); // Store in state — survives all screen changes
             setUploadData(data);
             setScreen("analyzing");
           }}
         />
-        </ErrorBoundary>
       )}
       {screen === "analyzing" && (
-        <ErrorBoundary screenName="Analysis" onBack={() => setScreen("upload")}>
         <AnalyzingScreen
           uploadData={uploadData}
           profile={profile}
           onComplete={handleAnalysisComplete}
           onBack={() => setScreen("upload")}
         />
-        </ErrorBoundary>
       )}
       {screen === "results" && (
-        <ErrorBoundary screenName="Results" onBack={() => setScreen("dashboard")}>
         <ResultsScreen
           result={analysisResult}
           profile={profile}
           history={history}
           videoUrl={liveVideoUrl}
-          videoFileRef={videoFileRef}
           onBack={() => setScreen("dashboard")}
           onDrills={() => setScreen("drills")}
         />
-        </ErrorBoundary>
       )}
       {screen === "drills" && (
-        <ErrorBoundary screenName="Drills" onBack={() => setScreen("results")}>
         <DrillsScreen
           result={analysisResult}
           onBack={() => setScreen("results")}
         />
-        </ErrorBoundary>
       )}
       {screen === "deductions" && (
-        <ErrorBoundary screenName="Deduction Guide" onBack={() => setScreen("dashboard")}>
         <DeductionsScreen onBack={() => setScreen("dashboard")} profile={profile} />
-        </ErrorBoundary>
       )}
       {screen === "settings" && (
-        <ErrorBoundary screenName="Settings" onBack={() => setScreen("dashboard")}>
         <SettingsScreen
           profile={profile}
-          history={history}
-          savedResults={savedResults}
           onSave={(p) => { saveProfile(p); setScreen("dashboard"); }}
           onBack={() => setScreen("dashboard")}
           onReset={() => {
             setProfile(null);
             setHistory([]);
-            setSavedResults({});
             (async () => {
               try { await storage.delete("strive-profile"); } catch {}
               try { await storage.delete("strive-history"); } catch {}
-              try { await storage.delete("strive-saved-results"); } catch {}
-              try { await storage.delete("strive-goals"); } catch {}
-              try { await storage.delete("strive-calibration"); } catch {}
             })();
             setScreen("splash");
           }}
         />
-        </ErrorBoundary>
       )}
       {screen === "progress" && (
         (() => {
@@ -1119,18 +1100,18 @@ export default function LegacyApp() {
           ) : (
             <div style={{ minHeight: "100vh", padding: "16px 18px 90px", maxWidth: 540, margin: "0 auto" }}>
               <button onClick={() => setScreen("dashboard")} style={{ background: "none", border: "none", color: "#C4982A", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 20 }}>← Dashboard</button>
-              <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>Progress Tracking</h2>
+              <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>📈 Progress Tracking</h2>
               <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 14, marginBottom: 16 }}>Track your score trends across the season.</p>
               {/* Show basic stats as teaser */}
               {history.length > 0 && (
                 <div className="card" style={{ padding: 16, marginBottom: 16 }}>
-                  <div style={{ fontSize: 16, color: "rgba(255,255,255,0.4)" }}>Total analyses: <span style={{ color: "#C4982A", fontWeight: 700 }}>{history.length}</span></div>
+                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>Total analyses: <span style={{ color: "#C4982A", fontWeight: 700 }}>{history.length}</span></div>
                 </div>
               )}
               <div style={{ border: "1.5px solid rgba(139,92,246,0.25)", borderRadius: 16, padding: 24, textAlign: "center", background: "rgba(139,92,246,0.04)" }}>
-                <div style={{ marginBottom: 8 }}><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#A78BFA" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg></div>
+                <div style={{ fontSize: 22, marginBottom: 8 }}>🔒</div>
                 <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>Score History & Trends</div>
-                <div style={{ fontSize: 16, color: "#8890AB", lineHeight: 1.6, marginBottom: 16 }}>Score charts over time, event-by-event trends, deduction pattern tracking, and improvement velocity — see exactly where you're getting better and what still needs work.</div>
+                <div style={{ fontSize: 12, color: "#8890AB", lineHeight: 1.6, marginBottom: 16 }}>Score charts over time, event-by-event trends, deduction pattern tracking, and improvement velocity — see exactly where you're getting better and what still needs work.</div>
                 <button onClick={() => { try { localStorage.setItem("strive-tier", "pro"); } catch {} window.location.reload(); }} style={{ background: "linear-gradient(135deg, #8B5CF6, #A78BFA)", color: "#FFF", border: "none", padding: "12px 32px", borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: "'Outfit', sans-serif" }}>
                   Upgrade to STRIVE Pro
                 </button>
@@ -1140,12 +1121,10 @@ export default function LegacyApp() {
         })()
       )}
       {screen === "meets" && (
-        <ErrorBoundary screenName="Meets" onBack={() => setScreen("dashboard")}>
         <MeetsScreen history={history} savedResults={savedResults} profile={profile}
           onBack={() => setScreen("dashboard")}
           onViewResult={(r) => { setAnalysisResult(r); setLiveVideoUrl(null); setScreen("results"); }}
         />
-        </ErrorBoundary>
       )}
       {screen === "mental" && (
         (() => {
@@ -1155,20 +1134,20 @@ export default function LegacyApp() {
           ) : (
             <div style={{ minHeight: "100vh", padding: "16px 18px 90px", maxWidth: 540, margin: "0 auto" }}>
               <button onClick={() => setScreen("dashboard")} style={{ background: "none", border: "none", color: "#C4982A", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 20 }}>← Dashboard</button>
-              <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>Mental Training</h2>
+              <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>🧠 Mental Training</h2>
               <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 14, marginBottom: 24 }}>Gymnastics is 80% mental. Train the mind alongside the body.</p>
               {/* Free teaser */}
               <div className="card" style={{ padding: 20, marginBottom: 16, borderColor: "rgba(196,152,42,0.15)" }}>
                 <h3 style={{ fontSize: 14, fontWeight: 700, color: "#C4982A", marginBottom: 10 }}>The 4 Pillars</h3>
                 {["Visualization — mentally rehearse routines", "Breathing — control nerves before competing", "Confidence — replace negative self-talk", "Pressure Management — make meets feel familiar"].map((p, i) => (
-                  <div key={i} style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", padding: "6px 0", borderBottom: i < 3 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>{p}</div>
+                  <div key={i} style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", padding: "6px 0", borderBottom: i < 3 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>{p}</div>
                 ))}
               </div>
               {/* Pro gate */}
               <div style={{ border: "1.5px solid rgba(139,92,246,0.25)", borderRadius: 16, padding: 24, textAlign: "center", background: "rgba(139,92,246,0.04)" }}>
-                <div style={{ marginBottom: 8 }}><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#A78BFA" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg></div>
+                <div style={{ fontSize: 22, marginBottom: 8 }}>🔒</div>
                 <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>Full Mental Training Suite</div>
-                <div style={{ fontSize: 16, color: "#8890AB", lineHeight: 1.6, marginBottom: 16 }}>
+                <div style={{ fontSize: 12, color: "#8890AB", lineHeight: 1.6, marginBottom: 16 }}>
                   Guided visualization scripts, breathing techniques (4-7-8, box breathing, power breath), confidence-building exercises, competition day protocols, and parent coaching tips.
                 </div>
                 <button onClick={() => { try { localStorage.setItem("strive-tier", "pro"); } catch {} window.location.reload(); }} style={{ background: "linear-gradient(135deg, #8B5CF6, #A78BFA)", color: "#FFF", border: "none", padding: "12px 32px", borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: "'Outfit', sans-serif" }}>
@@ -1187,12 +1166,12 @@ export default function LegacyApp() {
           ) : (
             <div style={{ minHeight: "100vh", padding: "16px 18px 90px", maxWidth: 540, margin: "0 auto" }}>
               <button onClick={() => setScreen("dashboard")} style={{ background: "none", border: "none", color: "#C4982A", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 20 }}>← Dashboard</button>
-              <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>Season Goals</h2>
+              <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>🎯 Season Goals</h2>
               <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 14, marginBottom: 24 }}>Set targets and track progress across the season.</p>
               <div style={{ border: "1.5px solid rgba(139,92,246,0.25)", borderRadius: 16, padding: 24, textAlign: "center", background: "rgba(139,92,246,0.04)" }}>
-                <div style={{ marginBottom: 8 }}><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#A78BFA" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg></div>
+                <div style={{ fontSize: 22, marginBottom: 8 }}>🔒</div>
                 <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>Season Goal Tracking</div>
-                <div style={{ fontSize: 16, color: "#8890AB", lineHeight: 1.6, marginBottom: 16 }}>
+                <div style={{ fontSize: 12, color: "#8890AB", lineHeight: 1.6, marginBottom: 16 }}>
                   Set event-specific score targets, track your progress over time, identify trends in your training, and get personalized recommendations for reaching your goals.
                 </div>
                 <button onClick={() => { try { localStorage.setItem("strive-tier", "pro"); } catch {} window.location.reload(); }} style={{ background: "linear-gradient(135deg, #8B5CF6, #A78BFA)", color: "#FFF", border: "none", padding: "12px 32px", borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: "'Outfit', sans-serif" }}>
@@ -1204,7 +1183,7 @@ export default function LegacyApp() {
         })()
       )}
 
-      {/* Bottom Navigation — SVG icons with gold active state */}
+      {/* Bottom Navigation */}
       {["dashboard", "deductions", "meets", "progress", "mental", "goals", "settings"].includes(screen) && (
         <nav style={{
           position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 100,
@@ -1214,11 +1193,11 @@ export default function LegacyApp() {
         }}>
           <div style={{ display: "flex", justifyContent: "space-around", maxWidth: 420, margin: "0 auto", padding: "0 12px" }}>
             {[
-              { id: "dashboard", label: "Home", icon: "home" },
-              { id: "upload", label: "Analyze", icon: "camera", primary: true },
-              { id: "meets", label: "Results", icon: "note" },
-              { id: "deductions", label: "Guide", icon: "guide" },
-              { id: "settings", label: "Settings", icon: "settings" },
+              { id: "dashboard", label: "Home", svg: `<path d="M3 10.5L10 4l7 6.5V18a1 1 0 01-1 1h-4v-5h-4v5H4a1 1 0 01-1-1z" stroke-linejoin="round"/>` },
+              { id: "meets", label: "History", svg: `<circle cx="10" cy="10" r="7.5"/><path d="M10 5v5l3 3"/>` },
+              { id: "upload", label: "Analyze", primary: true, svg: `<circle cx="10" cy="10" r="8"/><path d="M10 6v8M6 10h8"/>` },
+              { id: "deductions", label: "Guide", svg: `<path d="M4 4h12v14a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/><path d="M7 8h6M7 11h4"/>` },
+              { id: "settings", label: "Profile", svg: `<circle cx="10" cy="7" r="3.5"/><path d="M3.5 18c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"/>` },
             ].map(tab => {
               const isActive = screen === tab.id;
               const color = tab.primary ? "#C4982A" : isActive ? "#C4982A" : "rgba(255,255,255,0.22)";
@@ -1227,22 +1206,19 @@ export default function LegacyApp() {
                   key={tab.id}
                   onClick={() => setScreen(tab.id)}
                   style={{
-                    display: "flex", flexDirection: "column", alignItems: "center", gap: 2,
-                    padding: "8px 14px",
+                    display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
+                    padding: "8px 16px",
                     borderRadius: 14, border: "none", cursor: "pointer",
-                    fontFamily: "'Outfit', sans-serif", fontSize: 16, fontWeight: 600,
+                    fontFamily: "'Outfit', sans-serif", fontSize: 9, fontWeight: 600,
                     background: tab.primary ? "rgba(196,152,42,0.08)" : "transparent",
                     color,
                     transition: "all 0.15s", WebkitTapHighlightColor: "transparent",
-                    letterSpacing: 0.3, position: "relative",
+                    letterSpacing: 0.3,
                     ...(tab.primary ? { border: "1px solid rgba(196,152,42,0.12)", borderRadius: 16 } : {}),
                   }}
                 >
-                  <Icon name={tab.icon} size={20} color={color} />
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" dangerouslySetInnerHTML={{ __html: tab.svg }} />
                   <span>{tab.label}</span>
-                  {isActive && !tab.primary && (
-                    <div style={{ position: "absolute", bottom: 2, width: 4, height: 4, borderRadius: "50%", background: "#C4982A" }} />
-                  )}
                 </button>
               );
             })}
@@ -1253,21 +1229,14 @@ export default function LegacyApp() {
   );
 }
 function SplashScreen({ onStart }) {
-  const [phase, setPhase] = useState(0);
-  useEffect(() => {
-    const t1 = setTimeout(() => setPhase(1), 100);
-    const t2 = setTimeout(() => setPhase(2), 700);
-    const t3 = setTimeout(() => setPhase(3), 1200);
-    const t4 = setTimeout(() => setPhase(4), 1700);
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
-  }, []);
-  const entered = phase >= 1;
+  const [entered, setEntered] = useState(false);
+  useEffect(() => { setTimeout(() => setEntered(true), 100); }, []);
 
   return (
     <div style={{
       minHeight: "100vh", display: "flex", flexDirection: "column",
       alignItems: "center", justifyContent: "center", padding: 32, textAlign: "center",
-      position: "relative", overflow: "hidden", maxWidth: 540, margin: "0 auto",
+      position: "relative", overflow: "hidden",
     }}>
       {/* Background grid */}
       <div style={{
@@ -1276,10 +1245,10 @@ function SplashScreen({ onStart }) {
         backgroundSize: "60px 60px", opacity: 0.5,
       }} />
       <div style={{
-        position: "absolute", top: "15%", left: "50%", transform: "translateX(-50%)",
-        width: 600, height: 600, borderRadius: "50%",
-        background: "radial-gradient(circle, rgba(196,152,42,0.08) 0%, rgba(196,152,42,0.02) 40%, transparent 70%)",
-        pointerEvents: "none", opacity: phase >= 1 ? 1 : 0, transition: "opacity 2s ease-out",
+        position: "absolute", top: "10%", left: "50%", transform: "translateX(-50%)",
+        width: 400, height: 400, borderRadius: "50%",
+        background: "radial-gradient(circle, rgba(196,152,42,0.05) 0%, transparent 60%)",
+        pointerEvents: "none",
       }} />
 
       {/* Arc Logo */}
@@ -1323,7 +1292,7 @@ function SplashScreen({ onStart }) {
           }}>STRIVE</span>
         </h1>
         <div style={{
-          fontSize: 14, fontWeight: 600, letterSpacing: 3,
+          fontSize: 10, fontWeight: 600, letterSpacing: 3,
           color: "rgba(255,255,255,0.2)", marginTop: 10,
           textTransform: "uppercase",
         }}>
@@ -1353,16 +1322,16 @@ function SplashScreen({ onStart }) {
         display: "flex", flexDirection: "column", gap: 8, marginBottom: 36, width: "100%", maxWidth: 340,
       }}>
         {[
-          { svgIcon: "target", text: "Understand exactly why your score is what it is" },
-          { svgIcon: "progress", text: "Get a personalized plan to improve every tenth" },
-          { svgIcon: "mental", text: "Mental training and recovery guidance" },
+          { icon: "🎯", text: "Understand exactly why your score is what it is" },
+          { icon: "📈", text: "Get a personalized plan to improve every tenth" },
+          { icon: "🧠", text: "Mental training, nutrition, and recovery guidance" },
         ].map((prop, i) => (
           <div key={i} style={{
             display: "flex", alignItems: "center", gap: 14, padding: "12px 16px",
             borderRadius: 12, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)",
           }}>
-            <Icon name={prop.svgIcon} size={18} color="#C4982A" />
-            <span style={{ fontSize: 16, color: "rgba(255,255,255,0.45)", lineHeight: 1.4 }}>{prop.text}</span>
+            <span style={{ fontSize: 18, flexShrink: 0 }}>{prop.icon}</span>
+            <span style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", lineHeight: 1.4 }}>{prop.text}</span>
           </div>
         ))}
       </div>
@@ -1388,7 +1357,7 @@ function SplashScreen({ onStart }) {
       }}>
         {["USAG Levels 1–10", "Xcel Bronze–Sapphire", "MAG & WAG"].map((badge, i) => (
           <span key={i} style={{
-            fontSize: 14, fontWeight: 600, letterSpacing: 1.5,
+            fontSize: 8, fontWeight: 600, letterSpacing: 1.5,
             color: "rgba(196,152,42,0.25)", textTransform: "uppercase",
           }}>
             {badge}
@@ -1422,7 +1391,7 @@ function OnboardingScreen({ onComplete }) {
     if (step === 1) return name.trim().length > 0;
     if (step === 2) return gender !== "";
     if (step === 3) return levelCategory !== "" && level !== "";
-    if (step === 4) return true; // goals step — always can proceed
+    if (step === 4) return true; // goals — always can proceed
     return false;
   };
 
@@ -1438,9 +1407,9 @@ function OnboardingScreen({ onComplete }) {
       <p style={{ color: "rgba(255,255,255,0.35)", marginBottom: 28, fontSize: 14 }}>How will you be using the app?</p>
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {[
-          { val: "parent", label: "Parent", desc: "Recording my child's routines", svgIcon: "user" },
-          { val: "athlete", label: "Athlete", desc: "Analyzing my own routines", svgIcon: "star" },
-          { val: "coach", label: "Coach", desc: "Working with athletes on scores", svgIcon: "trophy" },
+          { val: "parent", label: "Parent", desc: "Recording my child's routines", icon: "👨‍👩‍👧" },
+          { val: "athlete", label: "Athlete", desc: "Analyzing my own routines", icon: "🤸" },
+          { val: "coach", label: "Coach", desc: "Working with athletes on scores", icon: "🏅" },
         ].map(opt => (
           <button
             key={opt.val}
@@ -1453,10 +1422,10 @@ function OnboardingScreen({ onComplete }) {
               transition: "all 0.2s",
             }}
           >
-            <div style={{ flexShrink: 0 }}><Icon name={opt.svgIcon} size={24} color={role === opt.val ? "#E8C35A" : "rgba(255,255,255,0.4)"} /></div>
+            <span style={{ fontSize: 24, flexShrink: 0 }}>{opt.icon}</span>
             <div>
-              <div style={{ color: role === opt.val ? "#E8C35A" : "#e2e8f0", fontWeight: 600, fontSize: 18, transition: "color 0.2s" }}>{opt.label}</div>
-              <div style={{ color: "rgba(255,255,255,0.3)", fontSize: 16, marginTop: 2 }}>{opt.desc}</div>
+              <div style={{ color: role === opt.val ? "#E8C35A" : "#e2e8f0", fontWeight: 600, fontSize: 15, transition: "color 0.2s" }}>{opt.label}</div>
+              <div style={{ color: "rgba(255,255,255,0.3)", fontSize: 12, marginTop: 2 }}>{opt.desc}</div>
             </div>
             {role === opt.val && (
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ marginLeft: "auto", flexShrink: 0 }}>
@@ -1494,8 +1463,8 @@ function OnboardingScreen({ onComplete }) {
         Sets the correct apparatus and judging criteria
       </p>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-        {[{ val: "female", label: "Women's artistic", desc: "VT · UB · BB · FX" },
-          { val: "male", label: "Men's artistic", desc: "FX · PH · SR · VT · PB · HB" }
+        {[{ val: "female", label: "Women's artistic", icon: "🤸‍♀️", desc: "VT · UB · BB · FX" },
+          { val: "male", label: "Men's artistic", icon: "🤸‍♂️", desc: "FX · PH · SR · VT · PB · HB" }
         ].map(opt => (
           <button
             key={opt.val}
@@ -1507,9 +1476,9 @@ function OnboardingScreen({ onComplete }) {
               transition: "all 0.2s",
             }}
           >
-            <div style={{ display: "block", marginBottom: 10, margin: "0 auto" }}><Icon name="star" size={32} color={gender === opt.val ? "#E8C35A" : "rgba(255,255,255,0.3)"} /></div>
+            <span style={{ fontSize: 32, display: "block", marginBottom: 10 }}>{opt.icon}</span>
             <span style={{ color: gender === opt.val ? "#E8C35A" : "#e2e8f0", fontWeight: 600, fontSize: 14, display: "block" }}>{opt.label}</span>
-            <span style={{ color: "rgba(255,255,255,0.25)", fontSize: 14, marginTop: 4, display: "block", fontFamily: "'Space Mono', monospace" }}>
+            <span style={{ color: "rgba(255,255,255,0.25)", fontSize: 11, marginTop: 4, display: "block", fontFamily: "'Space Mono', monospace" }}>
               {opt.desc}
             </span>
           </button>
@@ -1534,7 +1503,7 @@ function OnboardingScreen({ onComplete }) {
             onClick={() => { setLevelCategory(cat.val); setLevel(""); }}
             style={{
               flex: 1, padding: "10px 8px", borderRadius: 10, border: "none", cursor: "pointer",
-              fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 16,
+              fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 13,
               background: levelCategory === cat.val ? "linear-gradient(135deg, #C4982A, #E8C35A)" : "rgba(255,255,255,0.06)",
               color: levelCategory === cat.val ? "#0B1024" : "rgba(255,255,255,0.6)",
               transition: "all 0.3s",
@@ -1573,7 +1542,7 @@ function OnboardingScreen({ onComplete }) {
         Optional — helps personalize training, nutrition, and mental prep recommendations for age and goals.
       </p>
       <div style={{ marginBottom: 20 }}>
-        <label style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, display: "block", color: "rgba(255,255,255,0.6)" }}>AGE</label>
+        <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, display: "block", color: "rgba(255,255,255,0.6)" }}>AGE</label>
         <input
           className="input-field"
           type="number"
@@ -1586,8 +1555,8 @@ function OnboardingScreen({ onComplete }) {
         />
       </div>
       <div>
-        <label style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, display: "block", color: "rgba(255,255,255,0.6)" }}>GOALS</label>
-        <select className="input-field" value={goals} onChange={e => setGoals(e.target.value)} style={{ fontSize: 18, padding: 14 }}>
+        <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, display: "block", color: "rgba(255,255,255,0.6)" }}>GOALS</label>
+        <select className="input-field" value={goals} onChange={e => setGoals(e.target.value)} style={{ fontSize: 15, padding: 14 }}>
           <option value="">Select a goal...</option>
           <option value="improve scores">Improve meet scores</option>
           <option value="move up levels">Move up to the next level</option>
@@ -1602,7 +1571,7 @@ function OnboardingScreen({ onComplete }) {
   ];
 
   return (
-    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", padding: "24px 22px", maxWidth: 540, margin: "0 auto" }}>
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", padding: "24px 22px" }}>
       {/* Progress */}
       <div style={{ display: "flex", gap: 5, marginBottom: 40 }}>
         {[0,1,2,3,4].map(i => (
@@ -1626,7 +1595,7 @@ function OnboardingScreen({ onComplete }) {
           className="btn-gold"
           onClick={handleNext}
           disabled={!canProceed()}
-          style={{ flex: 2, opacity: canProceed() ? 1 : 0.35, pointerEvents: canProceed() ? "auto" : "none", padding: "14px 24px", fontSize: 18 }}
+          style={{ flex: 2, opacity: canProceed() ? 1 : 0.35, pointerEvents: canProceed() ? "auto" : "none", padding: "14px 24px", fontSize: 15 }}
         >
           {step === 4 ? "Start analyzing" : "Continue"}
         </button>
@@ -1704,12 +1673,12 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
           <div>
             <h1 style={{ fontSize: 18, fontWeight: 700, lineHeight: 1.2 }}>
               {profile.role === "parent" ? (
-                <><span style={{ color: "rgba(255,255,255,0.35)", fontSize: 16, fontWeight: 400 }}>Tracking </span><span style={{ color: "#E8C35A" }}>{profile.name}</span></>
+                <><span style={{ color: "rgba(255,255,255,0.35)", fontSize: 12, fontWeight: 400 }}>Tracking </span><span style={{ color: "#E8C35A" }}>{profile.name}</span></>
               ) : (
-                <><span style={{ color: "rgba(255,255,255,0.35)", fontSize: 16, fontWeight: 400 }}>Hey, </span><span style={{ color: "#E8C35A" }}>{profile.name}</span></>
+                <><span style={{ color: "rgba(255,255,255,0.35)", fontSize: 12, fontWeight: 400 }}>Hey, </span><span style={{ color: "#E8C35A" }}>{profile.name}</span></>
               )}
             </h1>
-            <p style={{ color: "rgba(255,255,255,0.2)", fontSize: 14, marginTop: 1, letterSpacing: 0.3 }}>
+            <p style={{ color: "rgba(255,255,255,0.2)", fontSize: 11, marginTop: 1, letterSpacing: 0.3 }}>
               {profile.level} · {profile.gender === "female" ? "WAG" : "MAG"}
               {profile.role === "coach" && " · Coach"}
             </p>
@@ -1754,9 +1723,9 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
             background: "rgba(139,92,246,0.04)", border: "1.5px solid rgba(139,92,246,0.2)",
             marginBottom: 24,
           }}>
-            <div style={{ marginBottom: 10 }}><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#A78BFA" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg></div>
+            <div style={{ fontSize: 28, marginBottom: 10 }}>🔒</div>
             <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>Monthly limit reached</div>
-            <div style={{ fontSize: 16, color: "#8890AB", lineHeight: 1.6, marginBottom: 16, maxWidth: 280, margin: "0 auto" }}>
+            <div style={{ fontSize: 13, color: "#8890AB", lineHeight: 1.6, marginBottom: 16, maxWidth: 280, margin: "0 auto" }}>
               You've used all 3 free analyses this month. Upgrade to Pro for unlimited video analysis.
             </div>
             <button onClick={() => { try { localStorage.setItem("strive-tier", "pro"); } catch {} window.location.reload(); }} style={{
@@ -1790,11 +1759,11 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
               <Icon name="camera" size={20} />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <span style={{ color: "#E8C35A", fontWeight: 700, fontSize: 18, display: "block" }}>
+              <span style={{ color: "#E8C35A", fontWeight: 700, fontSize: 15, display: "block" }}>
                 Analyze routine
               </span>
-              <span style={{ color: "rgba(255,255,255,0.25)", fontSize: 14, marginTop: 2, display: "block" }}>
-                {isPro ? "Unlimited · 2-pass AI" : `${remaining} free remaining`}
+              <span style={{ color: "rgba(255,255,255,0.25)", fontSize: 11, marginTop: 2, display: "block" }}>
+                {isPro ? "Unlimited · 3-pass AI" : `${remaining} free remaining`}
               </span>
             </div>
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0, opacity: 0.3 }}>
@@ -1818,7 +1787,7 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
         <div style={{ position: "relative", zIndex: 1 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 16, fontWeight: 700, color: "rgba(196,152,42,0.7)", letterSpacing: 1.5, marginBottom: 8 }}>
+              <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(196,152,42,0.7)", letterSpacing: 1.5, marginBottom: 8 }}>
                 TODAY'S FOCUS
               </div>
               <div style={{ fontSize: 14, fontWeight: 500, lineHeight: 1.6, color: "rgba(255,255,255,0.75)", maxWidth: 230 }}>
@@ -1846,7 +1815,7 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
           {/* Stats footer */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 14, paddingTop: 12, borderTop: "1px solid rgba(196,152,42,0.06)" }}>
             {history.length > 0 ? (
-              <div style={{ display: "flex", gap: 16, fontSize: 14 }}>
+              <div style={{ display: "flex", gap: 16, fontSize: 11 }}>
                 <span style={{ color: "rgba(255,255,255,0.25)" }}>
                   Best: <span style={{ color: "rgba(196,152,42,0.8)", fontWeight: 700, fontFamily: "'Space Mono', monospace" }}>
                     {Math.max(...history.filter(h => h.score).map(h => h.score)).toFixed(1)}
@@ -1857,11 +1826,11 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
                 </span>
               </div>
             ) : (
-              <div style={{ fontSize: 14, color: "rgba(255,255,255,0.2)" }}>Upload your first routine to get started</div>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.2)" }}>Upload your first routine to get started</div>
             )}
             {scoreTrend !== 0 && (
               <div style={{
-                fontSize: 14, fontWeight: 700,
+                fontSize: 11, fontWeight: 700,
                 color: scoreTrend > 0 ? "#22c55e" : "#ef4444",
                 background: scoreTrend > 0 ? "rgba(34,197,94,0.08)" : "rgba(239,68,68,0.08)",
                 padding: "3px 10px", borderRadius: 6,
@@ -1880,12 +1849,12 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
         background: "rgba(196,152,42,0.03)",
       }}>
         <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-          <span style={{ flexShrink: 0, marginTop: 2 }}><Icon name="sparkle" size={16} color="#C4982A" /></span>
+          <span style={{ fontSize: 16, flexShrink: 0, marginTop: 2 }}>💡</span>
           <div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "#C4982A", letterSpacing: 0.5, marginBottom: 4 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: "#C4982A", letterSpacing: 0.5, marginBottom: 4 }}>
               {history.length >= 2 ? "YOUR DATA SAYS" : "DID YOU KNOW?"}
             </div>
-            <div style={{ fontSize: 16, color: "rgba(255,255,255,0.55)", lineHeight: 1.7 }}>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", lineHeight: 1.7 }}>
               {(() => {
                 if (history.length >= 2) {
                   // Generate data-driven tips from actual history
@@ -1925,7 +1894,7 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
             <div style={{ fontSize: 20, fontWeight: 800, color: stat.color, fontFamily: "'Space Mono', monospace", lineHeight: 1 }}>
               {stat.value}
             </div>
-            <div style={{ fontSize: 16, color: "rgba(255,255,255,0.2)", fontWeight: 600, marginTop: 6, letterSpacing: 0.5 }}>{stat.label}</div>
+            <div style={{ fontSize: 9, color: "rgba(255,255,255,0.2)", fontWeight: 600, marginTop: 6, letterSpacing: 0.5 }}>{stat.label}</div>
           </div>
         ))}
       </div>
@@ -1950,8 +1919,8 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
             background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)",
           }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-              <span style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.35)" }}>Score Trend</span>
-              <span style={{ fontSize: 14, color: "rgba(255,255,255,0.2)" }}>Last {scores.length} analyses</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.35)" }}>Score Trend</span>
+              <span style={{ fontSize: 10, color: "rgba(255,255,255,0.2)" }}>Last {scores.length} analyses</span>
             </div>
             <svg viewBox={`-10 -5 ${w + 20} ${h + 10}`} width="100%" height="65" style={{ display: "block" }}>
               <defs>
@@ -1967,40 +1936,38 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
               <circle cx={points[points.length - 1].x} cy={points[points.length - 1].y} r="6" fill="#C4982A" opacity="0.15" />
             </svg>
             <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
-              <span style={{ fontSize: 14, color: "rgba(255,255,255,0.2)", fontFamily: "'Space Mono', monospace" }}>{scores[0].toFixed(1)}</span>
-              <span style={{ fontSize: 14, color: "#C4982A", fontWeight: 700, fontFamily: "'Space Mono', monospace" }}>{scores[scores.length - 1].toFixed(1)}</span>
+              <span style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", fontFamily: "'Space Mono', monospace" }}>{scores[0].toFixed(1)}</span>
+              <span style={{ fontSize: 10, color: "#C4982A", fontWeight: 700, fontFamily: "'Space Mono', monospace" }}>{scores[scores.length - 1].toFixed(1)}</span>
             </div>
           </div>
         );
       })()}
 
-      {/* Quick Actions — 3-column grid with SVG icons */}
+      {/* Quick Actions — horizontal scrollable pills */}
       {(() => {
         const tier = (() => { try { return localStorage.getItem("strive-tier") || "free"; } catch { return "free"; } })();
         const isPro = tier === "pro";
         return (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 20 }}>
+          <div style={{ display: "flex", gap: 8, marginBottom: 20, overflowX: "auto", paddingBottom: 4, WebkitOverflowScrolling: "touch" }}>
             {[
-              { icon: "guide", label: "Guide", subtitle: "Scoring ref", action: onViewDeductions },
-              { icon: "progress", label: "Progress", subtitle: "Score trends", action: onProgress, pro: true },
-              { icon: "meets", label: "My Meets", subtitle: "Past analyses", action: onMeets },
-              { icon: "mental", label: "Mental", subtitle: "Train mind", action: onMental, pro: true },
-              { icon: "goals", label: "Goals", subtitle: "Season targets", action: onGoals, pro: true },
-              { icon: "drills", label: "Drills", subtitle: "Exercises", action: onViewDeductions },
+              { emoji: "📋", label: "Guide", action: onViewDeductions },
+              { emoji: "🏆", label: "Meets", action: onMeets },
+              { emoji: "📈", label: "Progress", action: onProgress, pro: true },
+              { emoji: "🧠", label: "Mental", action: onMental, pro: true },
+              { emoji: "🎯", label: "Goals", action: onGoals, pro: true },
             ].map((btn, i) => (
               <button key={i} onClick={btn.action} style={{
-                display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
-                padding: "14px 6px 10px", borderRadius: 14, cursor: "pointer",
-                background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.05)",
-                fontFamily: "'Outfit', sans-serif", transition: "all 0.2s",
-                animation: `fadeIn 0.3s ease-out ${i * 0.05}s both`,
-                backdropFilter: "blur(8px)", minHeight: 44,
+                display: "flex", alignItems: "center", gap: 6,
+                padding: "10px 16px", borderRadius: 12, cursor: "pointer",
+                background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)",
+                fontFamily: "'Outfit', sans-serif", fontSize: 12, fontWeight: 600,
+                color: "rgba(255,255,255,0.55)", whiteSpace: "nowrap",
+                transition: "all 0.2s", flexShrink: 0,
               }}>
-                <div style={{ marginBottom: 2 }}><Icon name={btn.icon} size={20} color="#C4982A" /></div>
-                <span style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.7)" }}>{btn.label}</span>
-                <span style={{ fontSize: 16, color: "rgba(255,255,255,0.3)" }}>{btn.subtitle}</span>
+                <span style={{ fontSize: 14 }}>{btn.emoji}</span>
+                {btn.label}
                 {btn.pro && !isPro && (
-                  <span style={{ fontSize: 16, fontWeight: 700, padding: "1px 6px", borderRadius: 4, background: "rgba(139,92,246,0.12)", color: "#A78BFA", marginTop: 2 }}>PRO</span>
+                  <span style={{ fontSize: 8, fontWeight: 700, padding: "1px 5px", borderRadius: 4, background: "rgba(139,92,246,0.12)", color: "#A78BFA", marginLeft: 2 }}>PRO</span>
                 )}
               </button>
             ))}
@@ -2028,13 +1995,13 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.3)", letterSpacing: 1, marginBottom: 6 }}>LAST ANALYSIS</div>
-                <div style={{ fontSize: 18, fontWeight: 700 }}>{last.event}</div>
-                <div style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", marginTop: 3 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.3)", letterSpacing: 1, marginBottom: 6 }}>LAST ANALYSIS</div>
+                <div style={{ fontSize: 15, fontWeight: 700 }}>{last.event}</div>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 3 }}>
                   {last.meetName || last.date}{last.meetLocation ? ` · ${last.meetLocation}` : ""}
                 </div>
                 {topFault && (
-                  <div style={{ fontSize: 14, color: "rgba(255,255,255,0.35)", marginTop: 8 }}>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 8 }}>
                     Top fix: <span style={{ color: "#C4982A" }}>{safeStr(topFault.skill)}</span> (-{safeNum(topFault.deduction, 0).toFixed(2)})
                   </div>
                 )}
@@ -2043,8 +2010,8 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
                 <div style={{ fontSize: 28, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: scColor }}>
                   {sc.toFixed(1)}
                 </div>
-                <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)" }}>{dedCount} deductions</div>
-                <div style={{ fontSize: 14, color: "#C4982A", marginTop: 4 }}>tap to review →</div>
+                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>{dedCount} deductions</div>
+                <div style={{ fontSize: 10, color: "#C4982A", marginTop: 4 }}>tap to review →</div>
               </div>
             </div>
           </div>
@@ -2054,20 +2021,20 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
       {/* History — clickable */}
       <div style={{ marginBottom: 20 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-          <h3 style={{ fontSize: 18, fontWeight: 700 }}>Recent Analyses</h3>
+          <h3 style={{ fontSize: 15, fontWeight: 700 }}>Recent Analyses</h3>
           {history.length > 3 && (
             <button onClick={onMeets} style={{
               background: "none", border: "none", color: "#C4982A", cursor: "pointer",
-              fontSize: 16, fontWeight: 600, fontFamily: "'Outfit', sans-serif",
+              fontSize: 12, fontWeight: 600, fontFamily: "'Outfit', sans-serif",
             }}>See all {history.length} →</button>
           )}
         </div>
         {history.length === 0 ? (
           <div className="card" style={{ textAlign: "center", padding: "32px 24px" }}>
-            <div style={{ marginBottom: 12 }}><Icon name="camera" size={36} color="#C4982A" /></div>
+            <div style={{ fontSize: 36, marginBottom: 12 }}>🤸</div>
             <h4 style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>Ready to see your score?</h4>
-            <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 16, lineHeight: 1.6, maxWidth: 280, margin: "0 auto 16px" }}>
-              Upload a routine video and STRIVE's 2-pass AI engine will break down every deduction — just like a real judge.
+            <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, lineHeight: 1.6, maxWidth: 280, margin: "0 auto 16px" }}>
+              Upload a routine video and STRIVE's 3-pass AI engine will break down every deduction — just like a real judge.
             </p>
             <button className="btn-gold" onClick={onUpload} style={{ fontSize: 14, padding: "12px 32px" }}>
               Upload First Video
@@ -2101,7 +2068,7 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
                   </div>
                   <div>
                     <div style={{ fontWeight: 600, fontSize: 14 }}>{h.event}</div>
-                    <div style={{ fontSize: 14, color: "rgba(255,255,255,0.35)" }}>
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>
                       {h.meetName || h.date}{h.meetLocation ? ` · ${h.meetLocation}` : ""}
                     </div>
                   </div>
@@ -2110,7 +2077,7 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
                   <div style={{ fontWeight: 800, fontSize: 18, color: scColor, fontFamily: "'Space Mono', monospace" }}>
                     {sc > 0 ? sc.toFixed(3) : "—"}
                   </div>
-                  <div style={{ fontSize: 14, color: "rgba(255,255,255,0.25)" }}>
+                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.25)" }}>
                     {trend !== null && Math.abs(trend) >= 0.01 ? (
                       <span style={{ color: trend > 0 ? "#22c55e" : "#ef4444", fontWeight: 600 }}>
                         {trend > 0 ? "▲" : "▼"} {Math.abs(trend).toFixed(2)}
@@ -2132,14 +2099,14 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
       {/* Quick Reference — condensed */}
       <div className="card" style={{ padding: 16, marginBottom: 12, borderColor: "rgba(196,152,42,0.1)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-          <h3 style={{ fontSize: 16, fontWeight: 700, color: "#C4982A" }}>
+          <h3 style={{ fontSize: 13, fontWeight: 700, color: "#C4982A" }}>
             Scoring at {profile.level}
           </h3>
-          <span style={{ fontSize: 14, color: "rgba(255,255,255,0.25)" }}>
+          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.25)" }}>
             {profile.levelCategory === "compulsory" ? "Compulsory — SV 10.0" : profile.levelCategory === "xcel" ? "Xcel — SV 10.0" : "Optional — D-Score + E-Score"}
           </span>
         </div>
-        <div style={{ fontSize: 16, color: "rgba(255,255,255,0.45)", lineHeight: 1.7 }}>
+        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: 1.7 }}>
           {profile.levelCategory === "compulsory" ?
             "Same routine for everyone. Judges deduct for any deviation from the prescribed choreography. 9.0+ is strong." :
            profile.levelCategory === "xcel" ?
@@ -2162,8 +2129,8 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
           borderColor: "rgba(196,152,42,0.1)",
           textAlign: "center",
         }}>
-          <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>Know a gymnast or coach?</div>
-          <div style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", marginBottom: 12, lineHeight: 1.5 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>Know a gymnast or coach?</div>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginBottom: 12, lineHeight: 1.5 }}>
             STRIVE helps every gymnast understand their score and improve faster.
           </div>
           <button
@@ -2178,7 +2145,7 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
             style={{
               background: "rgba(196,152,42,0.1)", border: "1px solid rgba(196,152,42,0.2)",
               borderRadius: 10, padding: "10px 24px", cursor: "pointer",
-              color: "#C4982A", fontSize: 16, fontWeight: 600, fontFamily: "'Outfit', sans-serif",
+              color: "#C4982A", fontSize: 13, fontWeight: 600, fontFamily: "'Outfit', sans-serif",
             }}
           >
             Share STRIVE
@@ -2193,8 +2160,8 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
           background: "linear-gradient(135deg, #C4982A, #E8C35A)", backgroundClip: "text",
           WebkitBackgroundClip: "text", color: "transparent", marginBottom: 4,
         }}>STRIVE</div>
-        <div style={{ fontSize: 16, color: "rgba(255,255,255,0.12)", letterSpacing: 1 }}>
-          v1.0 · 2-Pass AI Engine · {profile.level}
+        <div style={{ fontSize: 9, color: "rgba(255,255,255,0.12)", letterSpacing: 1 }}>
+          v1.0 · 3-Pass AI Engine · {profile.level}
         </div>
       </div>
 
@@ -2220,17 +2187,16 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
   const [inlineKey, setInlineKey] = useState("");
   const [keySaving, setKeySaving] = useState(false);
 
-  // Check for API key on mount (user saved key OR server key)
+  // Check for API key on mount (server proxy first, then user saved key)
   useEffect(() => {
     (async () => {
       try {
-        const k = await storage.get("strive-gemini-key");
-        if (k?.value) { setHasApiKey(true); return; }
-      } catch {}
-      // Check server-side key
-      try {
         const resp = await fetch("/api/gemini-key");
         if (resp.ok) { setHasApiKey(true); return; }
+      } catch {}
+      try {
+        const k = await storage.get("strive-gemini-key");
+        if (k?.value) { setHasApiKey(true); return; }
       } catch {}
       setHasApiKey(false);
     })();
@@ -2268,7 +2234,7 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
         const height = Math.round(sourceVideo.videoHeight * scale);
         const duration = sourceVideo.duration;
 
-        if (DEBUG_MODE) console.log(`Compressing: ${sourceVideo.videoWidth}x${sourceVideo.videoHeight} → ${width}x${height}, ${duration.toFixed(1)}s`); // eslint-disable-line no-console
+        console.log(`Compressing: ${sourceVideo.videoWidth}x${sourceVideo.videoHeight} → ${width}x${height}, ${duration.toFixed(1)}s`);
 
         const canvas = document.createElement("canvas");
         canvas.width = width;
@@ -2294,7 +2260,7 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
         recorder.onstop = () => {
           const blob = new Blob(chunks, { type: mimeType });
           const compressedFile = new File([blob], file.name.replace(/\.[^.]+$/, ".webm"), { type: mimeType });
-          if (DEBUG_MODE) console.log(`Compressed: ${formatFileSize(file.size)} → ${formatFileSize(compressedFile.size)} (${Math.round((1 - compressedFile.size / file.size) * 100)}% reduction)`); // eslint-disable-line no-console
+          console.log(`Compressed: ${formatFileSize(file.size)} → ${formatFileSize(compressedFile.size)} (${Math.round((1 - compressedFile.size / file.size) * 100)}% reduction)`);
           URL.revokeObjectURL(sourceVideo.src);
           setCompressing(false);
           resolve(compressedFile);
@@ -2390,15 +2356,15 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
 
   return (
     <div style={{ minHeight: "100vh", padding: "16px 18px 90px", maxWidth: 540, margin: "0 auto" }}>
-      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(196,152,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 16, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
+      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(196,152,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 13, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.5 2.5l-5 5 5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> Dashboard
       </button>
 
       <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>
         <Icon name="camera" size={20} /> New Analysis
       </h2>
-      <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 16, marginBottom: 24 }}>
-        Upload a routine video — 2-pass AI judge scores using {profile.level} {profile.levelCategory === "xcel" ? "Xcel" : "USAG"} criteria.
+      <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, marginBottom: 24 }}>
+        Upload a routine video — 3-pass AI judge scores using {profile.level} {profile.levelCategory === "xcel" ? "Xcel" : "USAG"} criteria.
       </p>
 
       {/* Video Upload / Record */}
@@ -2416,7 +2382,7 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
           <div style={{ fontSize: 16, fontWeight: 700, color: "#C4982A", marginBottom: 8 }}>
             Optimizing Video...
           </div>
-          <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", marginBottom: 16, lineHeight: 1.5 }}>
+          <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", marginBottom: 16, lineHeight: 1.5 }}>
             Reducing file size for faster upload and analysis.
             <br/>Original: {formatFileSize(originalSize)} → Target: ~{formatFileSize(originalSize * 0.15)}
           </div>
@@ -2427,7 +2393,7 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
               width: `${compressProgress}%`, transition: "width 0.3s",
             }} />
           </div>
-          <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 16, fontWeight: 700, color: "#C4982A" }}>
+          <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 13, fontWeight: 700, color: "#C4982A" }}>
             {compressProgress}%
           </div>
         </div>
@@ -2449,7 +2415,7 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
               <Icon name="upload" size={28} />
             </div>
             <div style={{ color: "#C4982A", fontWeight: 600, fontSize: 16 }}>Choose Video from Library</div>
-            <div style={{ color: "rgba(255,255,255,0.3)", fontSize: 16, marginTop: 8 }}>
+            <div style={{ color: "rgba(255,255,255,0.3)", fontSize: 13, marginTop: 8 }}>
               MP4, MOV, WebM · iPhone recordings work great
             </div>
           </div>
@@ -2471,7 +2437,7 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
             </div>
             <div style={{ textAlign: "left" }}>
               <div style={{ color: "#e2e8f0", fontWeight: 600, fontSize: 14 }}>Record from Camera</div>
-              <div style={{ color: "rgba(255,255,255,0.3)", fontSize: 16, marginTop: 2 }}>
+              <div style={{ color: "rgba(255,255,255,0.3)", fontSize: 12, marginTop: 2 }}>
                 Opens your camera to film the routine
               </div>
             </div>
@@ -2529,7 +2495,7 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
                 <div style={{ color: "#C4982A", fontWeight: 600, fontSize: 15 }}>
                   {video.name?.split('.').pop()?.toUpperCase() || "Video"} File Loaded
                 </div>
-                <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 16, marginTop: 6 }}>
+                <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, marginTop: 6 }}>
                   Preview not available, but analysis will proceed normally
                 </div>
               </div>
@@ -2537,7 +2503,7 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
             {videoReady && !videoError && (
               <div style={{
                 position: "absolute", top: 10, right: 10, background: "rgba(34,197,94,0.9)",
-                padding: "4px 10px", borderRadius: 6, fontSize: 14, fontWeight: 700, color: "white",
+                padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 700, color: "white",
               }}>
                 ✓ Ready
               </div>
@@ -2546,10 +2512,10 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
 
           {/* File info & change button */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10 }}>
-            <div style={{ fontSize: 16, color: "rgba(255,255,255,0.4)" }}>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>
               {video.name?.substring(0, 25)}{video.name?.length > 25 ? "..." : ""} · {formatFileSize(video.size)}
               {originalSize > 0 && originalSize !== video.size && (
-                <span style={{ color: "#22c55e", marginLeft: 6, fontSize: 14 }}>
+                <span style={{ color: "#22c55e", marginLeft: 6, fontSize: 11 }}>
                   ✓ compressed from {formatFileSize(originalSize)} ({Math.round((1 - video.size / originalSize) * 100)}% smaller)
                 </span>
               )}
@@ -2558,7 +2524,7 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
               onClick={() => { setVideo(null); setVideoUrl(null); setVideoReady(false); setVideoError(null); }}
               style={{
                 background: "rgba(255,255,255,0.06)", border: "none", borderRadius: 8,
-                padding: "6px 14px", color: "#C4982A", fontSize: 16, fontWeight: 600,
+                padding: "6px 14px", color: "#C4982A", fontSize: 12, fontWeight: 600,
                 cursor: "pointer", fontFamily: "'Outfit', sans-serif",
               }}
             >
@@ -2571,7 +2537,7 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
             <div style={{
               marginTop: 10, padding: "10px 14px", borderRadius: 10,
               background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.2)",
-              fontSize: 16, color: "rgba(245,158,11,0.8)", lineHeight: 1.5,
+              fontSize: 12, color: "rgba(245,158,11,0.8)", lineHeight: 1.5,
             }}>
               <Icon name="info" size={12} /> {videoError}
             </div>
@@ -2581,7 +2547,7 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
 
       {/* Event Selection */}
       <div style={{ marginBottom: 20 }}>
-        <label style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, display: "block", color: "rgba(255,255,255,0.6)" }}>
+        <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, display: "block", color: "rgba(255,255,255,0.6)" }}>
           EVENT
         </label>
         <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(events.length, 4)}, 1fr)`, gap: 8 }}>
@@ -2591,7 +2557,7 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
               onClick={() => setEvent(e)}
               style={{
                 padding: "12px 8px", borderRadius: 10, border: "none", cursor: "pointer",
-                fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 16,
+                fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 12,
                 background: event === e ? "linear-gradient(135deg, #C4982A, #E8C35A)" : "rgba(255,255,255,0.06)",
                 color: event === e ? "#0B1024" : "rgba(255,255,255,0.5)",
                 transition: "all 0.2s",
@@ -2603,7 +2569,7 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
         </div>
         {/* Event-specific filming tip */}
         {event && (
-          <div style={{ marginTop: 8, padding: "8px 12px", borderRadius: 8, background: "rgba(196,152,42,0.04)", fontSize: 14, color: "rgba(255,255,255,0.4)", lineHeight: 1.5 }}>
+          <div style={{ marginTop: 8, padding: "8px 12px", borderRadius: 8, background: "rgba(196,152,42,0.04)", fontSize: 11, color: "rgba(255,255,255,0.4)", lineHeight: 1.5 }}>
             {{
               "Vault": "Best angle: side view, capturing the full run and landing. Get the board contact!",
               "Uneven Bars": "Best angle: side view from the low bar side. Capture transitions between bars.",
@@ -2620,19 +2586,19 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
 
       {/* Meet Information — compact */}
       <div style={{ marginBottom: 16 }}>
-        <label style={{ fontSize: 16, fontWeight: 600, marginBottom: 6, display: "block", color: "rgba(255,255,255,0.4)" }}>
+        <label style={{ fontSize: 12, fontWeight: 600, marginBottom: 6, display: "block", color: "rgba(255,255,255,0.4)" }}>
           MEET DETAILS (optional)
         </label>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
-          <input className="input-field" placeholder="Meet name" value={meetName} onChange={e => setMeetName(e.target.value)} style={{ fontSize: 16, padding: "10px 12px" }} />
-          <input className="input-field" placeholder="Location" value={meetLocation} onChange={e => setMeetLocation(e.target.value)} style={{ fontSize: 16, padding: "10px 12px" }} />
-          <input className="input-field" type="date" value={meetDate} onChange={e => setMeetDate(e.target.value)} style={{ fontSize: 16, padding: "10px 12px" }} />
+          <input className="input-field" placeholder="Meet name" value={meetName} onChange={e => setMeetName(e.target.value)} style={{ fontSize: 12, padding: "10px 12px" }} />
+          <input className="input-field" placeholder="Location" value={meetLocation} onChange={e => setMeetLocation(e.target.value)} style={{ fontSize: 12, padding: "10px 12px" }} />
+          <input className="input-field" type="date" value={meetDate} onChange={e => setMeetDate(e.target.value)} style={{ fontSize: 12, padding: "10px 12px" }} />
         </div>
       </div>
 
       {/* Notes */}
       <div style={{ marginBottom: 20 }}>
-        <label style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, display: "block", color: "rgba(255,255,255,0.6)" }}>
+        <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, display: "block", color: "rgba(255,255,255,0.6)" }}>
           NOTES FOR JUDGE (OPTIONAL)
         </label>
         <textarea
@@ -2647,22 +2613,22 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
 
       {/* Video Tips — visual checklist */}
       <div className="card" style={{ padding: 16, marginBottom: 16 }}>
-        <h4 style={{ fontSize: 16, fontWeight: 700, color: "#C4982A", marginBottom: 10 }}>
+        <h4 style={{ fontSize: 13, fontWeight: 700, color: "#C4982A", marginBottom: 10 }}>
           Tips for best results
         </h4>
         {[
-          { svgIcon: "eye", tip: "Film from the side at apparatus height" },
-          { svgIcon: "user", tip: "Keep the full body in frame, salute to salute" },
-          { svgIcon: "camera", tip: "Hold camera steady — tripod or lean on something" },
-          { svgIcon: "sparkle", tip: "Good lighting, minimal background clutter" },
-          { svgIcon: "clock", tip: "Keep under 2 minutes for fastest processing" },
+          { icon: "📐", tip: "Film from the side at apparatus height" },
+          { icon: "🧍", tip: "Keep the full body in frame, salute to salute" },
+          { icon: "📱", tip: "Hold camera steady — tripod or lean on something" },
+          { icon: "💡", tip: "Good lighting, minimal background clutter" },
+          { icon: "⏱", tip: "Keep under 2 minutes for fastest processing" },
         ].map((t, i) => (
           <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "5px 0" }}>
-            <Icon name={t.svgIcon} size={14} color="rgba(196,152,42,0.6)" />
-            <span style={{ fontSize: 16, color: "rgba(255,255,255,0.5)" }}>{t.tip}</span>
+            <span style={{ fontSize: 14, flexShrink: 0 }}>{t.icon}</span>
+            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>{t.tip}</span>
           </div>
         ))}
-        <div style={{ fontSize: 14, color: "rgba(255,255,255,0.25)", marginTop: 8, paddingTop: 8, borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", marginTop: 8, paddingTop: 8, borderTop: "1px solid rgba(255,255,255,0.04)" }}>
           iPhone tip: If video won't load, go to Settings → Camera → Formats → "Most Compatible" before filming.
         </div>
       </div>
@@ -2673,8 +2639,8 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
         padding: "10px 14px", borderRadius: 10, marginBottom: 12,
         background: "rgba(59,130,246,0.04)", border: "1px solid rgba(59,130,246,0.08)",
       }}>
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(147,197,253,0.7)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>
-        <span style={{ fontSize: 14, color: "rgba(147,197,253,0.7)" }}>Video processed on-device. Only frames sent to AI. Your data stays private.</span>
+        <span style={{ fontSize: 13 }}>🔒</span>
+        <span style={{ fontSize: 11, color: "rgba(147,197,253,0.7)" }}>Video processed on-device. Only frames sent to AI. Your data stays private.</span>
       </div>
 
       {/* API Key Status */}
@@ -2683,14 +2649,14 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
           padding: 16, borderRadius: 14, marginBottom: 16,
           background: "rgba(196,152,42,0.04)", border: "1px solid rgba(196,152,42,0.12)",
         }}>
-          <div style={{ fontSize: 16, fontWeight: 700, color: "#C4982A", marginBottom: 6 }}>
-            One-time setup
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#C4982A", marginBottom: 6 }}>
+            🔑 One-time setup
           </div>
-          <div style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", lineHeight: 1.6, marginBottom: 10 }}>
-            STRIVE needs a free API key to analyze videos. Takes 30 seconds:
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", lineHeight: 1.6, marginBottom: 10 }}>
+            STRIVE needs a free Gemini API key to analyze videos. Takes 30 seconds:
           </div>
-          <div style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", marginBottom: 12, lineHeight: 1.8 }}>
-            <span style={{ color: "#C4982A", fontWeight: 700 }}>1.</span>{" "}<span style={{ color: "#C4982A", cursor: "pointer", textDecoration: "underline" }} onClick={() => window.open("https://aistudio.google.com/apikey", "_blank")}>Get your free API key</span><br/>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginBottom: 12, lineHeight: 1.8 }}>
+            <span style={{ color: "#C4982A", fontWeight: 700 }}>1.</span>{" "}<span style={{ color: "#C4982A", cursor: "pointer", textDecoration: "underline" }} onClick={() => window.open("https://aistudio.google.com/apikey", "_blank")}>Open aistudio.google.com/apikey</span><br/>
             <span style={{ color: "#C4982A", fontWeight: 700 }}>2.</span> Click "Create API Key"<br/>
             <span style={{ color: "#C4982A", fontWeight: 700 }}>3.</span> Paste below
           </div>
@@ -2701,7 +2667,7 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
               placeholder="Paste API key (AIza...)"
               value={inlineKey}
               onChange={e => setInlineKey(e.target.value)}
-              style={{ fontSize: 16, flex: 1 }}
+              style={{ fontSize: 12, flex: 1 }}
             />
             <button
               onClick={async () => {
@@ -2717,7 +2683,7 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
               style={{
                 background: "linear-gradient(135deg, #C4982A, #E8C35A)",
                 color: "#0B1024", border: "none", borderRadius: 10,
-                padding: "0 20px", fontWeight: 700, fontSize: 16,
+                padding: "0 20px", fontWeight: 700, fontSize: 13,
                 cursor: inlineKey.trim() ? "pointer" : "not-allowed",
                 opacity: inlineKey.trim() ? 1 : 0.4,
                 fontFamily: "'Outfit', sans-serif", whiteSpace: "nowrap",
@@ -2734,18 +2700,18 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
           background: "rgba(34,197,94,0.04)", border: "1px solid rgba(34,197,94,0.08)",
         }}>
           <span style={{ color: "#22c55e", fontSize: 14 }}>✓</span>
-          <span style={{ fontSize: 16, color: "rgba(34,197,94,0.7)" }}>2-pass analysis engine ready</span>
-          <span style={{ fontSize: 14, color: "rgba(255,255,255,0.15)", marginLeft: "auto" }}>Detect → Judge</span>
+          <span style={{ fontSize: 12, color: "rgba(34,197,94,0.7)" }}>3-pass analysis engine ready</span>
+          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.15)", marginLeft: "auto" }}>Detect → Judge → Verify</span>
         </div>
       ) : (
         <div style={{ padding: "10px 14px", borderRadius: 10, marginBottom: 16, background: "rgba(255,255,255,0.02)" }}>
-          <span style={{ fontSize: 16, color: "rgba(255,255,255,0.3)" }}>Checking API key...</span>
+          <span style={{ fontSize: 12, color: "rgba(255,255,255,0.3)" }}>Checking API key...</span>
         </div>
       )}
 
       <button
         className="btn-gold"
-        onClick={() => onAnalyze({ video, videoUrl, videoFile: video, event, notes, meetName, meetLocation, meetDate })}
+        onClick={() => onAnalyze({ video, videoUrl, event, notes, meetName, meetLocation, meetDate })}
         disabled={!video || !event || compressing}
         style={{
           width: "100%", fontSize: 17, padding: 18,
@@ -2843,8 +2809,8 @@ function AnalyzingScreen({ uploadData, profile, onComplete, onBack }) {
       try {
         const vw = video.videoWidth || 640;
         const vh = video.videoHeight || 480;
-        // 1080p resolution (1920px width) for accurate form analysis
-        canvas.width = Math.min(vw, 1920);
+        // 720p resolution (1280px width) for better detail
+        canvas.width = Math.min(vw, 1280);
         canvas.height = Math.round(canvas.width * (vh / vw));
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
@@ -2906,7 +2872,7 @@ function AnalyzingScreen({ uploadData, profile, onComplete, onBack }) {
           try {
             const vw = video.videoWidth || 640;
             const vh = video.videoHeight || 480;
-            canvas.width = Math.min(vw, 1920);
+            canvas.width = Math.min(vw, 1280);
             canvas.height = Math.round(canvas.width * (vh / vw));
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
@@ -2944,7 +2910,7 @@ function AnalyzingScreen({ uploadData, profile, onComplete, onBack }) {
       try {
         const vw = video.videoWidth || 640;
         const vh = video.videoHeight || 480;
-        canvas.width = Math.min(vw, 1920);
+        canvas.width = Math.min(vw, 640);
         canvas.height = Math.round(canvas.width * (vh / vw));
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
@@ -3069,209 +3035,12 @@ function AnalyzingScreen({ uploadData, profile, onComplete, onBack }) {
 
   // (runPoseDetection removed — AI provides joint data directly)
 
-  // ── State Official judging prompt — returns JSON directly ──
-  // skillList: optional array from Pass 1 skill detection [{time, skill, type}]
-  const buildJudgingPrompt = useCallback((skillList) => {
-    const gender = profile.gender === "female" ? "Women's" : "Men's";
-    const eventName = uploadData.event;
-    const level = profile.level;
-    const isXcel = profile.levelCategory === "xcel";
-    const isCompulsory = profile.levelCategory === "compulsory";
-    const splitThreshold = isXcel
-      ? (level.includes("Bronze") || level.includes("Silver") ? "90" : level.includes("Gold") ? "120" : "150")
-      : (level.includes("6") || level.includes("7") ? "150" : "180");
-
-    return `You are the UNIVERSAL GYMNASTICS JUDGING ENGINE (UGJE). You are a Brevet-level USAG Official at a State Championship judging this ${gender} ${eventName} routine (${level}).
-
-You must be deterministic. Given the same video, produce the same deductions every time. Do not vary your output randomly.
-
-YOUR PRIMARY METHOD: Watch the video and judge EXACTLY as a real judge would — by watching what the gymnast does with your own eyes. You are fully capable of seeing form breaks, body positions, landing quality, and execution errors directly from the video. Trust your visual analysis. Do NOT fabricate or guess angle measurements — only include approximate angles when you can genuinely estimate them from what you see.
-
-No benefit of the doubt — if form is not picture-perfect, the deduction is taken.
-
-═══ STEP 1: IDENTIFICATION ═══
-${skillList && skillList.length > 0 ? `The following ${skillList.length} skills were identified in this routine by a prior analysis pass. You MUST judge EACH of these skills for execution errors. Do not skip any, and do not add skills that are not on this list unless you clearly see one that was missed.
-
-SKILL LIST:
-${skillList.map((s, i) => `${i + 1}. [${s.time}] ${s.skill} (${s.type})`).join("\n")}
-` : `Watch the full video and identify every distinct skill performed. For each skill, log:
-- Skill name, timestamp, and category (acrobatic, dance/leap, turn, mount, dismount, connection)
-- For ${eventName}: identify ${eventName === "Balance Beam" ? "mounts, acro series, leaps/jumps, turns, connections, and dismount" : eventName === "Uneven Bars" ? "kips, casts, releases, swings, transitions, and dismount" : eventName === "Floor Exercise" ? "tumbling passes, leaps/jumps, turns, and dance sequences" : "board contact, flight phase, and landing"}.`}
-${isCompulsory ? 'COMPULSORY (' + level + '): Note every deviation from the prescribed routine as an additional deduction (0.05-0.20).' : ''}
-${isXcel ? level + ': Verify all 4 Special Requirements are present (0.50 each if missing).' : ''}
-
-═══ STEP 2: JUDGE EACH SKILL ═══
-For each identified skill, WATCH IT TWICE before judging. On the first viewing, observe the overall quality. On the second viewing, look specifically for form breaks. Only deduct for faults you can CLEARLY SEE in both viewings.
-
-CRITICAL SCORING EXPECTATIONS:
-- You MUST find at least 6-10 separate deductions. Most skills have at least one small fault.
-- If your total deductions are below 0.50 for any routine, you are being too lenient. Go back and look harder.
-- Expected deductions: 0.70-1.50 for a typical competitive routine.
-- Multiple deductions CAN apply to a single element (bent knees AND leg separation = 2 deductions).
-- A typical ${level} routine has 8-15 deductions. If you find fewer than 5, YOU ARE MISSING DEDUCTIONS. Go back and look harder.
-- Total deductions should be 0.80-2.00 for most routines. Finding only 0.10-0.30 total means you missed most of the real errors.
-- EVERY skill has at least minor execution imperfections. Perfect 10.0 execution essentially doesn't exist below elite level.
-- Common deductions you MUST look for on EVERY skill: toe point, knee bend, body alignment, landing control.
-- If a gymnast scored 8.0-8.5 in competition, you should find 10-15 deductions totaling 1.50-2.00.
-
-CALIBRATION BENCHMARKS:
-- An 8.5 real score means ~1.50 in total deductions. An 8.9 means ~1.10. A 9.2 means ~0.80.
-- A 9.5+ means ~0.50 or fewer — this is exceptional and rare below elite level.
-- If your deduction total is under 0.50, you are almost certainly missing real faults.
-
-WHAT TO LOOK FOR:
-- Toe point: Are feet pointed or flexed? Flexed feet = 0.05 each occurrence.
-- Knee tension: Are legs straight when they should be? Soft/bent knees in flight = 0.05-0.10.
-- Body alignment: In handstands and inverted positions, is the body straight and vertical? Deviations = 0.05-0.10.
-- Leg separation: In saltos/flight, are knees together? "Cowboy" (knees apart wider than shoulders) = 0.10-0.20. This is one of the most visible errors — look for it in every tuck.
-- Split positions: In leaps/jumps, does the split reach ${splitThreshold}°? Most gymnasts at ${level} show 110-140° which is a 0.10-0.20 deduction. EVERY leap and jump must be evaluated for split position.
-- Acrobatic skills: Check body shape (tight tuck/pike/layout), rotation completion, and landing.
-- Landings: Watch for steps, hops, squat depth, chest position. EVERY landing must be evaluated separately.
-
-ANALYSIS ENGINES (tag every deduction + provide measured vs required):
-These engines categorize each deduction AND provide the motion analysis data that coaches, gymnasts, and parents use as a training tool to understand WHY a deduction was taken. For each deduction, tag the engine AND include the measured angle/position vs the skill requirement so the athlete can see the gap.
-- TPM (Toe Point Monitor) — foot/ankle position. Measured: estimated shin-to-foot angle. Required: 180° (fully pointed). Example: "Measured ~155°, required 180° — feet visibly flexed in flight."
-- KTM (Knee Tension Monitor) — knee straightness. Measured: estimated knee angle. Required: 175°+ (straight). Example: "Measured ~160°, required 175° — noticeably bent knees in back handspring."
-- VAE (Verticality & Alignment Engine) — body line in inverted/vertical positions. Measured: estimated deviation from vertical. Required: within 10°. Example: "~15° past vertical in handstand."
-- Split-Check — split amplitude in leaps/jumps. Measured: estimated hip vertex angle. Required: ${splitThreshold}° for ${level}. Example: "Measured ~130°, required ${splitThreshold}° — split visibly short."
-- Landing — landing mechanics. Measured: chest angle, knee flexion, steps/hops. Required: upright chest, controlled absorption, no extra steps.
-- General — artistry, rhythm, or other execution faults.
-Estimate angles from what you genuinely see in the video. Approximate is fine ("~155°", "~130°") — the goal is to show the athlete how far off they are from the standard, not to be a protractor. Do NOT fabricate precise numbers you cannot actually see.
-
-═══ STEP 3: SCORING OUTPUT ═══
-Compile all deductions into the scorecard. Rules:
-- DEDUCT PER-SKILL, NOT PER-PASS. In a tumbling pass like "Round-off BHS back tuck", the round-off, BHS, and back tuck each get their OWN deduction row if they have form errors. Do NOT write one row for the entire pass.
-- A single skill can have MULTIPLE faults combined into ONE deduction (e.g. BHS with bent elbows -0.10 AND neutral feet -0.05 = one row at -0.15 for BHS citing both faults).
-- EVERY landing gets its OWN row (step, hop, or squat). Landing deductions are separate from the preceding skill.
-- Use "Global" ONLY for artistry/presentation or a fault that is truly identical on 4+ skills. If a skill has a distinct fault (e.g. BHS elbows bent, back tuck cowboy knees), it MUST get its own row even if other skills also have minor knees/feet issues.
-
-CONSOLIDATION RULES (especially important for Bars):
-- List each SKILL only ONCE. If soft knees appear on every cast, write ONE row with combined deduction.
-- A routine should have 8-15 deduction rows, NOT 30-40. Consolidate recurring faults.
-- Group recurring execution errors as ONE "Global" deduction of 0.10-0.20 (e.g. "Global: persistent knee bend across 4 casts — 0.10").
-
-- ${eventName === "Uneven Bars" ? "8-12" : eventName === "Floor Exercise" ? "8-12" : eventName === "Balance Beam" ? "8-12" : "5-8"} deduction entries expected.
-- Expected total deductions: 0.80-1.50 for a solid ${level} routine.
-- Expected final score: 8.00-9.50. If below 7.50, you are too strict.
-- Describe the fault you actually see. Include approximate angles only when you can genuinely estimate them.
-- Deduction values are positive (0.10 not -0.10).
-- "severity": "small" (0.05-0.10), "medium" (0.10-0.15), "large" (0.20-0.30), "veryLarge" (0.30-0.50), "fall" (0.50+)
-- "category": "execution", "artistry", or "landing"
-- "engine": "TPM", "KTM", "VAE", "Split-Check", "Landing", or "General"
-- Use "Global" as timestamp for artistry/whole-routine deductions.
-
-═══ STEP 4: SUMMARY ═══
-Write truthAnalysis (2-3 paragraphs): why this score, biggest math win, path to improvement.
-List strengths (with timestamps) and areas for improvement.
-List topFixes: the 3 changes that would save the most points, with specific drills.
-
-═══ RESPONSE FORMAT ═══
-YOU MUST RESPOND WITH VALID JSON ONLY. No markdown, no extra text.
-
-{"skillAnalysis":[{"timestamp":"0:04","skill":"Round-off","type":"acro","verdict":"deduction","score":"clean"|"minor"|"moderate"|"major","deduction":0.10,"fault":"Slight knee bend during support phase","correction":"Focus on locked arms through the entire support. Drill: handstand snaps against wall","engine":"KTM","measuredVsIdeal":"Knee ~165° vs required 175°+","skeleton":null}],"executionDeductions":[{"timestamp":"0:04","skill":"Round-off","deduction":0.10,"engine":"KTM","fault":"Slight knee bend","category":"execution","severity":"small","correction":"Wall handstand snaps","confidence":0.85,"skeleton":null}],"executionDeductionsTotal":1.25,"artistryDeductionsTotal":0.20,"finalScore":8.550,"truthAnalysis":"...","topFixes":[{"name":"Fix name","saves":0.15,"drill":"Specific drill"}],"strengths":["Strength 1"],"areasForImprovement":["Area 1"],"overallAssessment":"2-3 sentence judge summary","biomechanics":{"keyMoments":[{"timestamp":"0:08","skill":"Back tuck","phase":"takeoff","jointAngles":{"lKnee":142,"rKnee":145},"angularVelocity":{"hip":320,"knee":280},"notes":"Good height"}],"landingAnalysis":[{"timestamp":"0:12","skill":"Landing","kneeFlexionAtImpact":155,"chestAngle":72,"stepsAfter":1,"impactRisk":"low","notes":"One step forward"}],"holdDurations":[],"injuryRiskFlags":[],"overallFlightHeight":"adequate","overallPowerRating":"7/10"},"coachReport":{"preemptiveCorrections":[],"conditioningPlan":[],"idealComparison":"","techniqueProgressionNotes":""},"athleteDevelopment":{"mentalTraining":[],"goalSpecificAdvice":""}}
-
-SKILL ANALYSIS (REQUIRED — the core product):
-The skillAnalysis array is the MOST IMPORTANT part of the response. It must contain ONE entry for EVERY skill performed in the routine, whether deducted or not.
-- "verdict": "clean" (no deduction), "deduction" (has a deduction), or "strength" (notably well-executed)  
-- "score": "clean" (perfect/near-perfect), "minor" (0.05), "moderate" (0.10-0.15), "major" (0.20+)
-- For "clean" skills: still describe what was good about execution in the "correction" field (rename as "notes" mentally)
-- For deducted skills: include fault, correction with specific drill, engine, measuredVsIdeal
-- "skeleton": Include for ANY skill where body position matters. Provide joints as normalized [0-1] coordinates for the body position at the moment of the fault (or peak of the skill for clean ones). Include faultJoints array and angles array [{joint, measured, ideal, label}].
-- Every skill gets an entry. A typical routine has 10-15 skills. If you have fewer than 8 skillAnalysis entries, you missed skills.
-
-CONFIDENCE SCORES: Every deduction MUST include "confidence" (0.0-1.0). Use 0.9+ for clearly visible errors you can see plainly in the video, 0.7-0.9 for likely errors, 0.5-0.7 for probable errors that are hard to confirm from the camera angle, below 0.5 only if you're unsure but it looks wrong. Do NOT include deductions with confidence below 0.3.
-
-SKELETON & MOTION ANALYSIS (Training Tool Layer):
-This data overlays on the video so gymnasts, coaches, and parents can VISUALLY SEE what the judge saw. It turns deductions into teaching moments.
-- skeleton: Include for the TOP 3 deductions. Provide joints as normalized [0-1] coordinates, faultJoints (joints involved in the fault), and angles (measured vs ideal for that skill). This lets the app draw the body position with highlighted problem areas.
-- For all other deductions, set skeleton to null. Prioritize complete scoring data over skeleton detail.
-
-BIOMECHANICS (fills the training/teaching layer):
-Fill completely — this is what coaches and parents review between the judging scorecard and the video replay.
-- keyMoments: For each major skill, show joint angles, angular velocity, and what was good or needs work. This is how athletes learn what their body is doing.
-- landingAnalysis: Every landing — knee flexion, chest angle, steps. Parents can see why a landing lost points.
-- holdDurations: Static holds — measured vs required time.
-- injuryRiskFlags: Flag positions that could lead to injury if not corrected. Coaches prioritize these.
-
-COACH REPORT:
-- preemptiveCorrections: technique habits forming NOW that become problems at higher levels. Include drill to fix.
-- conditioningPlan: 3-5 exercises addressing ROOT CAUSES of deductions (sets/reps/frequency).
-- idealComparison: compare to ideal model for ${level}.
-- techniqueProgressionNotes: what to train next.
-
-ATHLETE DEVELOPMENT for ${profile.age ? profile.age + '-year-old' : ''} ${String(gender || "").toLowerCase()} gymnast at ${level}${profile.goals ? ' (goal: ' + profile.goals + ')' : ''}:
-- mentalTraining: ${profile.goals ? 'techniques for goal of "' + profile.goals + '"' : 'visualization, pressure management'} appropriate for age.
-- goalSpecificAdvice: ${profile.goals ? 'Specific advice for "' + profile.goals + '" at ' + level + '.' : 'General development advice for ' + level + '.'}
-
-RESPONSE PRIORITY (if running low on output tokens):
-1. skillAnalysis array — ONE entry per skill, with full data (REQUIRED — this IS the product)
-2. executionDeductions + finalScore + totals (REQUIRED — the scorecard)
-3. truthAnalysis, topFixes, strengths, areasForImprovement, overallAssessment (REQUIRED)
-4. biomechanics — keyMoments, landingAnalysis, injuryRiskFlags (IMPORTANT)
-5. skeleton data on deducted skills (IMPORTANT)
-6. coachReport (important)
-7. athleteDevelopment (brief is fine)
-${uploadData.notes ? '\nCoach notes: "' + uploadData.notes + '"' : ''}`;
-  }, [profile, uploadData]);
-
-  // ── Pass 1: Skill Detection prompt — fast, small output ──
-  const buildSkillDetectionPrompt = useCallback(() => {
-    const gender = profile.gender === "female" ? "Women's" : "Men's";
-    const eventName = uploadData.event;
-    const level = profile.level;
-    const isCompulsory = profile.levelCategory === "compulsory";
-
-    return `Watch this ${gender} ${eventName} routine (${level}) from start to finish. Identify EVERY distinct gymnastics skill/element performed in chronological order.
-
-CRITICAL RULES:
-- Each skill should appear ONLY ONCE. Do NOT list the same skill at multiple timestamps.
-- A typical ${eventName} routine at ${level} has 8-15 distinct elements. If you're listing more than 15, you are probably counting the same skill twice.
-- For tumbling passes: list EACH INDIVIDUAL SKILL within the pass separately (e.g. a "Round-off BHS back tuck" pass = 3 entries: "Round-off" at 0:32, "Back handspring" at 0:33, "Back tuck" at 0:34), each with its own timestamp (1 second apart for connected skills).
-- Landing is a separate entry if it has a notable deduction (step, hop, etc.).
-
-For each skill, provide:
-- "time": timestamp in M:SS format (e.g. "0:04", "1:12")
-- "skill": standard gymnastics name (e.g. "Round-off", "Back handspring", "Back tuck", "Split leap")
-- "type": one of "acro", "dance", "turn", "mount", "dismount", "connection", "pose", "landing"
-
-${eventName === "Balance Beam" ? "Include: mount, all acro elements, leaps/jumps (note if connected), turns, acro series, and dismount." : ""}${eventName === "Uneven Bars" ? "Include: mount/kip, all casts, releases, swings, transitions between bars, and dismount." : ""}${eventName === "Floor Exercise" ? "Include: each tumbling pass broken into individual skills (round-off, BHS, salto each listed separately), leaps/jumps, turns, and dance sequences. A typical Level 6-8 floor routine has 2-3 tumbling passes, 2-3 leaps/jumps, 1-2 turns, and choreography." : ""}${eventName === "Vault" ? "Include: run, board contact/hurdle, flight phase (name the vault), and landing." : ""}
-${isCompulsory ? 'This is a COMPULSORY routine (' + level + '). List each element from the prescribed routine and note if it was performed correctly, modified, or missing.' : ''}
-
-RESPOND WITH VALID JSON ONLY:
-{"skills":[{"time":"0:32","skill":"Round-off","type":"acro"},{"time":"0:33","skill":"Back handspring","type":"acro"},{"time":"0:34","skill":"Back tuck","type":"acro"},{"time":"0:35","skill":"Landing","type":"landing"},{"time":"0:44","skill":"Split leap","type":"dance"}],"routineDuration":"1:15","skillCount":12}`;
-  }, [profile, uploadData]);
-
-  // Simplified prompt for retry on truncated responses — core scorecard only
-  const buildSimplifiedPrompt = useCallback(() => {
-    const gender = profile.gender === "female" ? "Women's" : "Men's";
-    const level = profile.level;
-    const isXcel = profile.levelCategory === "xcel";
-    const isCompulsory = profile.levelCategory === "compulsory";
-    const splitThreshold = isXcel
-      ? (level.includes("Bronze") || level.includes("Silver") ? "90" : level.includes("Gold") ? "120" : "150")
-      : (level.includes("6") || level.includes("7") ? "150" : "180");
-
-    return `Analyze this ${gender} ${uploadData.event} routine (${level}) as a Brevet-level USAG Official. Strict judging — no benefit of the doubt. Judge by watching the video directly — trust what you see.
-
-LOOK FOR: Toe point (flexed feet=0.05), knee tension (bent knees=0.05-0.10), body alignment (0.05-0.10), split positions (must reach ${splitThreshold}° at ${level}, 0.10-0.20 if short), leg separation/cowboy (0.10-0.20), landing steps/hops/squat. Tag each deduction with engine: TPM/KTM/VAE/Split-Check/Landing/General.
-${isCompulsory ? 'COMPULSORY: Deduct for deviations from prescribed routine.' : ''}${isXcel ? level + ': Check 4 Special Requirements (0.50 each if missing).' : ''}
-
-RULES: Deduct PER-SKILL within tumbling passes (round-off, BHS, tuck each get their own row). Every landing gets its own row. Use "Global" ONLY for artistry or faults appearing 4+ times identically. Max 12 entries. Expected score: 8.00-9.50. Describe what you see — include approximate angles only when you can genuinely estimate them.
-
-RESPOND WITH VALID JSON ONLY:
-{"executionDeductions":[{"timestamp":"0:12","skill":"...","deduction":0.10,"engine":"KTM","fault":"...","category":"execution","severity":"small","confidence":0.92,"skeleton":null}],"executionDeductionsTotal":0.80,"artistryDeductionsTotal":0.20,"finalScore":9.00,"truthAnalysis":"Why this score, biggest math win, path to improvement.","topFixes":[{"name":"...","saves":0.15,"drill":"..."}],"strengths":["..."],"areasForImprovement":["..."]}
-
-"severity": "small"/"medium"/"large"/"veryLarge"/"fall". "category": "execution"/"artistry"/"landing". "engine": "TPM"/"KTM"/"VAE"/"Split-Check"/"Landing"/"General".`;
-  }, [profile, uploadData]);
-
-  // ── Gemini Video Upload (reusable — returns file reference for multiple API calls) ──
+  // ── Gemini File Upload — uploads video to File API, returns reference ──
   const uploadVideoToGemini = useCallback(async (videoFile, apiKey) => {
     const mimeType = videoFile.type || "video/mp4";
-
-    // Step 1: Start resumable upload to File API
     setStatus("Uploading video...");
     setProgress(40);
-    log.info("upload", `Uploading: ${videoFile.name} (${(videoFile.size / 1024 / 1024).toFixed(1)}MB)`);
+    log.info("upload", `Uploading: ${videoFile.name} (${(videoFile.size/1024/1024).toFixed(1)}MB)`);
 
     const startRes = await fetch(`https://generativelanguage.googleapis.com/upload/v1beta/files?key=${apiKey}`, {
       method: "POST",
@@ -3284,17 +3053,12 @@ RESPOND WITH VALID JSON ONLY:
       },
       body: JSON.stringify({ file: { display_name: "routine_" + Date.now() } }),
     });
-
-    if (!startRes.ok) {
-      const errText = await startRes.text().catch(() => "");
-      throw new Error(`Upload init failed (${startRes.status}): ${errText}`);
-    }
+    if (!startRes.ok) throw new Error(`Upload init failed (${startRes.status})`);
 
     const uploadUrl = startRes.headers.get("X-Goog-Upload-URL") || startRes.headers.get("x-goog-upload-url");
-    if (!uploadUrl) throw new Error("No upload URL returned from File API");
+    if (!uploadUrl) throw new Error("No upload URL returned");
 
-    // Step 2: Upload the video bytes
-    setStatus("Sending video to analysis engine...");
+    setStatus("Sending video to AI judge...");
     setProgress(50);
 
     const uploadRes = await fetch(uploadUrl, {
@@ -3306,51 +3070,40 @@ RESPOND WITH VALID JSON ONLY:
       },
       body: videoFile,
     });
-
     if (!uploadRes.ok) throw new Error(`Upload failed (${uploadRes.status})`);
+
     const fileInfo = await uploadRes.json();
-    const fileUri = fileInfo.file?.uri;
+    const fileUri  = fileInfo.file?.uri;
     const fileName = fileInfo.file?.name;
     if (!fileUri) throw new Error("No file URI returned");
-    log.info("upload", `Video uploaded: ${fileName} URI: ${fileUri}`);
+    log.info("upload", `Uploaded: ${fileName}`);
 
-    // Step 3: Poll until video is processed
-    setStatus("Processing video (this may take 30-60 seconds)...");
+    // Poll until ACTIVE
+    setStatus("Processing video...");
     setProgress(58);
-
-    let fileReady = false;
     for (let i = 0; i < 40; i++) {
       await new Promise(r => setTimeout(r, 2000));
       try {
-        const checkRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/${fileName}?key=${apiKey}`);
-        if (checkRes.ok) {
-          const checkData = await checkRes.json();
-          log.info("upload", `File state: ${checkData.state} (poll ${i + 1})`);
-          if (checkData.state === "ACTIVE") { fileReady = true; break; }
-          if (checkData.state === "FAILED") throw new Error("Video processing failed on server");
+        const check = await fetch(`https://generativelanguage.googleapis.com/v1beta/${fileName}?key=${apiKey}`);
+        if (check.ok) {
+          const data = await check.json();
+          log.info("upload", `File state: ${data.state} (poll ${i+1})`);
+          if (data.state === "ACTIVE") break;
+          if (data.state === "FAILED") throw new Error("Video processing failed on server");
         }
-      } catch (e) {
-        if (e.message.includes("failed")) throw e;
-      }
-      setProgress(58 + Math.min(15, Math.floor(i / 2)));
+      } catch (e) { if (e.message.includes("failed")) throw e; }
+      setProgress(58 + Math.min(10, Math.floor(i / 2)));
+      if (i === 39) throw new Error("Video processing timed out");
     }
-    if (!fileReady) throw new Error("Video processing timed out after 80 seconds");
-
     return { fileUri, fileName, mimeType };
   }, []);
 
-  // ── Gemini Generate (call the model with an already-uploaded file) ──
+  // ── Gemini Generate — call the model with an uploaded file ──
   const geminiGenerate = useCallback(async (fileRef, prompt, apiKey, config = {}) => {
-    const {
-      maxOutputTokens = 65536,
-      thinkingBudget = 8192,
-      responseMimeType = "application/json",
-      label = "analysis",
-    } = config;
+    const { maxOutputTokens = 65536, thinkingBudget = 24576, label = "analysis" } = config;
+    log.info("gemini", `[${label}] Sending prompt (${prompt.length} chars)`);
 
-    log.info("gemini", `[${label}] Sending prompt (${prompt.length} chars) to gemini-2.5-flash`);
-
-    const analysisRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -3363,517 +3116,443 @@ RESPOND WITH VALID JSON ONLY:
         generationConfig: {
           maxOutputTokens,
           temperature: 0,
-          topP: 1,
-          topK: 1,
-          responseMimeType,
+          responseMimeType: "application/json",
           thinkingConfig: { thinkingBudget },
         },
       }),
     });
 
-    if (!analysisRes.ok) {
-      const errText = await analysisRes.text().catch(() => "");
-      throw new Error(`${label} failed (${analysisRes.status}): ${errText}`);
+    if (!res.ok) {
+      const errText = await res.text().catch(() => "");
+      throw new Error(`${label} failed (${res.status}): ${errText}`);
     }
 
-    const analysisData = await analysisRes.json();
-    const candidate = analysisData.candidates?.[0] || {};
-    const finishReason = candidate.finishReason || "UNKNOWN";
-    const allParts = candidate.content?.parts || [];
-    const thinkingChars = allParts.filter(p => p.thought).reduce((s, p) => s + (p.text?.length || 0), 0);
-    log.info("gemini", `[${label}] Response: ${allParts.length} parts (finish: ${finishReason}, thinking: ${thinkingChars} chars)`);
-    const rawText = allParts
-      .filter(p => p.text && !p.thought)
-      .map(p => p.text)
-      .join("\n") || allParts.map(p => p.text || "").join("\n");
-    log.info("gemini", `[${label}] Complete. Length: ${rawText.length}, preview: ${rawText.substring(0, 200)}`);
-    if (DEBUG_MODE) console.log(`[gemini ${label} raw]`, rawText); // eslint-disable-line no-console
-    try { localStorage.setItem(`debug-gemini-${label}`, rawText); } catch {}
+    const data = await res.json();
+    const parts = data.candidates?.[0]?.content?.parts || [];
+    const rawText = parts.filter(p => p.text && !p.thought).map(p => p.text).join("\n")
+      || parts.map(p => p.text || "").join("\n");
 
+    log.info("gemini", `[${label}] Response: ${rawText.length} chars`);
+    try { localStorage.setItem(`debug-gemini-${label}`, rawText); } catch {}
     return rawText;
   }, []);
 
-  // ── Legacy wrapper for backward compatibility ──
-  const analyzeWithGeminiVideo = useCallback(async (videoFile, prompt, apiKey) => {
-    const fileRef = await uploadVideoToGemini(videoFile, apiKey);
-    const rawText = await geminiGenerate(fileRef, prompt, apiKey, { label: "judge" });
-    // Cleanup uploaded file
-    try { fetch(`https://generativelanguage.googleapis.com/v1beta/${fileRef.fileName}?key=${apiKey}`, { method: "DELETE" }); } catch {}
-    return rawText;
-  }, [uploadVideoToGemini, geminiGenerate]);
+  // ── State Official judging prompt — returns JSON directly ──
+  // skillList: optional array from Pass 1 skill detection [{time, skill, type}]
+  // ══════════════════════════════════════════════════════════════════
+  // STRIVE 2-PASS GRADING SYSTEM
+  //
+  // Pass 1 — Skill Identification: Watch video, list every skill + timestamp
+  // Pass 2 — Skill Grading:        Grade each skill A-F, one sentence why
+  // Code   — Score Computation:    Grade → deduction → sum → final score
+  //
+  // Gemini observes. Code computes. No contradictions. No fabricated numbers.
+  // ══════════════════════════════════════════════════════════════════
 
+  // ── Level context helper ──────────────────────────────────────────
   // ══════════════════════════════════════════════════════════════════
-  // MAIN ORCHESTRATOR — 2-Pass Gemini Pipeline
-  // Pass 1: Skill detection  →  Pass 2: Execution judging
+  // STRIVE DIRECT JUDGING SYSTEM
+  //
+  // Single prompt. Gemini watches the video and returns every skill
+  // with a deduction on a 0.05 scale and a specific reason.
+  // Code sums deductions and computes the final score — never Gemini.
+  //
+  // Prompt is built dynamically from the athlete's profile:
+  //   level → split angle, expected skills, deduction standards
+  //   event → what elements to look for
+  //   compulsory/optional/xcel → judging context
   // ══════════════════════════════════════════════════════════════════
+
+  const buildJudgingPrompt = useCallback(() => {
+    const level   = profile.level  || "Level 6";
+    const gender  = profile.gender === "female" ? "Women's" : "Men's";
+    const event   = uploadData?.event || "Floor Exercise";
+    const cat     = profile.levelCategory || "optional";
+    const isXcel  = cat === "xcel";
+    const isComp  = cat === "compulsory";
+    const isElite = level === "Elite";
+
+    // ── Split angle minimum by level ────────────────────────────────
+    const splitMin = isXcel
+      ? (level.includes("Bronze") || level.includes("Silver") ? 90
+        : level.includes("Gold") ? 120
+        : level.includes("Platinum") ? 150 : 180)
+      : (["Level 1","Level 2","Level 3","Level 4"].includes(level) ? 90
+        : level === "Level 5" ? 120
+        : (level === "Level 6" || level === "Level 7") ? 150 : 180);
+
+    const splitDed = splitMin <= 90 ? "0.10" : splitMin <= 120 ? "0.10–0.20" : "0.20";
+
+    // ── Score benchmark for this level ─────────────────────────────
+    const bench = SCORE_BENCHMARKS[level];
+    const benchLine = bench
+      ? `Typical ${level} ${event} scores: avg ${bench.avg}, top 10% at ${bench.top10}, range ${bench.low}–${bench.high}.`
+      : "";
+
+    // ── Required skills for this level and event ────────────────────
+    const eventKey = String(event || '').toLowerCase().replace("floor exercise","floor").replace("balance beam","beam")
+      .replace("uneven bars","bars").replace("still rings","bars")
+      .replace("parallel bars","bars").replace("high bar","bars")
+      .replace("pommel horse","vault");
+    const levelSkills = LEVEL_SKILLS[level];
+    const skillsLine = levelSkills?.[eventKey]
+      ? `Required/expected skills at ${level} ${event}: ${levelSkills[eventKey]}.`
+      : "";
+
+    // ── Program context ─────────────────────────────────────────────
+    const programContext = isComp
+      ? `COMPULSORY ROUTINE (${level}): Every gymnast performs the identical prescribed choreography. Deduct for ANY deviation from the required choreography, timing, or element order — in addition to all execution faults.`
+      : isXcel
+      ? `XCEL ${level} ROUTINE: Athlete selects their own skills within Xcel program parameters. Verify all 4 Special Requirements are present (−0.50 each if missing). Split leap/jump minimum is ${splitMin}°.`
+      : isElite
+      ? `ELITE ROUTINE (FIG Code of Points): Judge execution from 10.0 E-score base. D-score is separate. Apply FIG deduction standards strictly.`
+      : `${level} OPTIONAL ROUTINE: Athlete selects their own skills. Split leap/jump minimum is ${splitMin}°. ${level === "Level 5" ? "Round-off BHS back tuck is required." : ""}`;
+
+    // ── Execution deduction standards (from USA Gymnastics code) ────
+    const executionStandards = `
+EXECUTION FAULTS — USA Gymnastics official deduction scale (0.05 increments only):
+  Bent arms:                  slight=0.05  noticeable=0.10  significant=0.20  severe=0.30
+  Bent knees / legs:          slight=0.05  noticeable=0.10  significant=0.20  severe=0.30
+  Leg separation (cowboy):    visible=0.10  wide=0.20
+  Flexed / sickled feet:      0.05 per occurrence
+  Insufficient height/amplitude: 0.05–0.30
+  Body alignment (pike/arch): 0.05–0.30
+  Incomplete rotation/twist:  0.05–0.30
+  Head position error:        0.05–0.10`;
+
+    const landingStandards = `
+LANDING FAULTS — judge every landing separately:
+  Small step:                 0.05
+  Medium step:                0.10
+  Large step / lunge:         0.20–0.30
+  Squat (above 90° knee):     0.10–0.20
+  Deep squat (below 90° knee):0.30
+  Hands on floor (no fall):   0.30
+  Fall:                       0.50
+  Chest drop / posture:       0.05–0.20`;
+
+    const artistryStandards = `
+ARTISTRY FAULTS — use "Global" timestamp:
+  Hollow hands / poor finger lines: 0.05
+  No eye contact with judges:       0.05
+  Lack of confidence / hesitation:  0.05–0.10
+  Poor musicality / rhythm (Floor): 0.05–0.20
+  Flat footwork / no releve:        0.05–0.10
+  Insufficient use of space (Floor):0.05–0.10`;
+
+    const splitStandard = `
+SPLIT LEAP/JUMP REQUIREMENT at ${level}: minimum ${splitMin}°
+  ${splitMin - 15}°–${splitMin - 1}° (close): −0.05–0.10
+  ${splitMin - 30}°–${splitMin - 16}° (short): −${splitDed}
+  Below ${splitMin - 30}° (very short): −0.20–0.30`;
+
+    return `You are a Brevet-level USAG Official at a State Championship judging this ${gender} ${event} routine (${level}).
+
+${programContext}
+
+${skillsLine}
+${benchLine}
+
+You are strictly forbidden from giving benefit of the doubt. If the form is not picture-perfect, the deduction is taken. Judge every single skill — no skipping.
+${executionStandards}
+${landingStandards}
+${artistryStandards}
+${splitStandard}
+
+JUDGING INSTRUCTIONS:
+1. Watch the full routine from start to finish
+2. Identify EVERY distinct skill — including skills done perfectly (deduction = 0.00)
+3. For tumbling passes: list EACH skill separately (round-off, BHS, tuck = 3 rows, timestamps 1 second apart)
+4. Judge EVERY landing as its own separate row
+5. Use "Global" for artistry faults applying to the whole routine
+6. Assign a deduction in 0.05 increments — 0.00 means genuinely clean, celebrate it
+7. Give one specific reason for each deduction AND a strength note for clean skills
+
+IMPORTANT: Include skills with 0.00 deduction — a clean skill deserves recognition. The gymnast and parent need to know what's working, not just what's wrong.
+
+TIMESTAMP RULES:
+- The video starts at exactly 0:00. All timestamps must be relative to the start of the video.
+- Use M:SS format exactly — "0:04", "0:32", "1:02"
+- If the gymnast walks on at 0:00 and the first skill starts at 0:08, use "0:08"
+- Do NOT offset or adjust timestamps — use exactly what you see on the video timeline
+
+DEDUCTION VALUES: 0.00, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.50 ONLY.
+
+Respond with valid JSON only — no markdown, no extra text:
+{
+  "startValue": 10.00,
+  "skills": [
+    {"timestamp": "0:04", "skill": "Opening pose",     "deduction": 0.00, "reason": null,        "strength": "Confident presentation — immediate connection with judges."},
+    {"timestamp": "0:14", "skill": "Dance step",       "deduction": 0.05, "reason": "Flat foot instead of high releve throughout.", "strength": null},
+    {"timestamp": "0:32", "skill": "Round-off",        "deduction": 0.10, "reason": "Knees softened during flight phase.", "strength": "Strong power generation."},
+    {"timestamp": "0:33", "skill": "Back handspring",  "deduction": 0.15, "reason": "Head thrown back early; arms bent on hand contact.", "strength": null},
+    {"timestamp": "0:34", "skill": "Back tuck",        "deduction": 0.20, "reason": "Cowboy position — knees outside shoulder width.", "strength": null},
+    {"timestamp": "0:35", "skill": "Landing",          "deduction": 0.10, "reason": "Chest dropped forward at impact.", "strength": null},
+    {"timestamp": "0:44", "skill": "Split leap",       "deduction": 0.20, "reason": "Split ~${splitMin - 10}° — ${level} requires ${splitMin}° minimum.", "strength": null},
+    {"timestamp": "0:53", "skill": "Full turn",        "deduction": 0.00, "reason": null, "strength": "Excellent center of gravity — no wobble, full rotation completed."},
+    {"timestamp": "Global","skill": "Artistry",        "deduction": 0.10, "reason": "Hollow fingertips; limited eye contact with judges.", "strength": null}
+  ],
+  "artistry": {
+    "fingerLines":   {"deduction": 0.05, "note": "Fingertips hollow rather than engaged throughout."},
+    "eyeContact":    {"deduction": 0.05, "note": "Limited eye contact with judges panel."},
+    "musicality":    {"deduction": 0.00, "note": "Good connection to music tempo."},
+    "confidence":    {"deduction": 0.00, "note": "Strong stage presence — routine performed not just executed."},
+    "footwork":      {"deduction": 0.05, "note": "Flat footwork in dance sections — needs releve."},
+    "spaceUsage":    {"deduction": 0.00, "note": "Good use of floor space."}
+  },
+  "celebrations": [
+    {"timestamp": "0:53", "skill": "Full turn", "note": "Most ${level} gymnasts wobble or hop out of a full turn. Her center of gravity was perfectly controlled — this shows real core strength and balance training."},
+    {"timestamp": "0:32", "skill": "Round-off snap-down", "note": "Excellent power generation for her size. The snap-down created real momentum into the tumbling pass."},
+    {"timestamp": "1:05", "skill": "Final pose", "note": "Held with confidence and maturity. She did not rush off the floor — this shows respect for the judges and performance experience."}
+  ],
+  "whyThisScore": "Two to three sentences explaining specifically why this routine earned this score at ${level}. Reference the biggest deductions, the accumulated micro-faults, and what separates this from a 9.0+ routine.",
+  "pathToNinePointO": "Two to three sentences on exactly what needs to change to break 9.0 at ${level}. Be specific — name the skills and the fixes."
+}`;
+  }, [profile, uploadData]);
+
+  // ── Main analysis orchestrator — single pass ─────────────────────
   const analyzeWithAI = useCallback(async (extractedFrames) => {
     setStatus("Preparing analysis...");
     setProgress(35);
 
-    // Try user's saved key first (manual override), then server proxy, then demo
+    // Get API key: try server proxy first, then user's saved key, then demo fallback
     let apiKey = null;
     try {
-      const k = await storage.get("strive-gemini-key");
-      apiKey = k?.value || null;
-    } catch (e) {}
-
-    // If no user override, fetch from server proxy (Vercel env var)
+      const resp = await fetch("/api/gemini-key");
+      if (resp.ok) { const d = await resp.json(); apiKey = d.key || null; }
+    } catch {}
+    // If no server key, fall back to user's manually-entered key in Settings
     if (!apiKey) {
-      try {
-        const resp = await fetch("/api/gemini-key");
-        if (resp.ok) {
-          const data = await resp.json();
-          apiKey = data.key || null;
-        }
-      } catch {}
+      try { const k = await storage.get("strive-gemini-key"); apiKey = k?.value || null; } catch {}
     }
+    if (!apiKey) throw new Error("No API key. Go to Settings and paste your Gemini key from aistudio.google.com/apikey");
+    if (!uploadData.video) throw new Error("No video file available.");
 
-    if (!apiKey) {
-      throw new Error("No API key found. Go to Settings and paste your free API key to enable video analysis.");
-    }
+    try {
+      // Upload video once
+      const fileRef = await uploadVideoToGemini(uploadData.video, apiKey);
 
-    let result = null;
-    let geminiError = null;
+      // ── Single judging pass ──────────────────────────────────────
+      setStatus(`AI judge evaluating ${profile.level} ${uploadData.event} routine...`);
+      setProgress(68);
 
-    if (apiKey && uploadData.video) {
-      try {
-        // ── Load calibration history to compute AI scoring bias ──
-        let calibrationBias = 0;
-        let calibrationNote = "";
+      const prompt = buildJudgingPrompt();
+      log.info("gemini", `Prompt length: ${prompt.length} chars | Level: ${profile.level} | Event: ${uploadData.event}`);
+
+      let rawResponse = null;
+      for (let attempt = 1; attempt <= 2; attempt++) {
         try {
-          const cal = await storage.get("strive-calibration");
-          if (cal) {
-            const calData = JSON.parse(cal.value);
-            // Filter to matching event+level for most accurate bias
-            const relevant = calData.filter(c => c.event === uploadData.event && c.level === profile.level);
-            const allRecords = relevant.length >= 3 ? relevant : calData; // fall back to all data if <3 matching
-            if (allRecords.length >= 2) {
-              const avgDiff = allRecords.reduce((s, c) => s + (c.diff || 0), 0) / allRecords.length;
-              calibrationBias = Math.round(avgDiff * 1000) / 1000;
-              const dir = calibrationBias > 0 ? "high" : "low";
-              calibrationNote = `CALIBRATION DATA: Based on ${allRecords.length} past score corrections${relevant.length >= 3 ? ` for ${uploadData.event} at ${profile.level}` : ""}, the AI has historically scored ${Math.abs(calibrationBias).toFixed(2)} ${dir} compared to actual meet judges. Adjust your scoring ${calibrationBias > 0 ? "downward" : "upward"} by approximately ${Math.abs(calibrationBias).toFixed(2)} to match real judging panels.`;
-              log.info("calibration", `Bias: ${calibrationBias.toFixed(3)} from ${allRecords.length} records (${relevant.length} event-specific)`);
-            }
-          }
-        } catch (e) { log.warn("calibration", "Failed to load calibration data"); }
-
-        log.info("gemini", "Starting 2-pass analysis pipeline (detect → judge)" + (calibrationNote ? " (with calibration)" : ""));
-
-        // ── Upload video once ──
-        const fileRef = await uploadVideoToGemini(uploadData.video, apiKey);
-
-        // ── PASS 1: Skill Detection (fast) ──
-        let skillList = [];
-        try {
-          setStatus("Pass 1: Identifying skills...");
-          setProgress(68);
-          const skillPrompt = buildSkillDetectionPrompt();
-          const skillRaw = await geminiGenerate(fileRef, skillPrompt, apiKey, {
-            maxOutputTokens: 4096,
-            thinkingBudget: 4096,
-            label: "skill-detect",
+          rawResponse = await geminiGenerate(fileRef, prompt, apiKey, {
+            maxOutputTokens: 8192,
+            thinkingBudget:  8192,
+            label: `judge-${profile.level}-attempt${attempt}`,
           });
-          try {
-            const skillMatch = skillRaw.match(/\{[\s\S]*\}/);
-            if (skillMatch) {
-              const skillData = JSON.parse(skillMatch[0]);
-              skillList = safeArray(skillData.skills).filter(s => s.time && s.skill);
-              log.info("skills", `Pass 1: ${skillList.length} skills: ${skillList.map(s => s.skill).join(", ")}`);
-            }
-          } catch (parseErr) {
-            log.warn("skills", `Skill detection parse failed: ${parseErr.message}`);
-          }
-        } catch (skillErr) {
-          log.warn("skills", `Pass 1 failed: ${skillErr.message}. Single-pass judging.`);
+          if (rawResponse && rawResponse.length > 100 && rawResponse.includes('"skills"')) break;
+          log.warn("judge", `Attempt ${attempt} short or missing skills (${rawResponse?.length} chars). Retrying...`);
+          await new Promise(r => setTimeout(r, 2000));
+        } catch (e) {
+          log.warn("judge", `Attempt ${attempt} failed: ${e.message}`);
+          if (attempt === 2) throw e;
+          await new Promise(r => setTimeout(r, 2000));
         }
-
-        // ── PASS 2: Execution Judging ──
-        setStatus(skillList.length > 0 ? `Pass 2: Judging ${skillList.length} skills...` : "AI judge analyzing routine...");
-        setProgress(78);
-        const judgingPrompt = buildJudgingPrompt(skillList) + (calibrationNote ? "\n\n" + calibrationNote : "");
-
-        let rawAnalysis = null;
-        let lastErr = null;
-        for (let attempt = 1; attempt <= 2; attempt++) {
-          try {
-            const prompt = attempt === 1 ? judgingPrompt : (buildSimplifiedPrompt() + (calibrationNote ? "\n\n" + calibrationNote : ""));
-            if (attempt === 2) {
-              setStatus("Retrying with focused prompt...");
-              log.info("gemini", `Attempt 1 incomplete. Retrying simplified...`);
-            }
-            rawAnalysis = await geminiGenerate(fileRef, prompt, apiKey, {
-              maxOutputTokens: 65536,
-              thinkingBudget: 8192,
-              label: attempt === 1 ? "judge" : "judge-retry",
-            });
-            if (rawAnalysis && rawAnalysis.length >= 50 && rawAnalysis.includes('"finalScore"')) {
-              break;
-            } else if (rawAnalysis && rawAnalysis.length >= 50) {
-              log.warn("gemini", `Attempt ${attempt}: truncated (${rawAnalysis.length} chars, no finalScore)`);
-            } else {
-              rawAnalysis = null;
-              lastErr = new Error("Empty response");
-            }
-          } catch (retryErr) {
-            lastErr = retryErr;
-            log.warn("gemini", `Attempt ${attempt}: ${retryErr.message}`);
-            if (attempt < 2) await new Promise(r => setTimeout(r, 2000));
-          }
-        }
-
-        // ── NO Pass 3 — verification was rejecting real deductions ──
-
-        // Cleanup uploaded file (after all passes complete)
-        try { fetch(`https://generativelanguage.googleapis.com/v1beta/${fileRef.fileName}?key=${apiKey}`, { method: "DELETE" }); } catch {}
-
-        if (!rawAnalysis) throw lastErr || new Error("AI returned empty response");
-
-        setStatus("Processing scorecard...");
-        setProgress(85);
-        log.info("parser", `Response length: ${rawAnalysis.length}, preview: ${rawAnalysis.substring(0, 200)}`);
-
-        // Try JSON first (primary path — prompt requests JSON, responseMimeType enforces it)
-        try {
-          const jsonMatch = rawAnalysis.match(/\{[\s\S]*\}/);
-          if (jsonMatch) {
-            const parsed = validateResult(JSON.parse(jsonMatch[0]));
-            if (parsed.executionDeductions.length > 0 && parsed.finalScore != null) {
-              // Map topFixes to corrections on matching deductions
-              parsed.executionDeductions.forEach(d => {
-                if (!d.correction && parsed.topFixes.length > 0) {
-                  const fix = safeArray(parsed.topFixes).find(f => {
-                    const fn = safeStr(f?.name).toLowerCase().split(" ")[0];
-                    return fn && (safeStr(d.skill).toLowerCase().includes(fn) || safeStr(d.fault).toLowerCase().includes(fn));
-                  });
-                  if (fix) d.correction = `${safeStr(fix.name)}: ${safeStr(fix.drill)}`;
-                }
-                // Parse MM:SS timestamps to frameRef
-                let tsNum = 0;
-                const firstTs = safeStr(d.timestamp).split(/[,\-]/)[0].trim();
-                const tsParts = firstTs.split(":");
-                if (tsParts.length === 2) tsNum = parseInt(tsParts[0]) * 60 + parseInt(tsParts[1]);
-                else tsNum = parseFloat(firstTs) || 0;
-                if (!d.frameRef) d.frameRef = Math.min(6, Math.floor(tsNum / 12) + 1);
-              });
-
-              // Use validateResult's computed totals — always derived from actual deductions
-              const topDed = [...parsed.executionDeductions].sort((a, b) => b.deduction - a.deduction)[0];
-
-              result = {
-                startValue: 10.0,
-                executionDeductions: parsed.executionDeductions,
-                executionDeductionsTotal: parsed.executionDeductionsTotal,
-                artistryDeductionsTotal: parsed.artistryDeductionsTotal,
-                neutralDeductionsTotal: 0,
-                totalDeductions: parsed.totalDeductions,
-                finalScore: parsed.finalScore,
-                overallAssessment: safeStr(parsed.truthAnalysis).substring(0, 500) || "Championship-strict evaluation of this routine.",
-                truthAnalysis: safeStr(parsed.truthAnalysis),
-                strengths: parsed.strengths.length > 0 ? parsed.strengths : ["Routine completed without falls"],
-                areasForImprovement: parsed.areasForImprovement.length > 0 ? parsed.areasForImprovement
-                  : parsed.topFixes.length > 0 ? parsed.topFixes.map(f => safeStr(f?.name) + " — saves +" + safeNum(f?.saves, 0).toFixed(2) + " — " + safeStr(f?.drill)).filter(s => s.length > 10)
-                  : ["Review deductions"],
-                rawAnalysis,
-                skillAnalysis: parsed.skillAnalysis || [],
-                bodyPositionNotes: parsed.executionDeductions.slice(0, 6).map((d, i) => ({
-                  frameRef: d.frameRef || i + 1,
-                  timestamp: d.timestamp || "0",
-                  observation: `${d.skill}: ${d.fault}`,
-                  annotation: `[${d.engine}] -${safeNum(d.deduction, 0).toFixed(2)}`,
-                  joints: null,
-                  faultJoints: [],
-                })),
-                biomechanics: parsed.biomechanics || null,
-                coachReport: parsed.coachReport || null,
-                athleteDevelopment: parsed.athleteDevelopment || null,
-                skillList: skillList.length > 0 ? skillList : null,
-                diagnostics: {
-                  threePassUsed: skillList.length > 0,
-                  skillsDetected: skillList.length,
-                  toePointIssues: parsed.executionDeductions.filter(d => d.engine === "TPM").length,
-                  kneeTensionIssues: parsed.executionDeductions.filter(d => d.engine === "KTM").length,
-                  splitDeficiency: parsed.executionDeductions.some(d => safeStr(d.fault).toLowerCase().includes("split")),
-                  landingDeductions: parsed.executionDeductions.filter(d => d.category === "landing").reduce((s, d) => s + d.deduction, 0),
-                  artistryDeductions: parsed.artistryDeductionsTotal,
-                  averageConfidence: parsed.executionDeductions.length > 0 ? Math.round(parsed.executionDeductions.reduce((s, d) => s + safeNum(d.confidence, 0.7), 0) / parsed.executionDeductions.length * 100) / 100 : 0,
-                  lowConfidenceCount: parsed.executionDeductions.filter(d => safeNum(d.confidence, 0.7) < 0.5).length,
-                  biggestMathWin: topDed ? "Fix " + topDed.skill + ": saves +" + topDed.deduction.toFixed(2) : "",
-                  consistencyNote: safeStr(parsed.truthAnalysis).substring(0, 200) || "See Truth Analysis",
-                },
-              };
-              if (Math.abs(calibrationBias) >= 0.05 && result.finalScore) {
-                const adjustedScore = Math.round((result.finalScore - calibrationBias) * 1000) / 1000;
-                const clampedScore = Math.max(0, Math.min(10, adjustedScore));
-                log.info("calibration", `Adjusting score: ${result.finalScore} → ${clampedScore} (bias: ${calibrationBias > 0 ? "+" : ""}${calibrationBias.toFixed(3)})`);
-                result.rawAiScore = result.finalScore;
-                result.calibrationBias = calibrationBias;
-                result.finalScore = clampedScore;
-                result.totalDeductions = Math.round((result.startValue - clampedScore) * 1000) / 1000;
-              }
-              log.info("parser", `Parsed as JSON. Score: ${result.finalScore}, ${parsed.executionDeductions.length} deductions`);
-            }
-          }
-        } catch(e) {
-          log.warn("parser", `JSON parse failed: ${e.message}`);
-          // Attempt to repair truncated JSON
-          try {
-            let repaired = rawAnalysis.trim();
-            // Strip markdown fences
-            repaired = repaired.replace(/^```json\s*/i, "").replace(/```\s*$/, "").trim();
-            // Find the start of the JSON object
-            const startIdx = repaired.indexOf("{");
-            if (startIdx >= 0) {
-              repaired = repaired.substring(startIdx);
-              // Close any open strings
-              const quoteCount = (repaired.match(/(?<!\\)"/g) || []).length;
-              if (quoteCount % 2 !== 0) repaired += '"';
-              // Close open brackets/braces
-              const opens = { "{": 0, "[": 0 };
-              const closes = { "}": "{", "]": "[" };
-              for (const ch of repaired) {
-                if (ch in opens) opens[ch]++;
-                if (ch in closes) opens[closes[ch]]--;
-              }
-              // Remove trailing comma or colon before closing
-              repaired = repaired.replace(/[,:\s]+$/, "");
-              for (let i = 0; i < opens["["]; i++) repaired += "]";
-              for (let i = 0; i < opens["{"]; i++) repaired += "}";
-              log.info("parser", `Attempting repaired JSON (added ${opens["["]} ] and ${opens["{"]} })`);
-              const parsed = validateResult(JSON.parse(repaired));
-              if (parsed.executionDeductions.length > 0) {
-                log.info("parser", `Repaired JSON succeeded: ${parsed.executionDeductions.length} deductions found`);
-                // Map topFixes to corrections on matching deductions
-                parsed.executionDeductions.forEach(d => {
-                  if (!d.correction && parsed.topFixes.length > 0) {
-                    const fix = safeArray(parsed.topFixes).find(f => {
-                      const fn = safeStr(f?.name).toLowerCase().split(" ")[0];
-                      return fn && (safeStr(d.skill).toLowerCase().includes(fn) || safeStr(d.fault).toLowerCase().includes(fn));
-                    });
-                    if (fix) d.correction = `${safeStr(fix.name)}: ${safeStr(fix.drill)}`;
-                  }
-                  let tsNum = 0;
-                  const firstTs = safeStr(d.timestamp).split(/[,\-]/)[0].trim();
-                  const tsParts = firstTs.split(":");
-                  if (tsParts.length === 2) tsNum = parseInt(tsParts[0]) * 60 + parseInt(tsParts[1]);
-                  else tsNum = parseFloat(firstTs) || 0;
-                  if (!d.frameRef) d.frameRef = Math.min(6, Math.floor(tsNum / 12) + 1);
-                });
-                // Use validateResult's computed totals
-                const topDed = [...parsed.executionDeductions].sort((a, b) => b.deduction - a.deduction)[0];
-                result = {
-                  startValue: 10.0,
-                  executionDeductions: parsed.executionDeductions,
-                  executionDeductionsTotal: parsed.executionDeductionsTotal,
-                  artistryDeductionsTotal: parsed.artistryDeductionsTotal,
-                  neutralDeductionsTotal: 0,
-                  totalDeductions: parsed.totalDeductions,
-                  finalScore: parsed.finalScore,
-                  overallAssessment: safeStr(parsed.truthAnalysis).substring(0, 500) || "Analysis from repaired truncated response — some data may be missing.",
-                  truthAnalysis: safeStr(parsed.truthAnalysis),
-                  strengths: parsed.strengths.length > 0 ? parsed.strengths : ["Routine analysis recovered from partial response"],
-                  areasForImprovement: parsed.areasForImprovement.length > 0 ? parsed.areasForImprovement : ["Review deductions"],
-                  rawAnalysis,
-                  skillAnalysis: parsed.skillAnalysis || [],
-                  bodyPositionNotes: parsed.executionDeductions.slice(0, 6).map((d, i) => ({
-                    frameRef: d.frameRef || i + 1, timestamp: d.timestamp || "0",
-                    observation: `${safeStr(d.skill)}: ${safeStr(d.fault)}`, annotation: `[${d.engine}] -${safeNum(d.deduction, 0).toFixed(2)}`,
-                    joints: null, faultJoints: [],
-                  })),
-                  biomechanics: parsed.biomechanics || null,
-                  coachReport: parsed.coachReport || null,
-                  athleteDevelopment: parsed.athleteDevelopment || null,
-                  diagnostics: {
-                    toePointIssues: parsed.executionDeductions.filter(d => d.engine === "TPM").length,
-                    kneeTensionIssues: parsed.executionDeductions.filter(d => d.engine === "KTM").length,
-                    splitDeficiency: parsed.executionDeductions.some(d => d.fault?.toLowerCase().includes("split")),
-                    landingDeductions: parsed.executionDeductions.filter(d => d.category === "landing").reduce((s, d) => s + d.deduction, 0),
-                    artistryDeductions: parsed.artistryDeductionsTotal,
-                    biggestMathWin: topDed ? "Fix " + topDed.skill + ": saves +" + topDed.deduction.toFixed(2) : "",
-                    consistencyNote: "Recovered from truncated response",
-                  },
-                  _repaired: true,
-                };
-                if (Math.abs(calibrationBias) >= 0.05 && result.finalScore) {
-                  const adjustedScore = Math.round((result.finalScore - calibrationBias) * 1000) / 1000;
-                  result.rawAiScore = result.finalScore;
-                  result.calibrationBias = calibrationBias;
-                  result.finalScore = Math.max(0, Math.min(10, adjustedScore));
-                  result.totalDeductions = Math.round((result.startValue - result.finalScore) * 1000) / 1000;
-                }
-                log.info("parser", `Repaired result. Score: ${result.finalScore}, ${parsed.executionDeductions.length} deductions`);
-              }
-            }
-          } catch(repairErr) {
-            log.warn("parser", `JSON repair also failed: ${repairErr.message}`);
-          }
-        }
-
-        // Fallback: Parse as text table
-        if (!result) {
-          const rawDeductions = parseGeminiTable(rawAnalysis);
-
-          if (rawDeductions.length === 0) {
-            throw new Error("No deductions found in Gemini response. First 300 chars: " + rawAnalysis.substring(0, 300));
-          }
-
-          // Group micro-faults into skills (merge within 3 seconds of each other)
-          const artistryDeds = rawDeductions.filter(d => d.category === "artistry");
-          const execRaw = rawDeductions.filter(d => d.category !== "artistry");
-          const sorted = [...execRaw].sort((a, b) => (parseFloat(a.timestamp)||0) - (parseFloat(b.timestamp)||0));
-          const grouped = [];
-          let current = null;
-
-          for (const d of sorted) {
-            const t = parseFloat(d.timestamp) || 0;
-            const ct = current ? (parseFloat(current.timestamp) || 0) : -999;
-            if (current && Math.abs(t - ct) <= 3) {
-              current.deduction = Math.round((current.deduction + d.deduction) * 100) / 100;
-              current.fault = current.fault + "; " + d.fault;
-              current.details = "Combined " + current.deduction.toFixed(2) + " across multiple faults on this skill";
-              if (String(d.skill || "").length > String(current.skill || "").length && !String(d.skill || "").toLowerCase().match(/landing|foot|arms|entry|exit/)) {
-                current.skill = d.skill;
-              }
-              if (current.deduction >= 0.30) current.severity = "large";
-              else if (current.deduction >= 0.15) current.severity = "medium";
-              if (d.deduction >= current.deduction * 0.5) current.engine = d.engine;
-            } else {
-              if (current) grouped.push(current);
-              current = { ...d };
-            }
-          }
-          if (current) grouped.push(current);
-          artistryDeds.forEach(a => grouped.push(a));
-
-          // Add corrections based on fault keywords
-          grouped.forEach(d => {
-            const f = String(d.fault || "").toLowerCase();
-            const corr = [];
-            if (f.includes("knee") && (f.includes("sep") || f.includes("cowboy"))) corr.push("Foam block between knees during tuck drills");
-            if (f.includes("flex") || f.includes("toe") || f.includes("foot") || f.includes("plantar")) corr.push("Theraband ankle exercises 3x20 daily");
-            if (f.includes("step") || f.includes("land") || f.includes("chest drop") || f.includes("chest")) corr.push("Stick drill: 20 reps off low block, freeze 3 seconds");
-            if (f.includes("split") || f.includes("leap") || f.includes("angle")) corr.push("Hold split at peak for a full beat");
-            if (f.includes("arm") || f.includes("elbow") || f.includes("bent")) corr.push("Wall handstand holds 3x30sec, locked elbows");
-            if (f.includes("align") || f.includes("vertical") || f.includes("pike") || f.includes("deviation")) corr.push("Partner-checked handstand shape holds");
-            if (f.match(/soft knee|17[0-5]|locked/)) corr.push("Releve walks focusing on locked knees");
-            if (f.includes("flat") || f.includes("releve") || f.includes("musicality")) corr.push("Practice choreo on high releve");
-            if (corr.length === 0) corr.push("Video review with coach targeting this skill");
-            d.correction = corr.join(". ");
-            d.ideal = "Full extension, pointed toes, locked knees, tight body line, controlled landing with chest up.";
-          });
-
-          const skillDeductions = grouped;
-          log.info("grouper", `Grouped into ${skillDeductions.length} skill cards`);
-
-          // Use Gemini's stated score — most accurate since it sees full video
-          const finalMatch = rawAnalysis.match(/Final\s*(?:Calculated\s*)?Score[:\s]*([\d.]+)/i);
-          const execMatch = rawAnalysis.match(/Total\s*Execution[^:\n]*[:\s]*-?([\d.]+)/i);
-          const artMatch = rawAnalysis.match(/Total\s*Artistry[^:\n]*[:\s]*-?([\d.]+)/i);
-
-          // Always compute totals from actual deductions — never trust AI text totals
-          const execTotal = Math.round(skillDeductions.filter(d => d.category !== "artistry").reduce((s, d) => s + d.deduction, 0) * 1000) / 1000;
-          const artTotal = Math.round(skillDeductions.filter(d => d.category === "artistry").reduce((s, d) => s + d.deduction, 0) * 1000) / 1000;
-          const totalDed = Math.round((execTotal + artTotal) * 1000) / 1000;
-          const finalScore = Math.max(0, Math.round((10.0 - totalDed) * 1000) / 1000);
-
-          // Extract narrative sections
-          const truthIdx = rawAnalysis.indexOf("TRUTH ANALYSIS");
-          const fixesIdx = rawAnalysis.indexOf("TOP 3 FIXES");
-          const strengthsIdx = rawAnalysis.indexOf("STRENGTHS");
-
-          const truthText = truthIdx >= 0
-            ? rawAnalysis.slice(truthIdx + 15, fixesIdx > 0 ? fixesIdx : truthIdx + 600).replace(/^[:\s\n]+/, "").trim() : "";
-          const fixesText = fixesIdx >= 0
-            ? rawAnalysis.slice(fixesIdx + 12, strengthsIdx > 0 ? strengthsIdx : fixesIdx + 400).replace(/^[:\s\n]+/, "").trim() : "";
-          const strengthsText = strengthsIdx >= 0
-            ? rawAnalysis.slice(strengthsIdx + 10).replace(/^[:\s\n]+/, "").trim() : "";
-
-          const improvements = fixesText
-            ? fixesText.split('\n').filter(l => l.trim().match(/^\d/)).slice(0, 3).map(l => l.replace(/^\d+[\.\)]\s*/, "").trim())
-            : ["Review deductions for improvement areas"];
-          const strengths = strengthsText
-            ? strengthsText.split('\n').filter(l => l.trim().length > 5).slice(0, 3).map(l => l.replace(/^[-\u2022]\s*/, "").trim())
-            : ["Routine completed without falls"];
-
-          const topDed = [...skillDeductions].sort((a, b) => b.deduction - a.deduction)[0];
-
-          // Build skillAnalysis from table-parsed deductions
-          const tableSkillAnalysis = skillDeductions.map(d => ({
-            timestamp: d.timestamp,
-            skill: d.skill,
-            type: d.category === "landing" ? "landing" : d.category === "artistry" ? "dance" : "acro",
-            verdict: "deduction",
-            score: d.severity === "small" ? "minor" : d.severity === "medium" ? "moderate" : "major",
-            deduction: d.deduction,
-            fault: d.fault,
-            correction: d.correction || "",
-            engine: d.engine,
-            measuredVsIdeal: safeStr(d.details || ""),
-            skeleton: d.skeleton || null,
-          }));
-
-          result = {
-            startValue: 10.0,
-            executionDeductions: skillDeductions,
-            executionDeductionsTotal: execTotal,
-            artistryDeductionsTotal: artTotal,
-            neutralDeductionsTotal: 0,
-            totalDeductions: totalDed,
-            finalScore,
-            overallAssessment: truthText.substring(0, 500) || "Championship-strict evaluation of this routine.",
-            truthAnalysis: truthText,
-            strengths,
-            areasForImprovement: improvements,
-            rawAnalysis,
-            skillAnalysis: tableSkillAnalysis,
-            diagnostics: {
-              toePointIssues: skillDeductions.filter(d => d.engine === "TPM").length,
-              kneeTensionIssues: skillDeductions.filter(d => d.engine === "KTM").length,
-              splitDeficiency: skillDeductions.some(d => d.fault?.toLowerCase().includes("split")),
-              landingDeductions: skillDeductions.filter(d => d.category === "landing").reduce((s, d) => s + d.deduction, 0),
-              artistryDeductions: artTotal,
-              biggestMathWin: topDed ? "Fix " + topDed.skill + ": saves +" + topDed.deduction.toFixed(2) : (improvements[0] || ""),
-              consistencyNote: truthText.substring(0, 200) || "See Truth Analysis",
-            },
-          };
-          log.info("pipeline", `Complete. Score: ${result.finalScore}, Skills: ${skillDeductions.length}`);
-        }
-
-      } catch (err) {
-        geminiError = err.message || String(err);
-        log.error("gemini", "Pipeline failed: " + geminiError);
-        setStatus("Video analysis error...");
-        setProgress(50);
       }
-    } else if (!apiKey) {
-      geminiError = "No API key configured";
-    } else if (!uploadData.video) {
-      geminiError = "No video file available";
+
+      // Cleanup uploaded file
+      try { fetch(`https://generativelanguage.googleapis.com/v1beta/${fileRef.fileName}?key=${apiKey}`, { method: "DELETE" }); } catch {}
+
+      if (!rawResponse) throw new Error("Gemini returned empty response.");
+
+      // ── Parse Gemini response ────────────────────────────────────
+      setStatus("Computing score...");
+      setProgress(88);
+
+      let parsedSkills = [];
+      let parsedArtistry = null;
+      let parsedCelebrations = [];
+      let whyThisScore = "";
+      let pathToGoal = "";
+
+      try {
+        const match = rawResponse.match(/\{[\s\S]*\}/);
+        if (match) {
+          const parsed = JSON.parse(match[0]);
+          parsedSkills       = safeArray(parsed.skills).filter(s => s.skill && s.deduction !== undefined);
+          parsedArtistry     = parsed.artistry     || null;
+          parsedCelebrations = safeArray(parsed.celebrations);
+          whyThisScore       = safeStr(parsed.whyThisScore);
+          pathToGoal         = safeStr(parsed.pathToNinePointO || parsed.pathToGoal);
+        }
+      } catch (e) {
+        log.warn("parse", `JSON parse failed: ${e.message}. Attempting repair...`);
+        try {
+          let rep = rawResponse.replace(/^```json\s*/i,"").replace(/```\s*$/,"").trim();
+          const si = rep.indexOf("{"); if (si > 0) rep = rep.substring(si);
+          let braces = 0, brackets = 0;
+          for (const ch of rep) {
+            if (ch==="{") braces++;   if (ch==="}") braces--;
+            if (ch==="[") brackets++; if (ch==="]") brackets--;
+          }
+          if (brackets > 0) rep += "]".repeat(brackets);
+          if (braces   > 0) rep += "}".repeat(braces);
+          const parsed = JSON.parse(rep);
+          parsedSkills       = safeArray(parsed.skills).filter(s => s.skill && s.deduction !== undefined);
+          parsedArtistry     = parsed.artistry     || null;
+          parsedCelebrations = safeArray(parsed.celebrations);
+          whyThisScore       = safeStr(parsed.whyThisScore);
+          pathToGoal         = safeStr(parsed.pathToNinePointO || parsed.pathToGoal);
+          log.info("parse", `Repaired — ${parsedSkills.length} skills recovered`);
+        } catch (re) {
+          throw new Error(`Could not parse response: ${re.message}. Raw: ${rawResponse.substring(0,300)}`);
+        }
+      }
+
+      if (parsedSkills.length === 0) {
+        throw new Error("No skills found in response. Raw: " + rawResponse.substring(0,300));
+      }
+
+      // ── CODE COMPUTES THE SCORE — not Gemini ────────────────────
+      const processedSkills = parsedSkills.map((s, idx) => {
+        // Clamp to nearest valid 0.05 increment
+        const raw = Math.abs(parseFloat(s.deduction) || 0);
+        const deduction = Math.round(Math.min(raw, 2.0) / 0.05) * 0.05;
+        const sec = parseTimestampToSec(s.timestamp || "0:00");
+        const isGlobal  = (s.timestamp || "").toLowerCase() === "global";
+        const isLanding = /^landing/i.test(s.skill);
+        const isDance   = /artistry|choreo|presentation|dance|rhythm|space|musicality/i.test(s.skill);
+        const category  = isDance || isGlobal ? "artistry" : "execution";
+        const severity  = deduction >= 0.50 ? "fall"
+          : deduction >= 0.30 ? "veryLarge"
+          : deduction >= 0.20 ? "large"
+          : deduction >= 0.10 ? "medium"
+          : "small";
+
+        return {
+          id:             `skill_${idx}`,
+          index:          idx + 1,
+          skill:          safeStr(s.skill),
+          timestamp:      s.timestamp || "0:00",
+          timestampSec:   sec,
+          type:           isLanding ? "landing" : isDance ? "dance" : "acro",
+          category,
+          deduction,
+          reason:         safeStr(s.reason),
+          strength:       safeStr(s.strength),   // ← what Gemini praised about this skill
+          isGlobal,
+          // Legacy fields for existing tabs
+          fault:          safeStr(s.reason),
+          engine:         isLanding ? "Landing" : isDance ? "General" : "KTM",
+          severity,
+          confidence:     0.92,
+          correction:     null,
+          skeleton:       null,
+          // Frame capture — populated later by VideoReviewPlayer
+          frameDataUrl:   null,
+          skeletonJoints: null,
+          // Graded skills view compatibility
+          grade:          deduction === 0 ? "A" : deduction <= 0.05 ? "A-" : deduction <= 0.10 ? "B" : deduction <= 0.20 ? "C" : deduction <= 0.30 ? "D+" : "F",
+          gradeDeduction: deduction,
+          gradeColor:     deduction === 0 ? "#22C55E" : deduction <= 0.05 ? "#4ADE80" : deduction <= 0.10 ? "#F59E0B" : deduction <= 0.20 ? "#F97316" : "#EF4444",
+          coachNote:      null,
+        };
+      });
+
+      // ── Sum deductions — only place math happens ─────────────────
+      const execSkills = processedSkills.filter(s => s.category !== "artistry");
+      const artSkills  = processedSkills.filter(s => s.category === "artistry");
+      const execTotal  = Math.round(execSkills.reduce((sum, s) => sum + s.deduction, 0) * 1000) / 1000;
+      const artTotal   = Math.round(artSkills.reduce( (sum, s) => sum + s.deduction, 0) * 1000) / 1000;
+      const totalDed   = Math.round((execTotal + artTotal) * 1000) / 1000;
+      const finalScore = Math.max(0, Math.round((10.0 - totalDed) * 1000) / 1000);
+
+      log.info("score", `FINAL: ${finalScore} | Deductions: ${totalDed} | Exec: ${execTotal} | Artistry: ${artTotal} | Skills: ${processedSkills.length} | Level: ${profile.level}`);
+
+      // Top issues and strengths
+      const withDeds   = [...processedSkills].filter(s => s.deduction > 0).sort((a,b) => b.deduction - a.deduction);
+      const cleanSkills = processedSkills.filter(s => s.deduction === 0);
+
+      const topFixes = withDeds.slice(0,3).map(s => ({
+        name:  s.skill,
+        saves: s.deduction,
+        drill: s.reason?.split(".")[0] || s.skill,
+      }));
+
+      const strengths = cleanSkills.map(s => `${s.skill}: Clean.`);
+
+      const bench = SCORE_BENCHMARKS[profile.level];
+      const benchContext = bench
+        ? `${profile.level} ${uploadData.event} typical range: ${bench.low}–${bench.high} (avg ${bench.avg}).`
+        : "";
+
+      return {
+        // ── Core score ──
+        startValue:               10.0,
+        finalScore,
+        totalDeductions:          totalDed,
+        executionDeductionsTotal: execTotal,
+        artistryDeductionsTotal:  artTotal,
+        neutralDeductionsTotal:   0,
+
+        // ── Skill list — drives both Skills tab and legacy tabs ──
+        gradedSkills:        processedSkills,
+        executionDeductions: processedSkills.filter(s => s.deduction > 0).map(s => ({
+          timestamp:  s.timestamp,
+          skill:      s.skill,
+          deduction:  s.deduction,
+          fault:      s.reason,
+          engine:     s.engine,
+          category:   s.category,
+          severity:   s.severity,
+          confidence: s.confidence,
+          skeleton:   null,
+          correction: null,
+        })),
+
+        // ── Full report — everything Gemini gave us ──
+        overallAssessment: whyThisScore || `${profile.level} ${uploadData.event} — ${processedSkills.length} skills judged. ${benchContext}`,
+        truthAnalysis:     whyThisScore || `${processedSkills.length} skills evaluated at ${profile.level} standard.`,
+        pathToGoal,
+        celebrations:      parsedCelebrations,
+        artistryBreakdown: parsedArtistry,
+        strengths: parsedCelebrations.length > 0
+          ? parsedCelebrations.map(c => `${c.timestamp ? c.timestamp + " — " : ""}${c.skill}: ${c.note}`)
+          : cleanSkills.map(s => `${s.skill}: ${s.strength || "Clean execution."}`),
+        areasForImprovement: withDeds.slice(0,4).map(s => `${s.skill}: ${s.reason}`),
+        topFixes,
+
+        // ── Diagnostics ──
+        diagnostics: {
+          directJudging:     true,
+          skillsEvaluated:   processedSkills.length,
+          levelJudged:       profile.level,
+          eventJudged:       uploadData.event,
+          splitMinRequired:  (() => {
+            const lv = profile.level; const xc = profile.levelCategory === "xcel";
+            return xc ? (lv.includes("Bronze")||lv.includes("Silver")?90:lv.includes("Gold")?120:lv.includes("Platinum")?150:180)
+              : (["Level 1","Level 2","Level 3","Level 4"].includes(lv)?90:lv==="Level 5"?120:(lv==="Level 6"||lv==="Level 7")?150:180);
+          })(),
+          landingDeductions: execSkills.filter(s => s.type==="landing").reduce((sum,s) => sum+s.deduction, 0),
+          artistryDeductions: artTotal,
+          biggestIssue:      withDeds[0] ? `${withDeds[0].skill}: ${withDeds[0].reason}` : "",
+          averageGrade:      computeAverageGrade(processedSkills),
+        },
+
+        // ── Pass-through ──
+        frames:   extractedFrames,
+        event:    uploadData.event,
+        level:    profile.level,
+        videoUrl: uploadData.videoUrl,
+        rawResponse,
+      };
+
+    } catch (err) {
+      log.error("pipeline", `Analysis failed: ${err.message}`);
+      throw err;
     }
+  }, [buildJudgingPrompt, uploadVideoToGemini, geminiGenerate, uploadData, profile]);
 
-    if (!result && extractedFrames.length > 0 && !apiKey) {
-      throw new Error("API key error. Please try again or check Settings → Video Analysis Engine.");
-    }
 
-    if (!result && geminiError) {
-      // Gemini failed — show the actual error, don't mask it with a bad fallback
-      throw new Error("Analysis failed: " + geminiError + ". Try again or check your API key in Settings.");
-    }
 
-    if (!result) {
-      throw new Error(geminiError || "No analysis method available");
-    }
 
-    result.frames = extractedFrames;
-    result.event = uploadData.event;
-    result.level = profile.level;
-    result.videoUrl = uploadData.videoUrl;
-
-    // Enhanced diagnostic summary
-    log.info("pipeline", `Analysis complete — Score: ${result.finalScore}, Deductions: ${result.executionDeductions?.length || 0}, Frames: ${extractedFrames.length}, Three-pass: ${result.diagnostics?.threePassUsed}, Skills detected: ${result.diagnostics?.skillsDetected || 0}, Avg confidence: ${result.diagnostics?.averageConfidence || "N/A"}, Low confidence filtered: ${result.diagnostics?.lowConfidenceCount || 0}`);
-    if (DEBUG_MODE) console.log("[pipeline-result]", { score: result.finalScore, deductions: result.executionDeductions?.length, frames: extractedFrames.length, diagnostics: result.diagnostics }); // eslint-disable-line no-console
-
-    return result;
-  }, [buildJudgingPrompt, buildSimplifiedPrompt, buildSkillDetectionPrompt, uploadVideoToGemini, geminiGenerate, analyzeWithGeminiVideo, uploadData, profile]);
   useEffect(() => {
     if (hasStarted.current) return;
     hasStarted.current = true;
@@ -3920,7 +3599,7 @@ RESPOND WITH VALID JSON ONLY:
   }, [extractFrames, analyzeWithAI, uploadData, profile, onComplete]);
 
   return (
-    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 32, maxWidth: 540, margin: "0 auto" }}>
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 32 }}>
       {/* Hidden video element */}
       <video
         ref={hiddenVideoRef}
@@ -3942,11 +3621,12 @@ RESPOND WITH VALID JSON ONLY:
 
       <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 6, textAlign: "center", maxWidth: 300 }}>{status}</h3>
 
-      {/* 2-Pass Pipeline Indicator */}
+      {/* 3-Pass Pipeline Indicator */}
       <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 16, marginBottom: 16 }}>
         {[
           { label: "Detect", threshold: 60 },
-          { label: "Judge", threshold: 78 },
+          { label: "Judge", threshold: 75 },
+          { label: "Verify", threshold: 82 },
         ].map((pass, i) => {
           const isDone = progress >= pass.threshold + 5;
           const isActive = progress >= pass.threshold - 5 && !isDone;
@@ -3970,15 +3650,15 @@ RESPOND WITH VALID JSON ONLY:
                   transition: "all 0.5s",
                 }}>
                   {isDone ? (
-                    <span style={{ color: "#C4982A", fontSize: 16, fontWeight: 700 }}>✓</span>
+                    <span style={{ color: "#C4982A", fontSize: 13, fontWeight: 700 }}>✓</span>
                   ) : isActive ? (
                     <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#C4982A", animation: "pulse 1s infinite" }} />
                   ) : (
-                    <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 14, fontWeight: 600 }}>{i + 1}</span>
+                    <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 11, fontWeight: 600 }}>{i + 1}</span>
                   )}
                 </div>
                 <span style={{
-                  fontSize: 14, fontWeight: 600, letterSpacing: 0.5,
+                  fontSize: 9, fontWeight: 600, letterSpacing: 0.5,
                   color: isDone ? "#C4982A" : isActive ? "rgba(196,152,42,0.7)" : "rgba(255,255,255,0.2)",
                   transition: "color 0.5s",
                 }}>{pass.label}</span>
@@ -3999,7 +3679,7 @@ RESPOND WITH VALID JSON ONLY:
           width: `${progress}%`, transition: "width 0.5s ease-out",
         }} />
       </div>
-      <p style={{ color: "rgba(255,255,255,0.3)", fontSize: 16, marginTop: 8, fontFamily: "'Space Mono', monospace" }}>{progress}%</p>
+      <p style={{ color: "rgba(255,255,255,0.3)", fontSize: 12, marginTop: 8, fontFamily: "'Space Mono', monospace" }}>{progress}%</p>
 
       {/* Error state */}
       {error && (
@@ -4008,8 +3688,8 @@ RESPOND WITH VALID JSON ONLY:
           background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.15)",
           maxWidth: 340, textAlign: "center",
         }}>
-          <div style={{ fontSize: 16, color: "#ef4444", fontWeight: 600, marginBottom: 6 }}>Analysis Error</div>
-          <div style={{ fontSize: 16, color: "rgba(255,255,255,0.45)", lineHeight: 1.6, marginBottom: 12 }}>
+          <div style={{ fontSize: 13, color: "#ef4444", fontWeight: 600, marginBottom: 6 }}>Analysis Error</div>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: 1.6, marginBottom: 12 }}>
             {error.match(/JSON|parse|Unexpected|truncat/i) ? "The AI returned an incomplete response. This happens occasionally — try again." :
              error.match(/403|401|quota|rate/i) ? "API rate limit hit. Wait 30 seconds and try again." :
              error.match(/network|fetch|Failed to fetch/i) ? "Network error — check your connection and try again." :
@@ -4019,7 +3699,7 @@ RESPOND WITH VALID JSON ONLY:
           <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
             <button onClick={onBack} style={{
               background: "linear-gradient(135deg, #C4982A, #E8C35A)", border: "none",
-              borderRadius: 10, padding: "10px 24px", color: "#0B1024", fontSize: 16,
+              borderRadius: 10, padding: "10px 24px", color: "#0B1024", fontSize: 13,
               fontWeight: 700, cursor: "pointer", fontFamily: "'Outfit', sans-serif",
             }}>Try Again</button>
           </div>
@@ -4051,10 +3731,10 @@ RESPOND WITH VALID JSON ONLY:
           background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)",
           maxWidth: 320, textAlign: "center", animation: "fadeIn 0.5s ease-out",
         }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(196,152,42,0.5)", letterSpacing: 1, marginBottom: 6 }}>DID YOU KNOW?</div>
-          <div style={{ fontSize: 16, color: "rgba(255,255,255,0.4)", lineHeight: 1.6 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(196,152,42,0.5)", letterSpacing: 1, marginBottom: 6 }}>DID YOU KNOW?</div>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", lineHeight: 1.6 }}>
             {[
-              "STRIVE uses a 2-pass system: first identifying every skill in the routine, then judging each one for execution errors using USAG criteria.",
+              "STRIVE uses a 3-pass system: first identifying every skill, then judging each one, then verifying to remove false deductions.",
               "A typical Level 5-7 routine has 8-12 scoreable elements. Judges evaluate each one independently.",
               "The most common deduction in all of gymnastics? Flexed feet. It happens on almost every skill and adds up fast.",
               "A 'stuck' landing (zero steps) is the single most impressive thing to a judge. It also saves 0.05-0.30.",
@@ -4068,778 +3748,1521 @@ RESPOND WITH VALID JSON ONLY:
   );
 }
 
-// ─── RESULTS SCREEN — SKILL-BY-SKILL ANALYSIS ──────────────────────
-function ResultsScreen({ result: rawResult, profile, history, videoUrl, videoFileRef, onBack, onDrills }) {
-  // Defensive: re-validate result to prevent crashes from malformed AI responses
-  const result = React.useMemo(() => {
-    if (!rawResult || typeof rawResult !== "object") return null;
-    // Ensure all required fields exist with safe defaults
-    const r = { ...rawResult };
-    r.finalScore = safeNum(r.finalScore, 0, 0, 10);
-    r.startValue = r.startValue ?? 10.0;
-    r.totalDeductions = safeNum(r.totalDeductions, 0, 0, 10);
-    r.overallAssessment = safeStr(r.overallAssessment || r.truthAnalysis || "");
-    r.strengths = safeArray(r.strengths);
-    r.areasForImprovement = safeArray(r.areasForImprovement);
-    r.topFixes = safeArray(r.topFixes);
-    r.executionDeductions = safeArray(r.executionDeductions).map(d => ({
-      ...d,
-      skill: safeStr(d.skill || "Unknown skill"),
-      fault: safeStr(d.fault || "Execution error"),
-      deduction: safeNum(d.deduction, 0, 0, 2),
-      severity: safeStr(d.severity || "small"),
-      category: safeStr(d.category || "execution"),
-      engine: safeStr(d.engine || ""),
-      details: safeStr(d.details || ""),
-      timestamp: safeStr(d.timestamp || "0:00"),
-    }));
-    // Build skillAnalysis from executionDeductions if missing
-    r.skillAnalysis = safeArray(r.skillAnalysis);
-    if (r.skillAnalysis.length === 0 && r.executionDeductions.length > 0) {
-      r.skillAnalysis = r.executionDeductions.map(d => ({
-        timestamp: d.timestamp,
-        skill: d.skill,
-        type: d.category === "landing" ? "landing" : d.category === "artistry" ? "dance" : "acro",
-        verdict: "deduction",
-        score: safeNum(d.deduction, 0) <= 0.10 ? "minor" : safeNum(d.deduction, 0) <= 0.20 ? "moderate" : "major",
-        deduction: d.deduction,
-        fault: d.fault,
-        correction: safeStr(d.correction || ""),
-        engine: d.engine,
-        measuredVsIdeal: safeStr(d.measuredVsIdeal || d.details || ""),
-        skeleton: d.skeleton || null,
-      }));
-    }
-    r.skillAnalysis = r.skillAnalysis.map(s => ({
-      ...s,
-      skill: safeStr(s.skill || "Unknown skill"),
-      fault: safeStr(s.fault || ""),
-      correction: safeStr(s.correction || ""),
-      engine: safeStr(s.engine || ""),
-      timestamp: safeStr(s.timestamp || "0:00"),
-      deduction: safeNum(s.deduction, 0, 0, 2),
-      score: safeStr(s.score || "clean"),
-    }));
-    if (!r.biomechanics || typeof r.biomechanics !== "object") {
-      r.biomechanics = { keyMoments: [], landingAnalysis: [], injuryRiskFlags: [] };
-    }
-    r.event = safeStr(r.event || "Event");
-    r.level = safeStr(r.level || "Level");
-    if (DEBUG_MODE) console.log("ResultsScreen result keys:", Object.keys(r), "skills:", r.skillAnalysis.length, "deds:", r.executionDeductions.length);
-    return r;
-  }, [rawResult]);
+// ─── VIDEO REVIEW PLAYER ────────────────────────────────────────────
+// ── Client-side deduction grouper ──
+// ─── SKELETON CANVAS — SVG overlay for live MediaPipe joints ─────────────────
+// Renders as an absolutely positioned SVG over an image/canvas.
+// joints: { name: { x, y } } — normalized 0-1 coordinates.
+function SkeletonCanvas({ joints }) {
+  if (!joints) return null;
 
-  const [activeResultTab, setActiveResultTab] = useState("overview");
-  const [activeSkill, setActiveSkill] = useState(null);
+  const CONNECTIONS = [
+    ["leftShoulder", "rightShoulder"],
+    ["leftShoulder", "leftElbow"], ["leftElbow", "leftWrist"],
+    ["rightShoulder", "rightElbow"], ["rightElbow", "rightWrist"],
+    ["leftShoulder", "leftHip"], ["rightShoulder", "rightHip"],
+    ["leftHip", "rightHip"],
+    ["leftHip", "leftKnee"], ["leftKnee", "leftAnkle"],
+    ["rightHip", "rightKnee"], ["rightKnee", "rightAnkle"],
+  ];
+
+  const JOINT_COLOR = {
+    leftShoulder: "#C4982A", rightShoulder: "#C4982A",
+    leftElbow: "#E8C35A",   rightElbow: "#E8C35A",
+    leftWrist: "#F5E6B8",   rightWrist: "#F5E6B8",
+    leftHip: "#3B82F6",     rightHip: "#3B82F6",
+    leftKnee: "#60A5FA",    rightKnee: "#60A5FA",
+    leftAnkle: "#93C5FD",   rightAnkle: "#93C5FD",
+  };
+
+  return (
+    <svg
+      viewBox="0 0 1 1"
+      preserveAspectRatio="none"
+      style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", pointerEvents: "none" }}
+    >
+      {/* Bones */}
+      {CONNECTIONS.map(([a, b]) => {
+        const p1 = joints[a]; const p2 = joints[b];
+        if (!p1 || !p2) return null;
+        return (
+          <line key={`${a}-${b}`}
+            x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y}
+            stroke="rgba(196,152,42,0.85)" strokeWidth="0.008" strokeLinecap="round" />
+        );
+      })}
+      {/* Joints */}
+      {Object.entries(joints).filter(([n]) => JOINT_COLOR[n]).map(([name, j]) => (
+        <g key={name}>
+          <circle cx={j.x} cy={j.y} r="0.014" fill={JOINT_COLOR[name] || "#fff"} />
+          <circle cx={j.x} cy={j.y} r="0.005" fill="rgba(255,255,255,0.9)" />
+        </g>
+      ))}
+    </svg>
+  );
+}
+
+function VideoReviewPlayer({ videoUrl: propUrl, result }) {
+  const videoRef = useRef(null);
+  const captureCanvasRef = useRef(null);
+  const [activeIdx, setActiveIdx] = useState(-1);
+  const [showSkeleton, setShowSkeleton] = useState(true);
+  const [showCompare, setShowCompare] = useState(true);
+  const [capturedFrame, setCapturedFrame] = useState(null);   // on-demand frame grab
+  const [capturingFrame, setCapturingFrame] = useState(false);
+  const [skelData, setSkelData] = useState(null);             // pose joints from MediaPipe
+
+  // Ensure video loads when URL changes
+  React.useEffect(() => {
+    const v = videoRef.current;
+    if (!v || !propUrl) return;
+    v.load();
+  }, [propUrl]);
+
+  const videoUrl = propUrl || result.videoUrl;
+  const deds = result.executionDeductions || [];
+
+  // Parse timestamp string to seconds — handles "0:12", "0:02, 0:04", "0:15-0:19", "Global", etc.
+  const tsToSec = (ts) => {
+    if (!ts || typeof ts !== "string") return NaN;
+    // Take only the first timestamp if comma-separated or range
+    const first = ts.split(/[,\-]/)[0].trim();
+    if (String(first || '').toLowerCase() === "global" || !first) return NaN;
+    const parts = first.split(":");
+    if (parts.length === 2) return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+    const n = parseFloat(first);
+    return isNaN(n) ? NaN : n;
+  };
+
+  const sorted = [...deds].sort((a, b) => (tsToSec(a.timestamp) || 0) - (tsToSec(b.timestamp) || 0));
+  const fmt = (t) => !t || !isFinite(t) ? "0:00" : `${Math.floor(t/60)}:${String(Math.floor(t%60)).padStart(2,"0")}`;
+
+  const jumpTo = async (i) => {
+    if (i < 0 || i >= sorted.length) return;
+    setActiveIdx(i);
+    setCapturedFrame(null);
+    setSkelData(null);
+
+    const v = videoRef.current;
+    if (!v) return;
+
+    const sec = tsToSec(sorted[i].timestamp);
+    const seekSec = isFinite(sec) ? Math.max(0, sec - 0.5) : 0;
+
+    // 1 — Seek the visible review video
+    v.pause();
+    v.currentTime = seekSec;
+
+    // 2 — Capture frame after seeked event
+    setCapturingFrame(true);
+    const captureFrame = () => {
+      try {
+        const canvas = captureCanvasRef.current || document.createElement("canvas");
+        const vw = v.videoWidth || 640;
+        const vh = v.videoHeight || 480;
+        canvas.width = Math.min(vw, 960);
+        canvas.height = Math.round(canvas.width * (vh / vw));
+        const ctx = canvas.getContext("2d", { willReadFrequently: true });
+        ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.90);
+
+        // Check it's not blank
+        const px = ctx.getImageData(canvas.width >> 1, canvas.height >> 1, 1, 1).data;
+        const isBlank = px[0] < 5 && px[1] < 5 && px[2] < 5;
+
+        if (!isBlank) {
+          setCapturedFrame(dataUrl);
+          // 3 — Run MediaPipe on canvas for skeleton
+          runSkeletonDetection(canvas).then(j => {
+            if (j) setSkelData(j);
+          });
+        }
+      } catch (e) {
+        console.warn("[VideoReviewPlayer] frame capture failed:", e.message);
+      } finally {
+        setCapturingFrame(false);
+      }
+    };
+
+    const onSeeked = () => { v.removeEventListener("seeked", onSeeked); captureFrame(); };
+    const timeout = setTimeout(() => { v.removeEventListener("seeked", onSeeked); captureFrame(); }, 2000);
+    v.addEventListener("seeked", onSeeked, { once: true });
+
+    // Fallback: capture even if seeked doesn't fire (some mobile browsers)
+    setTimeout(() => {
+      clearTimeout(timeout);
+      captureFrame();
+    }, 1500);
+  };
+
+  // ── MediaPipe skeleton detection on a canvas ─────────────────────────────
+  const mid = (a, b) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, visibility: Math.min(a.visibility || 0, b.visibility || 0) });
+
+  const runSkeletonDetection = async (canvas) => {
+    try {
+      const { PoseLandmarker, FilesetResolver } = await import("@mediapipe/tasks-vision");
+      const vision = await FilesetResolver.forVisionTasks(
+        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
+      );
+      const landmarker = await PoseLandmarker.createFromOptions(vision, {
+        baseOptions: {
+          modelAssetPath: "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
+          delegate: "GPU",
+        },
+        runningMode: "IMAGE",
+        numPoses: 1,
+      });
+      const result = landmarker.detect(canvas);
+      const raw = result.landmarks?.[0];
+      if (!raw) return null;
+
+      const JOINT_MAP = {
+        leftShoulder: 11, rightShoulder: 12, leftElbow: 13, rightElbow: 14,
+        leftWrist: 15, rightWrist: 16, leftHip: 23, rightHip: 24,
+        leftKnee: 25, rightKnee: 26, leftAnkle: 27, rightAnkle: 28,
+      };
+      const joints = {};
+      for (const [name, idx] of Object.entries(JOINT_MAP)) {
+        const lm = raw[idx];
+        if (lm && (lm.visibility || 0) > 0.3) {
+          joints[name] = { x: lm.x, y: lm.y, visibility: lm.visibility };
+        }
+      }
+      // Midpoints
+      if (joints.leftHip && joints.rightHip) joints.hip = mid(joints.leftHip, joints.rightHip);
+      if (joints.leftShoulder && joints.rightShoulder) joints.shoulder = mid(joints.leftShoulder, joints.rightShoulder);
+      if (joints.leftKnee && joints.rightKnee) joints.knee = mid(joints.leftKnee, joints.rightKnee);
+      if (joints.leftAnkle && joints.rightAnkle) joints.ankle = mid(joints.leftAnkle, joints.rightAnkle);
+      if (joints.leftElbow && joints.rightElbow) joints.elbow = mid(joints.leftElbow, joints.rightElbow);
+      landmarker.close();
+      return joints;
+    } catch (e) {
+      console.warn("[skeleton]", e.message);
+      return null;
+    }
+  };
+
+  const slowMoReplay = () => {
+    const v = videoRef.current;
+    if (!v || activeIdx < 0) return;
+    const sec = tsToSec(sorted[activeIdx].timestamp);
+    const start = isFinite(sec) ? Math.max(0, sec - 0.5) : 0;
+    v.currentTime = start;
+    v.playbackRate = 0.25;
+    v.play().catch(() => {});
+    setTimeout(() => { if (v) { v.pause(); v.playbackRate = 1; } }, 5000);
+  };
+
+  const ad = activeIdx >= 0 ? sorted[activeIdx] : null;
+  const adColor = ad ? (DEDUCTION_SCALE[ad.severity]?.color || "#f59e0b") : "transparent";
+
+  // Frame: prefer live capture, fall back to pre-captured result.frames match
+  const adFrameFromResult = ad ? result.frames?.find((f, i) => ad.frameRef === i + 1) : null;
+  const displayFrame = capturedFrame || adFrameFromResult?.dataUrl || null;
+
+  // Skeleton: prefer live MediaPipe joints, fall back to AI-returned skeleton
+  const adSkeleton = ad?.skeleton || null;
+  const adNote = ad ? result.bodyPositionNotes?.find(n => n.frameRef === ad.frameRef) : null;
+  const skelJoints = skelData || adSkeleton?.joints || adNote?.joints || null;
+  const skelFaults = adSkeleton?.faultJoints || adNote?.faultJoints || [];
+  const skelAngles = adSkeleton?.angles || [];
+  const correctRef = ad ? getCorrectFormRef(ad.skill, ad.subFaults?.[0]?.fault || ad.fault) : null;
+
+  if (!videoUrl) {
+    return (
+      <div className="card" style={{ padding: 32, textAlign: "center" }}>
+        <Icon name="camera" size={28} />
+        <p style={{ color: "rgba(255,255,255,0.5)", marginTop: 12, fontSize: 14 }}>Video not available. Use the Deductions and Frames tabs.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      {/* ── STICKY VIDEO ── */}
+      <div style={{
+        position: "sticky", top: 0, zIndex: 20,
+        borderRadius: ad ? "16px 16px 0 0" : 16, overflow: "hidden", background: "#000",
+        borderTop: ad ? `2px solid ${adColor}` : "2px solid rgba(255,255,255,0.08)",
+        borderLeft: ad ? `2px solid ${adColor}` : "2px solid rgba(255,255,255,0.08)",
+        borderRight: ad ? `2px solid ${adColor}` : "2px solid rgba(255,255,255,0.08)",
+        borderBottom: ad ? "none" : "2px solid rgba(255,255,255,0.08)",
+        boxShadow: "0 4px 24px rgba(0,0,0,0.6)",
+      }}>
+        <video ref={videoRef} src={videoUrl} controls controlsList="nodownload" playsInline
+          webkit-playsinline="" preload="auto"
+          onLoadedMetadata={() => { if (videoRef.current) videoRef.current.pause(); }}
+          style={{ width: "100%", display: "block", maxHeight: 400 }} />
+        {ad && (
+          <div style={{
+            position: "absolute", bottom: 44, left: 8, right: 8,
+            display: "flex", justifyContent: "space-between", alignItems: "center",
+            background: "rgba(0,0,0,0.85)", borderRadius: 8, padding: "6px 10px",
+            pointerEvents: "none",
+          }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: "#e2e8f0" }}>{safeStr(ad.skill)}</span>
+            <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 14, fontWeight: 700, color: adColor }}>-{safeNum(ad.deduction, 0).toFixed(2)}</span>
+          </div>
+        )}
+      </div>
+
+      {/* ── ACTIVE SKILL DETAILS ── */}
+      {ad && (
+        <div style={{
+          background: `${adColor}08`,
+          borderTop: "none",
+          borderLeft: `2px solid ${adColor}30`, borderRight: `2px solid ${adColor}30`, borderBottom: `2px solid ${adColor}30`,
+          borderRadius: "0 0 16px 16px", padding: "12px 14px", marginBottom: 12,
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+            <span className="tag" style={{ background: `${adColor}25`, color: adColor, fontSize: 11 }}>{ad.severity?.toUpperCase()}</span>
+            <span style={{ fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize: 16, color: adColor }}>-{safeNum(ad.deduction, 0).toFixed(2)}</span>
+            {ad.engine && <span className="tag" style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.4)", fontSize: 9 }}>{ad.engine}</span>}
+            <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 11, marginLeft: "auto", fontFamily: "'Space Mono', monospace" }}>{activeIdx+1}/{sorted.length}</span>
+          </div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#e2e8f0", marginBottom: 4 }}>{ad.skill}</div>
+
+          {/* Sub-faults quick list */}
+          {ad.subFaults?.length > 0 && (
+            <div style={{ marginBottom: 6 }}>
+              {ad.subFaults.map((sf, si) => {
+                const sfDed = safeNum(sf.deduction, 0);
+                const sfc = sfDed >= 0.20 ? "#ef4444" : sfDed >= 0.10 ? "#f97316" : "#f59e0b";
+                return (
+                  <div key={si} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 2 }}>
+                    <span style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", flex: 1 }}>· {safeStr(sf.fault)}</span>
+                    <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, color: sfc, marginLeft: 8 }}>-{sfDed.toFixed(2)}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          {/* Flat fault fallback */}
+          {!ad.subFaults?.length && ad.fault && (
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", lineHeight: 1.5, marginBottom: 4 }}>{ad.fault}</div>
+          )}
+
+          {/* Frame capture with skeleton overlay + perfect form reference */}
+          {showCompare && (
+            <div style={{ marginTop: 10 }}>
+              {/* Actual frame — live capture with skeleton overlay */}
+              <div style={{ borderRadius: 12, overflow: "hidden", position: "relative", border: `2px solid ${adColor}40`, background: "#000", marginBottom: 8 }}>
+                {capturingFrame ? (
+                  <div style={{ width: "100%", aspectRatio: "16/9", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 8 }}>
+                    <div style={{ width: 28, height: 28, borderRadius: "50%", border: "2px solid rgba(196,152,42,0.2)", borderTopColor: "#C4982A", animation: "rotate 1s linear infinite" }} />
+                    <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>Capturing frame…</span>
+                  </div>
+                ) : displayFrame ? (
+                  <div style={{ position: "relative" }}>
+                    <img src={displayFrame} alt="Deduction frame" style={{ width: "100%", display: "block" }} />
+                    {showSkeleton && skelJoints && (
+                      <SkeletonCanvas joints={skelJoints} />
+                    )}
+                  </div>
+                ) : (
+                  <div style={{ width: "100%", aspectRatio: "16/9", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 6 }}>
+                    <span style={{ fontSize: 20 }}>🎬</span>
+                    <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", textAlign: "center", padding: "0 16px" }}>
+                      Tap a skill below to capture frame
+                    </span>
+                  </div>
+                )}
+                {displayFrame && !capturingFrame && (
+                  <div style={{ position: "absolute", top: 8, left: 8, background: "rgba(239,68,68,0.9)", padding: "3px 10px", borderRadius: 6, fontSize: 11, fontWeight: 700, color: "white" }}>✗ ACTUAL</div>
+                )}
+                {ad?.fault && displayFrame && (
+                  <div style={{ position: "absolute", bottom: 8, left: 8, right: 8, background: "rgba(0,0,0,0.8)", padding: "6px 10px", borderRadius: 6, fontSize: 11, color: "rgba(255,255,255,0.8)", lineHeight: 1.4 }}>
+                    {ad.fault}
+                  </div>
+                )}
+              </div>
+              {/* Perfect form reference — smaller below */}
+              <div style={{ borderRadius: 12, overflow: "hidden", position: "relative", border: "1px solid rgba(34,197,94,0.25)", background: "rgba(34,197,94,0.03)", aspectRatio: "16/9" }}>
+                <PerfectFormSVG joints={correctRef?.joints} label={correctRef?.label} />
+                <div style={{ position: "absolute", top: 8, left: 8, background: "rgba(34,197,94,0.9)", padding: "3px 10px", borderRadius: 6, fontSize: 11, fontWeight: 700, color: "white" }}>✓ PERFECT FORM</div>
+              </div>
+            </div>
+          )}
+
+          {/* How to fix / ideal */}
+          {ad.correction && (
+            <div style={{ marginTop: 6, padding: "6px 10px", borderRadius: 6, background: "rgba(34,197,94,0.05)", border: "1px solid rgba(34,197,94,0.1)" }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "#22c55e", marginBottom: 2 }}>HOW TO FIX</div>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>{ad.correction}</div>
+            </div>
+          )}
+          {!ad.correction && correctRef?.notes && (
+            <div style={{ marginTop: 6, padding: "6px 10px", borderRadius: 6, background: "rgba(34,197,94,0.05)", border: "1px solid rgba(34,197,94,0.1)" }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "#22c55e", marginBottom: 2 }}>✓ ZERO DEDUCTION LOOKS LIKE:</div>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>{correctRef.notes}</div>
+            </div>
+          )}
+
+          {/* Reference search links */}
+          {(() => {
+            const skillClean = (ad.skill || "").replace(/[-—–]/g, " ").replace(/\s+/g, " ").trim();
+            const levelShort = (result.level || "").replace("Xcel ", "").replace("Level ", "L");
+            const genderWord = result.level?.includes("Xcel") || !result.event ? "" : "gymnastics";
+            const coreSkill = skillClean.replace(/landing|foot form|foot articulation|arm position|support phase|flight phase|same.*|finish position/gi, "").replace(/first|second|third|final|opening/gi, "").trim() || skillClean;
+            const ytQuery = encodeURIComponent(`${coreSkill} ${genderWord} perfect form tutorial`.trim());
+            const imgQuery = encodeURIComponent(`${coreSkill} gymnastics perfect form`.trim());
+            const levelQuery = encodeURIComponent(`${coreSkill} ${result.level || ""} gymnastics`.trim());
+            return (
+              <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
+                <a href={`https://www.youtube.com/results?search_query=${ytQuery}`} target="_blank" rel="noopener noreferrer"
+                  style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 4, padding: "8px 6px", borderRadius: 8, fontSize: 10, fontWeight: 700, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.15)", color: "#ef4444", textDecoration: "none" }}>
+                  ▶ Watch Perfect Form
+                </a>
+                <a href={`https://www.google.com/search?q=${imgQuery}&tbm=isch`} target="_blank" rel="noopener noreferrer"
+                  style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 4, padding: "8px 6px", borderRadius: 8, fontSize: 10, fontWeight: 700, background: "rgba(59,130,246,0.08)", border: "1px solid rgba(59,130,246,0.15)", color: "#3b82f6", textDecoration: "none" }}>
+                  📷 See Examples
+                </a>
+                <a href={`https://www.youtube.com/results?search_query=${levelQuery}`} target="_blank" rel="noopener noreferrer"
+                  style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 4, padding: "8px 6px", borderRadius: 8, fontSize: 10, fontWeight: 700, background: "rgba(196,152,42,0.08)", border: "1px solid rgba(196,152,42,0.15)", color: "#C4982A", textDecoration: "none" }}>
+                  🏅 {levelShort} Examples
+                </a>
+              </div>
+            );
+          })()}
+
+          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+            <button onClick={() => setShowCompare(!showCompare)} className="btn-outline"
+              style={{ flex: 1, padding: "10px 6px", fontSize: 12, fontWeight: 700, color: showCompare ? "#C4982A" : "rgba(255,255,255,0.4)", borderColor: showCompare ? "rgba(196,152,42,0.4)" : undefined }}>
+              📷 {showCompare ? "Hide" : "Show"} Frame Compare
+            </button>
+            <button onClick={() => setShowSkeleton(!showSkeleton)} className="btn-outline"
+              style={{ flex: 1, padding: "10px 6px", fontSize: 12, fontWeight: 700, color: showSkeleton ? "#22c55e" : "rgba(255,255,255,0.4)", borderColor: showSkeleton ? "rgba(34,197,94,0.4)" : undefined }}>
+              🦴 Skeleton {showSkeleton ? "ON" : "OFF"}
+            </button>
+          </div>
+          <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+            <button onClick={() => jumpTo(activeIdx-1)} disabled={activeIdx<=0} className="btn-outline"
+              style={{ flex: 1, padding: "10px 6px", fontSize: 13, fontWeight: 600, opacity: activeIdx<=0 ? 0.3 : 1 }}>← Prev</button>
+            <button onClick={slowMoReplay} className="btn-outline"
+              style={{ flex: 1.3, padding: "10px 6px", fontSize: 13, fontWeight: 600, color: "#C4982A", borderColor: "rgba(196,152,42,0.5)" }}>🐢 Slow-Mo</button>
+            <button onClick={() => jumpTo(activeIdx+1)} disabled={activeIdx>=sorted.length-1} className="btn-outline"
+              style={{ flex: 1, padding: "10px 6px", fontSize: 13, fontWeight: 600, opacity: activeIdx>=sorted.length-1 ? 0.3 : 1 }}>Next →</button>
+          </div>
+        </div>
+      )}
+
+      {!ad && <div style={{ height: 12 }} />}
+
+      {/* ── SKILL LIST — tap to jump ── */}
+      <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.5)", marginBottom: 10, marginTop: 8, letterSpacing: 0.5 }}>
+        TAP A SKILL TO JUMP VIDEO
+      </div>
+      {sorted.map((d, i) => {
+        const c = DEDUCTION_SCALE[d.severity]?.color || "#f59e0b";
+        const isActive = i === activeIdx;
+        return (
+          <div key={i} onClick={() => jumpTo(i)} style={{
+            display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderRadius: 12,
+            marginBottom: 6, cursor: "pointer", transition: "all 0.2s",
+            background: isActive ? `${c}18` : "rgba(255,255,255,0.03)",
+            borderLeft: `4px solid ${isActive ? c : "transparent"}`,
+            border: isActive ? `1px solid ${c}30` : "1px solid transparent",
+          }}>
+            <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 13, fontWeight: 700, color: isActive ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.4)", minWidth: 42 }}>{d.timestamp?.toLowerCase() === "global" ? "ALL" : fmt(tsToSec(d.timestamp))}</span>
+            <div style={{ flex: 1 }}>
+              <span style={{ fontSize: 14, fontWeight: 600, color: isActive ? "white" : "rgba(255,255,255,0.7)", display: "block", lineHeight: 1.3 }}>{safeStr(d.skill)}</span>
+              {d.fault && (
+                <span style={{ fontSize: 12, color: isActive ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.3)", display: "block", marginTop: 3, lineHeight: 1.4 }}>{safeStr(d.fault).length > 80 ? safeStr(d.fault).substring(0, 80) + "..." : safeStr(d.fault)}</span>
+              )}
+              {d.confidence != null && (
+                <span style={{
+                  fontSize: 9, padding: "1px 5px", borderRadius: 3, fontWeight: 600, marginTop: 3, display: "inline-block",
+                  background: d.confidence >= 0.8 ? "rgba(34,197,94,0.12)" : d.confidence >= 0.6 ? "rgba(245,158,11,0.12)" : "rgba(239,68,68,0.12)",
+                  color: d.confidence >= 0.8 ? "#22c55e" : d.confidence >= 0.6 ? "#f59e0b" : "#ef4444",
+                }}>{Math.round(d.confidence * 100)}%</span>
+              )}
+            </div>
+            <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 15, fontWeight: 700, color: c }}>-{safeNum(d.deduction, 0).toFixed(2)}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+// ─── GRADE DISPLAY HELPERS ──────────────────────────────────────────────────
+
+const GRADE_COLOR = {
+  "A+":"#22C55E","A":"#22C55E","A-":"#4ADE80",
+  "B+":"#86EFAC","B":"#F59E0B","B-":"#F59E0B",
+  "C+":"#FB923C","C":"#F97316","C-":"#EF4444",
+  "D+":"#DC2626","D":"#DC2626","F":"#7C3AED",
+};
+
+const GRADE_LABEL_MAP = {
+  "A+":"Perfect","A":"Excellent","A-":"Very Good",
+  "B+":"Good+","B":"Good","B-":"Good−",
+  "C+":"Average+","C":"Average","C-":"Below Avg",
+  "D+":"Needs Work","D":"Poor","F":"Fall",
+};
+
+function GradeCircle({ grade, size = 52 }) {
+  const color = GRADE_COLOR[grade] || "#C4982A";
+  return (
+    <div style={{ width: size, height: size, borderRadius: "50%", flexShrink: 0,
+      border: `2.5px solid ${color}`, background: `${color}14`,
+      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+    }}>
+      <div style={{ fontSize: size * 0.30, fontWeight: 900, color,
+        fontFamily: "'Space Mono', monospace", lineHeight: 1 }}>
+        {grade}
+      </div>
+      <div style={{ fontSize: size * 0.13, color: `${color}AA`, fontWeight: 600, marginTop: 1 }}>
+        {GRADE_LABEL_MAP[grade] || ""}
+      </div>
+    </div>
+  );
+}
+
+// ─── GRADED SKILL CARD ───────────────────────────────────────────────────────
+
+function GradedSkillCard({ skill, onSeek }) {
+  const [expanded, setExpanded] = useState(false);
+  const color   = GRADE_COLOR[skill.grade] || "#C4982A";
+  const isClean = !skill.fault || skill.gradeDeduction === 0;
+
+  return (
+    <div style={{
+      background: "rgba(255,255,255,0.03)",
+      border: `1px solid ${expanded ? color + "40" : "rgba(255,255,255,0.06)"}`,
+      borderRadius: 14, marginBottom: 10, overflow: "hidden", transition: "border-color 0.2s",
+    }}>
+      {/* ── Header ── */}
+      <button onClick={() => setExpanded(v => !v)}
+        style={{ width: "100%", textAlign: "left", padding: "14px 16px",
+          background: "transparent", border: "none", cursor: "pointer",
+          display: "flex", alignItems: "center", gap: 14 }}>
+
+        <GradeCircle grade={skill.grade} size={48} />
+
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: "#E2E8F0", marginBottom: 3 }}>
+            {skill.skill}
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)",
+              fontFamily: "'Space Mono', monospace" }}>{skill.timestamp}</span>
+            <span style={{ fontSize: 10, fontWeight: 600, padding: "1px 8px", borderRadius: 10,
+              background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.35)",
+              textTransform: "uppercase" }}>{skill.type}</span>
+          </div>
+          {!expanded && skill.fault && (
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginTop: 4,
+              lineHeight: 1.4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {skill.fault}
+            </div>
+          )}
+        </div>
+
+        {/* Deduction or clean badge */}
+        <div style={{ textAlign: "right", flexShrink: 0 }}>
+          {isClean ? (
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#22C55E", padding: "4px 10px",
+              borderRadius: 20, background: "rgba(34,197,94,0.1)",
+              border: "1px solid rgba(34,197,94,0.2)" }}>
+              ✓ Clean
+            </div>
+          ) : (
+            <div style={{ fontSize: 18, fontWeight: 800, color,
+              fontFamily: "'Space Mono', monospace" }}>
+              -{(skill.gradeDeduction || 0).toFixed(2)}
+            </div>
+          )}
+        </div>
+
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"
+          stroke="rgba(255,255,255,0.3)" strokeWidth="1.8"
+          style={{ transform: expanded ? "rotate(180deg)" : "none",
+            transition: "transform 0.2s", flexShrink: 0 }}>
+          <path d="M2 5l5 4 5-4"/>
+        </svg>
+      </button>
+
+      {/* ── Expanded detail ── */}
+      {expanded && (
+        <div style={{ padding: "0 16px 16px" }}>
+
+          {/* Jump to timestamp */}
+          {onSeek && (
+            <button onClick={() => onSeek(skill.timestampSec || 0)}
+              style={{ display: "flex", alignItems: "center", gap: 6,
+                padding: "7px 14px", borderRadius: 8, marginBottom: 14,
+                background: "rgba(196,152,42,0.1)",
+                border: "1px solid rgba(196,152,42,0.2)",
+                color: "#C4982A", fontSize: 12, fontWeight: 600,
+                cursor: "pointer", fontFamily: "'Outfit', sans-serif" }}>
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+                <path d="M3 2l7 4-7 4V2z"/>
+              </svg>
+              Jump to {skill.timestamp}
+            </button>
+          )}
+
+          {/* Fault */}
+          {skill.fault && (
+            <div style={{ marginBottom: 12, padding: "10px 14px", borderRadius: 10,
+              background: `${color}08`, borderLeft: `3px solid ${color}`,
+              border: `1px solid ${color}25` }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color,
+                letterSpacing: 1, textTransform: "uppercase", marginBottom: 4 }}>
+                Fault Observed
+              </div>
+              <div style={{ fontSize: 13, color: "#E2E8F0", lineHeight: 1.6 }}>
+                {skill.fault}
+              </div>
+            </div>
+          )}
+
+          {/* Strength */}
+          {skill.strength && (
+            <div style={{ marginBottom: 12, padding: "10px 14px", borderRadius: 10,
+              background: "rgba(34,197,94,0.05)",
+              border: "1px solid rgba(34,197,94,0.2)",
+              borderLeft: "3px solid #22C55E" }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "#22C55E",
+                letterSpacing: 1, textTransform: "uppercase", marginBottom: 4 }}>
+                Strength
+              </div>
+              <div style={{ fontSize: 13, color: "#E2E8F0", lineHeight: 1.6 }}>
+                {skill.strength}
+              </div>
+            </div>
+          )}
+
+          {/* Coach note */}
+          {skill.coachNote && (
+            <div style={{ padding: "8px 12px", borderRadius: 8,
+              background: "rgba(59,130,246,0.06)",
+              border: "1px solid rgba(59,130,246,0.15)" }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "#3B82F6",
+                letterSpacing: 1, textTransform: "uppercase", marginBottom: 3 }}>
+                Coach Note
+              </div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", lineHeight: 1.6 }}>
+                {skill.coachNote}
+              </div>
+            </div>
+          )}
+
+          {/* Clean skill — show Gemini's celebration note */}
+          {isClean && (
+            <div style={{ padding: "10px 14px", borderRadius: 10,
+              background: "rgba(34,197,94,0.06)",
+              border: "1px solid rgba(34,197,94,0.2)",
+              display: "flex", alignItems: "flex-start", gap: 10 }}>
+              <span style={{ fontSize: 20, flexShrink: 0 }}>✓</span>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#22C55E", marginBottom: skill.strength ? 3 : 0 }}>
+                  Clean execution — no deduction
+                </div>
+                {skill.strength && (
+                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", lineHeight: 1.6 }}>
+                    {skill.strength}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── GRADED SKILLS VIEW ──────────────────────────────────────────────────────
+// Primary results tab: one card per skill, grade badge, fault if any.
+
+function GradedSkillsView({ result, videoUrl }) {
+  const videoRef   = useRef(null);
+  const skills     = result.gradedSkills || [];
+  const cleanCount = skills.filter(s => !s.fault || s.gradeDeduction === 0).length;
+  const dedCount   = skills.filter(s => s.fault  && s.gradeDeduction  > 0).length;
+
+  // Best grade in the routine
+  const RANK = {"A+":12,"A":11,"A-":10,"B+":9,"B":8,"B-":7,"C+":6,"C":5,"C-":4,"D+":3,"D":2,"F":1};
+  const bestGrade = skills.reduce(
+    (best, s) => (RANK[s.grade] || 0) > (RANK[best] || 0) ? s.grade : best, "F"
+  );
+
+  const handleSeek = (sec) => {
+    const v = videoRef.current;
+    if (!v) return;
+    v.currentTime = Math.max(0, sec - 0.3);
+    v.pause();
+  };
+
+  if (skills.length === 0) {
+    return (
+      <div style={{ padding: "40px 0", textAlign: "center" }}>
+        <div style={{ fontSize: 36, marginBottom: 12 }}>🤸</div>
+        <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 6 }}>
+          No graded skills yet
+        </div>
+        <div style={{ fontSize: 13, color: "rgba(255,255,255,0.4)" }}>
+          Re-analyze the routine to use the new grading system.
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      {/* ── Summary row ── */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+        {[
+          ["Skills", skills.length, "#C4982A", "rgba(255,255,255,0.03)", "rgba(255,255,255,0.06)"],
+          ["Clean",  cleanCount,   "#22C55E", "rgba(34,197,94,0.05)",   "rgba(34,197,94,0.2)"],
+          ["Faults", dedCount,     "#EF4444", "rgba(239,68,68,0.05)",   "rgba(239,68,68,0.2)"],
+          ["Best",   bestGrade,    GRADE_COLOR[bestGrade] || "#C4982A", "rgba(196,152,42,0.05)", "rgba(196,152,42,0.15)"],
+        ].map(([label, val, color, bg, border]) => (
+          <div key={label} style={{ flex: 1, padding: "12px 6px", background: bg,
+            border: `1px solid ${border}`, borderRadius: 12, textAlign: "center" }}>
+            <div style={{ fontSize: 22, fontWeight: 900, color,
+              fontFamily: "'Space Mono', monospace" }}>{val}</div>
+            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)",
+              textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Biggest fix banner ── */}
+      {result.diagnostics?.biggestFix && (
+        <div style={{ marginBottom: 16, padding: "12px 14px", borderRadius: 12,
+          background: "rgba(196,152,42,0.06)",
+          border: "1px solid rgba(196,152,42,0.2)",
+          borderLeft: "3px solid #C4982A" }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: "#C4982A",
+            letterSpacing: 1, textTransform: "uppercase", marginBottom: 4 }}>
+            #1 Focus Area
+          </div>
+          <div style={{ fontSize: 13, color: "#E2E8F0", lineHeight: 1.6 }}>
+            {result.diagnostics.biggestFix}
+          </div>
+        </div>
+      )}
+
+      {/* ── Compact video player (sticky) ── */}
+      {videoUrl && (
+        <div style={{ position: "sticky", top: 0, zIndex: 10,
+          borderRadius: 12, overflow: "hidden", background: "#000",
+          marginBottom: 16, border: "1px solid rgba(255,255,255,0.08)" }}>
+          <video ref={videoRef} src={videoUrl} controls controlsList="nodownload"
+            playsInline webkit-playsinline="" preload="metadata"
+            style={{ width: "100%", display: "block", maxHeight: 220 }} />
+        </div>
+      )}
+
+      {/* ── Skill cards ── */}
+      <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.3)",
+        letterSpacing: 1, textTransform: "uppercase", marginBottom: 12 }}>
+        Skill-by-Skill Breakdown
+      </div>
+
+      {skills.map((skill, idx) => (
+        <GradedSkillCard
+          key={skill.id || idx}
+          skill={skill}
+          onSeek={videoUrl ? handleSeek : null}
+        />
+      ))}
+    </div>
+  );
+}
+
+// ─── RESULTS SCREEN ─────────────────────────────────────────────────
+function ResultsScreen({ result, profile, history, videoUrl, onBack, onDrills }) {
+  const [activeTab, setActiveTab] = useState("overview");
   const [actualScore, setActualScore] = useState("");
   const [scoreSaved, setScoreSaved] = useState(false);
-  const [showPro, setShowPro] = useState(false);
-  const [videoLoading, setVideoLoading] = useState(true);
-  const [videoPlayError, setVideoPlayError] = useState(false);
-  const [freshVideoUrl, setFreshVideoUrl] = useState(null);
-  const [videoOverlay, setVideoOverlay] = useState(null);
-  const videoRef = useRef(null);
-  const skillCardRefs = useRef({});
-
-  // Generate fresh blob URL from stored File ref (fixes blob URL death on navigation)
-  useEffect(() => {
-    if (videoFileRef?.current) {
-      const url = URL.createObjectURL(videoFileRef.current);
-      setFreshVideoUrl(url);
-      setVideoLoading(true);
-      setVideoPlayError(false);
-    }
-  }, [videoFileRef]);
-
-  // Auto-dismiss video overlay after 4 seconds
-  useEffect(() => {
-    if (videoOverlay) {
-      const t = setTimeout(() => setVideoOverlay(null), 4000);
-      return () => clearTimeout(t);
-    }
-  }, [videoOverlay]);
+  const [showSkeleton, setShowSkeleton] = useState(true);
 
   if (!result) return null;
 
-  const skills = safeArray(result.skillAnalysis);
-  const deds = safeArray(result.executionDeductions);
-  const sortedDeds = [...deds].sort((a, b) => safeNum(b.deduction, 0) - safeNum(a.deduction, 0));
+  const groupedDeds = result.executionDeductions || [];
   const scoreColor = result.finalScore >= 9.0 ? "#22c55e" : result.finalScore >= 8.0 ? "#f59e0b" : "#ef4444";
-  const isPro = (() => { try { return localStorage.getItem("strive-tier") === "pro"; } catch { return false; } })();
-  const vidUrl = freshVideoUrl || videoUrl || result.videoUrl;
-  const hasVideo = !!vidUrl;
   const actualNum = parseFloat(actualScore);
   const hasDiff = !isNaN(actualNum) && actualNum > 0;
   const diff = hasDiff ? (result.finalScore - actualNum) : 0;
+  const diffAbs = Math.abs(diff).toFixed(3);
+  const diffLabel = diff > 0 ? `AI scored ${diffAbs} HIGH` : diff < 0 ? `AI scored ${diffAbs} LOW` : "Exact match!";
+  const diffColor = Math.abs(diff) < 0.15 ? "#22c55e" : Math.abs(diff) < 0.4 ? "#f59e0b" : "#ef4444";
 
-  const jumpVideo = (timestamp) => {
-    if (!videoRef.current || !timestamp) return;
-    const first = String(timestamp).split(/[,\-]/)[0].trim();
-    if (String(first || '').toLowerCase() === "global") return;
-    const parts = first.split(":");
-    const sec = parts.length === 2 ? parseInt(parts[0]) * 60 + parseInt(parts[1]) : parseFloat(first);
-    if (isFinite(sec)) {
-      videoRef.current.currentTime = Math.max(0, sec - 0.5);
-      videoRef.current.pause();
-    }
-  };
-
-  // Estimated angle ranges when AI doesn't provide exact angles
-  const ESTIMATED_ANGLES = {
-    "Bent knees": { joint: "Knee", measured: "~162°", ideal: "180°", deviation: "~18°", severity: "medium" },
-    "Soft knees": { joint: "Knee", measured: "~168°", ideal: "180°", deviation: "~12°", severity: "small" },
-    "Knee bend": { joint: "Knee", measured: "~165°", ideal: "180°", deviation: "~15°", severity: "small-medium" },
-    "Leg separation": { joint: "Hips", measured: "~15° apart", ideal: "0° (together)", deviation: "~15°", severity: "small-medium" },
-    "Pike": { joint: "Hip", measured: "~155°", ideal: "180°", deviation: "~25°", severity: "medium" },
-    "Arch": { joint: "Spine", measured: "~160°", ideal: "180°", deviation: "~20°", severity: "medium" },
-    "Flexed feet": { joint: "Ankle", measured: "~95°", ideal: "140°+ (pointed)", deviation: "~45°", severity: "small" },
-    "Toe point": { joint: "Ankle", measured: "~100°", ideal: "140°+", deviation: "~40°", severity: "small" },
-    "Balance check": { joint: "Core/CoG", measured: "shifted", ideal: "centered", deviation: "visible", severity: "small" },
-    "Steps on landing": { joint: "Ankle/Knee", measured: "unstable", ideal: "stuck", deviation: "1-2 steps", severity: "small-medium" },
-    "Deep squat": { joint: "Knee", measured: "~90°", ideal: "135°+", deviation: "~45°", severity: "medium-large" },
-    "Insufficient split": { joint: "Hip", measured: "~140°", ideal: "180°", deviation: "~40°", severity: "medium" },
-    "Short handstand": { joint: "Shoulder", measured: "~160°", ideal: "180°", deviation: "~20°", severity: "small" },
-    "Off vertical": { joint: "Body line", measured: "~170°", ideal: "180°", deviation: "~10°", severity: "small" },
-    "Cowboy": { joint: "Knees", measured: ">1.2× shoulder width", ideal: "shoulder width", deviation: "wide", severity: "medium" },
-    "Head position": { joint: "Neck", measured: "tucked/thrown", ideal: "neutral", deviation: "visible", severity: "small" },
-  };
-
-  const getEstimatedAngles = (fault, engine) => {
-    const text = `${fault || ""} ${engine || ""}`.toLowerCase();
-    for (const [key, data] of Object.entries(ESTIMATED_ANGLES)) {
-      if (text.includes(key.toLowerCase())) return data;
-    }
-    return null;
-  };
-
-  const getSeverityExplanation = (deduction) => {
-    const d = safeNum(deduction, 0);
-    if (d <= 0.05) return "Barely visible fault — judges may or may not take this.";
-    if (d <= 0.10) return "Small but noticeable — most judges will deduct.";
-    if (d <= 0.20) return "Clear deviation from correct form — consistent deduction.";
-    if (d <= 0.30) return "Significant fault — clearly visible to all judges.";
-    if (d <= 0.50) return "Major execution error — large impact on score.";
-    return "Fall or very large fault — maximum deduction category.";
-  };
-
-  // Drill recommendations per fault type
-  const FAULT_DRILLS = {
-    "Bent knees": "Wall sits (3×30s) — slide down wall, press knees straight. Focus on locking out during every skill.",
-    "Soft knees": "Relevé walks (2 min) with squeezed legs. Cue: 'laser beams from kneecaps.'",
-    "Knee bend": "Straight-leg pulses on a panel mat — 3×15 reps emphasizing full extension.",
-    "Leg separation": "Squeeze drills: hold a foam block between ankles during jumps and casts. 3×10.",
-    "Pike": "Hollow body holds (4×20s). Progress from tuck to full hollow, pressing low back to floor.",
-    "Arch": "Superman-to-hollow rolls (3×8). Maintain tension throughout the roll.",
-    "Flexed feet": "Toe-point band exercises (3×20). Loop band around toes, point against resistance.",
-    "Toe point": "Ankle circles + pointed walks (2 min each). Point through every landing.",
-    "Steps on landing": "Stick drills from low box (3×10). Master each height before progressing.",
-    "Deep squat": "Eccentric squats (3×10, 4-sec descent). Same absorption pattern as landing.",
-    "Insufficient split": "Oversplit stretches (3×30s each side) on a raised surface. Daily flexibility work.",
-    "Short handstand": "Wall handstand holds (3×30s). Focus on open shoulder angle and stacked alignment.",
-    "Off vertical": "Handstand line drills against wall — heel, hip, shoulder, wrist in one line.",
-    "Balance check": "Single-leg relevé holds (3×20s each foot). Close eyes to increase challenge.",
-    "Cowboy": "Band walks (2×20 steps). Strengthen hip adductors to keep knees in line.",
-    "Head position": "Tennis ball chin drill (5 min). Hold ball under chin during rolls/handstands.",
-  };
-
-  const getFaultDrill = (fault, engine) => {
-    const text = `${fault || ""} ${engine || ""}`.toLowerCase();
-    for (const [key, drill] of Object.entries(FAULT_DRILLS)) {
-      if (text.includes(key.toLowerCase())) return drill;
-    }
-    return null;
-  };
-
-  const handleSkillTap = (idx) => {
-    const wasActive = activeSkill === idx;
-    setActiveSkill(wasActive ? null : idx);
-    if (!wasActive && skills[idx]) {
-      const s = skills[idx];
-      if (s.timestamp) jumpVideo(s.timestamp);
-      // Show overlay on video with skill info
-      if (s.deduction > 0) {
-        setVideoOverlay({ skill: safeStr(s.skill), fault: safeStr(s.fault), deduction: safeNum(s.deduction, 0) });
-      } else {
-        setVideoOverlay({ skill: safeStr(s.skill), fault: "Clean execution", deduction: 0 });
-      }
-      // Scroll the card into view (just below the sticky header)
-      setTimeout(() => {
-        const el = skillCardRefs.current[idx];
-        if (el) el.scrollIntoView({ behavior: "smooth", block: "nearest" });
-      }, 100);
-    } else {
-      setVideoOverlay(null);
-    }
-  };
-
-  const sevColors = { clean: "#22c55e", minor: "#86efac", moderate: "#f59e0b", major: "#ef4444" };
+  const hasVideo = !!(result.videoUrl || videoUrl);
+  
+  // ── Tier gating: check localStorage for pro status ──
+  const isPro = (() => { try { return localStorage.getItem("strive-tier") === "pro"; } catch { return false; } })();
+  
+  const tabs = [
+    { id: "overview",   label: "Overview" },
+    { id: "skills",     label: "🏅 Skills" },
+    ...(hasVideo ? [{ id: "review", label: "▶ Video" }] : []),
+    { id: "deductions", label: "Deductions" },
+    { id: "biomechanics", label: "🦴 Bio", pro: true },
+    { id: "coach",      label: "Program",  pro: true },
+    { id: "diagnostics",label: "Diagnostics", pro: true },
+    { id: "whatif",     label: "What If?", pro: true },
+  ];
 
   return (
-    <div style={{ minHeight: "100vh", padding: "0 0 90px", maxWidth: 540, margin: "0 auto" }}>
+    <div style={{ minHeight: "100vh", padding: "16px 18px 90px", maxWidth: 540, margin: "0 auto" }}>
+      <button onClick={onBack} style={{
+        background: "none", border: "none", color: "rgba(196,152,42,0.6)", cursor: "pointer",
+        fontFamily: "'Outfit', sans-serif", fontSize: 13, fontWeight: 600, marginBottom: 14,
+        display: "flex", alignItems: "center", gap: 4,
+      }}>
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.5 2.5l-5 5 5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        Dashboard
+      </button>
 
-      {/* ═══ STICKY VIDEO + SCORE BAR ═══ */}
-      <div style={{ position: "sticky", top: 0, zIndex: 50, background: "#0B1024" }}>
-        {/* Video */}
-        {hasVideo && !videoPlayError && (
-          <div style={{ position: "relative", background: "#000" }}>
-            {videoLoading && (
-              <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", zIndex: 2 }}>
-                <div style={{ width: 32, height: 32, borderRadius: "50%", border: "3px solid rgba(196,152,42,0.2)", borderTopColor: "#C4982A", animation: "rotate 1s linear infinite" }} />
-              </div>
-            )}
-            <video ref={videoRef} src={vidUrl} controls playsInline muted preload="metadata"
-              onLoadedData={() => setVideoLoading(false)}
-              onError={() => { setVideoLoading(false); setVideoPlayError(true); }}
-              style={{ width: "100%", maxHeight: 220, display: "block" }} />
-            {/* Deduction overlay on video — shows when a card is tapped */}
-            {videoOverlay && (
-              <div onClick={() => setVideoOverlay(null)} style={{
-                position: "absolute", bottom: 36, left: 12, right: 12,
-                padding: "8px 12px", borderRadius: 10,
-                background: "rgba(0,0,0,0.85)", backdropFilter: "blur(8px)",
-                border: `1px solid ${videoOverlay.deduction > 0 ? "rgba(239,68,68,0.3)" : "rgba(34,197,94,0.3)"}`,
-                display: "flex", alignItems: "center", justifyContent: "space-between",
-                animation: "fadeIn 0.15s ease-out", cursor: "pointer", zIndex: 3,
-              }}>
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: "#e2e8f0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                    {videoOverlay.skill}
-                  </div>
-                  <div style={{ fontSize: 14, color: "rgba(255,255,255,0.45)", marginTop: 1 }}>
-                    {videoOverlay.fault.substring(0, 50)}
-                  </div>
+      {/* Demo mode notice */}
+      {result.isDemo && (
+        <div style={{
+          padding: "12px 16px", borderRadius: 12, marginBottom: 16,
+          background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.2)",
+          animation: "fadeIn 0.4s ease-out",
+        }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#f59e0b", marginBottom: 4 }}>
+            ⚠ Demo Analysis
+          </div>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>
+            {result.failureReason ? (
+              <>
+                Analysis error: <span style={{ color: "#ef4444", fontFamily: "'Space Mono', monospace", fontSize: 11 }}>{result.failureReason}</span>
+                <div style={{ marginTop: 6, color: "rgba(255,255,255,0.4)" }}>
+                  {result.failureReason.match(/JSON|parse|Unexpected|truncat/i) ? (
+                    "The AI returned an incomplete response. This happens occasionally — try uploading again."
+                  ) : result.failureReason.match(/403|401|key|quota/i) ? (
+                    "API rate limit reached. Wait a minute and try again, or add your own key in Settings."
+                  ) : result.failureReason.match(/video|frame|extract/i) ? (
+                    "Video format issue. Try re-saving: open video in Photos → Edit → Done, then re-upload."
+                  ) : (
+                    "Try uploading again. If this persists, the video may be too long or in an unsupported format."
+                  )}
                 </div>
-                {videoOverlay.deduction > 0 && (
-                  <span style={{ fontSize: 16, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: "#ef4444", flexShrink: 0, marginLeft: 8 }}>
-                    -{videoOverlay.deduction.toFixed(2)}
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-        {videoPlayError && (
-          <div style={{ padding: "16px 18px", background: "rgba(239,68,68,0.06)", borderBottom: "1px solid rgba(239,68,68,0.12)", display: "flex", alignItems: "center", gap: 8 }}>
-            <Icon name="warning" size={16} color="#ef4444" />
-            <span style={{ fontSize: 16, color: "rgba(239,68,68,0.8)" }}>Video playback unavailable. Analysis results shown below.</span>
-          </div>
-        )}
-
-        {/* Score bar — compact */}
-        <div style={{
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "10px 18px", borderBottom: "1px solid rgba(255,255,255,0.04)",
-          background: "rgba(11,16,36,0.95)", backdropFilter: "blur(12px)",
-        }}>
-          <button onClick={onBack} style={{
-            background: "none", border: "none", color: "rgba(196,152,42,0.6)", cursor: "pointer",
-            fontFamily: "'Outfit', sans-serif", fontSize: 16, fontWeight: 600,
-            display: "flex", alignItems: "center", gap: 3, padding: 0,
-          }}>
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M7 2L3 6l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-            Back
-          </button>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ fontSize: 14, color: "rgba(255,255,255,0.25)", letterSpacing: 0.5 }}>
-              {result.event} · {result.level}
-            </span>
-            <span style={{ fontSize: 24, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: scoreColor }}>
-              {safeNum(result.finalScore, 0, 0, 10).toFixed(3)}
-            </span>
-          </div>
-          <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)", textAlign: "right", lineHeight: 1.4 }}>
-            <div style={{ color: "#ef4444", fontFamily: "'Space Mono', monospace" }}>-{safeNum(result.totalDeductions, 0).toFixed(2)}</div>
-            <div>{deds.length} ded</div>
+              </>
+            ) : "Demo mode — upload a video for real AI analysis."}
           </div>
         </div>
+      )}
 
-        {/* Skill timeline — horizontal scroll */}
-        {skills.length > 0 && (
+      {/* Score Card with celebration */}
+      <div style={{
+        background: "linear-gradient(135deg, rgba(196,152,42,0.1), rgba(196,152,42,0.03))",
+        border: `1px solid ${scoreColor}30`, borderRadius: 20, padding: 28,
+        textAlign: "center", marginBottom: 24, animation: "scaleIn 0.5s ease-out",
+        position: "relative", overflow: "hidden",
+      }}>
+        {/* Ambient glow behind score */}
+        <div style={{
+          position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)",
+          width: 200, height: 200, borderRadius: "50%",
+          background: `radial-gradient(circle, ${scoreColor}12 0%, transparent 70%)`,
+          pointerEvents: "none",
+        }} />
+
+        <div style={{ position: "relative", zIndex: 1 }}>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", fontWeight: 600, letterSpacing: 2, marginBottom: 4 }}>
+            {result.event?.toUpperCase()} · {result.level}
+          </div>
           <div style={{
-            display: "flex", gap: 2, padding: "8px 18px", overflowX: "auto",
-            background: "rgba(11,16,36,0.9)", borderBottom: "1px solid rgba(255,255,255,0.03)",
-            WebkitOverflowScrolling: "touch",
+            fontSize: 56, fontWeight: 900, fontFamily: "'Space Mono', monospace",
+            color: scoreColor, lineHeight: 1, marginBottom: 4,
           }}>
-            {skills.map((s, i) => {
-              const c = sevColors[s.score] || "#22c55e";
-              const isActive = activeSkill === i;
-              return (
-                <button key={i} onClick={() => handleSkillTap(i)} style={{
-                  flexShrink: 0, padding: "4px 10px", borderRadius: 8,
-                  background: isActive ? `${c}18` : "transparent",
-                  border: `1px solid ${isActive ? `${c}40` : "transparent"}`,
-                  cursor: "pointer", fontFamily: "'Outfit', sans-serif",
-                  display: "flex", alignItems: "center", gap: 4,
-                  transition: "all 0.15s",
-                }}>
-                  <div style={{ width: 6, height: 6, borderRadius: "50%", background: c, flexShrink: 0, boxShadow: s.deduction > 0 ? `0 0 6px ${c}50` : "none" }} />
-                  <span style={{ fontSize: 16, fontWeight: 600, color: isActive ? c : "rgba(255,255,255,0.3)", whiteSpace: "nowrap" }}>
-                    {safeStr(s.skill).substring(0, 14)}
-                  </span>
-                </button>
-              );
-            })}
+            {safeNum(result.finalScore, 0, 0, 10).toFixed(3)}
+          </div>
+
+          {/* Score-specific celebration/context message */}
+          <div style={{
+            fontSize: 12, fontWeight: 600, marginBottom: 12,
+            color: result.finalScore >= 9.2 ? "#22c55e" : result.finalScore >= 8.5 ? "#C4982A" : result.finalScore >= 7.5 ? "#f59e0b" : "#ef4444",
+          }}>
+            {result.finalScore >= 9.5 ? "Outstanding — elite-level execution" :
+             result.finalScore >= 9.2 ? "Excellent — top of the field" :
+             result.finalScore >= 9.0 ? "Strong performance — podium range" :
+             result.finalScore >= 8.5 ? "Solid routine — room to push higher" :
+             result.finalScore >= 8.0 ? "Good foundation — focused fixes will jump this score" :
+             result.finalScore >= 7.5 ? "Building — the biggest gains are within reach" :
+             "Keep working — every practice makes a difference"}
+          </div>
+          <div style={{ display: "flex", justifyContent: "center", gap: 20, marginTop: 16, alignItems: "center" }}>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", letterSpacing: 0.5 }}>START VALUE</div>
+            <div style={{ fontSize: 20, fontWeight: 700, fontFamily: "'Space Mono', monospace" }}>
+              {safeNum(result.startValue, 10).toFixed(1)}
+            </div>
+          </div>
+          <span style={{ fontSize: 18, fontWeight: 300, color: "rgba(255,255,255,0.25)", marginTop: 10 }}>-</span>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", letterSpacing: 0.5 }}>DEDUCTIONS ({safeArray(result.executionDeductions).length})</div>
+            <div style={{ fontSize: 20, fontWeight: 700, fontFamily: "'Space Mono', monospace", color: "#ef4444" }}>
+              {safeNum(result.totalDeductions, 0).toFixed(3)}
+            </div>
+          </div>
+          <span style={{ fontSize: 18, fontWeight: 300, color: "rgba(255,255,255,0.25)", marginTop: 10 }}>=</span>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", letterSpacing: 0.5 }}>FINAL SCORE</div>
+            <div style={{ fontSize: 20, fontWeight: 700, fontFamily: "'Space Mono', monospace", color: scoreColor }}>
+              {safeNum(result.finalScore, 0).toFixed(3)}
+            </div>
+          </div>
+        </div>
+        {result.calibrationBias && (
+          <div style={{ marginTop: 12, fontSize: 11, color: "rgba(255,255,255,0.4)", lineHeight: 1.5 }}>
+            <span style={{ background: "rgba(59,130,246,0.12)", color: "#60a5fa", padding: "2px 8px", borderRadius: 4, fontSize: 10, fontWeight: 600 }}>CALIBRATED</span>
+            {" "}Adjusted {result.calibrationBias > 0 ? "-" : "+"}{Math.abs(safeNum(result.calibrationBias, 0)).toFixed(2)} based on past score corrections
+            <span style={{ color: "rgba(255,255,255,0.25)" }}> (raw AI: {safeNum(result.rawAiScore, 0).toFixed(3)})</span>
           </div>
         )}
-
-        {/* ── Tab bar ── */}
-        <div style={{
-          display: "flex", gap: 0, overflowX: "auto", WebkitOverflowScrolling: "touch",
-          borderBottom: "1px solid rgba(255,255,255,0.04)", background: "rgba(11,16,36,0.95)",
-        }}>
-          {[
-            { id: "overview", label: "Overview" },
-            { id: "video", label: "Video Review" },
-            { id: "skills", label: "Skills" },
-            { id: "frames", label: "Frames" },
-            { id: "whatif", label: "What-If" },
-          ].map(tab => (
-            <button key={tab.id} onClick={() => setActiveResultTab(tab.id)} style={{
-              flex: "0 0 auto", padding: "10px 16px", border: "none", cursor: "pointer",
-              background: "transparent", fontFamily: "'Outfit', sans-serif",
-              fontSize: 14, fontWeight: activeResultTab === tab.id ? 700 : 500,
-              color: activeResultTab === tab.id ? "#C4982A" : "rgba(255,255,255,0.35)",
-              borderBottom: activeResultTab === tab.id ? "2px solid #C4982A" : "2px solid transparent",
-              transition: "all 0.15s", whiteSpace: "nowrap",
-            }}>
-              {tab.label}
-            </button>
-          ))}
-        </div>
+        </div>{/* close z-index wrapper */}
       </div>
 
-      {/* ═══ CONTENT ═══ */}
-      <div style={{ padding: "14px 18px 0" }}>
+      {/* Score Benchmark */}
+      <ScoreBenchmark score={result.finalScore} level={result.level} />
 
-        {/* Demo notice — always visible */}
-        {result.isDemo && (
-          <div style={{ padding: "10px 14px", borderRadius: 12, marginBottom: 14, background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.12)", fontSize: 16, color: "rgba(245,158,11,0.8)" }}>
-            Demo — {result.failureReason ? result.failureReason.substring(0, 80) : "upload a video for real analysis"}
+      {/* Event comparison — show improvement from last time */}
+      {(() => {
+        const sameEventHistory = (history || []).filter(h => h.event === result.event && h.score);
+        if (sameEventHistory.length > 0) {
+          const lastScore = sameEventHistory[0].score;
+          const diff = result.finalScore - lastScore;
+          const improved = diff > 0;
+          const same = Math.abs(diff) < 0.01;
+          return (
+            <div className="card" style={{
+              padding: 14, marginBottom: 16,
+              borderColor: same ? "rgba(255,255,255,0.06)" : improved ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.1)",
+              background: same ? "rgba(255,255,255,0.02)" : improved ? "rgba(34,197,94,0.03)" : "rgba(239,68,68,0.02)",
+            }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.35)", letterSpacing: 0.5 }}>VS LAST {result.event?.toUpperCase()}</div>
+                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginTop: 4 }}>
+                    Last: <span style={{ fontFamily: "'Space Mono', monospace", fontWeight: 700, color: "rgba(255,255,255,0.6)" }}>{lastScore.toFixed(3)}</span>
+                    <span style={{ color: "rgba(255,255,255,0.2)", margin: "0 6px" }}>→</span>
+                    Now: <span style={{ fontFamily: "'Space Mono', monospace", fontWeight: 700, color: scoreColor }}>{result.finalScore.toFixed(3)}</span>
+                  </div>
+                </div>
+                <div style={{
+                  fontSize: 18, fontWeight: 900, fontFamily: "'Space Mono', monospace",
+                  color: same ? "rgba(255,255,255,0.3)" : improved ? "#22c55e" : "#ef4444",
+                }}>
+                  {same ? "=" : improved ? "+" : ""}{diff.toFixed(2)}
+                </div>
+              </div>
+              {improved && diff >= 0.1 && (
+                <div style={{ fontSize: 11, color: "#22c55e", marginTop: 8, fontWeight: 600 }}>
+                  {diff >= 0.3 ? "Huge improvement — your training is paying off!" :
+                   diff >= 0.15 ? "Solid progress — keep doing what you're doing." :
+                   "Moving in the right direction. Consistency is key."}
+                </div>
+              )}
+            </div>
+          );
+        }
+        // First analysis for this event
+        if (history.length === 0) {
+          return (
+            <div className="card" style={{ padding: 14, marginBottom: 16, borderColor: "rgba(196,152,42,0.12)", background: "rgba(196,152,42,0.03)" }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: "#C4982A" }}>
+                First analysis recorded for {result.event}
+              </div>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 4 }}>
+                Upload again after your next practice or meet to track your improvement over time.
+              </div>
+            </div>
+          );
+        }
+        return null;
+      })()}
+
+      {/* Actual Score Input */}
+      <div className="card" style={{ marginBottom: 20, padding: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.5)", marginBottom: 6, letterSpacing: 0.5 }}>
+              ACTUAL MEET SCORE
+            </div>
+            <input
+              className="input-field"
+              type="number"
+              step="0.025"
+              min="0"
+              max="10"
+              placeholder="e.g. 8.925"
+              value={actualScore}
+              onChange={(e) => { setActualScore(e.target.value); setScoreSaved(false); }}
+              style={{ padding: "10px 12px", fontSize: 16, fontFamily: "'Space Mono', monospace", fontWeight: 700 }}
+            />
           </div>
+          {hasDiff && (
+            <div style={{ textAlign: "center", minWidth: 100, animation: "fadeIn 0.3s ease-out" }}>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginBottom: 4 }}>DIFFERENCE</div>
+              <div style={{ fontSize: 22, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: diffColor }}>
+                {diff > 0 ? "+" : ""}{diff.toFixed(3)}
+              </div>
+              <div style={{ fontSize: 10, color: diffColor, fontWeight: 600, marginTop: 2 }}>{diffLabel}</div>
+            </div>
+          )}
+        </div>
+        {hasDiff && (
+          <>
+          <div style={{
+            marginTop: 12, padding: "10px 14px", borderRadius: 10,
+            background: `${diffColor}08`, border: `1px solid ${diffColor}22`,
+            fontSize: 12, color: "rgba(255,255,255,0.6)", lineHeight: 1.6,
+          }}>
+            {Math.abs(diff) < 0.15 ? (
+              <span><strong style={{ color: "#22c55e" }}>Excellent calibration.</strong> The AI score is within 0.15 of the actual score — within normal judge variance.</span>
+            ) : Math.abs(diff) < 0.4 ? (
+              <span><strong style={{ color: "#f59e0b" }}>Close.</strong> The AI score is within 0.4 of the actual. {diff > 0 ? "Artistry/composition deductions are hard to see in frames." : "The AI may be stricter than the panel on borderline calls."}</span>
+            ) : (
+              <span><strong style={{ color: "#ef4444" }}>Outside normal variance.</strong> {diff > 0 ? "The AI may be missing deductions not visible in frames." : "The AI may be over-deducting. Real judges see full context."}</span>
+            )}
+          </div>
+          {!scoreSaved && (
+            <button
+              onClick={async () => {
+                try {
+                  const cal = await storage.get("strive-calibration");
+                  const data = cal ? JSON.parse(cal.value) : [];
+                  data.push({
+                    date: new Date().toISOString(),
+                    event: result.event,
+                    level: result.level,
+                    aiScore: result.finalScore,
+                    actualScore: actualNum,
+                    diff: diff,
+                    deductionCount: result.executionDeductions?.length || 0,
+                  });
+                  await storage.set("strive-calibration", JSON.stringify(data.slice(-50)));
+                } catch(e) { log.warn("calibration", "Failed to save calibration: " + e.message); }
+                setScoreSaved(true);
+              }}
+              className="btn-gold"
+              style={{ width: "100%", marginTop: 10, padding: "12px 16px", fontSize: 13 }}
+            >
+              <Icon name="target" size={14} /> Submit Score Correction — Help STRIVE Learn
+            </button>
+          )}
+          {scoreSaved && (
+            <div style={{ marginTop: 10, padding: "10px 14px", borderRadius: 10, background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.2)", fontSize: 12, color: "#22c55e", textAlign: "center" }}>
+              ✓ Score correction saved. Helps calibrate future analyses for {result.level} {result.event}.
+            </div>
+          )}
+          </>
         )}
+      </div>
 
-        {/* ── OVERVIEW TAB ── */}
-        {activeResultTab === "overview" && (<>
-          {/* Score Math Card */}
-          <div style={{ marginBottom: 14, padding: "14px 16px", borderRadius: 14, background: "rgba(196,152,42,0.03)", border: "1px solid rgba(196,152,42,0.08)", animation: "fadeIn 0.4s ease-out" }}>
-            <div style={{ fontSize: 16, fontWeight: 700, color: "rgba(196,152,42,0.5)", letterSpacing: 1, marginBottom: 10 }}>SCORE BREAKDOWN</div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12 }}>
-              <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: 16, color: "rgba(255,255,255,0.3)", marginBottom: 4 }}>START</div>
-                <div style={{ fontSize: 24, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: "rgba(255,255,255,0.8)" }}>10.000</div>
-              </div>
-              <span style={{ fontSize: 20, color: "rgba(255,255,255,0.2)", marginTop: 12 }}>-</span>
-              <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: 16, color: "rgba(255,255,255,0.3)", marginBottom: 4 }}>DEDUCTIONS</div>
-                <div style={{ fontSize: 24, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: "#ef4444" }}>{safeNum(result.totalDeductions, 0).toFixed(3)}</div>
-              </div>
-              <span style={{ fontSize: 20, color: "rgba(255,255,255,0.2)", marginTop: 12 }}>=</span>
-              <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: 16, color: "rgba(255,255,255,0.3)", marginBottom: 4 }}>FINAL</div>
-                <div style={{ fontSize: 24, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: scoreColor }}>{safeNum(result.finalScore, 0, 0, 10).toFixed(3)}</div>
-              </div>
+      {/* Tabs */}
+      <div style={{ display: "flex", gap: 3, marginBottom: 16, background: "rgba(255,255,255,0.025)", borderRadius: 14, padding: 3, overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+        {tabs.map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => (tab.pro && !isPro) ? setActiveTab("pro-gate") : setActiveTab(tab.id)}
+            style={{
+              flex: tab.id === "review" ? "none" : 1, padding: "9px 8px", borderRadius: 11, border: "none", cursor: "pointer",
+              fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 11,
+              background: activeTab === tab.id ? "linear-gradient(135deg, #C4982A, #E8C35A)" : "transparent",
+              color: activeTab === tab.id ? "#0B1024" : (tab.pro && !isPro) ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.45)",
+              transition: "all 0.2s", whiteSpace: "nowrap", position: "relative",
+            }}
+          >
+            {tab.label}
+            {tab.pro && !isPro && (
+              <span style={{ fontSize: 7, marginLeft: 2, verticalAlign: "super", color: "#A78BFA" }}>PRO</span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* ─── PRO UPGRADE GATE (shown when clicking locked tab) ─── */}
+      {activeTab === "pro-gate" && (
+        <div style={{ animation: "fadeIn 0.3s ease-out" }}>
+          <div style={{
+            border: "1.5px solid rgba(139,92,246,0.25)", borderRadius: 20,
+            padding: 32, textAlign: "center", background: "rgba(139,92,246,0.04)",
+            marginBottom: 20,
+          }}>
+            <div style={{ fontSize: 28, marginBottom: 12 }}>🔒</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: "#E2E8F0", marginBottom: 8 }}>
+              Unlock Full Analysis
+            </div>
+            <div style={{ fontSize: 13, color: "#8890AB", lineHeight: 1.7, maxWidth: 300, margin: "0 auto 20px" }}>
+              Get the complete picture: skill-by-skill breakdown, biomechanics dashboard, personalized 5-pillar training program, what-if simulator, and diagnostics.
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, maxWidth: 260, margin: "0 auto 20px", textAlign: "left" }}>
+              {[
+                "🦴 Biomechanics — joint angles, landing forces, injury flags",
+                "🏅 Training Program — drills, strength, nutrition, mental, recovery",
+                "🔮 What-If — see how fixing each skill changes your score",
+                "📊 Diagnostics — engine confidence, scoring breakdown",
+              ].map((feat, i) => (
+                <div key={i} style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.5, padding: "6px 10px", borderRadius: 8, background: "rgba(139,92,246,0.04)", borderLeft: "2px solid rgba(139,92,246,0.2)" }}>
+                  {feat}
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={() => {
+                try { localStorage.setItem("strive-tier", "pro"); } catch {}
+                window.location.reload();
+              }}
+              style={{
+                background: "linear-gradient(135deg, #8B5CF6, #A78BFA)",
+                color: "#FFF", border: "none", padding: "14px 36px",
+                borderRadius: 12, fontWeight: 700, fontSize: 15,
+                cursor: "pointer", fontFamily: "'Outfit', sans-serif",
+                letterSpacing: 0.3, transition: "all 0.2s",
+              }}
+            >
+              Upgrade to STRIVE Pro
+            </button>
+            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", marginTop: 10 }}>
+              Payment integration coming soon — tap to preview Pro features
             </div>
           </div>
 
-          {/* Quick wins */}
-          {sortedDeds.length >= 2 && (() => {
-            const top3 = sortedDeds.slice(0, 3);
-            const gain = top3.reduce((s, d) => s + safeNum(d.deduction, 0), 0);
+          {/* Blurred preview of what's behind the gate */}
+          <div style={{ filter: "blur(4px)", opacity: 0.4, pointerEvents: "none", userSelect: "none" }}>
+            <div className="card" style={{ marginBottom: 10, padding: 16 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#ef4444", letterSpacing: 1 }}>🎯 PRIORITY DRILL</div>
+              <div style={{ fontSize: 13, fontWeight: 600, marginTop: 6 }}>Landing control — stick drill 3x per practice</div>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 4 }}>Based on 3 landing deductions in this routine</div>
+            </div>
+            <div className="card" style={{ marginBottom: 10, padding: 16 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#3b82f6", letterSpacing: 1 }}>💪 STRENGTH TARGET</div>
+              <div style={{ fontSize: 13, fontWeight: 600, marginTop: 6 }}>Single-leg RDL with hold — hamstring/glute power</div>
+            </div>
+            <div className="card" style={{ padding: 16 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#A78BFA", letterSpacing: 1 }}>🧠 MENTAL</div>
+              <div style={{ fontSize: 13, fontWeight: 600, marginTop: 6 }}>Competition visualization before bed</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── VIDEO REVIEW TAB ─── */}
+      {/* ─── SKILLS TAB — primary graded view ─── */}
+      {activeTab === "skills" && (
+        <GradedSkillsView result={result} videoUrl={videoUrl} />
+      )}
+
+      {activeTab === "review" && hasVideo && (
+        <VideoReviewPlayer videoUrl={videoUrl} result={result} />
+      )}
+      {activeTab === "overview" && (
+        <div style={{ animation: "fadeIn 0.4s ease-out" }}>
+          {/* Body fault heatmap */}
+          <BodyHeatmap deductions={result.executionDeductions} />
+
+          {/* Deduction timeline on overview */}
+          <DeductionTimeline deductions={result.executionDeductions} />
+
+          {/* ── Judge's Assessment (Why This Score) ── */}
+          {result.overallAssessment && (
+            <div className="card" style={{ marginBottom: 16 }}>
+              <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 10, color: "#C4982A" }}>
+                ⚖️ Judge's Assessment
+              </h3>
+              <p style={{ fontSize: 14, color: "rgba(255,255,255,0.7)", lineHeight: 1.75 }}>
+                {safeStr(result.overallAssessment)}
+              </p>
+              {result.pathToGoal && (
+                <div style={{ marginTop: 12, padding: "10px 14px", borderRadius: 10,
+                  background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.2)" }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "#22C55E",
+                    letterSpacing: 1, textTransform: "uppercase", marginBottom: 6 }}>
+                    Path to 9.0+
+                  </div>
+                  <p style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", lineHeight: 1.65, margin: 0 }}>
+                    {safeStr(result.pathToGoal)}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── Celebrations — what was genuinely good ── */}
+          {safeArray(result.celebrations).length > 0 && (
+            <div className="card" style={{ marginBottom: 16,
+              background: "linear-gradient(135deg, rgba(34,197,94,0.04), rgba(34,197,94,0.02))",
+              borderColor: "rgba(34,197,94,0.15)" }}>
+              <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, color: "#22C55E" }}>
+                🌟 What Was Excellent
+              </h3>
+              {safeArray(result.celebrations).map((c, i) => (
+                <div key={i} style={{ display: "flex", gap: 12, alignItems: "flex-start",
+                  marginBottom: i < result.celebrations.length - 1 ? 12 : 0,
+                  paddingBottom: i < result.celebrations.length - 1 ? 12 : 0,
+                  borderBottom: i < result.celebrations.length - 1 ? "1px solid rgba(34,197,94,0.1)" : "none" }}>
+                  <div style={{ width: 36, height: 36, borderRadius: "50%", flexShrink: 0,
+                    background: "rgba(34,197,94,0.12)", border: "1px solid rgba(34,197,94,0.3)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 10, fontWeight: 700, color: "#22C55E",
+                    fontFamily: "'Space Mono', monospace" }}>
+                    {safeStr(c.timestamp) || "✓"}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#22C55E", marginBottom: 3 }}>
+                      {safeStr(c.skill)}
+                    </div>
+                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", lineHeight: 1.6 }}>
+                      {safeStr(c.note)}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* ── Artistry Breakdown ── */}
+          {result.artistryBreakdown && (
+            <div className="card" style={{ marginBottom: 16 }}>
+              <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, color: "#C4982A" }}>
+                🎭 Artistry Breakdown
+              </h3>
+              {Object.entries(result.artistryBreakdown).map(([key, val]) => {
+                if (!val || typeof val !== "object") return null;
+                const ded = safeNum(val.deduction, 0);
+                const label = {
+                  fingerLines: "Finger / Hand Lines",
+                  eyeContact:  "Eye Contact with Judges",
+                  musicality:  "Musicality & Rhythm",
+                  confidence:  "Confidence & Stage Presence",
+                  footwork:    "Footwork & Releve",
+                  spaceUsage:  "Use of Floor Space",
+                }[key] || key;
+                const isClean = ded === 0;
+                return (
+                  <div key={key} style={{ display: "flex", alignItems: "flex-start", gap: 12,
+                    marginBottom: 10, paddingBottom: 10,
+                    borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                    <div style={{ width: 28, flexShrink: 0, textAlign: "right",
+                      fontFamily: "'Space Mono', monospace", fontSize: 12, fontWeight: 700,
+                      color: isClean ? "#22C55E" : "#F97316", paddingTop: 1 }}>
+                      {isClean ? "✓" : `-${ded.toFixed(2)}`}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600,
+                        color: isClean ? "#22C55E" : "#E2E8F0", marginBottom: 2 }}>
+                        {label}
+                      </div>
+                      <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: 1.5 }}>
+                        {safeStr(val.note)}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Fallback strengths if no celebrations returned */}
+          {safeArray(result.celebrations).length === 0 && safeArray(result.strengths).length > 0 && (
+            <div className="card" style={{ marginBottom: 16 }}>
+              <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12 }}>
+                <span style={{ color: "#22c55e" }}>✓</span> Strengths
+              </h3>
+              {safeArray(result.strengths).map((s, i) => (
+                <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start", marginBottom: 8 }}>
+                  <span style={{ color: "#22c55e", fontWeight: 700, fontSize: 12, marginTop: 2 }}>●</span>
+                  <span style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", lineHeight: 1.5 }}>{safeStr(s)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Improvement Potential — the conversion hook */}
+          {groupedDeds.length >= 2 && (() => {
+            const top3 = [...groupedDeds].sort((a, b) => safeNum(b.deduction, 0) - safeNum(a.deduction, 0)).slice(0, 3);
+            const potentialGain = top3.reduce((s, d) => s + safeNum(d.deduction, 0), 0);
+            const projectedScore = Math.min(10, safeNum(result.finalScore, 0) + potentialGain);
             return (
-              <div style={{ marginBottom: 14, padding: "12px 14px", borderRadius: 14, background: "rgba(34,197,94,0.03)", border: "1px solid rgba(34,197,94,0.06)" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                  <span style={{ fontSize: 16, fontWeight: 700, color: "rgba(255,255,255,0.2)", letterSpacing: 1 }}>FASTEST PATH TO IMPROVEMENT</span>
-                  <span style={{ fontSize: 18, fontWeight: 800, color: "#22c55e", fontFamily: "'Space Mono', monospace" }}>+{gain.toFixed(2)}</span>
+              <div className="card" style={{
+                padding: 16, marginBottom: 16,
+                background: "linear-gradient(135deg, rgba(196,152,42,0.06), rgba(34,197,94,0.03))",
+                borderColor: "rgba(196,152,42,0.15)",
+              }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#C4982A", letterSpacing: 1, marginBottom: 10 }}>
+                  IMPROVEMENT POTENTIAL
+                </div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginBottom: 12 }}>
+                  <div style={{ textAlign: "center" }}>
+                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>NOW</div>
+                    <div style={{ fontSize: 24, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: scoreColor }}>
+                      {safeNum(result.finalScore, 0).toFixed(1)}
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 20, color: "rgba(196,152,42,0.4)" }}>→</div>
+                  <div style={{ textAlign: "center" }}>
+                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>POSSIBLE</div>
+                    <div style={{ fontSize: 24, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: "#22c55e" }}>
+                      {projectedScore.toFixed(1)}
+                    </div>
+                  </div>
+                  <div style={{ textAlign: "center", marginLeft: 8 }}>
+                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>GAIN</div>
+                    <div style={{ fontSize: 18, fontWeight: 800, fontFamily: "'Space Mono', monospace", color: "#C4982A" }}>
+                      +{potentialGain.toFixed(2)}
+                    </div>
+                  </div>
+                </div>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", lineHeight: 1.6 }}>
+                  Fix just 3 skills and your score jumps by <span style={{ color: "#C4982A", fontWeight: 700 }}>+{potentialGain.toFixed(2)}</span>:
                 </div>
                 {top3.map((d, i) => (
-                  <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "3px 0", fontSize: 16 }}>
-                    <span style={{ color: "rgba(255,255,255,0.45)" }}>{i+1}. {safeStr(d.skill)}</span>
-                    <span style={{ color: "#22c55e", fontWeight: 700, fontFamily: "'Space Mono', monospace" }}>+{safeNum(d.deduction, 0).toFixed(2)}</span>
+                  <div key={i} style={{
+                    display: "flex", justifyContent: "space-between", alignItems: "center",
+                    padding: "6px 0", borderBottom: i < 2 ? "1px solid rgba(255,255,255,0.04)" : "none",
+                  }}>
+                    <span style={{ fontSize: 12, color: "rgba(255,255,255,0.6)" }}>{i + 1}. {safeStr(d.skill)}</span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: "#22c55e", fontFamily: "'Space Mono', monospace" }}>+{safeNum(d.deduction, 0).toFixed(2)}</span>
                   </div>
                 ))}
               </div>
             );
           })()}
-        </>)}
 
-        {/* ── VIDEO REVIEW TAB ── */}
-        {activeResultTab === "video" && (
-          <div style={{ padding: "20px 0", textAlign: "center" }}>
-            <div style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", marginBottom: 10 }}>
-              Video player is pinned above. Tap a skill in the timeline to jump.
-            </div>
-            <div style={{ fontSize: 16, color: "rgba(255,255,255,0.2)" }}>
-              Use slow-mo and scrub controls to review each skill frame by frame.
-            </div>
-          </div>
-        )}
-
-        {/* ── SKILLS TAB ── */}
-        {(activeResultTab === "skills" || activeResultTab === "overview") && (<>
-        {/* ═══ SKILL-BY-SKILL FEED ═══ */}
-        <div style={{ fontSize: 16, fontWeight: 700, color: "rgba(255,255,255,0.15)", letterSpacing: 1, marginBottom: 10 }}>
-          ROUTINE BREAKDOWN · {skills.length} SKILLS
-        </div>
-
-        {skills.map((s, i) => {
-          const isActive = activeSkill === i;
-          const c = sevColors[s.score] || "#22c55e";
-          const hasDed = s.deduction > 0;
-          const bio = safeArray(result.biomechanics?.keyMoments).find(m => m.timestamp === s.timestamp || m.skill === s.skill);
-          const landing = safeArray(result.biomechanics?.landingAnalysis).find(l => l.timestamp === s.timestamp);
-          const injury = safeArray(result.biomechanics?.injuryRiskFlags).find(f => f.timestamp === s.timestamp);
-          const estimated = hasDed ? getEstimatedAngles(s.fault, s.engine) : null;
-          const drill = hasDed ? getFaultDrill(s.fault, s.engine) : null;
-
-          return (
-            <div key={i}
-              ref={el => { skillCardRefs.current[i] = el; }}
-              onClick={() => handleSkillTap(i)}
-              style={{
-                marginBottom: 6, borderRadius: 16, cursor: "pointer",
-                background: isActive ? `${c}0C` : "rgba(255,255,255,0.015)",
-                border: `1px solid ${isActive ? `${c}35` : "rgba(255,255,255,0.03)"}`,
-                boxShadow: isActive ? `0 0 12px ${c}15, inset 0 0 0 1px ${c}10` : "none",
-                overflow: "hidden", transition: "all 0.15s",
-                animation: `floatIn 0.25s ease-out ${i * 0.03}s both`,
-              }}
-            >
-              {/* Skill header — always visible */}
-              <div style={{ padding: "12px 14px", display: "flex", alignItems: "center", gap: 10 }}>
-                {/* Status indicator */}
-                <div style={{
-                  width: 32, height: 32, borderRadius: 10, flexShrink: 0,
-                  background: `${c}12`, display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 14,
-                }}>
-                  {hasDed ? <span style={{ fontSize: 14, fontWeight: 800, color: c, fontFamily: "'Space Mono', monospace" }}>-{s.deduction.toFixed(1)}</span> : <span style={{ color: c, fontSize: 16 }}>✓</span>}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <span style={{ fontSize: 16, fontWeight: 700, color: "#e2e8f0" }}>{safeStr(s.skill)}</span>
-                    <span style={{ fontSize: 16, color: "rgba(255,255,255,0.15)" }}>{s.type || ""}</span>
-                  </div>
-                  <div style={{ fontSize: 14, color: "rgba(255,255,255,0.25)", marginTop: 2 }}>
-                    {s.timestamp}{hasDed ? ` · ${safeStr(s.fault).substring(0, 40)}` : s.verdict === "strength" ? " · Notable strength" : ""}
-                  </div>
-                </div>
-                {/* Chevron */}
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ flexShrink: 0, transform: isActive ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.15s" }}>
-                  <path d="M3 4.5l3 3 3-3" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5" strokeLinecap="round"/>
-                </svg>
+          {/* Areas for Improvement */}
+          <div className="card" style={{ marginBottom: 16 }}>
+            <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12 }}>
+              <span style={{ color: "#f59e0b" }}>▲</span> Areas for Improvement
+            </h3>
+            {safeArray(result.areasForImprovement).map((a, i) => (
+              <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start", marginBottom: 8 }}>
+                <span style={{ color: "#f59e0b", fontWeight: 700, fontSize: 12, marginTop: 2 }}>●</span>
+                <span style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", lineHeight: 1.5 }}>{safeStr(a)}</span>
               </div>
+            ))}
+          </div>
 
-              {/* ═══ EXPANDED SKILL DETAIL ═══ */}
-              {isActive && (
-                <div style={{ padding: "0 14px 14px", animation: "fadeIn 0.15s ease-out" }}>
-
-                  {/* Fault detail */}
-                  {hasDed && (
-                    <div style={{ padding: "10px 12px", borderRadius: 10, marginBottom: 8, background: `${c}06`, border: `1px solid ${c}15` }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                        <span style={{ fontSize: 14, fontWeight: 700, color: c, letterSpacing: 0.5 }}>
-                          {s.engine && `${s.engine} · `}{s.score?.toUpperCase()}
-                        </span>
-                        <span style={{ fontSize: 18, fontWeight: 800, fontFamily: "'Space Mono', monospace", color: c }}>
-                          -{safeNum(s.deduction, 0).toFixed(2)}
-                        </span>
-                      </div>
-                      <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>{safeStr(s.fault)}</div>
-                      {/* Severity explanation */}
-                      <div style={{ marginTop: 6, fontSize: 14, color: "rgba(255,255,255,0.3)", fontStyle: "italic" }}>
-                        {getSeverityExplanation(s.deduction)}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Measured vs Ideal angles — from AI or estimated */}
-                  {hasDed && (() => {
-                    const hasAIAngles = s.measuredVsIdeal || (bio?.jointAngles && Object.keys(bio.jointAngles).length > 0);
-                    const est = !hasAIAngles ? estimated : null;
-                    return (hasAIAngles || est) ? (
-                      <div style={{ padding: "8px 10px", borderRadius: 8, marginBottom: 8, background: "rgba(59,130,246,0.03)", border: "1px solid rgba(59,130,246,0.06)" }}>
-                        <div style={{ fontSize: 16, fontWeight: 700, color: "rgba(59,130,246,0.6)", letterSpacing: 0.5, marginBottom: 6 }}>
-                          BIOMECHANICS{!hasAIAngles && est ? " (ESTIMATED)" : ""}
-                        </div>
-                        {/* AI-provided angles */}
-                        {s.measuredVsIdeal && (
-                          <div style={{ padding: "5px 8px", borderRadius: 6, background: "rgba(255,255,255,0.02)", fontSize: 14, color: "rgba(255,255,255,0.5)", fontFamily: "'Space Mono', monospace", marginBottom: 4 }}>
-                            {s.measuredVsIdeal}
-                          </div>
-                        )}
-                        {bio?.jointAngles && Object.entries(bio.jointAngles).map(([joint, angle]) => (
-                          <div key={joint} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "3px 8px", borderRadius: 4, marginBottom: 2, background: "rgba(59,130,246,0.04)" }}>
-                            <span style={{ fontSize: 14, color: "rgba(255,255,255,0.5)" }}>{joint}</span>
-                            <span style={{ fontSize: 14, fontFamily: "'Space Mono', monospace", color: "rgba(239,68,68,0.8)" }}>
-                              {typeof angle === "number" ? `${angle}°` : angle}
-                            </span>
-                          </div>
-                        ))}
-                        {/* Estimated angles when AI doesn't provide them */}
-                        {est && (
-                          <>
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 8px", borderRadius: 4, background: "rgba(59,130,246,0.04)", marginBottom: 2 }}>
-                              <span style={{ fontSize: 14, color: "rgba(255,255,255,0.5)" }}>{est.joint}</span>
-                              <div style={{ textAlign: "right" }}>
-                                <span style={{ fontSize: 14, fontFamily: "'Space Mono', monospace", color: "#ef4444" }}>{est.measured}</span>
-                                <span style={{ fontSize: 14, color: "rgba(255,255,255,0.2)", margin: "0 4px" }}>vs</span>
-                                <span style={{ fontSize: 14, fontFamily: "'Space Mono', monospace", color: "#22c55e" }}>{est.ideal}</span>
-                              </div>
-                            </div>
-                            <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)", marginTop: 4, lineHeight: 1.5 }}>
-                              This {est.deviation} deviation is a {est.severity} deduction per USAG standards.
-                            </div>
-                          </>
-                        )}
-                        {bio?.notes && <div style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", lineHeight: 1.5, marginTop: 4 }}>{bio.notes}</div>}
-                      </div>
-                    ) : null;
-                  })()}
-
-                  {/* What correct looks like */}
-                  {hasDed && estimated && (
-                    <div style={{ padding: "8px 10px", borderRadius: 8, marginBottom: 8, background: "rgba(34,197,94,0.02)", border: "1px solid rgba(34,197,94,0.05)" }}>
-                      <div style={{ fontSize: 16, fontWeight: 700, color: "rgba(34,197,94,0.5)", letterSpacing: 0.5, marginBottom: 4 }}>WHAT CORRECT LOOKS LIKE</div>
-                      <div style={{ fontSize: 14, color: "rgba(255,255,255,0.45)", lineHeight: 1.6 }}>
-                        {estimated.joint === "Knee" && "Legs completely straight with kneecaps locked back. No visible bend when viewed from the side."}
-                        {estimated.joint === "Hips" && "Legs pressed together with no visible gap. Inner thighs, knees, and ankles touching throughout."}
-                        {estimated.joint === "Hip" && "Full 180° split or flat body line with no visible pike at the hips."}
-                        {estimated.joint === "Spine" && "Straight body line from shoulders through hips — no visible arch in the lower back."}
-                        {estimated.joint === "Ankle" && "Toes fully extended, creating a smooth line from shin through the top of the foot."}
-                        {estimated.joint === "Core/CoG" && "Body centered over base of support with no visible wobble or shift."}
-                        {estimated.joint === "Ankle/Knee" && "Land with feet together, absorb with a slight knee bend, and hold position with no steps."}
-                        {estimated.joint === "Shoulder" && "Full vertical handstand — ears between arms, body stacked in a straight line."}
-                        {estimated.joint === "Body line" && "Perfectly vertical body line with no visible lean or deviation from 180°."}
-                        {estimated.joint === "Knees" && "Knees tracking directly over toes, no wider than shoulder width apart."}
-                        {estimated.joint === "Neck" && "Head in neutral position — chin neither tucked to chest nor thrown back."}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Clean skill — what was good */}
-                  {!hasDed && (s.correction || s.verdict === "strength") && (
-                    <div style={{ padding: "10px 12px", borderRadius: 10, marginBottom: 8, background: "rgba(34,197,94,0.04)", border: "1px solid rgba(34,197,94,0.06)" }}>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: "#22c55e", letterSpacing: 0.5, marginBottom: 4 }}>WELL EXECUTED</div>
-                      <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>{s.correction || "Clean execution — no deductions taken."}</div>
-                    </div>
-                  )}
-
-                  {/* Skeleton overlay — simplified, only when data exists */}
-                  {s.skeleton && s.skeleton.joints && (
-                    <div style={{ marginBottom: 8, borderRadius: 10, overflow: "hidden", background: "rgba(0,0,0,0.2)", padding: 8, position: "relative", height: 120 }}>
-                      <div style={{ fontSize: 16, fontWeight: 700, color: "rgba(255,255,255,0.15)", letterSpacing: 0.5, marginBottom: 4 }}>BODY POSITION</div>
-                      <SkeletonOverlay skeleton={s.skeleton} />
-                    </div>
-                  )}
-
-                  {/* Landing analysis */}
-                  {landing && (
-                    <div style={{ padding: "8px 10px", borderRadius: 8, marginBottom: 8, background: "rgba(196,152,42,0.03)", border: "1px solid rgba(196,152,42,0.06)" }}>
-                      <div style={{ fontSize: 16, fontWeight: 700, color: "rgba(196,152,42,0.6)", letterSpacing: 0.5, marginBottom: 4 }}>LANDING</div>
-                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                        {landing.kneeFlexionAtImpact && <span style={{ fontSize: 14, padding: "2px 8px", borderRadius: 4, background: "rgba(196,152,42,0.06)", color: "rgba(196,152,42,0.7)", fontFamily: "'Space Mono', monospace" }}>Knee: {landing.kneeFlexionAtImpact}°</span>}
-                        {landing.chestAngle && <span style={{ fontSize: 14, padding: "2px 8px", borderRadius: 4, background: "rgba(196,152,42,0.06)", color: "rgba(196,152,42,0.7)", fontFamily: "'Space Mono', monospace" }}>Chest: {landing.chestAngle}°</span>}
-                        {landing.stepsAfter != null && <span style={{ fontSize: 14, padding: "2px 8px", borderRadius: 4, background: landing.stepsAfter > 0 ? "rgba(239,68,68,0.06)" : "rgba(34,197,94,0.06)", color: landing.stepsAfter > 0 ? "rgba(239,68,68,0.7)" : "rgba(34,197,94,0.7)" }}>{landing.stepsAfter === 0 ? "Stuck!" : `${landing.stepsAfter} step${landing.stepsAfter > 1 ? "s" : ""}`}</span>}
-                      </div>
-                      {landing.notes && <div style={{ fontSize: 14, color: "rgba(255,255,255,0.35)", marginTop: 4 }}>{landing.notes}</div>}
-                    </div>
-                  )}
-
-                  {/* Injury flag */}
-                  {injury && (
-                    <div style={{ padding: "6px 10px", borderRadius: 8, marginBottom: 8, background: "rgba(239,68,68,0.04)", border: "1px solid rgba(239,68,68,0.08)", fontSize: 14, color: "rgba(239,68,68,0.7)" }}>
-                      {injury.reason} — {injury.recommendation}
-                    </div>
-                  )}
-
-                  {/* Correction / how to fix */}
-                  {hasDed && s.correction && (
-                    <div style={{ padding: "10px 12px", borderRadius: 10, marginBottom: 8, background: "rgba(34,197,94,0.03)", border: "1px solid rgba(34,197,94,0.06)" }}>
-                      <div style={{ fontSize: 16, fontWeight: 700, color: "#22c55e", letterSpacing: 0.5, marginBottom: 4 }}>HOW TO FIX</div>
-                      <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>{safeStr(s.correction)}</div>
-                    </div>
-                  )}
-
-                  {/* Specific drill recommendation */}
-                  {hasDed && (drill || s.correction) && (
-                    <div style={{ padding: "8px 10px", borderRadius: 8, marginBottom: 8, background: "rgba(139,92,246,0.03)", border: "1px solid rgba(139,92,246,0.06)" }}>
-                      <div style={{ fontSize: 16, fontWeight: 700, color: "rgba(139,92,246,0.6)", letterSpacing: 0.5, marginBottom: 4 }}>DRILL FOR THIS FAULT</div>
-                      <div style={{ fontSize: 14, color: "rgba(255,255,255,0.45)", lineHeight: 1.6 }}>
-                        {drill || `Practice this skill with focus on ${safeStr(s.fault).substring(0, 40)}. Film and compare.`}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Jump to timestamp button */}
-                  {hasVideo && s.timestamp && s.timestamp !== "Global" && (
-                    <button onClick={(e) => {
-                      e.stopPropagation();
-                      jumpVideo(s.timestamp);
-                      setVideoOverlay({ skill: safeStr(s.skill), fault: safeStr(s.fault), deduction: safeNum(s.deduction, 0) });
-                    }} style={{
-                      width: "100%", padding: "8px 10px", borderRadius: 8, border: "1px solid rgba(196,152,42,0.12)",
-                      background: "rgba(196,152,42,0.03)", cursor: "pointer", fontSize: 14, fontWeight: 600,
-                      color: "#C4982A", fontFamily: "'Outfit', sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
-                    }}>
-                      <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 1l7 4-7 4V1z" fill="currentColor"/></svg>
-                      Jump to {s.timestamp}
-                    </button>
-                  )}
-                </div>
+          {/* Post-Meet Debrief — parent-friendly summary */}
+          <div className="card" style={{ padding: 16, marginBottom: 16, background: "rgba(196,152,42,0.03)", borderColor: "rgba(196,152,42,0.12)" }}>
+            <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 10, color: "#C4982A" }}>
+              <Icon name="info" size={14} /> What This Score Means (Parent Summary)
+            </h3>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", lineHeight: 1.8 }}>
+              {result.finalScore >= 9.2 ? (
+                <span>This is an <strong style={{ color: "#22c55e" }}>excellent score</strong>. Your child performed a very clean routine with only minor deductions. At {result.level}, scoring above 9.2 means they're executing at a high level. Celebrate this — it takes serious dedication to score this well.</span>
+              ) : result.finalScore >= 8.8 ? (
+                <span>This is a <strong style={{ color: "#C4982A" }}>strong, solid score</strong>. Your child showed good execution with some typical deductions that most gymnasts receive. The {safeNum(result.totalDeductions, 0).toFixed(2)} in deductions came from {safeArray(result.executionDeductions).length} identified faults — most of which are fixable with focused practice. This is a competitive score at {result.level}.</span>
+              ) : result.finalScore >= 8.3 ? (
+                <span>This is an <strong style={{ color: "#f59e0b" }}>average score</strong> for {result.level} — not bad at all, but there's clear room for improvement. The deductions add up from multiple small form issues. The good news: most of these are execution details (body position, landings, foot form) that improve naturally with practice and awareness.</span>
+              ) : (
+                <span>This score suggests there are <strong style={{ color: "#ef4444" }}>several areas that need attention</strong>. Don't be discouraged — this is normal at every level and doesn't reflect your child's effort or potential. Focus on the 2-3 biggest deductions first. Small improvements on a few skills can raise the score significantly. Talk to the coach about what to prioritize.</span>
               )}
             </div>
-          );
-        })}
-
-        {/* ═══ BODY HEATMAP ═══ */}
-        <div style={{ marginTop: 14, marginBottom: 14 }}>
-          <BodyHeatmap deductions={result.executionDeductions} />
-        </div>
-        </>)}
-
-        {/* ── FRAMES TAB ── */}
-        {activeResultTab === "frames" && (
-          <DeductionsTabContent result={result} frames={[]} />
-        )}
-
-        {/* ── WHAT-IF TAB ── */}
-        {activeResultTab === "whatif" && (
-          <WhatIfSimulator result={result} />
-        )}
-
-        {/* ═══ STRENGTHS + AREAS (overview only) ═══ */}
-        {activeResultTab === "overview" && (<>
-        {/* ═══ STRENGTHS + AREAS ═══ */}
-        <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
-          {safeArray(result.strengths).length > 0 && (
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 16, fontWeight: 700, color: "rgba(34,197,94,0.5)", letterSpacing: 0.5, marginBottom: 6 }}>STRENGTHS</div>
-              {safeArray(result.strengths).slice(0, 3).map((s, i) => (
-                <div key={i} style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", padding: "4px 0", lineHeight: 1.5 }}>
-                  <span style={{ color: "#22c55e", marginRight: 4 }}>✓</span>{safeStr(s).substring(0, 50)}
-                </div>
-              ))}
-            </div>
-          )}
-          {safeArray(result.areasForImprovement).length > 0 && (
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 16, fontWeight: 700, color: "rgba(245,158,11,0.5)", letterSpacing: 0.5, marginBottom: 6 }}>IMPROVE</div>
-              {safeArray(result.areasForImprovement).slice(0, 3).map((a, i) => (
-                <div key={i} style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", padding: "4px 0", lineHeight: 1.5 }}>
-                  <span style={{ color: "#f59e0b", marginRight: 4 }}>▲</span>{safeStr(a).substring(0, 50)}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* ═══ ASSESSMENT ═══ */}
-        {(result.overallAssessment || result.truthAnalysis) && (
-          <div style={{ marginBottom: 14, padding: "12px 14px", borderRadius: 14, background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.03)" }}>
-            <div style={{ fontSize: 16, fontWeight: 700, color: "rgba(196,152,42,0.4)", letterSpacing: 0.5, marginBottom: 6 }}>JUDGE'S ASSESSMENT</div>
-            <div style={{ fontSize: 16, color: "rgba(255,255,255,0.45)", lineHeight: 1.7 }}>
-              {safeStr(result.overallAssessment || result.truthAnalysis).substring(0, 500)}
+            <div style={{ marginTop: 10, padding: "8px 12px", borderRadius: 8, background: "rgba(255,255,255,0.03)" }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.4)", marginBottom: 4 }}>QUICK MATH FOR PARENTS</div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.7 }}>
+                Start Value ({safeNum(result.startValue, 10).toFixed(1)}) minus {safeArray(result.executionDeductions).length} deductions totaling {safeNum(result.totalDeductions, 0).toFixed(2)} = Final Score of {safeNum(result.finalScore, 0).toFixed(3)}.
+                {groupedDeds.length > 0 && ` The biggest single deduction was -${Math.max(...groupedDeds.map(d => safeNum(d.deduction, 0))).toFixed(2)} for "${safeStr(groupedDeds.reduce((a, b) => (safeNum(b.deduction, 0) > safeNum(a.deduction, 0) ? b : a))?.skill)}".`}
+                {groupedDeds.length > 2 && ` Fixing just the top 3 deductions could improve the score by approximately +${[...groupedDeds].sort((a, b) => safeNum(b.deduction, 0) - safeNum(a.deduction, 0)).slice(0, 3).reduce((s, d) => s + safeNum(d.deduction, 0), 0).toFixed(2)}.`}
+              </div>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* ═══ ACTUAL SCORE ═══ */}
-        <div style={{ marginBottom: 14, padding: "12px 14px", borderRadius: 14, background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.03)" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 16, fontWeight: 700, color: "rgba(255,255,255,0.15)", letterSpacing: 0.5, marginBottom: 6 }}>ACTUAL MEET SCORE</div>
-              <input className="input-field" type="number" step="0.025" min="0" max="10" placeholder="8.925"
-                value={actualScore} onChange={(e) => { setActualScore(e.target.value); setScoreSaved(false); }}
-                onClick={(e) => e.stopPropagation()}
-                style={{ padding: "10px 12px", fontSize: 18, fontFamily: "'Space Mono', monospace", fontWeight: 700 }} />
+      {activeTab === "deductions" && (
+        isPro ? (
+          <DeductionsTabContent result={result} frames={result.frames} />
+        ) : (
+          <div style={{ animation: "fadeIn 0.4s ease-out" }}>
+            {/* Free tier: show top 3 deductions with ranking */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+              <div style={{ fontSize: 13, fontWeight: 700 }}>Top Point Losses</div>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.25)" }}>
+                {groupedDeds.length} total found
+              </div>
             </div>
-            {hasDiff && (
-              <div style={{ textAlign: "center", minWidth: 65 }}>
-                <div style={{ fontSize: 18, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: Math.abs(diff) < 0.15 ? "#22c55e" : Math.abs(diff) < 0.4 ? "#f59e0b" : "#ef4444" }}>
-                  {diff > 0 ? "+" : ""}{diff.toFixed(2)}
+            {[...groupedDeds].sort((a, b) => safeNum(b.deduction, 0) - safeNum(a.deduction, 0)).slice(0, 3).map((d, i) => {
+              const c = d.severity === "fall" ? "#dc2626" : d.severity === "large" || d.severity === "veryLarge" ? "#ef4444" : d.severity === "medium" ? "#f59e0b" : "#22c55e";
+              const fixDifficulty = d.severity === "fall" ? "Hard" : d.severity === "large" || d.severity === "veryLarge" ? "Moderate" : "Quick fix";
+              const fixColor = d.severity === "fall" ? "#ef4444" : d.severity === "large" || d.severity === "veryLarge" ? "#f59e0b" : "#22c55e";
+              return (
+                <div key={i} style={{
+                  borderRadius: 14, padding: "14px 16px", marginBottom: 8,
+                  background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)",
+                  animation: `fadeIn 0.3s ease-out ${i * 0.1}s both`,
+                }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                    <div style={{ display: "flex", gap: 12, flex: 1 }}>
+                      {/* Rank circle */}
+                      <div style={{
+                        width: 28, height: 28, borderRadius: 8, flexShrink: 0,
+                        background: `${c}12`, display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: 13, fontWeight: 800, color: c,
+                      }}>{i + 1}</div>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 700 }}>{safeStr(d.skill)}</div>
+                        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 3, lineHeight: 1.5 }}>
+                          {safeStr(d.fault).substring(0, 80)}
+                        </div>
+                        <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+                          <span style={{ fontSize: 9, fontWeight: 600, padding: "2px 8px", borderRadius: 4, background: `${fixColor}12`, color: fixColor }}>{fixDifficulty}</span>
+                          <span style={{ fontSize: 9, fontWeight: 600, padding: "2px 8px", borderRadius: 4, background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.3)" }}>{safeStr(d.timestamp)}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 17, fontWeight: 800, color: c, marginLeft: 8, flexShrink: 0 }}>
+                      -{safeNum(d.deduction, 0).toFixed(2)}
+                    </span>
+                  </div>
                 </div>
-                <div style={{ fontSize: 16, color: "rgba(255,255,255,0.25)" }}>{Math.abs(diff) < 0.15 ? "Accurate" : Math.abs(diff) < 0.4 ? "Close" : "Off"}</div>
+              );
+            })}
+
+            {/* Potential score gain summary */}
+            {groupedDeds.length >= 2 && (() => {
+              const top3 = [...groupedDeds].sort((a, b) => safeNum(b.deduction, 0) - safeNum(a.deduction, 0)).slice(0, 3);
+              const gain = top3.reduce((s, d) => s + safeNum(d.deduction, 0), 0);
+              return (
+                <div style={{
+                  textAlign: "center", padding: "10px 16px", marginBottom: 8,
+                  borderRadius: 10, background: "rgba(34,197,94,0.04)", border: "1px solid rgba(34,197,94,0.08)",
+                }}>
+                  <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>Fix these 3 → </span>
+                  <span style={{ fontSize: 15, fontWeight: 800, color: "#22c55e", fontFamily: "'Space Mono', monospace" }}>+{gain.toFixed(2)}</span>
+                  <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}> possible</span>
+                </div>
+              );
+            })()}
+
+            {groupedDeds.length > 3 && (
+              <div style={{ textAlign: "center", padding: 12 }}>
+                <button
+                  onClick={() => setActiveTab("pro-gate")}
+                  style={{
+                    background: "rgba(139,92,246,0.06)", border: "1px solid rgba(139,92,246,0.15)",
+                    borderRadius: 10, padding: "10px 24px", cursor: "pointer",
+                    color: "#A78BFA", fontSize: 12, fontWeight: 600, fontFamily: "'Outfit', sans-serif",
+                  }}
+                >
+                  See all {groupedDeds.length} deductions — Pro
+                </button>
               </div>
             )}
-          </div>
-          {hasDiff && !scoreSaved && (
-            <button onClick={async (e) => { e.stopPropagation();
-              try { const cal = await storage.get("strive-calibration"); const data = cal ? JSON.parse(cal.value) : [];
-                data.push({ date: new Date().toISOString(), event: result.event, level: result.level, aiScore: result.finalScore, actualScore: actualNum, diff });
-                await storage.set("strive-calibration", JSON.stringify(data.slice(-50)));
-              } catch {} setScoreSaved(true);
-            }} className="btn-outline" style={{ width: "100%", marginTop: 8, padding: "8px", fontSize: 14 }}>
-              {Math.abs(diff) >= 0.3 ? "Submit Score Correction" : "Save — helps calibrate"}
-            </button>
-          )}
-          {hasDiff && Math.abs(diff) >= 0.3 && !scoreSaved && (<div style={{ fontSize: 14, color: "rgba(245,158,11,0.7)", marginTop: 6, lineHeight: 1.5, padding: "6px 10px", borderRadius: 8, background: "rgba(245,158,11,0.04)" }}>Score differs by {Math.abs(diff).toFixed(2)}. Submitting helps calibrate future analyses.</div>)}
-        </div>
 
-        {/* ═══ PRO (collapsible) ═══ */}
-        <button onClick={() => setShowPro(!showPro)} style={{
-          width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "12px 14px", borderRadius: 14, marginBottom: 6,
-          background: "rgba(139,92,246,0.02)", border: "1px solid rgba(139,92,246,0.06)",
-          cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 16, fontWeight: 600,
-          color: isPro ? "rgba(167,139,250,0.7)" : "rgba(255,255,255,0.3)",
-        }}>
-          <span>{isPro ? "Advanced analysis" : "Pro features"}</span>
-          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ transform: showPro ? "rotate(180deg)" : "", transition: "transform 0.15s" }}>
-            <path d="M2 3.5l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-          </svg>
-        </button>
-        {showPro && (
-          <div style={{ animation: "fadeIn 0.15s ease-out", marginBottom: 14 }}>
-            {isPro ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                <BiomechanicsDashboard result={result} />
-                <TrainingProgram result={result} profile={profile} history={history} />
-                <WhatIfSimulator result={result} />
-                <DiagnosticsDashboard result={result} />
-              </div>
-            ) : (
-              <div style={{ padding: 16, borderRadius: 14, textAlign: "center", background: "rgba(139,92,246,0.02)", border: "1px solid rgba(139,92,246,0.06)" }}>
-                <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>Unlock full analysis</div>
-                <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)", marginBottom: 14 }}>Biomechanics, training, what-if, diagnostics</div>
-                <button onClick={() => { try { localStorage.setItem("strive-tier", "pro"); } catch {} window.location.reload(); }} style={{
-                  background: "linear-gradient(135deg, #8B5CF6, #A78BFA)", color: "#FFF", border: "none",
-                  padding: "10px 28px", borderRadius: 10, fontWeight: 700, fontSize: 16, cursor: "pointer", fontFamily: "'Outfit', sans-serif",
-                }}>Upgrade</button>
-              </div>
-            )}
+            {/* Free tier: #1 actionable fix */}
+            {groupedDeds.length > 0 && (() => {
+              const topDed = [...groupedDeds].sort((a, b) => safeNum(b.deduction, 0) - safeNum(a.deduction, 0))[0];
+              return (
+                <div style={{ marginTop: 12 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 8, color: "#22c55e" }}>
+                    ✓ Your #1 priority fix
+                  </div>
+                  <div style={{
+                    borderRadius: 14, padding: 16,
+                    background: "rgba(34,197,94,0.03)", border: "1px solid rgba(34,197,94,0.1)",
+                  }}>
+                    <div style={{ fontSize: 14, fontWeight: 700 }}>Fix: {safeStr(topDed.skill).toLowerCase()}</div>
+                    <div style={{ fontSize: 13, color: "#C4982A", fontWeight: 700, marginTop: 4 }}>
+                      Worth +{safeNum(topDed.deduction, 0).toFixed(2)} per routine
+                    </div>
+                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", marginTop: 8, lineHeight: 1.6 }}>
+                      {topDed.correction || `Work with your coach on this specific fault: "${safeStr(topDed.fault).substring(0, 60)}." Film yourself doing drills for this skill and compare frame by frame.`}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
-        )}
+        )
+      )}
 
-        {/* ═══ ACTIONS ═══ */}
-        <button className="btn-gold" onClick={onDrills} style={{ width: "100%", fontSize: 14, padding: 13 }}>
-          Get drills for these deductions
+      {/* ─── WHAT-IF SIMULATOR TAB (Pro only) ─── */}
+      {activeTab === "whatif" && isPro && (
+        <WhatIfSimulator result={result} />
+      )}
+
+      {/* ─── BIOMECHANICS TAB (Pro only) ─── */}
+      {activeTab === "biomechanics" && isPro && (
+        <BiomechanicsDashboard result={result} />
+      )}
+
+      {/* ─── TRAINING PROGRAM TAB (Pro only) ─── */}
+      {activeTab === "coach" && isPro && (
+        <TrainingProgram result={result} profile={profile} history={history} />
+      )}
+
+      {/* ─── DIAGNOSTICS TAB (Pro only) ─── */}
+      {activeTab === "diagnostics" && isPro && (
+        <DiagnosticsDashboard result={result} />
+      )}
+
+      {/* Drills CTA */}
+      <button
+        className="btn-gold"
+        onClick={onDrills}
+        style={{ width: "100%", marginTop: 24, fontSize: 16, padding: 16 }}
+      >
+        <Icon name="drill" /> Get Personalized Drills <Icon name="arrow" />
+      </button>
+
+      {/* Share / Export Actions */}
+      <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+        {/* Share with Coach — uses native share sheet on mobile, clipboard on desktop */}
+        <button
+          className="btn-outline"
+          onClick={() => {
+            const topDeds = [...groupedDeds].sort((a, b) => safeNum(b.deduction, 0) - safeNum(a.deduction, 0)).slice(0, 5);
+            const text = [
+              `STRIVE Analysis — ${result.event} · ${result.level}`,
+              `Score: ${safeNum(result.finalScore, 0).toFixed(3)} (Start: ${safeNum(result.startValue, 10).toFixed(1)} - Deductions: ${safeNum(result.totalDeductions, 0).toFixed(2)})`,
+              ``,
+              `Top deductions:`,
+              ...topDeds.map((d, i) =>
+                `  ${i+1}. ${safeStr(d.skill)} — ${safeStr(d.fault)} (-${safeNum(d.deduction, 0).toFixed(2)})`
+              ),
+              ``,
+              `Strengths: ${safeArray(result.strengths).slice(0, 3).map(s => safeStr(s)).join("; ")}`,
+              ``,
+              `#1 fix: ${topDeds[0] ? safeStr(topDeds[0].skill) + " (saves +" + safeNum(topDeds[0].deduction, 0).toFixed(2) + ")" : "See full report"}`,
+              ``,
+              `— Analyzed by STRIVE · strive-app-amber.vercel.app`,
+            ].join("\n");
+
+            // Try native share first (works on mobile)
+            if (navigator.share) {
+              navigator.share({ title: `STRIVE — ${result.event} ${safeNum(result.finalScore, 0).toFixed(3)}`, text }).catch(() => {});
+            } else if (navigator.clipboard) {
+              navigator.clipboard.writeText(text).then(() => alert("Copied! Paste into a text or email to share with your coach."));
+            } else {
+              const ta = document.createElement("textarea"); ta.value = text;
+              document.body.appendChild(ta); ta.select(); document.execCommand("copy");
+              document.body.removeChild(ta); alert("Copied!");
+            }
+          }}
+          style={{ flex: 1, fontSize: 13, padding: 14 }}
+        >
+          <Icon name="save" size={14} /> Share with Coach
         </button>
-        {/* Copy Analysis for Coach */}
-        <button className="btn-outline" onClick={() => {
-          const lines = [`STRIVE Analysis — ${result.event || "Event"} · ${result.level || "Level"}`, `Score: ${safeNum(result.finalScore, 0).toFixed(3)} (${deds.length} deductions, -${safeNum(result.totalDeductions, 0).toFixed(2)} total)`, ""];
-          if (safeArray(result.strengths).length > 0) { lines.push("STRENGTHS:"); safeArray(result.strengths).slice(0, 3).forEach(s => lines.push(`  + ${safeStr(s)}`)); lines.push(""); }
-          lines.push("DEDUCTIONS:");
-          sortedDeds.forEach((d, i) => lines.push(`  ${i+1}. ${safeStr(d.skill)} — ${safeStr(d.fault)} (-${safeNum(d.deduction, 0).toFixed(2)})`));
-          lines.push("");
-          if (safeArray(result.topFixes).length > 0) { lines.push("TOP FIXES:"); safeArray(result.topFixes).slice(0, 3).forEach(f => lines.push(`  - ${safeStr(f)}`)); lines.push(""); }
-          if (result.overallAssessment) { lines.push("ASSESSMENT:"); lines.push(`  ${safeStr(result.overallAssessment).substring(0, 200)}`); lines.push(""); }
-          lines.push("— Generated by STRIVE");
-          const fullText = lines.join("\n");
-          if (navigator.clipboard) navigator.clipboard.writeText(fullText).then(() => alert("Analysis copied to clipboard! Paste into a message to your coach.")).catch(() => {});
-        }} style={{ width: "100%", fontSize: 16, padding: 12, marginTop: 6, borderColor: "rgba(196,152,42,0.2)", color: "#C4982A" }}>
-          Copy Analysis for Coach
+
+        {/* Analyze Another */}
+        <button
+          className="btn-outline"
+          onClick={onBack}
+          style={{ flex: 1, fontSize: 13, padding: 14 }}
+        >
+          <Icon name="camera" size={14} /> New Analysis
         </button>
-        <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
-          <button className="btn-outline" onClick={() => {
-            const text = [`STRIVE — ${result.event} · ${result.level}`, `Score: ${safeNum(result.finalScore, 0).toFixed(3)}`, "",
-              ...sortedDeds.slice(0, 5).map((d, i) => `${i+1}. ${safeStr(d.skill)} -${safeNum(d.deduction, 0).toFixed(2)}`),
-              "", "strive-app-amber.vercel.app"].join("\n");
-            if (navigator.share) navigator.share({ title: `STRIVE ${result.event}`, text }).catch(() => {});
-            else if (navigator.clipboard) navigator.clipboard.writeText(text).then(() => alert("Copied!"));
-          }} style={{ flex: 1, fontSize: 14, padding: 10 }}>Share</button>
-          <button className="btn-outline" onClick={onBack} style={{ flex: 1, fontSize: 14, padding: 10 }}>New analysis</button>
+      </div>
+
+      {/* App branding footer */}
+      <div style={{ textAlign: "center", marginTop: 24, paddingTop: 16, borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+        <div style={{
+          fontFamily: "'Georgia', serif", fontSize: 14, fontWeight: 500, letterSpacing: 3,
+          background: "linear-gradient(135deg, #C4982A, #E8C35A)", backgroundClip: "text",
+          WebkitBackgroundClip: "text", color: "transparent",
+        }}>STRIVE</div>
+        <div style={{ fontSize: 9, color: "rgba(255,255,255,0.15)", marginTop: 4, letterSpacing: 1 }}>
+          SEE YOUR SCORE. OWN YOUR GROWTH.
         </div>
-        </>)}
       </div>
     </div>
   );
@@ -4879,14 +5302,14 @@ function DrillsScreen({ result, onBack }) {
 
   return (
     <div style={{ minHeight: "100vh", padding: "16px 18px 90px", maxWidth: 540, margin: "0 auto" }}>
-      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(196,152,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 16, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
+      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(196,152,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 13, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.5 2.5l-5 5 5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> Results
       </button>
 
       <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>
         Your Drill Plan
       </h2>
-      <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 16, marginBottom: 8 }}>
+      <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, marginBottom: 8 }}>
         {uniquePairs.length} targeted exercises based on {deds.length} deductions identified in your routine.
       </p>
 
@@ -4897,7 +5320,7 @@ function DrillsScreen({ result, onBack }) {
           padding: "10px 16px", borderRadius: 12, marginBottom: 20,
           background: "rgba(34,197,94,0.04)", border: "1px solid rgba(34,197,94,0.1)",
         }}>
-          <span style={{ fontSize: 16, color: "rgba(255,255,255,0.5)" }}>Complete this plan to gain up to</span>
+          <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>Complete this plan to gain up to</span>
           <span style={{ fontSize: 18, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: "#22c55e" }}>+{totalGain.toFixed(2)}</span>
         </div>
       )}
@@ -4913,14 +5336,14 @@ function DrillsScreen({ result, onBack }) {
             display: "flex", justifyContent: "space-between", alignItems: "center",
           }}>
             <div>
-              <span style={{ fontSize: 16, fontWeight: 700 }}>{pair.skill || pair.fault}</span>
+              <span style={{ fontSize: 13, fontWeight: 700 }}>{pair.skill || pair.fault}</span>
               {pair.skill && pair.fault !== pair.skill && (
-                <span style={{ fontSize: 14, color: "rgba(255,255,255,0.35)", marginLeft: 6 }}>— {pair.fault.substring(0, 40)}</span>
+                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginLeft: 6 }}>— {pair.fault.substring(0, 40)}</span>
               )}
             </div>
             {pair.deduction > 0 && (
               <span style={{
-                fontSize: 14, fontWeight: 700, padding: "3px 10px", borderRadius: 6,
+                fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 6,
                 background: "rgba(34,197,94,0.1)", color: "#22c55e",
                 fontFamily: "'Space Mono', monospace",
               }}>
@@ -4938,7 +5361,7 @@ function DrillsScreen({ result, onBack }) {
                   <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 3, color: "#C4982A" }}>
                     {drill.name}
                   </div>
-                  <p style={{ fontSize: 16, color: "rgba(255,255,255,0.55)", lineHeight: 1.6 }}>
+                  <p style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", lineHeight: 1.6 }}>
                     {drill.description}
                   </p>
                   {drill.yt && (
@@ -4946,7 +5369,7 @@ function DrillsScreen({ result, onBack }) {
                       display: "inline-flex", alignItems: "center", gap: 6, marginTop: 8,
                       padding: "5px 12px", borderRadius: 8,
                       background: "rgba(255,0,0,0.06)", border: "1px solid rgba(255,0,0,0.12)",
-                      color: "#ff6b6b", fontSize: 14, fontWeight: 600, textDecoration: "none",
+                      color: "#ff6b6b", fontSize: 11, fontWeight: 600, textDecoration: "none",
                       fontFamily: "'Outfit', sans-serif",
                     }}>
                       ▶ Watch on YouTube
@@ -4954,7 +5377,7 @@ function DrillsScreen({ result, onBack }) {
                   )}
                 </div>
                 <span style={{
-                  fontFamily: "'Space Mono', monospace", fontSize: 14, fontWeight: 700,
+                  fontFamily: "'Space Mono', monospace", fontSize: 10, fontWeight: 700,
                   background: "rgba(255,255,255,0.05)", padding: "4px 8px", borderRadius: 5,
                   whiteSpace: "nowrap", marginLeft: 10, color: "rgba(255,255,255,0.4)",
                 }}>
@@ -4971,7 +5394,7 @@ function DrillsScreen({ result, onBack }) {
         <h3 style={{ fontSize: 14, fontWeight: 700, color: "#C4982A", marginBottom: 10 }}>
           <Icon name="sparkle" size={14} /> Pro Tips
         </h3>
-        <div style={{ fontSize: 16, color: "rgba(255,255,255,0.6)", lineHeight: 1.8 }}>
+        <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", lineHeight: 1.8 }}>
           Practice each drill 3-4 times per week. Film yourself doing drills to check form. Focus on quality over quantity — one perfect rep beats ten sloppy ones. Show your coach the analysis and ask them to watch for the specific faults during practice.
         </div>
       </div>
@@ -5000,21 +5423,21 @@ function DeductionsScreen({ onBack, profile }) {
 
   return (
     <div style={{ minHeight: "100vh", padding: "16px 18px 90px", maxWidth: 540, margin: "0 auto" }}>
-      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(196,152,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 16, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
+      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(196,152,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 13, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.5 2.5l-5 5 5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> Dashboard
       </button>
 
       <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Deduction Guide</h2>
-      <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 16, marginBottom: 20 }}>
+      <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, marginBottom: 20 }}>
         USAG / Xcel scoring reference · {profile?.level || "All Levels"}
       </p>
 
       {/* Quick Score Calculator for Parents */}
       <div className="card" style={{ marginBottom: 16, padding: 16, borderColor: "rgba(196,152,42,0.15)", background: "rgba(196,152,42,0.03)" }}>
-        <div style={{ fontSize: 14, fontWeight: 700, color: "#C4982A", letterSpacing: 1, marginBottom: 10 }}>QUICK SCORE CALCULATOR</div>
+        <div style={{ fontSize: 11, fontWeight: 700, color: "#C4982A", letterSpacing: 1, marginBottom: 10 }}>QUICK SCORE CALCULATOR</div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)", marginBottom: 4 }}>START</div>
+            <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", marginBottom: 4 }}>START</div>
             <input
               className="input-field"
               type="number"
@@ -5025,7 +5448,7 @@ function DeductionsScreen({ onBack, profile }) {
           </div>
           <span style={{ fontSize: 18, color: "rgba(255,255,255,0.2)", marginTop: 14 }}>−</span>
           <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)", marginBottom: 4 }}>DEDUCTIONS</div>
+            <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", marginBottom: 4 }}>DEDUCTIONS</div>
             <input
               className="input-field"
               type="number"
@@ -5038,7 +5461,7 @@ function DeductionsScreen({ onBack, profile }) {
           </div>
           <span style={{ fontSize: 18, color: "rgba(255,255,255,0.2)", marginTop: 14 }}>=</span>
           <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)", marginBottom: 4 }}>SCORE</div>
+            <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", marginBottom: 4 }}>SCORE</div>
             <div style={{
               fontSize: 22, fontWeight: 900, fontFamily: "'Space Mono', monospace",
               color: calcResult >= 9.0 ? "#22c55e" : calcResult >= 8.0 ? "#f59e0b" : "#ef4444",
@@ -5048,7 +5471,7 @@ function DeductionsScreen({ onBack, profile }) {
             </div>
           </div>
         </div>
-        <div style={{ fontSize: 14, color: "rgba(255,255,255,0.25)", marginTop: 8 }}>
+        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", marginTop: 8 }}>
           Add up the deductions from the list below to understand how a score is calculated.
         </div>
       </div>
@@ -5057,7 +5480,7 @@ function DeductionsScreen({ onBack, profile }) {
       <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 16 }}>
         {Object.entries(DEDUCTION_SCALE).map(([key, val]) => (
           <span key={key} style={{
-            fontSize: 14, fontWeight: 600, padding: "3px 10px", borderRadius: 6,
+            fontSize: 10, fontWeight: 600, padding: "3px 10px", borderRadius: 6,
             background: `${val.color}15`, color: val.color, letterSpacing: 0.3,
           }}>
             {key}: {val.range}
@@ -5073,7 +5496,7 @@ function DeductionsScreen({ onBack, profile }) {
             onClick={() => setActiveCategory(cat)}
             style={{
               padding: "8px 16px", borderRadius: 8, border: "none", cursor: "pointer",
-              fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 16,
+              fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 12,
               background: activeCategory === cat ? "#C4982A" : "rgba(255,255,255,0.06)",
               color: activeCategory === cat ? "#0B1024" : "rgba(255,255,255,0.5)",
               whiteSpace: "nowrap", transition: "all 0.2s", textTransform: "capitalize",
@@ -5085,7 +5508,7 @@ function DeductionsScreen({ onBack, profile }) {
       </div>
 
       {/* Category description */}
-      <div style={{ fontSize: 14, color: "rgba(255,255,255,0.35)", marginBottom: 14, lineHeight: 1.5, padding: "0 4px" }}>
+      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginBottom: 14, lineHeight: 1.5, padding: "0 4px" }}>
         {catDescriptions[activeCategory]}
       </div>
 
@@ -5102,9 +5525,9 @@ function DeductionsScreen({ onBack, profile }) {
             animation: `fadeIn 0.2s ease-out ${i * 0.03}s both`,
           }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: 16, fontWeight: 600, flex: 1 }}>{ded.fault}</span>
+              <span style={{ fontSize: 13, fontWeight: 600, flex: 1 }}>{ded.fault}</span>
               <span style={{
-                fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize: 16,
+                fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize: 12,
                 color: severityColor, marginLeft: 12, whiteSpace: "nowrap",
               }}>
                 {ded.deduction}
@@ -5118,7 +5541,7 @@ function DeductionsScreen({ onBack, profile }) {
 }
 
 // ─── SETTINGS SCREEN ────────────────────────────────────────────────
-function SettingsScreen({ profile, history, savedResults, onSave, onBack, onReset }) {
+function SettingsScreen({ profile, onSave, onBack, onReset }) {
   const [editProfile, setEditProfile] = useState({ ...profile });
   const [showConfirm, setShowConfirm] = useState(false);
   const [geminiKey, setGeminiKey] = useState("");
@@ -5136,7 +5559,7 @@ function SettingsScreen({ profile, history, savedResults, onSave, onBack, onRese
 
   return (
     <div style={{ minHeight: "100vh", padding: "16px 18px 90px", maxWidth: 540, margin: "0 auto" }}>
-      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(196,152,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 16, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
+      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(196,152,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 13, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.5 2.5l-5 5 5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> Dashboard
       </button>
 
@@ -5144,12 +5567,12 @@ function SettingsScreen({ profile, history, savedResults, onSave, onBack, onRese
 
       <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
         <div>
-          <label style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, display: "block", color: "rgba(255,255,255,0.6)" }}>NAME</label>
+          <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, display: "block", color: "rgba(255,255,255,0.6)" }}>NAME</label>
           <input className="input-field" value={editProfile.name} onChange={e => setEditProfile({...editProfile, name: e.target.value})} />
         </div>
 
         <div>
-          <label style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, display: "block", color: "rgba(255,255,255,0.6)" }}>PROGRAM</label>
+          <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, display: "block", color: "rgba(255,255,255,0.6)" }}>PROGRAM</label>
           <select className="input-field" value={editProfile.gender} onChange={e => setEditProfile({...editProfile, gender: e.target.value, primaryEvents: []})}>
             <option value="female">Women's Artistic</option>
             <option value="male">Men's Artistic</option>
@@ -5157,7 +5580,7 @@ function SettingsScreen({ profile, history, savedResults, onSave, onBack, onRese
         </div>
 
         <div>
-          <label style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, display: "block", color: "rgba(255,255,255,0.6)" }}>LEVEL CATEGORY</label>
+          <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, display: "block", color: "rgba(255,255,255,0.6)" }}>LEVEL CATEGORY</label>
           <select className="input-field" value={editProfile.levelCategory} onChange={e => setEditProfile({...editProfile, levelCategory: e.target.value, level: ""})}>
             <option value="compulsory">Compulsory</option>
             <option value="optional">Optional</option>
@@ -5167,7 +5590,7 @@ function SettingsScreen({ profile, history, savedResults, onSave, onBack, onRese
 
         {levelOptions.length > 0 && (
           <div>
-            <label style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, display: "block", color: "rgba(255,255,255,0.6)" }}>LEVEL</label>
+            <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, display: "block", color: "rgba(255,255,255,0.6)" }}>LEVEL</label>
             <select className="input-field" value={editProfile.level} onChange={e => setEditProfile({...editProfile, level: e.target.value})}>
               <option value="">Select level...</option>
               {levelOptions.map(l => <option key={l} value={l}>{l}</option>)}
@@ -5176,7 +5599,7 @@ function SettingsScreen({ profile, history, savedResults, onSave, onBack, onRese
         )}
 
         <div>
-          <label style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, display: "block", color: "rgba(255,255,255,0.6)" }}>EVENTS</label>
+          <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, display: "block", color: "rgba(255,255,255,0.6)" }}>EVENTS</label>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
             {events.map(e => (
               <button
@@ -5190,7 +5613,7 @@ function SettingsScreen({ profile, history, savedResults, onSave, onBack, onRese
                 }}
                 style={{
                   padding: "8px 16px", borderRadius: 8, border: "none", cursor: "pointer",
-                  fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 16,
+                  fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 13,
                   background: editProfile.primaryEvents?.includes(e) ? "#C4982A" : "rgba(255,255,255,0.06)",
                   color: editProfile.primaryEvents?.includes(e) ? "#0B1024" : "rgba(255,255,255,0.5)",
                 }}
@@ -5203,12 +5626,12 @@ function SettingsScreen({ profile, history, savedResults, onSave, onBack, onRese
       </div>
 
         <div>
-          <label style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, display: "block", color: "rgba(255,255,255,0.6)" }}>AGE</label>
+          <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, display: "block", color: "rgba(255,255,255,0.6)" }}>AGE</label>
           <input className="input-field" type="number" min="4" max="25" placeholder="e.g. 10" value={editProfile.age || ""} onChange={e => setEditProfile({...editProfile, age: e.target.value ? parseInt(e.target.value) : null})} />
         </div>
 
         <div>
-          <label style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, display: "block", color: "rgba(255,255,255,0.6)" }}>GOAL</label>
+          <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, display: "block", color: "rgba(255,255,255,0.6)" }}>GOAL</label>
           <select className="input-field" value={editProfile.goals || ""} onChange={e => setEditProfile({...editProfile, goals: e.target.value || null})}>
             <option value="">Select a goal...</option>
             <option value="improve scores">Improve meet scores</option>
@@ -5238,8 +5661,8 @@ function SettingsScreen({ profile, history, savedResults, onSave, onBack, onRese
           }}>
             <span style={{ color: "#22c55e", fontSize: 14 }}>✓</span>
             <div>
-              <span style={{ fontSize: 16, color: "rgba(34,197,94,0.8)" }}>API key configured</span>
-              <div style={{ fontSize: 14, color: "rgba(255,255,255,0.25)", marginTop: 2 }}>2-pass engine: Detect → Judge</div>
+              <span style={{ fontSize: 12, color: "rgba(34,197,94,0.8)" }}>API key configured</span>
+              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", marginTop: 2 }}>3-pass engine: Detect → Judge → Verify</div>
             </div>
           </div>
         ) : (
@@ -5249,20 +5672,20 @@ function SettingsScreen({ profile, history, savedResults, onSave, onBack, onRese
             background: "rgba(245,158,11,0.04)", border: "1px solid rgba(245,158,11,0.1)",
           }}>
             <span style={{ color: "#f59e0b", fontSize: 14 }}>!</span>
-            <span style={{ fontSize: 16, color: "rgba(245,158,11,0.8)" }}>No API key — add one below to enable analysis</span>
+            <span style={{ fontSize: 12, color: "rgba(245,158,11,0.8)" }}>No API key — add one below to enable analysis</span>
           </div>
         )}
-        <p style={{ fontSize: 14, color: "rgba(255,255,255,0.3)", marginBottom: 10, lineHeight: 1.5 }}>
+        <p style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginBottom: 10, lineHeight: 1.5 }}>
           Get a free API key at <span style={{ color: "#C4982A", cursor: "pointer" }} onClick={() => window.open("https://aistudio.google.com/apikey", "_blank")}>aistudio.google.com/apikey</span>. Create one, copy it, paste below.
         </p>
         <div style={{ display: "flex", gap: 8 }}>
           <input
             className="input-field"
             type="password"
-            placeholder="Paste your API key (AIza...)"
+            placeholder="Paste your Gemini API key (AIza...)"
             value={geminiKey}
             onChange={e => setGeminiKey(e.target.value)}
-            style={{ fontSize: 16, flex: 1 }}
+            style={{ fontSize: 12, flex: 1 }}
           />
           <button className="btn-outline" onClick={async () => {
             try {
@@ -5275,7 +5698,7 @@ function SettingsScreen({ profile, history, savedResults, onSave, onBack, onRese
               }
               setTimeout(() => setKeySaved(false), 3000);
             } catch (e) { alert("Error: " + e.message); }
-          }} style={{ padding: "10px 16px", fontSize: 16, whiteSpace: "nowrap" }}>
+          }} style={{ padding: "10px 16px", fontSize: 12, whiteSpace: "nowrap" }}>
             {keySaved ? "✓ Saved" : "Save"}
           </button>
         </div>
@@ -5292,15 +5715,15 @@ function SettingsScreen({ profile, history, savedResults, onSave, onBack, onRese
           return currentTier === "pro" ? (
             <div style={{ padding: 16, borderRadius: 12, background: "rgba(139,92,246,0.06)", border: "1px solid rgba(139,92,246,0.2)" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                <span style={{ fontSize: 14, fontWeight: 700, padding: "3px 10px", borderRadius: 4, background: "rgba(139,92,246,0.2)", color: "#A78BFA", letterSpacing: 0.5 }}>PRO ACTIVE</span>
+                <span style={{ fontSize: 9, fontWeight: 700, padding: "3px 10px", borderRadius: 4, background: "rgba(139,92,246,0.2)", color: "#A78BFA", letterSpacing: 0.5 }}>PRO ACTIVE</span>
               </div>
-              <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>
                 Full access to all features: unlimited analyses, biomechanics, training programs, mental training, what-if simulator, and diagnostics.
               </div>
             </div>
           ) : (
             <div>
-              <div style={{ fontSize: 16, color: "rgba(255,255,255,0.4)", lineHeight: 1.6, marginBottom: 12 }}>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", lineHeight: 1.6, marginBottom: 12 }}>
                 Unlock unlimited analyses, full deduction breakdowns, biomechanics dashboard, personalized 5-pillar training programs, and more.
               </div>
               <button onClick={() => {
@@ -5314,7 +5737,7 @@ function SettingsScreen({ profile, history, savedResults, onSave, onBack, onRese
               }}>
                 Upgrade to STRIVE Pro
               </button>
-              <div style={{ fontSize: 14, color: "rgba(255,255,255,0.2)", marginTop: 6, textAlign: "center" }}>
+              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", marginTop: 6, textAlign: "center" }}>
                 Payment integration coming soon — tap to preview Pro features
               </div>
             </div>
@@ -5330,35 +5753,16 @@ function SettingsScreen({ profile, history, savedResults, onSave, onBack, onRese
             background: "linear-gradient(135deg, #C4982A, #E8C35A)", backgroundClip: "text",
             WebkitBackgroundClip: "text", color: "transparent", marginBottom: 6,
           }}>STRIVE</div>
-          <div style={{ fontSize: 14, color: "rgba(255,255,255,0.2)", letterSpacing: 1, marginBottom: 12 }}>
+          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", letterSpacing: 1, marginBottom: 12 }}>
             SEE YOUR SCORE. OWN YOUR GROWTH.
           </div>
-          <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)", lineHeight: 1.7, maxWidth: 300, margin: "0 auto" }}>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", lineHeight: 1.7, maxWidth: 300, margin: "0 auto" }}>
             AI-powered gymnastics scoring using USAG criteria. Built for athletes, parents, and coaches. Levels 1-10, Xcel Bronze-Sapphire, WAG & MAG.
           </div>
-          <div style={{ fontSize: 14, color: "rgba(255,255,255,0.15)", marginTop: 12, fontFamily: "'Space Mono', monospace" }}>
-            v1.0.0 · 2-Pass Analysis Engine · strive-app-amber.vercel.app
+          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.15)", marginTop: 12, fontFamily: "'Space Mono', monospace" }}>
+            v1.0.0 · 3-Pass Gemini Engine · strive-app-amber.vercel.app
           </div>
         </div>
-
-        {/* Download My Data */}
-        <button onClick={() => {
-          try {
-            const exportData = { profile, history: history || [], goals: null, calibration: null };
-            try { const g = localStorage.getItem("strive-goals"); if (g) exportData.goals = JSON.parse(g); } catch {}
-            try { const c = localStorage.getItem("strive-calibration"); if (c) exportData.calibration = JSON.parse(c); } catch {}
-            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a"); a.href = url; a.download = `strive-data-${new Date().toISOString().slice(0,10)}.json`;
-            document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
-          } catch {}
-        }} style={{
-          width: "100%", padding: 14, borderRadius: 12, border: "1px solid rgba(196,152,42,0.2)",
-          background: "rgba(196,152,42,0.04)", color: "#C4982A", cursor: "pointer",
-          fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 14, marginBottom: 12,
-        }}>
-          Download My Data
-        </button>
 
         {!showConfirm ? (
           <button onClick={() => setShowConfirm(true)} style={{
@@ -5366,7 +5770,7 @@ function SettingsScreen({ profile, history, savedResults, onSave, onBack, onRese
             background: "rgba(239,68,68,0.05)", color: "#ef4444", cursor: "pointer",
             fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 14,
           }}>
-            Clear All Data
+            Reset Account & Data
           </button>
         ) : (
           <div className="card" style={{ borderColor: "rgba(239,68,68,0.3)", padding: 20 }}>
@@ -5403,7 +5807,7 @@ function WhatIfSimulator({ result }) {
   return (
     <div style={{ animation: "fadeIn 0.4s ease-out" }}>
       <div className="card" style={{ padding: 20, marginBottom: 16, textAlign: "center" }}>
-        <div style={{ fontSize: 16, color: "rgba(255,255,255,0.4)", marginBottom: 4 }}>IF YOU FIXED THE SELECTED DEDUCTIONS</div>
+        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: 4 }}>IF YOU FIXED THE SELECTED DEDUCTIONS</div>
         <div style={{ fontSize: 48, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: projectedScore >= 9.0 ? "#22c55e" : "#f59e0b" }}>
           {projectedScore.toFixed(3)}
         </div>
@@ -5412,7 +5816,7 @@ function WhatIfSimulator({ result }) {
             +{improvement.toFixed(3)} improvement possible
           </div>
         )}
-        <div style={{ fontSize: 16, color: "rgba(255,255,255,0.35)", marginTop: 8 }}>
+        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", marginTop: 8 }}>
           Tap deductions below to see how fixing them would change your score
         </div>
       </div>
@@ -5434,15 +5838,15 @@ function WhatIfSimulator({ result }) {
               background: isOff ? "rgba(34,197,94,0.2)" : "transparent",
               display: "flex", alignItems: "center", justifyContent: "center",
             }}>
-              {isOff && <span style={{ color: "#22c55e", fontSize: 16, fontWeight: 700 }}>✓</span>}
+              {isOff && <span style={{ color: "#22c55e", fontSize: 13, fontWeight: 700 }}>✓</span>}
             </div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 16, fontWeight: 600, color: isOff ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.7)", textDecoration: isOff ? "line-through" : "none" }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: isOff ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.7)", textDecoration: isOff ? "line-through" : "none" }}>
                 {d.skill}
               </div>
-              <div style={{ fontSize: 14, color: "rgba(255,255,255,0.35)" }}>{d.fault}</div>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>{d.fault}</div>
             </div>
-            <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 16, fontWeight: 700, color: isOff ? "#22c55e" : c, textDecoration: isOff ? "line-through" : "none" }}>
+            <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 13, fontWeight: 700, color: isOff ? "#22c55e" : c, textDecoration: isOff ? "line-through" : "none" }}>
               -{d.deduction?.toFixed(2)}
             </span>
           </div>
@@ -5454,24 +5858,14 @@ function WhatIfSimulator({ result }) {
 
 // ─── PROGRESS SCREEN ────────────────────────────────────────────────
 function ProgressScreen({ history, profile, onBack }) {
-  const [selectedEvent, setSelectedEvent] = useState("all");
   const events = profile.gender === "female" ? WOMEN_EVENTS : MEN_EVENTS;
-  const eventColors = { "Vault": "#C4982A", "Uneven Bars": "#A78BFA", "Balance Beam": "#22c55e", "Floor Exercise": "#f59e0b", "Pommel Horse": "#ef4444", "Still Rings": "#3b82f6", "Parallel Bars": "#ec4899", "High Bar": "#14b8a6" };
 
-  // Filter by selected event
-  const filtered = selectedEvent === "all" ? history : history.filter(h => h.event === selectedEvent);
-  const chartData = [...filtered].reverse().map((h, i) => ({
-    name: h.meetName ? h.meetName.substring(0, 8) : h.date || `#${i+1}`,
+  // Score trend data
+  const chartData = [...history].reverse().map((h, i) => ({
+    name: h.meetName || h.date || `#${i+1}`,
     score: h.score || 0,
     event: h.event,
   }));
-
-  // Per-event chart data for event comparison
-  const eventChartData = {};
-  events.forEach(evt => {
-    const evtH = [...history].filter(h => h.event === evt).reverse();
-    if (evtH.length >= 2) eventChartData[evt] = evtH.map((h, i) => ({ name: h.date || `#${i+1}`, score: h.score || 0 }));
-  });
 
   // Personal bests per event
   const bests = {};
@@ -5479,28 +5873,7 @@ function ProgressScreen({ history, profile, onBack }) {
     if (!bests[h.event] || h.score > bests[h.event]) bests[h.event] = h.score;
   });
 
-  // Deduction frequency from saved results
-  const faultFreq = {};
-  try {
-    const sr = localStorage.getItem("strive-saved-results");
-    if (sr) Object.values(JSON.parse(sr)).forEach(r => {
-      safeArray(r.executionDeductions).forEach(d => {
-        const fk = safeStr(d.fault).substring(0, 40) || "Unknown";
-        if (!faultFreq[fk]) faultFreq[fk] = { count: 0, totalDed: 0 };
-        faultFreq[fk].count++;
-        faultFreq[fk].totalDed += safeNum(d.deduction, 0);
-      });
-    });
-  } catch {}
-  const topFaults = Object.entries(faultFreq).sort(([,a],[,b]) => b.count - a.count).slice(0, 8);
-
-  // Improvement tracking
-  const sortedH = [...history].sort((a, b) => (a.id || 0) - (b.id || 0));
-  const mid = Math.ceil(sortedH.length / 2);
-  const avgFirst = mid > 0 ? sortedH.slice(0, mid).reduce((s,h) => s + (h.score||0), 0) / mid : 0;
-  const avgSecond = sortedH.length > mid ? sortedH.slice(mid).reduce((s,h) => s + (h.score||0), 0) / (sortedH.length - mid) : 0;
-  const scoreDelta = sortedH.length > 2 ? avgSecond - avgFirst : 0;
-
+  // Most common deductions (from saved calibration)
   const deductionFreq = {};
   history.forEach(h => {
     if (h.deductions) {
@@ -5511,7 +5884,7 @@ function ProgressScreen({ history, profile, onBack }) {
 
   return (
     <div style={{ minHeight: "100vh", padding: "16px 18px 90px", maxWidth: 540, margin: "0 auto" }}>
-      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(196,152,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 16, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
+      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(196,152,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 13, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.5 2.5l-5 5 5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> Dashboard
       </button>
       <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Progress Tracking</h2>
@@ -5526,8 +5899,6 @@ function ProgressScreen({ history, profile, onBack }) {
         </div>
       ) : (
         <>
-          {sortedH.length > 2 && (<div className="card" style={{ padding: 16, marginBottom: 16 }}><div style={{ display: "flex", justifyContent: "space-between" }}><div><div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.25)", letterSpacing: 1 }}>IMPROVEMENT TREND</div></div><div style={{ textAlign: "right" }}><div style={{ fontSize: 24, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: scoreDelta >= 0 ? "#22c55e" : "#ef4444" }}>{scoreDelta >= 0 ? "+" : ""}{scoreDelta.toFixed(3)}</div></div></div></div>)}
-          <div style={{ display: "flex", gap: 4, marginBottom: 16, overflowX: "auto" }}><button onClick={() => setSelectedEvent("all")} style={{ padding: "6px 14px", borderRadius: 8, border: "none", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 14, background: selectedEvent === "all" ? "#C4982A" : "rgba(255,255,255,0.06)", color: selectedEvent === "all" ? "#0B1024" : "rgba(255,255,255,0.4)" }}>All</button>{events.filter(e => history.some(h => h.event === e)).map(evt => (<button key={evt} onClick={() => setSelectedEvent(evt)} style={{ padding: "6px 14px", borderRadius: 8, border: "none", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 14, whiteSpace: "nowrap", background: selectedEvent === evt ? (eventColors[evt] || "#C4982A") : "rgba(255,255,255,0.06)", color: selectedEvent === evt ? "#0B1024" : "rgba(255,255,255,0.4)" }}>{evt.replace("Exercise","").replace("Uneven ","").trim()}</button>))}</div>
           {/* Score Trend Line Chart */}
           <div className="card" style={{ padding: 16, marginBottom: 16 }}>
             <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12 }}>Score Trend</h3>
@@ -5535,14 +5906,14 @@ function ProgressScreen({ history, profile, onBack }) {
               <ResponsiveContainer width="100%" height={200}>
                 <LineChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
-                  <XAxis dataKey="name" tick={{ fill: "rgba(255,255,255,0.3)", fontSize: 14 }} />
-                  <YAxis domain={[7, 10]} tick={{ fill: "rgba(255,255,255,0.3)", fontSize: 14 }} />
-                  <Tooltip contentStyle={{ background: "#111631", border: "1px solid rgba(196,152,42,0.2)", borderRadius: 8, color: "#e2e8f0", fontSize: 16 }} />
+                  <XAxis dataKey="name" tick={{ fill: "rgba(255,255,255,0.3)", fontSize: 10 }} />
+                  <YAxis domain={[7, 10]} tick={{ fill: "rgba(255,255,255,0.3)", fontSize: 10 }} />
+                  <Tooltip contentStyle={{ background: "#111631", border: "1px solid rgba(196,152,42,0.2)", borderRadius: 8, color: "#e2e8f0", fontSize: 12 }} />
                   <Line type="monotone" dataKey="score" stroke="#C4982A" strokeWidth={2} dot={{ fill: "#C4982A", r: 4 }} />
                 </LineChart>
               </ResponsiveContainer>
             ) : (
-              <div style={{ padding: 20, textAlign: "center", color: "rgba(255,255,255,0.3)", fontSize: 16 }}>
+              <div style={{ padding: 20, textAlign: "center", color: "rgba(255,255,255,0.3)", fontSize: 13 }}>
                 {chartData.map((d, i) => (
                   <span key={i} style={{ fontFamily: "'Space Mono', monospace", marginRight: 12 }}>{d.name}: <span style={{ color: "#C4982A" }}>{d.score?.toFixed(3)}</span></span>
                 ))}
@@ -5559,7 +5930,7 @@ function ProgressScreen({ history, profile, onBack }) {
                   padding: "12px 14px", borderRadius: 10,
                   background: "rgba(196,152,42,0.06)", border: "1px solid rgba(196,152,42,0.1)",
                 }}>
-                  <div style={{ fontSize: 14, color: "rgba(255,255,255,0.4)" }}>{evt}</div>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>{evt}</div>
                   <div style={{ fontSize: 22, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: "#C4982A" }}>
                     {score?.toFixed(3)}
                   </div>
@@ -5576,8 +5947,8 @@ function ProgressScreen({ history, profile, onBack }) {
               const avg = count > 0 ? history.filter(h => h.event === evt).reduce((s, h) => s + (h.score || 0), 0) / count : 0;
               return (
                 <div key={evt} style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
-                  <span style={{ fontSize: 16, fontWeight: 600, flex: 1 }}>{evt}</span>
-                  <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 16, color: "rgba(255,255,255,0.5)" }}>{count} analyzed</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, flex: 1 }}>{evt}</span>
+                  <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, color: "rgba(255,255,255,0.5)" }}>{count} analyzed</span>
                   {count > 0 && <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 14, fontWeight: 700, color: "#C4982A" }}>{avg.toFixed(3)} avg</span>}
                 </div>
               );
@@ -5620,11 +5991,11 @@ function MeetsScreen({ history, savedResults, profile, onBack, onViewResult }) {
 
   return (
     <div style={{ minHeight: "100vh", padding: "16px 18px 90px", maxWidth: 540, margin: "0 auto" }}>
-      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(196,152,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 16, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
+      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(196,152,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 13, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.5 2.5l-5 5 5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> Dashboard
       </button>
       <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Competition History</h2>
-      <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 16, marginBottom: 20 }}>
+      <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, marginBottom: 20 }}>
         {history.length} analyses across {Object.keys(meets).length} meets
       </p>
 
@@ -5632,20 +6003,20 @@ function MeetsScreen({ history, savedResults, profile, onBack, onViewResult }) {
       {allScores.length > 0 && (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 20 }}>
           <div className="card" style={{ textAlign: "center", padding: 14 }}>
-            <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)", letterSpacing: 0.5 }}>BEST SCORE</div>
+            <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", letterSpacing: 0.5 }}>BEST SCORE</div>
             <div style={{ fontSize: 20, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: "#22c55e", marginTop: 4 }}>
               {bestScore.toFixed(1)}
             </div>
           </div>
           <div className="card" style={{ textAlign: "center", padding: 14 }}>
-            <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)", letterSpacing: 0.5 }}>AVERAGE</div>
+            <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", letterSpacing: 0.5 }}>AVERAGE</div>
             <div style={{ fontSize: 20, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: "#C4982A", marginTop: 4 }}>
               {avgScore.toFixed(1)}
             </div>
           </div>
           <div className="card" style={{ textAlign: "center", padding: 14 }}>
-            <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)", letterSpacing: 0.5 }}>BEST EVENT</div>
-            <div style={{ fontSize: 16, fontWeight: 700, color: "#E2E8F0", marginTop: 6 }}>
+            <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", letterSpacing: 0.5 }}>BEST EVENT</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#E2E8F0", marginTop: 6 }}>
               {bestEvent ? bestEvent.event.replace("Exercise", "").replace("Uneven ", "") : "—"}
             </div>
           </div>
@@ -5656,7 +6027,7 @@ function MeetsScreen({ history, savedResults, profile, onBack, onViewResult }) {
         <div className="card" style={{ padding: "32px 24px", textAlign: "center" }}>
           <div style={{ fontSize: 32, marginBottom: 10 }}>🏆</div>
           <h4 style={{ fontSize: 15, fontWeight: 700, marginBottom: 6 }}>No meets recorded yet</h4>
-          <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 16, lineHeight: 1.6 }}>
+          <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, lineHeight: 1.6 }}>
             When you upload a video, add the meet name to organize your competition history here.
           </p>
         </div>
@@ -5671,13 +6042,13 @@ function MeetsScreen({ history, savedResults, profile, onBack, onViewResult }) {
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div>
                     <div style={{ fontWeight: 700, fontSize: 15 }}>{meet.name || key}</div>
-                    <div style={{ fontSize: 14, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>
                       {meet.location && `${meet.location} · `}{meet.date}
                     </div>
                   </div>
                   {meet.entries.length > 1 && (
                     <div style={{ textAlign: "right" }}>
-                      <div style={{ fontSize: 14, color: "rgba(255,255,255,0.25)" }}>ALL-AROUND</div>
+                      <div style={{ fontSize: 9, color: "rgba(255,255,255,0.25)" }}>ALL-AROUND</div>
                       <div style={{ fontSize: 16, fontWeight: 800, fontFamily: "'Space Mono', monospace", color: "#C4982A" }}>
                         {aa.toFixed(2)}
                       </div>
@@ -5700,8 +6071,8 @@ function MeetsScreen({ history, savedResults, profile, onBack, onViewResult }) {
                       transition: "background 0.2s",
                     }}>
                     <div>
-                      <div style={{ fontSize: 16, fontWeight: 600 }}>{h.event}</div>
-                      {hasR && <div style={{ fontSize: 14, color: "#C4982A" }}>tap to review →</div>}
+                      <div style={{ fontSize: 13, fontWeight: 600 }}>{h.event}</div>
+                      {hasR && <div style={{ fontSize: 10, color: "#C4982A" }}>tap to review →</div>}
                     </div>
                     <div style={{ textAlign: "right" }}>
                       <div style={{ fontWeight: 800, fontSize: 17, fontFamily: "'Space Mono', monospace", color: scColor }}>
@@ -5715,49 +6086,6 @@ function MeetsScreen({ history, savedResults, profile, onBack, onViewResult }) {
           );
         })
       )}
-
-      {/* Meet-over-Meet Comparison */}
-      {Object.keys(meets).length >= 2 && (() => {
-        const meetList = Object.entries(meets).filter(([,m]) => m.entries.length > 0);
-        if (meetList.length < 2) return null;
-        return (
-          <div className="card" style={{ padding: 16, marginTop: 16 }}>
-            <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12 }}>Meet-over-Meet Comparison</h3>
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 16 }}>
-                <thead>
-                  <tr>
-                    <th style={{ textAlign: "left", padding: "6px 8px", color: "rgba(255,255,255,0.3)", fontSize: 14, fontWeight: 700 }}>MEET</th>
-                    <th style={{ textAlign: "center", padding: "6px 8px", color: "rgba(255,255,255,0.3)", fontSize: 14, fontWeight: 700 }}>EVENTS</th>
-                    <th style={{ textAlign: "center", padding: "6px 8px", color: "rgba(255,255,255,0.3)", fontSize: 14, fontWeight: 700 }}>AVG</th>
-                    <th style={{ textAlign: "right", padding: "6px 8px", color: "rgba(255,255,255,0.3)", fontSize: 14, fontWeight: 700 }}>AA</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {meetList.map(([key, meet], mi) => {
-                    const meetAA = meet.entries.reduce((s, h) => s + (h.score || 0), 0);
-                    const meetAvgScore = meet.entries.length > 0 ? meetAA / meet.entries.length : 0;
-                    const prevMeet = mi > 0 ? meetList[mi - 1] : null;
-                    const prevAA = prevMeet ? prevMeet[1].entries.reduce((s, h) => s + (h.score || 0), 0) : 0;
-                    const aaDelta = mi > 0 ? meetAA - prevAA : 0;
-                    return (
-                      <tr key={mi} style={{ borderBottom: "1px solid rgba(255,255,255,0.03)" }}>
-                        <td style={{ padding: "8px", fontWeight: 600 }}>{(meet.name || key).substring(0, 15)}</td>
-                        <td style={{ padding: "8px", textAlign: "center", color: "rgba(255,255,255,0.4)" }}>{meet.entries.length}</td>
-                        <td style={{ padding: "8px", textAlign: "center", fontFamily: "'Space Mono', monospace", fontWeight: 700, color: "#C4982A" }}>{meetAvgScore.toFixed(2)}</td>
-                        <td style={{ padding: "8px", textAlign: "right" }}>
-                          <span style={{ fontFamily: "'Space Mono', monospace", fontWeight: 700 }}>{meet.entries.length > 1 ? meetAA.toFixed(2) : meetAvgScore.toFixed(2)}</span>
-                          {mi > 0 && aaDelta !== 0 && (<span style={{ fontSize: 14, marginLeft: 4, color: aaDelta > 0 ? "#22c55e" : "#ef4444" }}>{aaDelta > 0 ? "+" : ""}{aaDelta.toFixed(2)}</span>)}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        );
-      })()}
     </div>
   );
 }
@@ -5776,7 +6104,7 @@ function MentalTrainingScreen({ profile, onBack }) {
 
   return (
     <div style={{ minHeight: "100vh", padding: "16px 18px 90px", maxWidth: 540, margin: "0 auto" }}>
-      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(196,152,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 16, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
+      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(196,152,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 13, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.5 2.5l-5 5 5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> Dashboard
       </button>
       <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}><Icon name="brain" size={24} /> Mental Training</h2>
@@ -5787,7 +6115,7 @@ function MentalTrainingScreen({ profile, onBack }) {
         {sections.map(s => (
           <button key={s.id} onClick={() => setActiveSection(s.id)} style={{
             flex: 1, padding: "8px 4px", borderRadius: 10, border: "none", cursor: "pointer",
-            fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 14, whiteSpace: "nowrap",
+            fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 11, whiteSpace: "nowrap",
             background: activeSection === s.id ? "linear-gradient(135deg, #C4982A, #E8C35A)" : "transparent",
             color: activeSection === s.id ? "#0B1024" : "rgba(255,255,255,0.4)",
           }}>{s.label}</button>
@@ -5798,7 +6126,7 @@ function MentalTrainingScreen({ profile, onBack }) {
         <div style={{ animation: "fadeIn 0.4s ease-out" }}>
           <div className="card" style={{ padding: 20, marginBottom: 12, borderColor: "rgba(196,152,42,0.15)" }}>
             <h3 style={{ fontSize: 15, fontWeight: 700, color: "#C4982A", marginBottom: 10 }}>Why Mental Training Matters</h3>
-            <p style={{ fontSize: 16, color: "rgba(255,255,255,0.6)", lineHeight: 1.8 }}>
+            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", lineHeight: 1.8 }}>
               The difference between a gymnast who scores 8.5 and one who scores 9.2 is rarely just physical ability. It's mental focus, confidence, and the ability to perform under pressure. Every elite gymnast — from Simone Biles to your child's favorite Level 10 at the gym — uses mental training techniques daily.
             </p>
           </div>
@@ -5813,14 +6141,14 @@ function MentalTrainingScreen({ profile, onBack }) {
               <div key={i} style={{ display: "flex", gap: 12, marginBottom: 12, alignItems: "flex-start" }}>
                 <span style={{ fontSize: 22, flexShrink: 0 }}>{p.icon}</span>
                 <div>
-                  <div style={{ fontSize: 16, fontWeight: 700 }}>{p.title}</div>
-                  <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>{p.desc}</div>
+                  <div style={{ fontSize: 13, fontWeight: 700 }}>{p.title}</div>
+                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>{p.desc}</div>
                 </div>
               </div>
             ))}
           </div>
           <div className="card" style={{ padding: 16, background: "rgba(196,152,42,0.04)", borderColor: "rgba(196,152,42,0.1)" }}>
-            <p style={{ fontSize: 16, color: "rgba(255,255,255,0.45)", lineHeight: 1.7, fontStyle: "italic" }}>
+            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: 1.7, fontStyle: "italic" }}>
               <strong style={{ color: "#C4982A" }}>Parent tip:</strong> You can practice these with your child in the car on the way to the gym. Even 5 minutes of visualization before practice makes a measurable difference.
             </p>
           </div>
@@ -5859,13 +6187,13 @@ function MentalTrainingScreen({ profile, onBack }) {
             <div key={i} className="card" style={{ padding: 16, marginBottom: 12 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
                 <h3 style={{ fontSize: 14, fontWeight: 700 }}>👁 {ex.title}</h3>
-                <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 14, fontWeight: 700, background: "rgba(255,255,255,0.06)", padding: "3px 8px", borderRadius: 5, color: "rgba(255,255,255,0.4)" }}>{ex.time}</span>
+                <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700, background: "rgba(255,255,255,0.06)", padding: "3px 8px", borderRadius: 5, color: "rgba(255,255,255,0.4)" }}>{ex.time}</span>
               </div>
-              <div style={{ fontSize: 14, color: "#C4982A", marginBottom: 8 }}>Best time: {ex.when}</div>
+              <div style={{ fontSize: 11, color: "#C4982A", marginBottom: 8 }}>Best time: {ex.when}</div>
               {ex.steps.map((step, j) => (
                 <div key={j} style={{ display: "flex", gap: 8, marginBottom: 6 }}>
-                  <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 14, fontWeight: 700, color: "rgba(196,152,42,0.5)", minWidth: 18 }}>{j+1}.</span>
-                  <span style={{ fontSize: 16, color: "rgba(255,255,255,0.55)", lineHeight: 1.6 }}>{step}</span>
+                  <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700, color: "rgba(196,152,42,0.5)", minWidth: 18 }}>{j+1}.</span>
+                  <span style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", lineHeight: 1.6 }}>{step}</span>
                 </div>
               ))}
             </div>
@@ -5883,11 +6211,11 @@ function MentalTrainingScreen({ profile, onBack }) {
           ].map((ex, i) => (
             <div key={i} className="card" style={{ padding: 16, marginBottom: 12 }}>
               <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 2 }}>🌬 {ex.title}</h3>
-              <div style={{ fontSize: 16, color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>{ex.desc}</div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>{ex.desc}</div>
               <div style={{ padding: "10px 12px", borderRadius: 8, background: "rgba(59,130,246,0.06)", border: "1px solid rgba(59,130,246,0.12)", marginBottom: 8 }}>
-                <div style={{ fontSize: 16, color: "rgba(147,197,253,0.9)", lineHeight: 1.7 }}>{ex.steps}</div>
+                <div style={{ fontSize: 13, color: "rgba(147,197,253,0.9)", lineHeight: 1.7 }}>{ex.steps}</div>
               </div>
-              <div style={{ fontSize: 14, color: "#C4982A" }}>When to use: {ex.when}</div>
+              <div style={{ fontSize: 11, color: "#C4982A" }}>When to use: {ex.when}</div>
             </div>
           ))}
         </div>
@@ -5897,7 +6225,7 @@ function MentalTrainingScreen({ profile, onBack }) {
         <div style={{ animation: "fadeIn 0.4s ease-out" }}>
           <div className="card" style={{ padding: 16, marginBottom: 12 }}>
             <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 10 }}>💪 Pre-Competition Affirmations</h3>
-            <p style={{ fontSize: 16, color: "rgba(255,255,255,0.4)", marginBottom: 10 }}>Have your child say these (out loud or silently) before competing:</p>
+            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: 10 }}>Have your child say these (out loud or silently) before competing:</p>
             {[
               "I have trained for this. My body knows what to do.",
               "I am strong, I am prepared, I am ready.",
@@ -5911,7 +6239,7 @@ function MentalTrainingScreen({ profile, onBack }) {
               <div key={i} style={{
                 padding: "8px 12px", borderRadius: 8, marginBottom: 4,
                 background: "rgba(196,152,42,0.04)", borderLeft: "3px solid rgba(196,152,42,0.2)",
-                fontSize: 16, color: "rgba(255,255,255,0.6)", lineHeight: 1.5, fontStyle: "italic",
+                fontSize: 13, color: "rgba(255,255,255,0.6)", lineHeight: 1.5, fontStyle: "italic",
               }}>"{a}"</div>
             ))}
           </div>
@@ -5926,10 +6254,10 @@ function MentalTrainingScreen({ profile, onBack }) {
             ].map((ex, i) => (
               <div key={i} style={{ marginBottom: 12, paddingBottom: 12, borderBottom: i < 4 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                  <div style={{ fontSize: 16, fontWeight: 700 }}>{ex.name}</div>
-                  <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 14, color: "rgba(255,255,255,0.3)", background: "rgba(255,255,255,0.04)", padding: "2px 6px", borderRadius: 4 }}>{ex.freq}</span>
+                  <div style={{ fontSize: 13, fontWeight: 700 }}>{ex.name}</div>
+                  <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, color: "rgba(255,255,255,0.3)", background: "rgba(255,255,255,0.04)", padding: "2px 6px", borderRadius: 4 }}>{ex.freq}</span>
                 </div>
-                <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.6, marginTop: 4 }}>{ex.desc}</div>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.6, marginTop: 4 }}>{ex.desc}</div>
               </div>
             ))}
           </div>
@@ -5940,7 +6268,7 @@ function MentalTrainingScreen({ profile, onBack }) {
         <div style={{ animation: "fadeIn 0.4s ease-out" }}>
           <div className="card" style={{ padding: 16, marginBottom: 12 }}>
             <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 10 }}>🏟 Competition Day Timeline</h3>
-            <p style={{ fontSize: 16, color: "rgba(255,255,255,0.4)", marginBottom: 12 }}>What to expect from arrival to awards:</p>
+            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: 12 }}>What to expect from arrival to awards:</p>
             {[
               { time: "60 min before", title: "Arrival", desc: "Check in, find your team area, use the bathroom, get leotard on. No rushing.", color: "rgba(59,130,246,0.8)" },
               { time: "45 min before", title: "Light Warm-Up", desc: "Jog, stretch, handstands, basic skills only. NO new skills on meet day. Keep it familiar.", color: "rgba(59,130,246,0.6)" },
@@ -5953,15 +6281,15 @@ function MentalTrainingScreen({ profile, onBack }) {
               <div key={i} style={{ display: "flex", gap: 12, marginBottom: 10 }}>
                 <div style={{ width: 3, flexShrink: 0, background: step.color, borderRadius: 2 }} />
                 <div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: step.color, letterSpacing: 0.5 }}>{step.time}</div>
-                  <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 2 }}>{step.title}</div>
-                  <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>{step.desc}</div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: step.color, letterSpacing: 0.5 }}>{step.time}</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 2 }}>{step.title}</div>
+                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>{step.desc}</div>
                 </div>
               </div>
             ))}
           </div>
           <div className="card" style={{ padding: 16, background: "rgba(239,68,68,0.04)", borderColor: "rgba(239,68,68,0.1)" }}>
-            <h3 style={{ fontSize: 16, fontWeight: 700, color: "#ef4444", marginBottom: 8 }}>⚠ Common Meet Day Mistakes (Parents)</h3>
+            <h3 style={{ fontSize: 13, fontWeight: 700, color: "#ef4444", marginBottom: 8 }}>⚠ Common Meet Day Mistakes (Parents)</h3>
             {[
               "Coaching from the stands — your child can hear you and it adds pressure",
               "Comparing scores to other gymnasts out loud",
@@ -5969,7 +6297,7 @@ function MentalTrainingScreen({ profile, onBack }) {
               "Skipping breakfast or eating heavy food before competing",
               "Arriving late and rushing through warm-up",
             ].map((m, i) => (
-              <div key={i} style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.6, marginBottom: 4, paddingLeft: 12, borderLeft: "2px solid rgba(239,68,68,0.2)" }}>{m}</div>
+              <div key={i} style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.6, marginBottom: 4, paddingLeft: 12, borderLeft: "2px solid rgba(239,68,68,0.2)" }}>{m}</div>
             ))}
           </div>
         </div>
@@ -5979,7 +6307,7 @@ function MentalTrainingScreen({ profile, onBack }) {
         <div style={{ animation: "fadeIn 0.4s ease-out" }}>
           <div className="card" style={{ padding: 20, marginBottom: 12, borderColor: "rgba(196,152,42,0.15)" }}>
             <h3 style={{ fontSize: 15, fontWeight: 700, color: "#C4982A", marginBottom: 10 }}>Your Stress Matters Too</h3>
-            <p style={{ fontSize: 16, color: "rgba(255,255,255,0.6)", lineHeight: 1.8 }}>
+            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", lineHeight: 1.8 }}>
               Watching your child compete is one of the most stressful experiences in youth sports. Your heart pounds, your palms sweat, and a wobble on beam feels like it's happening to YOU. This is completely normal — and there are proven techniques to manage it so you can be the calm, supportive presence your child needs.
             </p>
           </div>
@@ -5996,10 +6324,10 @@ function MentalTrainingScreen({ profile, onBack }) {
             ].map((ex, i) => (
               <div key={i} style={{ marginBottom: 14, paddingBottom: 14, borderBottom: i < 5 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
-                  <span style={{ fontSize: 16, fontWeight: 700 }}>{ex.name}</span>
-                  <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 14, color: "rgba(255,255,255,0.3)", background: "rgba(255,255,255,0.04)", padding: "2px 6px", borderRadius: 4, whiteSpace: "nowrap" }}>{ex.time}</span>
+                  <span style={{ fontSize: 13, fontWeight: 700 }}>{ex.name}</span>
+                  <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, color: "rgba(255,255,255,0.3)", background: "rgba(255,255,255,0.04)", padding: "2px 6px", borderRadius: 4, whiteSpace: "nowrap" }}>{ex.time}</span>
                 </div>
-                <div style={{ fontSize: 16, color: "rgba(255,255,255,0.55)", lineHeight: 1.7 }}>{ex.desc}</div>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", lineHeight: 1.7 }}>{ex.desc}</div>
               </div>
             ))}
           </div>
@@ -6015,8 +6343,8 @@ function MentalTrainingScreen({ profile, onBack }) {
               { trap: "Making gymnastics their entire identity", why: "They're a kid who does gymnastics, not 'a gymnast who goes to school.' When sport = identity, pressure becomes unbearable." },
             ].map((item, i) => (
               <div key={i} style={{ marginBottom: 10 }}>
-                <div style={{ fontSize: 16, fontWeight: 700, color: "#ef4444", marginBottom: 2 }}>{item.trap}</div>
-                <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>{item.why}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#ef4444", marginBottom: 2 }}>{item.trap}</div>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>{item.why}</div>
               </div>
             ))}
           </div>
@@ -6031,12 +6359,12 @@ function MentalTrainingScreen({ profile, onBack }) {
               "\"I'm proud of you no matter what the scores say.\"",
               "\"Want to grab ice cream?\"",
             ].map((s, i) => (
-              <div key={i} style={{ fontSize: 16, color: "rgba(255,255,255,0.6)", lineHeight: 1.5, marginBottom: 6, paddingLeft: 12, borderLeft: "2px solid rgba(34,197,94,0.2)", fontStyle: "italic" }}>{s}</div>
+              <div key={i} style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", lineHeight: 1.5, marginBottom: 6, paddingLeft: 12, borderLeft: "2px solid rgba(34,197,94,0.2)", fontStyle: "italic" }}>{s}</div>
             ))}
           </div>
 
           <div className="card" style={{ padding: 14, background: "rgba(196,152,42,0.03)", borderColor: "rgba(196,152,42,0.1)" }}>
-            <p style={{ fontSize: 16, color: "rgba(255,255,255,0.45)", lineHeight: 1.7, fontStyle: "italic" }}>
+            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: 1.7, fontStyle: "italic" }}>
               <strong style={{ color: "#C4982A" }}>Remember:</strong> The average competitive gymnastics career lasts 4-8 years. The relationship with your child lasts forever. Protect the relationship — the scores will take care of themselves.
             </p>
           </div>
@@ -6082,7 +6410,7 @@ function SeasonGoalsScreen({ profile, history, onBack }) {
 
   return (
     <div style={{ minHeight: "100vh", padding: "16px 18px 90px", maxWidth: 540, margin: "0 auto" }}>
-      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(196,152,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 16, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
+      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(196,152,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 13, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.5 2.5l-5 5 5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> Dashboard
       </button>
       <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}><Icon name="target" size={24} /> Season Goals</h2>
@@ -6093,7 +6421,7 @@ function SeasonGoalsScreen({ profile, history, onBack }) {
         <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 10 }}>Add a Goal</h3>
         <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
           <select value={newGoalEvent} onChange={e => setNewGoalEvent(e.target.value)}
-            className="input-field" style={{ flex: 2, fontSize: 16, padding: "10px 8px" }}>
+            className="input-field" style={{ flex: 2, fontSize: 13, padding: "10px 8px" }}>
             <option value="">Event...</option>
             {events.map(e => <option key={e} value={e}>{e}</option>)}
             <option value="All-Around">All-Around</option>
@@ -6101,10 +6429,10 @@ function SeasonGoalsScreen({ profile, history, onBack }) {
           <input className="input-field" type="number" step="0.025" min="7" max="10"
             placeholder="Target (e.g. 9.2)" value={newGoalTarget}
             onChange={e => setNewGoalTarget(e.target.value)}
-            style={{ flex: 1, fontSize: 16, fontFamily: "'Space Mono', monospace" }} />
+            style={{ flex: 1, fontSize: 13, fontFamily: "'Space Mono', monospace" }} />
         </div>
         <button onClick={addGoal} disabled={!newGoalEvent || !newGoalTarget}
-          className="btn-gold" style={{ width: "100%", padding: "10px 12px", fontSize: 16, opacity: (!newGoalEvent || !newGoalTarget) ? 0.4 : 1 }}>
+          className="btn-gold" style={{ width: "100%", padding: "10px 12px", fontSize: 13, opacity: (!newGoalEvent || !newGoalTarget) ? 0.4 : 1 }}>
           Set Goal
         </button>
       </div>
@@ -6128,12 +6456,12 @@ function SeasonGoalsScreen({ profile, history, onBack }) {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
               <div>
                 <div style={{ fontSize: 14, fontWeight: 700 }}>{goal.event}</div>
-                <div style={{ fontSize: 14, color: "rgba(255,255,255,0.35)" }}>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>
                   Current best: <span style={{ color: "#C4982A", fontFamily: "'Space Mono', monospace", fontWeight: 700 }}>{current ? current.toFixed(3) : "—"}</span>
                 </div>
               </div>
               <div style={{ textAlign: "right" }}>
-                <div style={{ fontSize: 14, color: "rgba(255,255,255,0.35)" }}>TARGET</div>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>TARGET</div>
                 <div style={{ fontSize: 22, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: achieved ? "#22c55e" : "#C4982A" }}>
                   {goal.target.toFixed(3)}
                 </div>
@@ -6148,11 +6476,11 @@ function SeasonGoalsScreen({ profile, history, onBack }) {
               }} />
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: 14, color: achieved ? "#22c55e" : "rgba(255,255,255,0.35)", fontWeight: achieved ? 700 : 400 }}>
+              <span style={{ fontSize: 11, color: achieved ? "#22c55e" : "rgba(255,255,255,0.35)", fontWeight: achieved ? 700 : 400 }}>
                 {achieved ? "🎉 GOAL ACHIEVED!" : `${progress.toFixed(0)}% of the way there`}
               </span>
               <button onClick={() => removeGoal(goal.id)} style={{
-                background: "none", border: "none", color: "rgba(255,255,255,0.2)", cursor: "pointer", fontSize: 16, fontFamily: "'Outfit', sans-serif",
+                background: "none", border: "none", color: "rgba(255,255,255,0.2)", cursor: "pointer", fontSize: 12, fontFamily: "'Outfit', sans-serif",
               }}>remove</button>
             </div>
           </div>
@@ -6161,7 +6489,7 @@ function SeasonGoalsScreen({ profile, history, onBack }) {
 
       {/* Tip */}
       <div className="card" style={{ padding: 14, marginTop: 12, background: "rgba(196,152,42,0.03)", borderColor: "rgba(196,152,42,0.1)" }}>
-        <p style={{ fontSize: 16, color: "rgba(255,255,255,0.45)", lineHeight: 1.7, fontStyle: "italic" }}>
+        <p style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: 1.7, fontStyle: "italic" }}>
           <strong style={{ color: "#C4982A" }}>Setting good goals:</strong> Aim for 0.2-0.4 improvement per season on each event. That might sound small, but in gymnastics scoring, improving 0.3 on every event means a 1.2 improvement in All-Around — that's the difference between 5th place and 1st.
         </p>
       </div>
@@ -6197,7 +6525,7 @@ function BodyHeatmap({ deductions }) {
     // Check faultJoints from skeleton
     const fj = d.skeleton?.faultJoints || [];
     fj.forEach(j => {
-      const jl = String(j || "").toLowerCase();
+      const jl = String(j || '').toLowerCase();
       if (jl.includes("ankle")) allBodyPoints.push("ankles");
       else if (jl.includes("knee")) allBodyPoints.push("knees");
       else if (jl.includes("hip")) allBodyPoints.push("hips");
@@ -6207,7 +6535,7 @@ function BodyHeatmap({ deductions }) {
     });
 
     allBodyPoints.forEach(bp => {
-      const bl = String(bp || "").toLowerCase();
+      const bl = String(bp || '').toLowerCase();
       if (bl.includes("ankle") || bl.includes("foot") || bl.includes("feet") || bl.includes("toe")) hits.push("ankles");
       else if (bl.includes("knee")) hits.push("knees");
       else if (bl.includes("hip") || bl.includes("core") || bl.includes("split")) hits.push("hips");
@@ -6256,7 +6584,7 @@ function BodyHeatmap({ deductions }) {
 
   return (
     <div className="card" style={{ padding: "16px 14px", marginBottom: 12 }}>
-      <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: 1, marginBottom: 8 }}>
+      <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: 1, marginBottom: 8 }}>
         BODY FAULT MAP
       </div>
       <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
@@ -6350,14 +6678,14 @@ function BodyHeatmap({ deductions }) {
               return (
                 <div key={key} style={{ marginBottom: 8 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 2 }}>
-                    <span style={{ fontSize: 16, fontWeight: 700, color: "rgba(255,255,255,0.7)" }}>{r.label}</span>
-                    <span style={{ fontSize: 16, fontWeight: 800, fontFamily: "'Space Mono', monospace", color }}>-{r.total.toFixed(2)}</span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.7)" }}>{r.label}</span>
+                    <span style={{ fontSize: 12, fontWeight: 800, fontFamily: "'Space Mono', monospace", color }}>-{r.total.toFixed(2)}</span>
                   </div>
                   {/* Bar */}
                   <div style={{ height: 4, borderRadius: 2, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
                     <div style={{ height: "100%", width: `${intensity * 100}%`, borderRadius: 2, background: color, transition: "width 0.5s ease" }} />
                   </div>
-                  <div style={{ fontSize: 14, color: "rgba(255,255,255,0.35)", marginTop: 2, lineHeight: 1.3 }}>
+                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", marginTop: 2, lineHeight: 1.3 }}>
                     {r.faults.slice(0, 2).join(" · ")}{r.faults.length > 2 ? ` +${r.faults.length - 2} more` : ""}
                   </div>
                 </div>
@@ -6400,7 +6728,7 @@ function DeductionTimeline({ deductions, duration }) {
 
   return (
     <div className="card" style={{ padding: "12px 14px", marginBottom: 12 }}>
-      <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: 1, marginBottom: 8 }}>
+      <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: 1, marginBottom: 8 }}>
         DEDUCTION TIMELINE
       </div>
       <div style={{ display: "flex", gap: 2, alignItems: "flex-end", height: 40 }}>
@@ -6423,15 +6751,15 @@ function DeductionTimeline({ deductions, duration }) {
         })}
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
-        <span style={{ fontSize: 14, color: "rgba(255,255,255,0.25)", fontFamily: "'Space Mono', monospace" }}>0:00</span>
-        <span style={{ fontSize: 14, color: "rgba(255,255,255,0.25)", fontFamily: "'Space Mono', monospace" }}>
+        <span style={{ fontSize: 9, color: "rgba(255,255,255,0.25)", fontFamily: "'Space Mono', monospace" }}>0:00</span>
+        <span style={{ fontSize: 9, color: "rgba(255,255,255,0.25)", fontFamily: "'Space Mono', monospace" }}>
           {Math.floor(maxTime / 60)}:{String(Math.round(maxTime % 60)).padStart(2, "0")}
         </span>
       </div>
       <div style={{ display: "flex", gap: 12, marginTop: 6, justifyContent: "center" }}>
-        <span style={{ fontSize: 14, color: "rgba(255,255,255,0.3)" }}><span style={{ display: "inline-block", width: 8, height: 8, borderRadius: 2, background: "#22c55e", marginRight: 3, verticalAlign: "middle" }} />Minor</span>
-        <span style={{ fontSize: 14, color: "rgba(255,255,255,0.3)" }}><span style={{ display: "inline-block", width: 8, height: 8, borderRadius: 2, background: "#f59e0b", marginRight: 3, verticalAlign: "middle" }} />Moderate</span>
-        <span style={{ fontSize: 14, color: "rgba(255,255,255,0.3)" }}><span style={{ display: "inline-block", width: 8, height: 8, borderRadius: 2, background: "#ef4444", marginRight: 3, verticalAlign: "middle" }} />Heavy</span>
+        <span style={{ fontSize: 9, color: "rgba(255,255,255,0.3)" }}><span style={{ display: "inline-block", width: 8, height: 8, borderRadius: 2, background: "#22c55e", marginRight: 3, verticalAlign: "middle" }} />Minor</span>
+        <span style={{ fontSize: 9, color: "rgba(255,255,255,0.3)" }}><span style={{ display: "inline-block", width: 8, height: 8, borderRadius: 2, background: "#f59e0b", marginRight: 3, verticalAlign: "middle" }} />Moderate</span>
+        <span style={{ fontSize: 9, color: "rgba(255,255,255,0.3)" }}><span style={{ display: "inline-block", width: 8, height: 8, borderRadius: 2, background: "#ef4444", marginRight: 3, verticalAlign: "middle" }} />Heavy</span>
       </div>
     </div>
   );
@@ -6477,9 +6805,9 @@ function DeductionsTabContent({ result, frames }) {
       <div className="card" style={{ padding: 0, overflow: "hidden", marginBottom: 12 }}>
         {/* Header row */}
         <div style={{ display: "grid", gridTemplateColumns: "50px 1fr auto", gap: 0, padding: "10px 14px", background: "rgba(255,255,255,0.03)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-          <span style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.3)", letterSpacing: 1 }}>TIME</span>
-          <span style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.3)", letterSpacing: 1 }}>SKILL / FAULT</span>
-          <span style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.3)", letterSpacing: 1, textAlign: "right" }}>DED</span>
+          <span style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.3)", letterSpacing: 1 }}>TIME</span>
+          <span style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.3)", letterSpacing: 1 }}>SKILL / FAULT</span>
+          <span style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.3)", letterSpacing: 1, textAlign: "right" }}>DED</span>
         </div>
 
         {/* Deduction rows */}
@@ -6496,24 +6824,24 @@ function DeductionsTabContent({ result, frames }) {
                 background: isExpanded ? `${c}08` : "transparent",
                 animation: `slideUp 0.2s ease-out ${i * 0.03}s both`,
               }}>
-                <span style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", fontFamily: "'Space Mono', monospace" }}>{d.timestamp || "—"}</span>
+                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: "'Space Mono', monospace" }}>{d.timestamp || "—"}</span>
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 16, fontWeight: 600, color: "#e2e8f0", lineHeight: 1.3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{d.skill}</div>
-                  <div style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", marginTop: 2, lineHeight: 1.3 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "#e2e8f0", lineHeight: 1.3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{d.skill}</div>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 2, lineHeight: 1.3 }}>
                     {d.fault || d.details || ""}
                   </div>
                   <div style={{ display: "flex", gap: 4, marginTop: 3, flexWrap: "wrap" }}>
-                    <span style={{ fontSize: 14, padding: "1px 5px", borderRadius: 3, background: `${c}18`, color: c, fontWeight: 700 }}>{d.category?.toUpperCase()}</span>
-                    {d.engine && d.engine !== "General" && <span style={{ fontSize: 14, padding: "1px 5px", borderRadius: 3, background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.35)", fontWeight: 600 }}>{d.engine}</span>}
+                    <span style={{ fontSize: 8, padding: "1px 5px", borderRadius: 3, background: `${c}18`, color: c, fontWeight: 700 }}>{d.category?.toUpperCase()}</span>
+                    {d.engine && d.engine !== "General" && <span style={{ fontSize: 8, padding: "1px 5px", borderRadius: 3, background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.35)", fontWeight: 600 }}>{d.engine}</span>}
                     {d.confidence != null && (
                       <span style={{
-                        fontSize: 14, padding: "1px 5px", borderRadius: 3, fontWeight: 700,
+                        fontSize: 8, padding: "1px 5px", borderRadius: 3, fontWeight: 700,
                         background: d.confidence >= 0.8 ? "rgba(34,197,94,0.12)" : d.confidence >= 0.6 ? "rgba(245,158,11,0.12)" : "rgba(239,68,68,0.12)",
                         color: d.confidence >= 0.8 ? "#22c55e" : d.confidence >= 0.6 ? "#f59e0b" : "#ef4444",
                       }}>{Math.round(d.confidence * 100)}% conf</span>
                     )}
                     {d.lowConfidence && (
-                      <span style={{ fontSize: 14, padding: "1px 5px", borderRadius: 3, background: "rgba(239,68,68,0.12)", color: "#ef4444", fontWeight: 600, fontStyle: "italic" }}>LOW CONF</span>
+                      <span style={{ fontSize: 8, padding: "1px 5px", borderRadius: 3, background: "rgba(239,68,68,0.12)", color: "#ef4444", fontWeight: 600, fontStyle: "italic" }}>LOW CONF</span>
                     )}
                   </div>
                 </div>
@@ -6521,7 +6849,7 @@ function DeductionsTabContent({ result, frames }) {
                   <span style={{ fontFamily: "'Space Mono', monospace", fontWeight: 900, fontSize: 15, color: c }}>
                     -{d.deduction?.toFixed(2)}
                   </span>
-                  <span style={{ fontSize: 14, color: "rgba(255,255,255,0.25)" }}>{isExpanded ? "▲" : "▼"}</span>
+                  <span style={{ fontSize: 9, color: "rgba(255,255,255,0.25)" }}>{isExpanded ? "▲" : "▼"}</span>
                 </div>
               </div>
               {/* Expanded detail panel with frame thumbnail */}
@@ -6539,26 +6867,26 @@ function DeductionsTabContent({ result, frames }) {
                           width: 120, height: 90, objectFit: "cover", borderRadius: 8,
                           border: `2px solid ${c}40`,
                         }} />
-                        <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)", textAlign: "center", marginTop: 3, fontFamily: "'Space Mono', monospace" }}>
+                        <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", textAlign: "center", marginTop: 3, fontFamily: "'Space Mono', monospace" }}>
                           {parseFloat(frame.timestamp).toFixed(1)}s
                         </div>
                       </div>
                     )}
                     <div style={{ flex: 1, minWidth: 0 }}>
                       {d.details && d.details !== d.fault && (
-                        <div style={{ fontSize: 16, color: "rgba(255,255,255,0.55)", lineHeight: 1.5, marginBottom: 6 }}>{d.details}</div>
+                        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", lineHeight: 1.5, marginBottom: 6 }}>{d.details}</div>
                       )}
                       {d.correction && (
-                        <div style={{ fontSize: 14, color: "#22c55e", lineHeight: 1.4, padding: "6px 8px", background: "rgba(34,197,94,0.08)", borderRadius: 6 }}>
+                        <div style={{ fontSize: 11, color: "#22c55e", lineHeight: 1.4, padding: "6px 8px", background: "rgba(34,197,94,0.08)", borderRadius: 6 }}>
                           <span style={{ fontWeight: 700 }}>Fix: </span>{d.correction}
                         </div>
                       )}
                       {d.subFaults && d.subFaults.length > 0 && (
                         <div style={{ marginTop: 6 }}>
                           {d.subFaults.map((sf, si) => (
-                            <div key={si} style={{ fontSize: 14, color: "rgba(255,255,255,0.45)", lineHeight: 1.4, padding: "2px 0", display: "flex", justifyContent: "space-between" }}>
+                            <div key={si} style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", lineHeight: 1.4, padding: "2px 0", display: "flex", justifyContent: "space-between" }}>
                               <span>{sf.fault}</span>
-                              <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 14, color: c, fontWeight: 600 }}>-{sf.deduction?.toFixed(2)}</span>
+                              <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, color: c, fontWeight: 600 }}>-{sf.deduction?.toFixed(2)}</span>
                             </div>
                           ))}
                         </div>
@@ -6578,28 +6906,28 @@ function DeductionsTabContent({ result, frames }) {
         border: "1px solid rgba(196,152,42,0.15)", borderRadius: 12,
         padding: 16, marginTop: 4,
       }}>
-        <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: 1, marginBottom: 10 }}>SCORE MATH</div>
+        <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: 1, marginBottom: 10 }}>SCORE MATH</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           {safeNum(result.executionDeductionsTotal, 0) > 0 && (
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: 16, color: "rgba(255,255,255,0.6)" }}>Execution ({result.executionDeductions?.filter(d => d.category !== "artistry").length || 0} deductions)</span>
-              <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 16, fontWeight: 700, color: "#ef4444" }}>-{safeNum(result.executionDeductionsTotal, 0).toFixed(3)}</span>
+              <span style={{ fontSize: 12, color: "rgba(255,255,255,0.6)" }}>Execution ({result.executionDeductions?.filter(d => d.category !== "artistry").length || 0} deductions)</span>
+              <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 13, fontWeight: 700, color: "#ef4444" }}>-{safeNum(result.executionDeductionsTotal, 0).toFixed(3)}</span>
             </div>
           )}
           {safeNum(result.artistryDeductionsTotal, 0) > 0 && (
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: 16, color: "rgba(255,255,255,0.6)" }}>Artistry ({result.executionDeductions?.filter(d => d.category === "artistry").length || 0} deductions)</span>
-              <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 16, fontWeight: 700, color: "#ef4444" }}>-{safeNum(result.artistryDeductionsTotal, 0).toFixed(3)}</span>
+              <span style={{ fontSize: 12, color: "rgba(255,255,255,0.6)" }}>Artistry ({result.executionDeductions?.filter(d => d.category === "artistry").length || 0} deductions)</span>
+              <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 13, fontWeight: 700, color: "#ef4444" }}>-{safeNum(result.artistryDeductionsTotal, 0).toFixed(3)}</span>
             </div>
           )}
           <div style={{ height: 1, background: "rgba(255,255,255,0.08)", margin: "4px 0" }} />
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: 16, fontWeight: 700, color: "rgba(255,255,255,0.8)" }}>Total Deductions ({result.executionDeductions?.length || 0} items)</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.8)" }}>Total Deductions ({result.executionDeductions?.length || 0} items)</span>
             <span style={{ fontFamily: "'Space Mono', monospace", fontWeight: 900, fontSize: 16, color: "#ef4444" }}>-{safeNum(result.totalDeductions, 0).toFixed(3)}</span>
           </div>
           <div style={{ height: 1, background: "rgba(255,255,255,0.08)", margin: "2px 0" }} />
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: 16, fontWeight: 600, color: "rgba(255,255,255,0.5)" }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.5)" }}>
               {safeNum(result.startValue, 10).toFixed(1)} - {safeNum(result.totalDeductions, 0).toFixed(3)} =
             </span>
             <span style={{ fontFamily: "'Space Mono', monospace", fontWeight: 900, fontSize: 20, color: result.finalScore >= 9.0 ? "#22c55e" : result.finalScore >= 8.0 ? "#f59e0b" : "#ef4444" }}>
@@ -6634,19 +6962,19 @@ function WeeklyTrainingPlan({ faults }) {
     <div className="card" style={{ padding: 16, marginBottom: 16, borderColor: "rgba(196,152,42,0.12)" }}>
       <div onClick={() => setExpanded(!expanded)} style={{ cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <h3 style={{ fontSize: 14, fontWeight: 700 }}><Icon name="target" size={14} /> Weekly Training Plan</h3>
-        <span style={{ color: "#C4982A", fontSize: 16, fontWeight: 600 }}>{expanded ? "▲" : "▼"}</span>
+        <span style={{ color: "#C4982A", fontSize: 13, fontWeight: 600 }}>{expanded ? "▲" : "▼"}</span>
       </div>
       {expanded && (
         <div style={{ marginTop: 12 }}>
-          <p style={{ fontSize: 16, color: "rgba(255,255,255,0.4)", marginBottom: 12 }}>Based on the faults identified in this analysis:</p>
+          <p style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: 12 }}>Based on the faults identified in this analysis:</p>
           {dayPlans.map((day, i) => (
             <div key={i} style={{ marginBottom: 12, paddingBottom: 12, borderBottom: i < dayPlans.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                <span style={{ fontSize: 16, fontWeight: 700, color: "#C4982A" }}>{day.day}</span>
-                <span style={{ fontSize: 14, color: "rgba(255,255,255,0.35)" }}>{day.focus}</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: "#C4982A" }}>{day.day}</span>
+                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>{day.focus}</span>
               </div>
               {day.items.map((item, j) => (
-                <div key={j} style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.7, paddingLeft: 12, borderLeft: "2px solid rgba(196,152,42,0.1)" }}>
+                <div key={j} style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.7, paddingLeft: 12, borderLeft: "2px solid rgba(196,152,42,0.1)" }}>
                   {item}
                 </div>
               ))}
@@ -6810,17 +7138,17 @@ function PillarProgress({ history, profile }) {
 
   return (
     <div className="card" style={{ padding: 16, marginBottom: 12, borderColor: "rgba(168,85,247,0.15)" }}>
-      <div style={{ fontSize: 14, fontWeight: 700, color: "#a855f7", letterSpacing: 1, marginBottom: 4 }}>📊 YOUR PROGRESS — {recent.length} Analyses</div>
-      <div style={{ fontSize: 14, color: "rgba(255,255,255,0.35)", marginBottom: 12 }}>Tracking improvement across all training pillars over time</div>
+      <div style={{ fontSize: 11, fontWeight: 700, color: "#a855f7", letterSpacing: 1, marginBottom: 4 }}>📊 YOUR PROGRESS — {recent.length} Analyses</div>
+      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginBottom: 12 }}>Tracking improvement across all training pillars over time</div>
 
       {/* Score trend */}
       {scoreTrend.length >= 2 && (
         <div style={{ marginBottom: 12 }}>
-          <div style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.6)", marginBottom: 6 }}>Score Trend</div>
+          <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.6)", marginBottom: 6 }}>Score Trend</div>
           <ResponsiveContainer width="100%" height={80}>
             <LineChart data={scoreTrend} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
-              <XAxis dataKey="label" tick={{ fill: "rgba(255,255,255,0.2)", fontSize: 14 }} />
-              <YAxis domain={["auto", "auto"]} tick={{ fill: "rgba(255,255,255,0.2)", fontSize: 14 }} />
+              <XAxis dataKey="label" tick={{ fill: "rgba(255,255,255,0.2)", fontSize: 9 }} />
+              <YAxis domain={["auto", "auto"]} tick={{ fill: "rgba(255,255,255,0.2)", fontSize: 9 }} />
               <Line type="monotone" dataKey="score" stroke="#C4982A" strokeWidth={2} dot={{ r: 3, fill: "#C4982A" }} />
             </LineChart>
           </ResponsiveContainer>
@@ -6833,30 +7161,30 @@ function PillarProgress({ history, profile }) {
           <div style={{ fontSize: 16, fontWeight: 900, color: scoreDelta >= 0 ? "#22c55e" : "#ef4444", fontFamily: "'Space Mono', monospace" }}>
             {scoreDelta >= 0 ? "+" : ""}{scoreDelta.toFixed(2)}
           </div>
-          <div style={{ fontSize: 14, color: "rgba(255,255,255,0.35)" }}>Score Change</div>
+          <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)" }}>Score Change</div>
         </div>
         <div style={{ flex: "1 1 30%", minWidth: 80, padding: 10, borderRadius: 8, background: `rgba(${landingImproved ? "34,197,94" : "245,158,11"},0.04)`, textAlign: "center" }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: landingImproved ? "#22c55e" : "#f59e0b" }}>
             {landingImproved ? "Improving" : "Work on it"}
           </div>
-          <div style={{ fontSize: 14, color: "rgba(255,255,255,0.35)" }}>Landings</div>
+          <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)" }}>Landings</div>
         </div>
         <div style={{ flex: "1 1 30%", minWidth: 80, padding: 10, borderRadius: 8, background: `rgba(${fallsImproved ? "34,197,94" : "239,68,68"},0.04)`, textAlign: "center" }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: fallsImproved ? "#22c55e" : avgFallSecond === 0 ? "#22c55e" : "#ef4444" }}>
             {avgFallSecond === 0 ? "No Falls!" : fallsImproved ? "Fewer Falls" : "Watch Falls"}
           </div>
-          <div style={{ fontSize: 14, color: "rgba(255,255,255,0.35)" }}>Fall Trend</div>
+          <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)" }}>Fall Trend</div>
         </div>
       </div>
 
       {/* Deduction pattern trends */}
       {strengthTrend.length >= 2 && (strengthTrend[0].landing > 0 || strengthTrend[0].knees > 0 || strengthTrend[0].toes > 0) && (
         <div style={{ marginTop: 12 }}>
-          <div style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.6)", marginBottom: 6 }}>Deduction Patterns Over Time</div>
+          <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.6)", marginBottom: 6 }}>Deduction Patterns Over Time</div>
           <ResponsiveContainer width="100%" height={80}>
             <LineChart data={strengthTrend} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
-              <XAxis dataKey="label" tick={{ fill: "rgba(255,255,255,0.2)", fontSize: 14 }} />
-              <YAxis tick={{ fill: "rgba(255,255,255,0.2)", fontSize: 14 }} />
+              <XAxis dataKey="label" tick={{ fill: "rgba(255,255,255,0.2)", fontSize: 9 }} />
+              <YAxis tick={{ fill: "rgba(255,255,255,0.2)", fontSize: 9 }} />
               <Line type="monotone" dataKey="landing" name="Landings" stroke="#ef4444" strokeWidth={1.5} dot={{ r: 2 }} />
               <Line type="monotone" dataKey="knees" name="Knees" stroke="#f97316" strokeWidth={1.5} dot={{ r: 2 }} />
               <Line type="monotone" dataKey="toes" name="Toes" stroke="#8b5cf6" strokeWidth={1.5} dot={{ r: 2 }} />
@@ -6864,12 +7192,12 @@ function PillarProgress({ history, profile }) {
           </ResponsiveContainer>
           <div style={{ display: "flex", gap: 12, justifyContent: "center", marginTop: 4 }}>
             {[{label: "Landings", color: "#ef4444"}, {label: "Knees", color: "#f97316"}, {label: "Toes", color: "#8b5cf6"}].map(l => (
-              <div key={l.label} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 14, color: "rgba(255,255,255,0.3)" }}>
+              <div key={l.label} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 9, color: "rgba(255,255,255,0.3)" }}>
                 <div style={{ width: 8, height: 3, background: l.color, borderRadius: 2 }} />{l.label}
               </div>
             ))}
           </div>
-          <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)", marginTop: 6, textAlign: "center" }}>
+          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginTop: 6, textAlign: "center" }}>
             Lines going down = fewer deductions in that area (improvement!)
           </div>
         </div>
@@ -6919,12 +7247,12 @@ function TrainingProgram({ result, profile, history }) {
 
   const pillarCard = (icon, title, color, immediateContent, longTermContent, inspirePillar) => (
     <div className="card" style={{ padding: 16, marginBottom: 12 }}>
-      <div style={{ fontSize: 14, fontWeight: 700, color, letterSpacing: 1, marginBottom: 10 }}>{icon} {title}</div>
+      <div style={{ fontSize: 11, fontWeight: 700, color, letterSpacing: 1, marginBottom: 10 }}>{icon} {title}</div>
       {viewMode === "thisWeek" ? immediateContent : longTermContent}
       {/* Daily Inspiration */}
       <div style={{ marginTop: 10, padding: 10, borderRadius: 8, background: `${color}08`, borderLeft: `2px solid ${color}30` }}>
-        <div style={{ fontSize: 14, fontWeight: 700, color, letterSpacing: 0.5, marginBottom: 3 }}>TODAY'S INSPIRATION</div>
-        <div style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", lineHeight: 1.6, fontStyle: "italic" }}>{getDailyInspiration(inspirePillar)}</div>
+        <div style={{ fontSize: 10, fontWeight: 700, color, letterSpacing: 0.5, marginBottom: 3 }}>TODAY'S INSPIRATION</div>
+        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", lineHeight: 1.6, fontStyle: "italic" }}>{getDailyInspiration(inspirePillar)}</div>
       </div>
     </div>
   );
@@ -6933,20 +7261,20 @@ function TrainingProgram({ result, profile, history }) {
     <div style={{ animation: "fadeIn 0.4s ease-out" }}>
       {/* Header */}
       <div className="card" style={{ padding: 16, marginBottom: 12, background: "linear-gradient(135deg, rgba(196,152,42,0.06), rgba(196,152,42,0.02))", borderColor: "rgba(196,152,42,0.15)" }}>
-        <div style={{ fontSize: 14, fontWeight: 700, color: "#C4982A", letterSpacing: 1, marginBottom: 8 }}>YOUR PERSONALIZED TRAINING PROGRAM</div>
-        <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.7 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: "#C4982A", letterSpacing: 1, marginBottom: 8 }}>YOUR PERSONALIZED TRAINING PROGRAM</div>
+        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.7 }}>
           Built from {deds.length} deductions, {risks.length} injury risk flag{risks.length !== 1 ? "s" : ""}, biomechanical analysis
           {profile?.goals ? `, and goal of "${profile.goals}"` : ""} at {result.level || profile?.level || "your level"}.
           {profile?.age ? ` Age-appropriate for ${profile.age}-year-old athletes.` : ""}
         </div>
-        <div style={{ fontSize: 14, color: "rgba(255,255,255,0.25)", marginTop: 8 }}>Sources: USAG Athlete Wellness · NSCA Youth Training · ACSM Guidelines · ISSN Position Stands</div>
+        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", marginTop: 8 }}>Sources: USAG Athlete Wellness · NSCA Youth Training · ACSM Guidelines · ISSN Position Stands</div>
       </div>
 
       {/* This Week / Season Toggle */}
       <div style={{ display: "flex", gap: 4, marginBottom: 12, padding: 3, borderRadius: 10, background: "rgba(255,255,255,0.04)" }}>
         {[{ id: "thisWeek", label: "This Week" }, { id: "season", label: "Season Plan" }].map(m => (
           <button key={m.id} onClick={() => setViewMode(m.id)} style={{
-            flex: 1, padding: "10px 0", borderRadius: 8, border: "none", fontSize: 16, fontWeight: 700, cursor: "pointer",
+            flex: 1, padding: "10px 0", borderRadius: 8, border: "none", fontSize: 12, fontWeight: 700, cursor: "pointer",
             background: viewMode === m.id ? "rgba(196,152,42,0.15)" : "transparent",
             color: viewMode === m.id ? "#C4982A" : "rgba(255,255,255,0.35)",
             transition: "all 0.2s",
@@ -6960,12 +7288,12 @@ function TrainingProgram({ result, profile, history }) {
       {/* Persistent issues alert (season view) */}
       {viewMode === "season" && persistentIssues.length > 0 && (
         <div className="card" style={{ padding: 16, marginBottom: 12, borderColor: "rgba(249,115,22,0.2)" }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: "#f97316", letterSpacing: 1, marginBottom: 8 }}>🔄 RECURRING PATTERNS</div>
-          <div style={{ fontSize: 14, color: "rgba(255,255,255,0.35)", marginBottom: 10 }}>Issues that keep appearing across multiple analyses — these need focused long-term attention</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#f97316", letterSpacing: 1, marginBottom: 8 }}>🔄 RECURRING PATTERNS</div>
+          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", marginBottom: 10 }}>Issues that keep appearing across multiple analyses — these need focused long-term attention</div>
           {persistentIssues.map((p, i) => (
             <div key={i} style={{ padding: 10, marginBottom: 6, borderRadius: 8, background: "rgba(249,115,22,0.04)", borderLeft: "3px solid #f97316" }}>
-              <div style={{ fontSize: 16, fontWeight: 700 }}>{p.area} <span style={{ fontSize: 14, color: "rgba(255,255,255,0.3)", fontWeight: 400 }}>avg {p.avg} per analysis</span></div>
-              <div style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", marginTop: 4, lineHeight: 1.5 }}>{p.tip}</div>
+              <div style={{ fontSize: 12, fontWeight: 700 }}>{p.area} <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", fontWeight: 400 }}>avg {p.avg} per analysis</span></div>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginTop: 4, lineHeight: 1.5 }}>{p.tip}</div>
             </div>
           ))}
         </div>
@@ -6981,24 +7309,24 @@ function TrainingProgram({ result, profile, history }) {
             return (
               <div key={i} style={{ padding: 10, marginBottom: 8, borderRadius: 8, background: "rgba(255,255,255,0.02)", borderLeft: `3px solid ${i === 0 ? "#ef4444" : i === 1 ? "#f59e0b" : "#22c55e"}` }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-                  <span style={{ fontSize: 16, fontWeight: 700 }}>{p.label}</span>
-                  <span style={{ fontSize: 14, fontFamily: "'Space Mono', monospace", color: "rgba(255,255,255,0.3)" }}>{p.count} deduction{p.count !== 1 ? "s" : ""}</span>
+                  <span style={{ fontSize: 13, fontWeight: 700 }}>{p.label}</span>
+                  <span style={{ fontSize: 10, fontFamily: "'Space Mono', monospace", color: "rgba(255,255,255,0.3)" }}>{p.count} deduction{p.count !== 1 ? "s" : ""}</span>
                 </div>
-                <div style={{ fontSize: 16, fontWeight: 600, color: "#e2e8f0" }}>{drill.drill}</div>
-                <div style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>{drill.prescription}</div>
-                <div style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", marginTop: 4 }}>{drill.why}</div>
-                <div style={{ fontSize: 14, color: "rgba(255,255,255,0.2)", marginTop: 3 }}>Source: {drill.source}</div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: "#e2e8f0" }}>{drill.drill}</div>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>{drill.prescription}</div>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginTop: 4 }}>{drill.why}</div>
+                <div style={{ fontSize: 9, color: "rgba(255,255,255,0.2)", marginTop: 3 }}>Source: {drill.source}</div>
               </div>
             );
           })}
           {priorities.filter(p => p.count > 0).length === 0 && (
-            <div style={{ fontSize: 16, color: "rgba(255,255,255,0.4)", padding: 10 }}>No specific drill priorities from this analysis — maintain current drill routine!</div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", padding: 10 }}>No specific drill priorities from this analysis — maintain current drill routine!</div>
           )}
           {coach?.preemptiveCorrections?.length > 0 && (
             <div style={{ marginTop: 8 }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.35)", marginBottom: 6 }}>COACH CORRECTIONS THIS WEEK:</div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.35)", marginBottom: 6 }}>COACH CORRECTIONS THIS WEEK:</div>
               {coach.preemptiveCorrections.slice(0, 3).map((c, i) => (
-                <div key={i} style={{ fontSize: 14, color: "rgba(255,255,255,0.45)", lineHeight: 1.6, marginBottom: 4, paddingLeft: 10, borderLeft: `2px solid ${c?.priority === "high" ? "rgba(239,68,68,0.3)" : "rgba(239,68,68,0.15)"}` }}>
+                <div key={i} style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", lineHeight: 1.6, marginBottom: 4, paddingLeft: 10, borderLeft: `2px solid ${c?.priority === "high" ? "rgba(239,68,68,0.3)" : "rgba(239,68,68,0.15)"}` }}>
                   {typeof c === "string" ? c : <><strong style={{ color: "rgba(255,255,255,0.6)" }}>{safeStr(c.skill)}:</strong> {safeStr(c.correction || c.currentFault)}{c.riskIfUncorrected ? ` — ${safeStr(c.riskIfUncorrected)}` : ""}</>}
                 </div>
               ))}
@@ -7007,20 +7335,20 @@ function TrainingProgram({ result, profile, history }) {
         </>,
         // SEASON: long-term drill development
         <>
-          <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.7, marginBottom: 10 }}>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.7, marginBottom: 10 }}>
             Build drill consistency across the full season. Add each drill to your daily warm-up until it becomes automatic.
           </div>
           {Object.entries(EVIDENCE_PROGRAMS.drills).map(([key, drill], i) => (
             <div key={key} style={{ padding: 10, marginBottom: 6, borderRadius: 8, background: "rgba(255,255,255,0.02)" }}>
-              <div style={{ fontSize: 16, fontWeight: 600, color: "#e2e8f0" }}>{drill.drill}</div>
-              <div style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>Daily: {drill.prescription}</div>
-              <div style={{ fontSize: 14, color: "rgba(255,255,255,0.25)", marginTop: 2 }}>Source: {drill.source}</div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: "#e2e8f0" }}>{drill.drill}</div>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>Daily: {drill.prescription}</div>
+              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", marginTop: 2 }}>Source: {drill.source}</div>
             </div>
           ))}
           {coach?.techniqueProgressionNotes && (
             <div style={{ marginTop: 10, padding: 10, borderRadius: 8, background: "rgba(34,197,94,0.04)", borderLeft: "3px solid #22c55e" }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: "#22c55e", marginBottom: 4 }}>NEXT SKILLS TO DEVELOP</div>
-              <div style={{ fontSize: 16, color: "rgba(255,255,255,0.55)", lineHeight: 1.7 }}>{safeStr(coach.techniqueProgressionNotes)}</div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "#22c55e", marginBottom: 4 }}>NEXT SKILLS TO DEVELOP</div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", lineHeight: 1.7 }}>{safeStr(coach.techniqueProgressionNotes)}</div>
             </div>
           )}
         </>,
@@ -7034,10 +7362,10 @@ function TrainingProgram({ result, profile, history }) {
           {coach?.conditioningPlan?.length > 0 ? (
             coach.conditioningPlan.map((c, i) => (
               <div key={i} style={{ padding: 8, marginBottom: 6, borderRadius: 6, background: "rgba(255,255,255,0.02)", display: "flex", gap: 8, alignItems: "flex-start" }}>
-                <div style={{ width: 22, height: 22, borderRadius: "50%", background: "rgba(59,130,246,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 900, color: "#3b82f6", fontFamily: "'Space Mono', monospace", flexShrink: 0 }}>{i + 1}</div>
+                <div style={{ width: 22, height: 22, borderRadius: "50%", background: "rgba(59,130,246,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 900, color: "#3b82f6", fontFamily: "'Space Mono', monospace", flexShrink: 0 }}>{i + 1}</div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 16, fontWeight: 600 }}>{safeStr(c.exercise)} <span style={{ fontSize: 14, color: "rgba(255,255,255,0.3)" }}>({safeStr(c.sets)} · {safeStr(c.frequency)})</span></div>
-                  <div style={{ fontSize: 14, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>{safeStr(c.why)}</div>
+                  <div style={{ fontSize: 12, fontWeight: 600 }}>{safeStr(c.exercise)} <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>({safeStr(c.sets)} · {safeStr(c.frequency)})</span></div>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>{safeStr(c.why)}</div>
                 </div>
               </div>
             ))
@@ -7045,16 +7373,16 @@ function TrainingProgram({ result, profile, history }) {
             <>
               {landCount > 0 && EVIDENCE_PROGRAMS.strength.lowerBody.map((ex, i) => (
                 <div key={`lb-${i}`} style={{ padding: 8, marginBottom: 4, borderRadius: 6, background: "rgba(255,255,255,0.02)" }}>
-                  <div style={{ fontSize: 16, fontWeight: 600 }}>{ex.exercise} <span style={{ fontSize: 14, color: "rgba(255,255,255,0.3)" }}>({ex.prescription})</span></div>
-                  <div style={{ fontSize: 14, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>{ex.why}</div>
-                  <div style={{ fontSize: 14, color: "rgba(255,255,255,0.2)", marginTop: 2 }}>Source: {ex.source}</div>
+                  <div style={{ fontSize: 12, fontWeight: 600 }}>{ex.exercise} <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>({ex.prescription})</span></div>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>{ex.why}</div>
+                  <div style={{ fontSize: 9, color: "rgba(255,255,255,0.2)", marginTop: 2 }}>Source: {ex.source}</div>
                 </div>
               ))}
               {EVIDENCE_PROGRAMS.strength.core.slice(0, 2).map((ex, i) => (
                 <div key={`core-${i}`} style={{ padding: 8, marginBottom: 4, borderRadius: 6, background: "rgba(255,255,255,0.02)" }}>
-                  <div style={{ fontSize: 16, fontWeight: 600 }}>{ex.exercise} <span style={{ fontSize: 14, color: "rgba(255,255,255,0.3)" }}>({ex.prescription})</span></div>
-                  <div style={{ fontSize: 14, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>{ex.why}</div>
-                  <div style={{ fontSize: 14, color: "rgba(255,255,255,0.2)", marginTop: 2 }}>Source: {ex.source}</div>
+                  <div style={{ fontSize: 12, fontWeight: 600 }}>{ex.exercise} <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>({ex.prescription})</span></div>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>{ex.why}</div>
+                  <div style={{ fontSize: 9, color: "rgba(255,255,255,0.2)", marginTop: 2 }}>Source: {ex.source}</div>
                 </div>
               ))}
             </>
@@ -7062,17 +7390,17 @@ function TrainingProgram({ result, profile, history }) {
         </>,
         // SEASON: full strength program
         <>
-          <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.7, marginBottom: 10 }}>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.7, marginBottom: 10 }}>
             Complete strength program for {ageGroup === "young" ? "growing athletes" : ageGroup === "teen" ? "teen performers" : "adult athletes"}. Train 2-3x per week, progressively increasing difficulty.
           </div>
           {["core", "lowerBody", "upperBody", "flexibility"].map(group => (
             <div key={group} style={{ marginBottom: 10 }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.35)", letterSpacing: 0.5, marginBottom: 6 }}>{group === "lowerBody" ? "LOWER BODY" : group === "upperBody" ? "UPPER BODY" : String(group || '').toUpperCase()}</div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.35)", letterSpacing: 0.5, marginBottom: 6 }}>{group === "lowerBody" ? "LOWER BODY" : group === "upperBody" ? "UPPER BODY" : String(group || '').toUpperCase()}</div>
               {EVIDENCE_PROGRAMS.strength[group].map((ex, i) => (
                 <div key={i} style={{ padding: 8, marginBottom: 4, borderRadius: 6, background: "rgba(255,255,255,0.02)" }}>
-                  <div style={{ fontSize: 16, fontWeight: 600 }}>{ex.exercise} <span style={{ fontSize: 14, color: "rgba(255,255,255,0.3)" }}>({ex.prescription})</span></div>
-                  <div style={{ fontSize: 14, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>{ex.why}</div>
-                  <div style={{ fontSize: 14, color: "rgba(255,255,255,0.2)", marginTop: 2 }}>Source: {ex.source}</div>
+                  <div style={{ fontSize: 12, fontWeight: 600 }}>{ex.exercise} <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>({ex.prescription})</span></div>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>{ex.why}</div>
+                  <div style={{ fontSize: 9, color: "rgba(255,255,255,0.2)", marginTop: 2 }}>Source: {ex.source}</div>
                 </div>
               ))}
             </div>
@@ -7084,12 +7412,12 @@ function TrainingProgram({ result, profile, history }) {
       {/* ── INJURY PREVENTION ── */}
       {risks.length > 0 && (
         <div className="card" style={{ padding: 16, marginBottom: 12, borderColor: risks.some(r => r.risk === "high") ? "rgba(239,68,68,0.2)" : "rgba(245,158,11,0.15)" }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: risks.some(r => r.risk === "high") ? "#ef4444" : "#f59e0b", letterSpacing: 1, marginBottom: 10 }}>⚠️ INJURY PREVENTION</div>
-          <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)", marginBottom: 10 }}>Based on biomechanical analysis. Not medical advice — consult a sports medicine professional for concerns.</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: risks.some(r => r.risk === "high") ? "#ef4444" : "#f59e0b", letterSpacing: 1, marginBottom: 10 }}>⚠️ INJURY PREVENTION</div>
+          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginBottom: 10 }}>Based on biomechanical analysis. Not medical advice — consult a sports medicine professional for concerns.</div>
           {risks.map((r, i) => (
             <div key={i} style={{ padding: 10, marginBottom: 6, borderRadius: 8, background: `${r.risk === "high" ? "rgba(239,68,68,0.04)" : "rgba(245,158,11,0.04)"}`, borderLeft: `3px solid ${r.risk === "high" ? "#ef4444" : r.risk === "moderate" ? "#f59e0b" : "#22c55e"}` }}>
-              <div style={{ fontSize: 16, fontWeight: 600 }}>{safeStr(r.reason)}</div>
-              <div style={{ fontSize: 14, color: "#22c55e", marginTop: 4 }}>Rx: {safeStr(r.recommendation)}</div>
+              <div style={{ fontSize: 12, fontWeight: 600 }}>{safeStr(r.reason)}</div>
+              <div style={{ fontSize: 11, color: "#22c55e", marginTop: 4 }}>Rx: {safeStr(r.recommendation)}</div>
             </div>
           ))}
         </div>
@@ -7101,39 +7429,39 @@ function TrainingProgram({ result, profile, history }) {
         <>
           {hasFall && (
             <div style={{ padding: 10, marginBottom: 8, borderRadius: 8, background: "rgba(239,68,68,0.04)", borderLeft: "3px solid #ef4444" }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: "#ef4444", marginBottom: 4 }}>FALL RECOVERY — Priority This Week</div>
-              <div style={{ fontSize: 16, color: "rgba(255,255,255,0.55)", lineHeight: 1.6 }}>{EVIDENCE_PROGRAMS.mental.fallRecovery}</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#ef4444", marginBottom: 4 }}>FALL RECOVERY — Priority This Week</div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", lineHeight: 1.6 }}>{EVIDENCE_PROGRAMS.mental.fallRecovery}</div>
             </div>
           )}
           <div style={{ padding: 10, marginBottom: 6, borderRadius: 8, background: "rgba(255,255,255,0.02)" }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "#a78bfa", marginBottom: 4 }}>VISUALIZATION</div>
-            <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>{EVIDENCE_PROGRAMS.mental.visualization}</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#a78bfa", marginBottom: 4 }}>VISUALIZATION</div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>{EVIDENCE_PROGRAMS.mental.visualization}</div>
           </div>
           {deds.length > 8 && (
             <div style={{ padding: 10, marginBottom: 6, borderRadius: 8, background: "rgba(255,255,255,0.02)" }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: "#a78bfa", marginBottom: 4 }}>ERROR RECOVERY</div>
-              <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>{EVIDENCE_PROGRAMS.mental.errorRecovery}</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#a78bfa", marginBottom: 4 }}>ERROR RECOVERY</div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>{EVIDENCE_PROGRAMS.mental.errorRecovery}</div>
             </div>
           )}
           {safeArray(dev?.mentalTraining).map((tip, i) => (
-            <div key={i} style={{ fontSize: 16, color: "rgba(255,255,255,0.45)", lineHeight: 1.6, marginTop: 6, paddingLeft: 10, borderLeft: "2px solid rgba(139,92,246,0.15)" }}>{safeStr(tip)}</div>
+            <div key={i} style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: 1.6, marginTop: 6, paddingLeft: 10, borderLeft: "2px solid rgba(139,92,246,0.15)" }}>{safeStr(tip)}</div>
           ))}
         </>,
         // SEASON
         <>
-          <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.7, marginBottom: 10 }}>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.7, marginBottom: 10 }}>
             Build a complete mental performance toolkit over the season. Add one technique per month until all become habit.
           </div>
           {Object.entries(EVIDENCE_PROGRAMS.mental).map(([key, content]) => (
             <div key={key} style={{ padding: 10, marginBottom: 6, borderRadius: 8, background: "rgba(255,255,255,0.02)" }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: "#a78bfa", marginBottom: 4 }}>{String(key || '').replace(/([A-Z])/g, " $1").toUpperCase()}</div>
-              <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>{content}</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#a78bfa", marginBottom: 4 }}>{String(key || '').replace(/([A-Z])/g, " $1").toUpperCase()}</div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>{content}</div>
             </div>
           ))}
           {profile?.goals === "build confidence" && (
             <div style={{ padding: 10, borderRadius: 8, background: "rgba(139,92,246,0.04)", borderLeft: "3px solid #8b5cf6", marginTop: 8 }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: "#a78bfa", marginBottom: 4 }}>SEASON CONFIDENCE GOAL</div>
-              <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#a78bfa", marginBottom: 4 }}>SEASON CONFIDENCE GOAL</div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>
                 Start a confidence journal. Each week, review and celebrate progress. By mid-season, you'll have documented proof of how far you've come.
               </div>
             </div>
@@ -7147,28 +7475,28 @@ function TrainingProgram({ result, profile, history }) {
         // THIS WEEK
         <>
           {EVIDENCE_PROGRAMS.nutrition[ageGroup].map((tip, i) => (
-            <div key={i} style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.7, marginBottom: 8, paddingLeft: 10, borderLeft: "2px solid rgba(34,197,94,0.15)" }}>{tip}</div>
+            <div key={i} style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.7, marginBottom: 8, paddingLeft: 10, borderLeft: "2px solid rgba(34,197,94,0.15)" }}>{tip}</div>
           ))}
         </>,
         // SEASON
         <>
-          <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.7, marginBottom: 10 }}>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.7, marginBottom: 10 }}>
             Nutrition evolves across the season: building phase early on, maintenance mid-season, and peak fueling for competition.
           </div>
           <div style={{ padding: 10, marginBottom: 8, borderRadius: 8, background: "rgba(255,255,255,0.02)" }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "#22c55e", marginBottom: 4 }}>PRE-SEASON (Building)</div>
-            <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>Focus on protein intake for muscle building. Increase calories slightly above maintenance to support new skill development and conditioning.</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#22c55e", marginBottom: 4 }}>PRE-SEASON (Building)</div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>Focus on protein intake for muscle building. Increase calories slightly above maintenance to support new skill development and conditioning.</div>
           </div>
           <div style={{ padding: 10, marginBottom: 8, borderRadius: 8, background: "rgba(255,255,255,0.02)" }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "#22c55e", marginBottom: 4 }}>MID-SEASON (Maintenance)</div>
-            <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>Maintain consistent fueling. Focus on timing: pre-practice snack 1-2 hrs before, recovery meal within 30 min after. Hydrate aggressively.</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#22c55e", marginBottom: 4 }}>MID-SEASON (Maintenance)</div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>Maintain consistent fueling. Focus on timing: pre-practice snack 1-2 hrs before, recovery meal within 30 min after. Hydrate aggressively.</div>
           </div>
           <div style={{ padding: 10, marginBottom: 8, borderRadius: 8, background: "rgba(255,255,255,0.02)" }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "#22c55e", marginBottom: 4 }}>COMPETITION (Peak)</div>
-            <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>Only familiar foods on meet days. Carb-focused meals before competition. Light, easy-to-digest snacks between events. Electrolytes for all-day meets.</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#22c55e", marginBottom: 4 }}>COMPETITION (Peak)</div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>Only familiar foods on meet days. Carb-focused meals before competition. Light, easy-to-digest snacks between events. Electrolytes for all-day meets.</div>
           </div>
           {EVIDENCE_PROGRAMS.nutrition[ageGroup].map((tip, i) => (
-            <div key={i} style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", lineHeight: 1.6, marginBottom: 6, paddingLeft: 10, borderLeft: "2px solid rgba(34,197,94,0.1)" }}>{tip}</div>
+            <div key={i} style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", lineHeight: 1.6, marginBottom: 6, paddingLeft: 10, borderLeft: "2px solid rgba(34,197,94,0.1)" }}>{tip}</div>
           ))}
         </>,
         "nutrition"
@@ -7178,32 +7506,32 @@ function TrainingProgram({ result, profile, history }) {
       {pillarCard("😴", viewMode === "thisWeek" ? "RECOVERY — This Week" : "RECOVERY — Season Habits", "#06b6d4",
         // THIS WEEK
         <>
-          <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.7, marginBottom: 8, paddingLeft: 10, borderLeft: "2px solid rgba(6,182,212,0.15)" }}>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.7, marginBottom: 8, paddingLeft: 10, borderLeft: "2px solid rgba(6,182,212,0.15)" }}>
             {EVIDENCE_PROGRAMS.recovery.sleep[ageGroup]}
           </div>
-          <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.7, marginBottom: 8, paddingLeft: 10, borderLeft: "2px solid rgba(6,182,212,0.15)" }}>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.7, marginBottom: 8, paddingLeft: 10, borderLeft: "2px solid rgba(6,182,212,0.15)" }}>
             {EVIDENCE_PROGRAMS.recovery.active}
           </div>
-          <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.7, paddingLeft: 10, borderLeft: "2px solid rgba(6,182,212,0.15)" }}>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.7, paddingLeft: 10, borderLeft: "2px solid rgba(6,182,212,0.15)" }}>
             {EVIDENCE_PROGRAMS.recovery.foam}
           </div>
         </>,
         // SEASON
         <>
-          <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.7, marginBottom: 10 }}>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.7, marginBottom: 10 }}>
             Recovery is what turns hard training into actual improvement. Build these habits month by month.
           </div>
           <div style={{ padding: 10, marginBottom: 8, borderRadius: 8, background: "rgba(255,255,255,0.02)" }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "#06b6d4", marginBottom: 4 }}>MONTH 1: Sleep Foundation</div>
-            <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>{EVIDENCE_PROGRAMS.recovery.sleep[ageGroup]} Set a consistent bedtime and track sleep quality.</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#06b6d4", marginBottom: 4 }}>MONTH 1: Sleep Foundation</div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>{EVIDENCE_PROGRAMS.recovery.sleep[ageGroup]} Set a consistent bedtime and track sleep quality.</div>
           </div>
           <div style={{ padding: 10, marginBottom: 8, borderRadius: 8, background: "rgba(255,255,255,0.02)" }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "#06b6d4", marginBottom: 4 }}>MONTH 2: Add Active Recovery</div>
-            <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>{EVIDENCE_PROGRAMS.recovery.active}</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#06b6d4", marginBottom: 4 }}>MONTH 2: Add Active Recovery</div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>{EVIDENCE_PROGRAMS.recovery.active}</div>
           </div>
           <div style={{ padding: 10, marginBottom: 8, borderRadius: 8, background: "rgba(255,255,255,0.02)" }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "#06b6d4", marginBottom: 4 }}>MONTH 3: Mobility & Soft Tissue</div>
-            <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>{EVIDENCE_PROGRAMS.recovery.foam}</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#06b6d4", marginBottom: 4 }}>MONTH 3: Mobility & Soft Tissue</div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>{EVIDENCE_PROGRAMS.recovery.foam}</div>
           </div>
         </>,
         "recovery"
@@ -7212,15 +7540,15 @@ function TrainingProgram({ result, profile, history }) {
       {/* ── GOAL-SPECIFIC ── */}
       {(dev?.goalSpecificAdvice || coach?.idealComparison) && (
         <div className="card" style={{ padding: 16, marginBottom: 12, background: "rgba(196,152,42,0.03)", borderColor: "rgba(196,152,42,0.12)" }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: "#C4982A", letterSpacing: 1, marginBottom: 8 }}>🏆 {profile?.goals ? String(profile.goals || '').toUpperCase() : "DEVELOPMENT ADVICE"}</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#C4982A", letterSpacing: 1, marginBottom: 8 }}>🏆 {profile?.goals ? String(profile.goals || '').toUpperCase() : "DEVELOPMENT ADVICE"}</div>
           {viewMode === "thisWeek" ? (
             <>
-              {dev?.goalSpecificAdvice && <div style={{ fontSize: 16, color: "rgba(255,255,255,0.55)", lineHeight: 1.7, marginBottom: 8 }}>{safeStr(dev.goalSpecificAdvice)}</div>}
-              {coach?.idealComparison && <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.7 }}>{safeStr(coach.idealComparison)}</div>}
+              {dev?.goalSpecificAdvice && <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", lineHeight: 1.7, marginBottom: 8 }}>{safeStr(dev.goalSpecificAdvice)}</div>}
+              {coach?.idealComparison && <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.7 }}>{safeStr(coach.idealComparison)}</div>}
             </>
           ) : (
             <>
-              <div style={{ fontSize: 16, color: "rgba(255,255,255,0.55)", lineHeight: 1.7, marginBottom: 8 }}>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", lineHeight: 1.7, marginBottom: 8 }}>
                 {profile?.goals === "move up levels" && "Moving up requires mastering all skills at current level with minimal deductions. Focus on consistency before adding difficulty."}
                 {profile?.goals === "qualify regionals" && "Regional qualification requires consistent competitive scores. Focus on reducing deductions below 1.5 total and building start value."}
                 {profile?.goals === "college gymnastics" && "College coaches look for clean execution, consistency, and coachability. Build a highlight reel showing clean routines and personality."}
@@ -7230,7 +7558,7 @@ function TrainingProgram({ result, profile, history }) {
                 {profile?.goals === "have fun" && "Fun comes from feeling competent and connected. Master the skills you enjoy, perform for yourself, and remember why you love this sport."}
                 {!profile?.goals && "Set a specific goal for this season to help focus your training. Even small goals give direction and motivation."}
               </div>
-              {dev?.goalSpecificAdvice && <div style={{ fontSize: 16, color: "rgba(255,255,255,0.45)", lineHeight: 1.7 }}>{safeStr(dev.goalSpecificAdvice)}</div>}
+              {dev?.goalSpecificAdvice && <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: 1.7 }}>{safeStr(dev.goalSpecificAdvice)}</div>}
             </>
           )}
         </div>
@@ -7341,8 +7669,8 @@ function BiomechanicsDashboard({ result }) {
 
   const sectionHead = (title, subtitle) => (
     <div style={{ marginBottom: 10 }}>
-      <div style={{ fontSize: 16, fontWeight: 700, color: "rgba(255,255,255,0.85)" }}>{title}</div>
-      <div style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", lineHeight: 1.5, marginTop: 2 }}>{subtitle}</div>
+      <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.85)" }}>{title}</div>
+      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", lineHeight: 1.5, marginTop: 2 }}>{subtitle}</div>
     </div>
   );
 
@@ -7350,8 +7678,8 @@ function BiomechanicsDashboard({ result }) {
     <div style={{ animation: "fadeIn 0.4s ease-out" }}>
       {/* What This Tab Shows */}
       <div className="card" style={{ padding: 16, marginBottom: 12, borderLeft: "3px solid #3b82f6" }}>
-        <div style={{ fontSize: 16, fontWeight: 700, color: "#3b82f6", marginBottom: 6 }}>What is Biomechanics?</div>
-        <div style={{ fontSize: 16, color: "rgba(255,255,255,0.55)", lineHeight: 1.7 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "#3b82f6", marginBottom: 6 }}>What is Biomechanics?</div>
+        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", lineHeight: 1.7 }}>
           This tab shows how the body moves during the routine — joint angles, landing impact, rotational speed, and where the body may be under stress.
           Think of it as a "body report card" that helps you understand <strong style={{ color: "rgba(255,255,255,0.8)" }}>what's working well</strong> and <strong style={{ color: "rgba(255,255,255,0.8)" }}>what to train</strong> to improve scores and stay injury-free.
         </div>
@@ -7365,8 +7693,8 @@ function BiomechanicsDashboard({ result }) {
             {bodyGrades.map((g, i) => (
               <div key={i} style={{ flex: "1 1 30%", minWidth: 90, padding: 12, borderRadius: 10, background: "rgba(255,255,255,0.02)", textAlign: "center" }}>
                 <div style={{ fontSize: 28, fontWeight: 900, color: g.color, fontFamily: "'Space Mono', monospace" }}>{g.grade}</div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.6)", marginBottom: 4 }}>{g.area}</div>
-                <div style={{ fontSize: 14, color: "rgba(255,255,255,0.35)", lineHeight: 1.4 }}>{g.tip}</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.6)", marginBottom: 4 }}>{g.area}</div>
+                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", lineHeight: 1.4 }}>{g.tip}</div>
               </div>
             ))}
           </div>
@@ -7378,15 +7706,15 @@ function BiomechanicsDashboard({ result }) {
         {sectionHead("Power & Flight", "How much explosive energy is generated and how high skills go in the air")}
         <div style={{ display: "flex", gap: 12, marginBottom: 10 }}>
           <div style={{ flex: 1, textAlign: "center", padding: 12, borderRadius: 10, background: "rgba(59,130,246,0.06)" }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: 1, marginBottom: 4 }}>POWER</div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: 1, marginBottom: 4 }}>POWER</div>
             <div style={{ fontSize: 24, fontWeight: 900, color: "#3b82f6", fontFamily: "'Space Mono', monospace" }}>{bio?.overallPowerRating || "—"}</div>
           </div>
           <div style={{ flex: 1, textAlign: "center", padding: 12, borderRadius: 10, background: "rgba(168,85,247,0.06)" }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: 1, marginBottom: 4 }}>FLIGHT</div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: 1, marginBottom: 4 }}>FLIGHT</div>
             <div style={{ fontSize: 14, fontWeight: 700, color: "#a855f7", textTransform: "capitalize" }}>{bio?.overallFlightHeight || "—"}</div>
           </div>
           <div style={{ flex: 1, textAlign: "center", padding: 12, borderRadius: 10, background: risks.some(r => r.risk === "high") ? "rgba(239,68,68,0.06)" : "rgba(34,197,94,0.06)" }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: 1, marginBottom: 4 }}>INJURY RISK</div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: 1, marginBottom: 4 }}>INJURY RISK</div>
             <div style={{ fontSize: 14, fontWeight: 700, color: risks.some(r => r.risk === "high") ? "#ef4444" : risks.some(r => r.risk === "moderate") ? "#f59e0b" : "#22c55e" }}>
               {risks.some(r => r.risk === "high") ? "HIGH" : risks.some(r => r.risk === "moderate") ? "MODERATE" : risks.length > 0 ? "LOW" : "—"}
             </div>
@@ -7394,8 +7722,8 @@ function BiomechanicsDashboard({ result }) {
         </div>
         {(explainPower(bio?.overallPowerRating) || explainFlight(bio?.overallFlightHeight)) && (
           <div style={{ padding: 10, borderRadius: 8, background: "rgba(59,130,246,0.04)", marginTop: 4 }}>
-            {explainPower(bio?.overallPowerRating) && <div style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", lineHeight: 1.6, marginBottom: 4 }}>💪 {explainPower(bio?.overallPowerRating)}</div>}
-            {explainFlight(bio?.overallFlightHeight) && <div style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>🕊 {explainFlight(bio?.overallFlightHeight)}</div>}
+            {explainPower(bio?.overallPowerRating) && <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", lineHeight: 1.6, marginBottom: 4 }}>💪 {explainPower(bio?.overallPowerRating)}</div>}
+            {explainFlight(bio?.overallFlightHeight) && <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>🕊 {explainFlight(bio?.overallFlightHeight)}</div>}
           </div>
         )}
       </div>
@@ -7407,17 +7735,17 @@ function BiomechanicsDashboard({ result }) {
           <ResponsiveContainer width="100%" height={140}>
             <LineChart data={timelineData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
-              <XAxis dataKey="time" tick={{ fill: "rgba(255,255,255,0.3)", fontSize: 14 }} tickFormatter={v => `${Math.floor(v / 60)}:${String(v % 60).padStart(2, "0")}`} />
-              <YAxis tick={{ fill: "rgba(255,255,255,0.3)", fontSize: 14 }} domain={[0, "auto"]} tickFormatter={v => `-${v}`} />
+              <XAxis dataKey="time" tick={{ fill: "rgba(255,255,255,0.3)", fontSize: 10 }} tickFormatter={v => `${Math.floor(v / 60)}:${String(v % 60).padStart(2, "0")}`} />
+              <YAxis tick={{ fill: "rgba(255,255,255,0.3)", fontSize: 10 }} domain={[0, "auto"]} tickFormatter={v => `-${v}`} />
               <Tooltip
-                contentStyle={{ background: "#1a1a2e", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, fontSize: 16 }}
+                contentStyle={{ background: "#1a1a2e", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, fontSize: 12 }}
                 labelFormatter={v => `${Math.floor(v / 60)}:${String(v % 60).padStart(2, "0")}`}
                 formatter={(val, name, props) => [`-${val.toFixed(2)} (${props.payload.skill})`, "Deduction"]}
               />
               <Line type="stepAfter" dataKey="deduction" stroke="#ef4444" strokeWidth={2} dot={{ r: 4, fill: "#ef4444" }} activeDot={{ r: 6 }} />
             </LineChart>
           </ResponsiveContainer>
-          <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)", marginTop: 8, lineHeight: 1.5 }}>
+          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginTop: 8, lineHeight: 1.5 }}>
             {timelineData.length > 3 && timelineData.slice(-2).reduce((s, d) => s + d.deduction, 0) > timelineData.slice(0, 2).reduce((s, d) => s + d.deduction, 0)
               ? "📊 More errors happen toward the end of the routine — this often means fatigue. Endurance conditioning can help."
               : "📊 Errors are spread throughout the routine — focus on cleaning up the specific skills where deductions happen."
@@ -7433,9 +7761,9 @@ function BiomechanicsDashboard({ result }) {
           <ResponsiveContainer width="100%" height={160}>
             <LineChart data={angleData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
-              <XAxis dataKey="time" tick={{ fill: "rgba(255,255,255,0.3)", fontSize: 14 }} tickFormatter={v => `${Math.floor(v / 60)}:${String(v % 60).padStart(2, "0")}`} />
-              <YAxis tick={{ fill: "rgba(255,255,255,0.3)", fontSize: 14 }} domain={[0, 200]} label={{ value: "degrees", angle: -90, position: "insideLeft", fill: "rgba(255,255,255,0.2)", fontSize: 14 }} />
-              <Tooltip contentStyle={{ background: "#1a1a2e", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, fontSize: 14 }}
+              <XAxis dataKey="time" tick={{ fill: "rgba(255,255,255,0.3)", fontSize: 10 }} tickFormatter={v => `${Math.floor(v / 60)}:${String(v % 60).padStart(2, "0")}`} />
+              <YAxis tick={{ fill: "rgba(255,255,255,0.3)", fontSize: 10 }} domain={[0, 200]} label={{ value: "degrees", angle: -90, position: "insideLeft", fill: "rgba(255,255,255,0.2)", fontSize: 9 }} />
+              <Tooltip contentStyle={{ background: "#1a1a2e", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, fontSize: 11 }}
                 labelFormatter={v => `${Math.floor(v / 60)}:${String(v % 60).padStart(2, "0")}`} />
               <Line type="monotone" dataKey="lKnee" name="L Knee" stroke="#ef4444" strokeWidth={2} dot={{ r: 3 }} connectNulls />
               <Line type="monotone" dataKey="rKnee" name="R Knee" stroke="#f97316" strokeWidth={2} dot={{ r: 3 }} connectNulls />
@@ -7445,13 +7773,13 @@ function BiomechanicsDashboard({ result }) {
           </ResponsiveContainer>
           <div style={{ display: "flex", gap: 12, marginTop: 6, justifyContent: "center" }}>
             {[{label: "L Knee", color: "#ef4444"}, {label: "R Knee", color: "#f97316"}, {label: "L Hip", color: "#3b82f6"}, {label: "R Hip", color: "#8b5cf6"}].map(l => (
-              <div key={l.label} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 14, color: "rgba(255,255,255,0.4)" }}>
+              <div key={l.label} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10, color: "rgba(255,255,255,0.4)" }}>
                 <div style={{ width: 8, height: 3, background: l.color, borderRadius: 2 }} />{l.label}
               </div>
             ))}
           </div>
           <div style={{ padding: 10, borderRadius: 8, background: "rgba(255,255,255,0.02)", marginTop: 10 }}>
-            <div style={{ fontSize: 14, color: "rgba(255,255,255,0.45)", lineHeight: 1.6 }}>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", lineHeight: 1.6 }}>
               <strong style={{ color: "rgba(255,255,255,0.65)" }}>How to read this:</strong> Lines close to 180° mean the body is straight (good for most skills). Dips below 150° during jumps or tumbling passes mean bent knees or pike hips — common deduction causes.
             </div>
           </div>
@@ -7466,18 +7794,18 @@ function BiomechanicsDashboard({ result }) {
             <div key={i} style={{ padding: "10px 12px", marginBottom: 6, borderRadius: 8, background: "rgba(255,255,255,0.02)" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 16, fontWeight: 600 }}>{d.skill} <span style={{ fontSize: 14, color: "rgba(255,255,255,0.3)" }}>({d.phase})</span></div>
+                  <div style={{ fontSize: 12, fontWeight: 600 }}>{d.skill} <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>({d.phase})</span></div>
                 </div>
                 {d.hipVel && <div style={{ textAlign: "center", padding: "4px 8px", borderRadius: 6, background: "rgba(59,130,246,0.08)" }}>
-                  <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)" }}>Hip</div>
+                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>Hip</div>
                   <div style={{ fontSize: 14, fontWeight: 700, color: "#3b82f6", fontFamily: "'Space Mono', monospace" }}>{d.hipVel}°/s</div>
                 </div>}
                 {d.kneeVel && <div style={{ textAlign: "center", padding: "4px 8px", borderRadius: 6, background: "rgba(249,115,22,0.08)" }}>
-                  <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)" }}>Knee</div>
+                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>Knee</div>
                   <div style={{ fontSize: 14, fontWeight: 700, color: "#f97316", fontFamily: "'Space Mono', monospace" }}>{d.kneeVel}°/s</div>
                 </div>}
               </div>
-              <div style={{ fontSize: 14, color: "rgba(255,255,255,0.35)", lineHeight: 1.4 }}>
+              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", lineHeight: 1.4 }}>
                 {d.hipVel ? explainVelocity(d.hipVel) : explainVelocity(d.kneeVel)}
               </div>
             </div>
@@ -7492,32 +7820,32 @@ function BiomechanicsDashboard({ result }) {
           {landings.map((l, i) => (
             <div key={i} style={{ padding: 12, marginBottom: 8, borderRadius: 10, background: "rgba(255,255,255,0.02)", borderLeft: `3px solid ${riskColor(l.impactRisk)}` }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                <span style={{ fontSize: 16, fontWeight: 600 }}>{safeStr(l.skill)}</span>
-                <span style={{ fontSize: 14, color: "rgba(255,255,255,0.3)" }}>{safeStr(l.timestamp)}</span>
+                <span style={{ fontSize: 13, fontWeight: 600 }}>{safeStr(l.skill)}</span>
+                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>{safeStr(l.timestamp)}</span>
               </div>
               <div style={{ display: "flex", gap: 8, marginBottom: 6 }}>
                 <div style={{ flex: 1, padding: "6px 8px", borderRadius: 6, background: "rgba(255,255,255,0.03)", textAlign: "center" }}>
-                  <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)" }}>Knee Bend</div>
+                  <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)" }}>Knee Bend</div>
                   <div style={{ fontSize: 14, fontWeight: 700, fontFamily: "'Space Mono', monospace", color: safeNum(l.kneeFlexionAtImpact, 0) < 120 ? "#ef4444" : "#22c55e" }}>{safeNum(l.kneeFlexionAtImpact, 0)}°</div>
                 </div>
                 <div style={{ flex: 1, padding: "6px 8px", borderRadius: 6, background: "rgba(255,255,255,0.03)", textAlign: "center" }}>
-                  <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)" }}>Chest</div>
+                  <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)" }}>Chest</div>
                   <div style={{ fontSize: 14, fontWeight: 700, fontFamily: "'Space Mono', monospace", color: safeNum(l.chestAngle, 0) < 70 ? "#f59e0b" : "#22c55e" }}>{safeNum(l.chestAngle, 0)}°</div>
                 </div>
                 <div style={{ flex: 1, padding: "6px 8px", borderRadius: 6, background: "rgba(255,255,255,0.03)", textAlign: "center" }}>
-                  <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)" }}>Steps</div>
+                  <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)" }}>Steps</div>
                   <div style={{ fontSize: 14, fontWeight: 700, fontFamily: "'Space Mono', monospace", color: safeNum(l.stepsAfter, 0) > 0 ? "#f59e0b" : "#22c55e" }}>{safeNum(l.stepsAfter, 0)}</div>
                 </div>
                 <div style={{ flex: 1, padding: "6px 8px", borderRadius: 6, background: `${riskColor(l.impactRisk)}08`, textAlign: "center" }}>
-                  <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)" }}>Impact</div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: riskColor(l.impactRisk), textTransform: "uppercase" }}>{l.impactRisk}</div>
+                  <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)" }}>Impact</div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: riskColor(l.impactRisk), textTransform: "uppercase" }}>{l.impactRisk}</div>
                 </div>
               </div>
-              <div style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", lineHeight: 1.5, padding: "6px 0" }}>
+              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", lineHeight: 1.5, padding: "6px 0" }}>
                 {explainKneeAngle(safeNum(l.kneeFlexionAtImpact, 0))} • {explainChestAngle(safeNum(l.chestAngle, 0))}
                 {safeNum(l.stepsAfter, 0) > 0 && ` • ${safeNum(l.stepsAfter, 0)} step${safeNum(l.stepsAfter, 0) > 1 ? "s" : ""} after landing = -${(safeNum(l.stepsAfter, 0) * 0.1).toFixed(1)} deduction`}
               </div>
-              {l.notes && <div style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", lineHeight: 1.5 }}>{safeStr(l.notes)}</div>}
+              {l.notes && <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", lineHeight: 1.5 }}>{safeStr(l.notes)}</div>}
             </div>
           ))}
         </div>
@@ -7534,15 +7862,15 @@ function BiomechanicsDashboard({ result }) {
             return (
               <div key={i} style={{ marginBottom: 10, padding: "10px 12px", borderRadius: 8, background: "rgba(255,255,255,0.02)" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                  <span style={{ fontSize: 16, fontWeight: 600 }}>{safeStr(h.skill)} <span style={{ fontSize: 14, color: "rgba(255,255,255,0.3)" }}>{safeStr(h.timestamp)}</span></span>
-                  <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 16, fontWeight: 700, color: h.met ? "#22c55e" : "#ef4444" }}>
+                  <span style={{ fontSize: 13, fontWeight: 600 }}>{safeStr(h.skill)} <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>{safeStr(h.timestamp)}</span></span>
+                  <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, fontWeight: 700, color: h.met ? "#22c55e" : "#ef4444" }}>
                     {(durMs / 1000).toFixed(1)}s / {(reqMs / 1000).toFixed(1)}s
                   </span>
                 </div>
                 <div style={{ height: 6, borderRadius: 3, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
                   <div style={{ height: "100%", width: `${pct}%`, borderRadius: 3, background: h.met ? "#22c55e" : "#ef4444", transition: "width 0.5s" }} />
                 </div>
-                <div style={{ fontSize: 14, color: "rgba(255,255,255,0.35)", marginTop: 4 }}>
+                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", marginTop: 4 }}>
                   {h.met ? "Held long enough — no deduction" : `Released ${shortBy}s too early — practice holding longer with core/arm conditioning`}
                 </div>
               </div>
@@ -7565,15 +7893,15 @@ function BiomechanicsDashboard({ result }) {
               borderLeft: `3px solid ${riskColor(r.risk)}`,
             }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-                <span style={{ fontSize: 16, fontWeight: 600 }}>{r.joint?.replace("l", "Left ").replace("r", "Right ").replace("Knee", "Knee").replace("Ankle", "Ankle").replace("Elbow", "Elbow")}</span>
+                <span style={{ fontSize: 13, fontWeight: 600 }}>{r.joint?.replace("l", "Left ").replace("r", "Right ").replace("Knee", "Knee").replace("Ankle", "Ankle").replace("Elbow", "Elbow")}</span>
                 <span style={{
-                  fontSize: 14, fontWeight: 700, textTransform: "uppercase", padding: "2px 8px", borderRadius: 4,
+                  fontSize: 10, fontWeight: 700, textTransform: "uppercase", padding: "2px 8px", borderRadius: 4,
                   background: `${riskColor(r.risk)}15`, color: riskColor(r.risk),
                 }}>{r.risk} risk</span>
               </div>
-              <div style={{ fontSize: 16, color: "rgba(255,255,255,0.6)", marginBottom: 4 }}>{safeStr(r.reason)}</div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", marginBottom: 4 }}>{safeStr(r.reason)}</div>
               {r.recommendation && (
-                <div style={{ fontSize: 14, color: "#22c55e", marginTop: 4, lineHeight: 1.5 }}>What to do: {safeStr(r.recommendation)}</div>
+                <div style={{ fontSize: 11, color: "#22c55e", marginTop: 4, lineHeight: 1.5 }}>What to do: {safeStr(r.recommendation)}</div>
               )}
             </div>
           ))}
@@ -7585,7 +7913,7 @@ function BiomechanicsDashboard({ result }) {
         <div className="card" style={{ padding: 24, textAlign: "center" }}>
           <div style={{ fontSize: 32, marginBottom: 12 }}>🦴</div>
           <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 6 }}>Body Movement Analysis</div>
-          <div style={{ fontSize: 16, color: "rgba(255,255,255,0.4)", lineHeight: 1.6 }}>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", lineHeight: 1.6 }}>
             After analyzing a video, this tab will show how the body moves during the routine — including joint positions, landing safety, hold strength, and areas to watch for injury prevention.
           </div>
         </div>
@@ -7620,12 +7948,12 @@ function DiagnosticsDashboard({ result }) {
       {/* Biggest Math Win */}
       {biggestWin && (
         <div className="card" style={{ padding: 16, marginBottom: 12, borderColor: "rgba(34,197,94,0.2)", background: "rgba(34,197,94,0.04)" }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: "#22c55e", letterSpacing: 1, marginBottom: 6 }}>🎯 BIGGEST MATH WIN</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#22c55e", letterSpacing: 1, marginBottom: 6 }}>🎯 BIGGEST MATH WIN</div>
           <div style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.8)", lineHeight: 1.7 }}>
             {biggestWin}
           </div>
           {sortedDeds.length >= 3 && (
-            <div style={{ fontSize: 16, color: "rgba(255,255,255,0.4)", marginTop: 8, lineHeight: 1.6 }}>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginTop: 8, lineHeight: 1.6 }}>
               Fixing the top 3 deductions alone would save <span style={{ color: "#C4982A", fontWeight: 700, fontFamily: "'Space Mono', monospace" }}>+{sortedDeds.slice(0, 3).reduce((s, d) => s + safeNum(d.deduction, 0), 0).toFixed(2)}</span> — that's the difference between {safeNum(result.finalScore, 0).toFixed(1)} and {(safeNum(result.finalScore, 0) + sortedDeds.slice(0, 3).reduce((s, d) => s + safeNum(d.deduction, 0), 0)).toFixed(1)}.
             </div>
           )}
@@ -7635,22 +7963,22 @@ function DiagnosticsDashboard({ result }) {
       {/* Consistency Analysis */}
       {diag.consistencyNote && (
         <div className="card" style={{ padding: 16, marginBottom: 12 }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: "#C4982A", letterSpacing: 1, marginBottom: 6 }}>🔍 WHERE DOES FOCUS BREAK?</div>
-          <div style={{ fontSize: 16, color: "rgba(255,255,255,0.6)", lineHeight: 1.7 }}>{diag.consistencyNote}</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#C4982A", letterSpacing: 1, marginBottom: 6 }}>🔍 WHERE DOES FOCUS BREAK?</div>
+          <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", lineHeight: 1.7 }}>{diag.consistencyNote}</div>
         </div>
       )}
 
       {/* Deduction Heatmap by Category */}
       <div className="card" style={{ padding: 16, marginBottom: 12 }}>
-        <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: 1, marginBottom: 12 }}>DEDUCTION BREAKDOWN BY TYPE</div>
+        <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: 1, marginBottom: 12 }}>DEDUCTION BREAKDOWN BY TYPE</div>
         {Object.entries(categoryTotals).sort((a, b) => b[1] - a[1]).map(([cat, total], i) => {
           const pct = result.totalDeductions > 0 ? (total / result.totalDeductions) * 100 : 0;
           const count = deds.filter(d => (d.category || "execution") === cat).length;
           return (
             <div key={i} style={{ marginBottom: 10 }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                <span style={{ fontSize: 16, fontWeight: 600, textTransform: "capitalize" }}>{cat}</span>
-                <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 16, fontWeight: 700, color: "#ef4444" }}>-{total.toFixed(2)} <span style={{ color: "rgba(255,255,255,0.3)", fontWeight: 400 }}>({count})</span></span>
+                <span style={{ fontSize: 13, fontWeight: 600, textTransform: "capitalize" }}>{cat}</span>
+                <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, fontWeight: 700, color: "#ef4444" }}>-{total.toFixed(2)} <span style={{ color: "rgba(255,255,255,0.3)", fontWeight: 400 }}>({count})</span></span>
               </div>
               <div style={{ height: 6, borderRadius: 3, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
                 <div style={{ height: "100%", width: `${pct}%`, borderRadius: 3, background: cat === "execution" ? "#ef4444" : cat === "landing" ? "#f97316" : cat === "artistry" ? "#a855f7" : "#f59e0b", transition: "width 0.5s" }} />
@@ -7662,7 +7990,7 @@ function DiagnosticsDashboard({ result }) {
 
       {/* Detection Engine Report */}
       <div className="card" style={{ padding: 16, marginBottom: 12 }}>
-        <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: 1, marginBottom: 12 }}>DETECTION ENGINE REPORT</div>
+        <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: 1, marginBottom: 12 }}>DETECTION ENGINE REPORT</div>
         {[
           { name: "Toe Point (TPM)", count: diag.toePointIssues || deds.filter(d => (d.fault || "").toLowerCase().includes("toe") || (d.fault || "").toLowerCase().includes("flex") || (d.fault || "").toLowerCase().includes("foot") || (d.engine || "") === "TPM").length, color: "#ef4444", icon: "🦶" },
           { name: "Knee Tension (KTM)", count: diag.kneeTensionIssues || deds.filter(d => (d.fault || "").toLowerCase().includes("knee") || (d.fault || "").toLowerCase().includes("soft") || (d.engine || "") === "KTM").length, color: "#f97316", icon: "🦵" },
@@ -7676,9 +8004,9 @@ function DiagnosticsDashboard({ result }) {
           }}>
             <span style={{ fontSize: 18 }}>{eng.icon}</span>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 16, fontWeight: 600, color: eng.count > 0 ? "rgba(255,255,255,0.8)" : "rgba(255,255,255,0.4)" }}>{eng.name}</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: eng.count > 0 ? "rgba(255,255,255,0.8)" : "rgba(255,255,255,0.4)" }}>{eng.name}</div>
               {eng.total !== undefined && eng.total > 0 && (
-                <div style={{ fontSize: 14, color: "rgba(255,255,255,0.35)" }}>-{eng.total.toFixed(2)} total</div>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>-{eng.total.toFixed(2)} total</div>
               )}
             </div>
             <div style={{
@@ -7696,34 +8024,34 @@ function DiagnosticsDashboard({ result }) {
       {/* Biomechanical Summary */}
       {result.biomechanics && (
         <div className="card" style={{ padding: 16, marginBottom: 12, borderColor: "rgba(59,130,246,0.15)" }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: "#3b82f6", letterSpacing: 1, marginBottom: 10 }}>🦴 BIOMECHANICAL SUMMARY</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#3b82f6", letterSpacing: 1, marginBottom: 10 }}>🦴 BIOMECHANICAL SUMMARY</div>
           <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
             <div style={{ flex: 1, padding: "8px 6px", borderRadius: 8, background: "rgba(59,130,246,0.06)", textAlign: "center" }}>
-              <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)" }}>Power</div>
+              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)" }}>Power</div>
               <div style={{ fontSize: 14, fontWeight: 700, color: "#3b82f6", fontFamily: "'Space Mono', monospace" }}>{result.biomechanics.overallPowerRating || "—"}</div>
             </div>
             <div style={{ flex: 1, padding: "8px 6px", borderRadius: 8, background: "rgba(168,85,247,0.06)", textAlign: "center" }}>
-              <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)" }}>Flight</div>
-              <div style={{ fontSize: 14, fontWeight: 600, color: "#a855f7", textTransform: "capitalize" }}>{result.biomechanics.overallFlightHeight || "—"}</div>
+              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)" }}>Flight</div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: "#a855f7", textTransform: "capitalize" }}>{result.biomechanics.overallFlightHeight || "—"}</div>
             </div>
             <div style={{ flex: 1, padding: "8px 6px", borderRadius: 8, background: (result.biomechanics.injuryRiskFlags || []).some(r => r.risk === "high") ? "rgba(239,68,68,0.06)" : "rgba(34,197,94,0.06)", textAlign: "center" }}>
-              <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)" }}>Risk Flags</div>
+              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)" }}>Risk Flags</div>
               <div style={{ fontSize: 14, fontWeight: 700, color: (result.biomechanics.injuryRiskFlags || []).length > 0 ? ((result.biomechanics.injuryRiskFlags || []).some(r => r.risk === "high") ? "#ef4444" : "#f59e0b") : "#22c55e", fontFamily: "'Space Mono', monospace" }}>
                 {(result.biomechanics.injuryRiskFlags || []).length}
               </div>
             </div>
             <div style={{ flex: 1, padding: "8px 6px", borderRadius: 8, background: "rgba(245,158,11,0.06)", textAlign: "center" }}>
-              <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)" }}>Landings</div>
+              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)" }}>Landings</div>
               <div style={{ fontSize: 14, fontWeight: 700, color: "#f59e0b", fontFamily: "'Space Mono', monospace" }}>{(result.biomechanics.landingAnalysis || []).length}</div>
             </div>
           </div>
-          <div style={{ fontSize: 14, color: "rgba(255,255,255,0.35)", textAlign: "center" }}>Full biomechanics analysis in the 🦴 Biomechanics tab</div>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", textAlign: "center" }}>Full biomechanics analysis in the 🦴 Biomechanics tab</div>
         </div>
       )}
 
       {/* Severity Distribution */}
       <div className="card" style={{ padding: 16, marginBottom: 12 }}>
-        <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: 1, marginBottom: 12 }}>SEVERITY DISTRIBUTION</div>
+        <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: 1, marginBottom: 12 }}>SEVERITY DISTRIBUTION</div>
         <div style={{ display: "flex", gap: 8 }}>
           {[
             { key: "small", label: "Micro/Small", color: "#22c55e" },
@@ -7736,7 +8064,7 @@ function DiagnosticsDashboard({ result }) {
             return (
               <div key={s.key} style={{ flex: 1, textAlign: "center", padding: "10px 4px", borderRadius: 10, background: count > 0 ? `${s.color}10` : "rgba(255,255,255,0.02)" }}>
                 <div style={{ fontSize: 20, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: count > 0 ? s.color : "rgba(255,255,255,0.15)" }}>{count}</div>
-                <div style={{ fontSize: 14, color: count > 0 ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.2)", marginTop: 2 }}>{s.label}</div>
+                <div style={{ fontSize: 9, color: count > 0 ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.2)", marginTop: 2 }}>{s.label}</div>
               </div>
             );
           })}
@@ -7745,20 +8073,20 @@ function DiagnosticsDashboard({ result }) {
 
       {/* Top 3 Score Drains */}
       <div className="card" style={{ padding: 16, marginBottom: 12 }}>
-        <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: 1, marginBottom: 12 }}>TOP SCORE DRAINS</div>
+        <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: 1, marginBottom: 12 }}>TOP SCORE DRAINS</div>
         {sortedDeds.slice(0, 5).map((d, i) => {
           const c = DEDUCTION_SCALE[d.severity]?.color || "#f59e0b";
           return (
             <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8, padding: "8px 10px", borderRadius: 8, background: "rgba(255,255,255,0.02)" }}>
               <div style={{
                 width: 24, height: 24, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
-                background: `${c}15`, fontSize: 16, fontWeight: 900, color: c, fontFamily: "'Space Mono', monospace",
+                background: `${c}15`, fontSize: 12, fontWeight: 900, color: c, fontFamily: "'Space Mono', monospace",
               }}>
                 {i + 1}
               </div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 16, fontWeight: 600 }}>{safeStr(d.skill)}</div>
-                <div style={{ fontSize: 14, color: "rgba(255,255,255,0.4)" }}>{safeStr(d.fault)}</div>
+                <div style={{ fontSize: 12, fontWeight: 600 }}>{safeStr(d.skill)}</div>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>{safeStr(d.fault)}</div>
               </div>
               <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 14, fontWeight: 700, color: c }}>-{safeNum(d.deduction, 0).toFixed(2)}</span>
             </div>
@@ -7768,8 +8096,8 @@ function DiagnosticsDashboard({ result }) {
 
       {/* Coach Talking Points */}
       <div className="card" style={{ padding: 16, background: "rgba(196,152,42,0.03)", borderColor: "rgba(196,152,42,0.12)" }}>
-        <div style={{ fontSize: 14, fontWeight: 700, color: "#C4982A", letterSpacing: 1, marginBottom: 8 }}>💬 TALKING POINTS FOR COACH</div>
-        <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.7 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: "#C4982A", letterSpacing: 1, marginBottom: 8 }}>💬 TALKING POINTS FOR COACH</div>
+        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.7 }}>
           {sortedDeds.length > 0 && `"The analysis identified ${deds.length} deductions totaling -${safeNum(result.totalDeductions, 0).toFixed(2)}. `}
           {sortedDeds[0] && `The biggest single item was ${safeStr(sortedDeds[0].skill)} (${safeStr(sortedDeds[0].fault)}, -${safeNum(sortedDeds[0].deduction, 0).toFixed(2)}). `}
           {diag.biggestMathWin && `The single biggest score improvement would come from: ${diag.biggestMathWin}. `}
@@ -7877,10 +8205,6 @@ function generateDemoResult(event, profile, frames) {
       ],
       skeleton: { joints: { head:[0.50,0.10], neck:[0.50,0.16], lShoulder:[0.42,0.20], rShoulder:[0.58,0.20], lElbow:[0.36,0.30], rElbow:[0.64,0.30], lWrist:[0.32,0.40], rWrist:[0.68,0.40], lHip:[0.46,0.42], rHip:[0.54,0.42], lKnee:[0.44,0.60], rKnee:[0.56,0.60], lAnkle:[0.43,0.78], rAnkle:[0.57,0.78] }, faultJoints: ["lElbow", "rElbow"], angles: [{ joint: "lElbow", measured: 163, ideal: 180, label: "Elbow lock" }, { joint: "rElbow", measured: 165, ideal: 180, label: "Elbow lock" }] },
     },
-    { timestamp: "35", skill: "Switch leap", category: "execution", severity: "small", deduction: 0.10, engine: "Split-Check", frameRef: 5, correction: "Drive rear leg higher on switch.", ideal: "Split reaches 120°+, rear leg above horizontal.", details: "Switch leap split short and rear leg below horizontal.", subFaults: [{ fault: "Split ~115° on switch leap", deduction: 0.05, engine: "Split-Check", bodyPoint: "hips", angle: { measured: 115, ideal: 120, unit: "degrees" }, correction: "Film switch leap from side to check angle" }, { fault: "Flexed back foot at peak", deduction: 0.05, engine: "TPM", bodyPoint: "left_ankle", angle: { measured: 155, ideal: 180, unit: "degrees" }, correction: "Theraband ankle work during switches" }], skeleton: null },
-    { timestamp: "48", skill: "Straddle jump", category: "execution", severity: "small", deduction: 0.10, engine: "KTM", frameRef: 5, correction: "Lock knees at peak of jump.", ideal: "Knees locked, toes pointed, straddle at horizontal.", details: "Soft knees and insufficient height.", subFaults: [{ fault: "Soft knees at peak — 170°", deduction: 0.05, engine: "KTM", bodyPoint: "knees", angle: { measured: 170, ideal: 180, unit: "degrees" }, correction: "Jump drills with locked-knee focus" }, { fault: "Insufficient jump height", deduction: 0.05, engine: "General", bodyPoint: "global", angle: null, correction: "Plyometric conditioning" }], skeleton: null },
-    { timestamp: "52", skill: "Back tuck — 3rd pass", category: "execution", severity: "small", deduction: 0.10, engine: "TPM", frameRef: 6, correction: "Point toes through every aerial phase.", ideal: "Tight tuck, toes pointed, clean rotation.", details: "Flexed feet through tuck flight.", subFaults: [{ fault: "Both feet flexed in tuck flight", deduction: 0.10, engine: "TPM", bodyPoint: "ankles", angle: { measured: 150, ideal: 180, unit: "degrees" }, correction: "Theraband ankle circles 3x20 daily" }], skeleton: null },
-    { timestamp: "55", skill: "Global: presentation and artistry", category: "artistry", severity: "small", deduction: 0.10, engine: "General", frameRef: 6, correction: "Mirror work — exaggerated expression.", ideal: "Confident, expressive performance.", details: "Transitions functional not performed.", subFaults: [{ fault: "Insufficient use of floor space", deduction: 0.05, engine: "General", bodyPoint: "global", angle: null, correction: "Use corners and edges" }, { fault: "Lack of expression between passes", deduction: 0.05, engine: "General", bodyPoint: "global", angle: null, correction: "Mirror work: perform to audience" }], skeleton: null },
     {
       timestamp: "58",
       skill: "Round-off BHS Layout — dismount landing",
@@ -7910,10 +8234,6 @@ function generateDemoResult(event, profile, frames) {
     { timestamp: "30", skill: "Full turn on one foot", category: "execution", severity: "small", deduction: 0.05, engine: "KTM", frameRef: 4, correction: "Relevé balance drills. Lock knee from first moment of turn.", ideal: "Supporting leg locked 175°+. Clean passé. Arms tight.", details: "Supporting knee 172° — below 175° threshold.",
       subFaults: [{ fault: "Soft supporting knee — 172°, requires 175°+", deduction: 0.05, engine: "KTM", bodyPoint: "right_knee", angle: { measured: 172, ideal: 180, unit: "degrees" }, correction: "Relevé balance 1 min daily on each foot" }],
       skeleton: { joints: { head:[0.50,0.08], neck:[0.50,0.14], lShoulder:[0.46,0.18], rShoulder:[0.54,0.18], lElbow:[0.47,0.12], rElbow:[0.53,0.12], lWrist:[0.48,0.06], rWrist:[0.52,0.06], lHip:[0.47,0.38], rHip:[0.53,0.38], lKnee:[0.47,0.56], rKnee:[0.53,0.56], lAnkle:[0.47,0.74], rAnkle:[0.53,0.74] }, faultJoints: ["rKnee"], angles: [{ joint: "rKnee", measured: 172, ideal: 180, label: "Knee lock" }] } },
-    { timestamp: "35", skill: "Cartwheel", category: "execution", severity: "small", deduction: 0.10, engine: "KTM", frameRef: 4, correction: "Locked legs.", ideal: "Straight legs.", details: "Bent knees 168°.", subFaults: [{ fault: "Bent knees 168°", deduction: 0.05, engine: "KTM", bodyPoint: "knees", angle: { measured: 168, ideal: 180, unit: "degrees" }, correction: "Floor drill" }, { fault: "Wobble", deduction: 0.05, engine: "General", bodyPoint: "hips", angle: null, correction: "Freeze" }], skeleton: null },
-    { timestamp: "38", skill: "Relevé walk", category: "execution", severity: "small", deduction: 0.05, engine: "TPM", frameRef: 4, correction: "Full relevé.", ideal: "Max relevé.", details: "Flat feet.", subFaults: [{ fault: "Flat feet", deduction: 0.05, engine: "TPM", bodyPoint: "ankles", angle: { measured: 155, ideal: 180, unit: "degrees" }, correction: "Walk drill" }], skeleton: null },
-    { timestamp: "42", skill: "Sissone", category: "execution", severity: "small", deduction: 0.10, engine: "Split-Check", frameRef: 5, correction: "Drive higher.", ideal: "120° split.", details: "Low amplitude.", subFaults: [{ fault: "Split ~110°", deduction: 0.05, engine: "Split-Check", bodyPoint: "hips", angle: { measured: 110, ideal: 120, unit: "degrees" }, correction: "Over-split" }, { fault: "Balance check", deduction: 0.05, engine: "General", bodyPoint: "hips", angle: null, correction: "Freeze" }], skeleton: null },
-    { timestamp: "45", skill: "Global: beam artistry", category: "artistry", severity: "small", deduction: 0.10, engine: "General", frameRef: 5, correction: "Confidence and poise.", ideal: "No hesitation.", details: "Hesitation before acro.", subFaults: [{ fault: "Pre-acro hesitation", deduction: 0.05, engine: "General", bodyPoint: "global", angle: null, correction: "Commit fully" }, { fault: "Lack of confidence in presentation", deduction: 0.05, engine: "General", bodyPoint: "global", angle: null, correction: "Run-throughs" }], skeleton: null },
     { timestamp: "48", skill: "Round-off back tuck dismount", category: "landing", severity: "large", deduction: 0.25, engine: "Landing", frameRef: 5, correction: "Landing drills off beam. Absorb through ankles, chest up, freeze.", ideal: "Stuck landing, feet together, chest vertical, arms at ears. Zero movement.", details: "Large step + chest drop on dismount landing — the final impression.",
       subFaults: [{ fault: "Large step on dismount landing", deduction: 0.20, engine: "Landing", bodyPoint: "feet", angle: null, correction: "Pit-to-beam landing drill 15 reps" }, { fault: "Chest dropped below vertical on absorption", deduction: 0.05, engine: "General", bodyPoint: "torso", angle: { measured: 70, ideal: 90, unit: "degrees" }, correction: "Focus on tall chest on every landing — imagine thread pulling head up" }],
       skeleton: { joints: { head:[0.50,0.14], neck:[0.50,0.20], lShoulder:[0.42,0.24], rShoulder:[0.58,0.24], lElbow:[0.36,0.18], rElbow:[0.64,0.18], lWrist:[0.32,0.12], rWrist:[0.68,0.12], lHip:[0.46,0.42], rHip:[0.54,0.42], lKnee:[0.44,0.58], rKnee:[0.56,0.58], lAnkle:[0.42,0.76], rAnkle:[0.58,0.78] }, faultJoints: ["lAnkle", "rAnkle"], angles: [] } },
@@ -7927,10 +8247,6 @@ function generateDemoResult(event, profile, frames) {
     { timestamp: "22", skill: "Clear hip circle", category: "execution", severity: "small", deduction: 0.10, engine: "KTM", frameRef: 3, correction: "Clear hip conditioning on low bar. Focus on leg lockout through rotation.", ideal: "Straight legs throughout rotation, tight body, smooth circle.", details: "Leg form breaks mid-circle — bent knees 168°.",
       subFaults: [{ fault: "Bent knees during clear hip — 168°, requires 175°+", deduction: 0.10, engine: "KTM", bodyPoint: "knees", angle: { measured: 168, ideal: 180, unit: "degrees" }, correction: "Clear hip on low bar with straight-leg focus drills" }],
       skeleton: { joints: { head:[0.5,0.15], neck:[0.5,0.22], lShoulder:[0.42,0.26], rShoulder:[0.58,0.26], lElbow:[0.38,0.20], rElbow:[0.62,0.20], lWrist:[0.36,0.16], rWrist:[0.64,0.16], lHip:[0.46,0.42], rHip:[0.54,0.42], lKnee:[0.44,0.58], rKnee:[0.56,0.58], lAnkle:[0.43,0.74], rAnkle:[0.57,0.74] }, faultJoints: ["lKnee", "rKnee"], angles: [{ joint: "rKnee", measured: 168, ideal: 180, label: "Knee bend" }] } },
-    { timestamp: "16", skill: "Second cast", category: "execution", severity: "small", deduction: 0.10, engine: "VAE", frameRef: 3, correction: "Every cast must reach handstand.", ideal: "180° vertical.", details: "Cast only 155° on second attempt.", subFaults: [{ fault: "Cast 155° — 25° short", deduction: 0.10, engine: "VAE", bodyPoint: "torso", angle: { measured: 155, ideal: 180, unit: "degrees" }, correction: "Cast handstand drills with spot" }], skeleton: null },
-    { timestamp: "25", skill: "Back hip circle", category: "execution", severity: "small", deduction: 0.05, engine: "TPM", frameRef: 3, correction: "Point toes through hip circle.", ideal: "Toes pointed, body tight.", details: "Feet flexed through rotation.", subFaults: [{ fault: "Flexed feet", deduction: 0.05, engine: "TPM", bodyPoint: "ankles", angle: { measured: 152, ideal: 180, unit: "degrees" }, correction: "Toe point awareness drill" }], skeleton: null },
-    { timestamp: "28", skill: "Squat-on / transition", category: "execution", severity: "small", deduction: 0.10, engine: "KTM", frameRef: 4, correction: "Tight body through transition.", ideal: "Controlled transition, no pause.", details: "Body position breaks during transition.", subFaults: [{ fault: "Piked body on transition", deduction: 0.05, engine: "General", bodyPoint: "hips", angle: null, correction: "Hollow body holds" }, { fault: "Pause on high bar", deduction: 0.05, engine: "General", bodyPoint: "global", angle: null, correction: "Smooth transition drills" }], skeleton: null },
-    { timestamp: "32", skill: "Global: bar form", category: "execution", severity: "small", deduction: 0.10, engine: "KTM", frameRef: 4, correction: "Consistent body tension.", ideal: "Tight body throughout.", details: "Recurring soft knees across multiple skills.", subFaults: [{ fault: "Persistent soft knees on casts and swings", deduction: 0.10, engine: "KTM", bodyPoint: "knees", angle: { measured: 170, ideal: 180, unit: "degrees" }, correction: "Hollow body conditioning 4x20s daily" }], skeleton: null },
     { timestamp: "35", skill: "Flyaway dismount — back tuck", category: "landing", severity: "large", deduction: 0.25, engine: "Landing", frameRef: 4, correction: "Pit flyaway practice. Tuck tight, spot the mat, absorb through ankles.", ideal: "Tight tuck in flight, stuck landing, chest up, arms at ears.", details: "Open tuck + large step on landing.",
       subFaults: [{ fault: "Open tuck in flyaway — insufficient tuck position", deduction: 0.10, engine: "KTM", bodyPoint: "knees", angle: null, correction: "Tuck jump drills — focus on pulling knees to chest" }, { fault: "Large step on flyaway landing", deduction: 0.15, engine: "Landing", bodyPoint: "feet", angle: null, correction: "Pit-to-mat progression: stick before moving to competition height" }],
       skeleton: { joints: { head:[0.50,0.14], neck:[0.50,0.20], lShoulder:[0.42,0.24], rShoulder:[0.58,0.24], lElbow:[0.36,0.16], rElbow:[0.64,0.16], lWrist:[0.32,0.10], rWrist:[0.68,0.10], lHip:[0.46,0.42], rHip:[0.54,0.42], lKnee:[0.44,0.58], rKnee:[0.56,0.58], lAnkle:[0.42,0.76], rAnkle:[0.58,0.78] }, faultJoints: ["lAnkle", "rAnkle"], angles: [] } },
@@ -7941,9 +8257,6 @@ function generateDemoResult(event, profile, frames) {
     { timestamp: "5", skill: "Table contact + repulsion phase", category: "execution", severity: "medium", deduction: 0.15, engine: "KTM", frameRef: 2, correction: "Wall handstand push-up drill. Arms must lock BEFORE hands hit table.", ideal: "Arms locked 180° on contact. Push through shoulders at maximum force. Brief contact.", details: "Bent elbows reduce repulsion power and score.",
       subFaults: [{ fault: "Bent elbows on table contact — 162°/165°", deduction: 0.10, engine: "KTM", bodyPoint: "elbows", angle: { measured: 162, ideal: 180, unit: "degrees" }, correction: "Wall handstand: push through shoulders, lock elbows before contact" }, { fault: "Body not in hollow — slight pike on table contact", deduction: 0.05, engine: "VAE", bodyPoint: "hips", angle: null, correction: "Repulsion drill with hollow body from box" }],
       skeleton: { joints: { head:[0.50,0.82], neck:[0.50,0.74], lShoulder:[0.42,0.67], rShoulder:[0.58,0.67], lElbow:[0.44,0.56], rElbow:[0.56,0.56], lWrist:[0.44,0.45], rWrist:[0.56,0.45], lHip:[0.47,0.52], rHip:[0.53,0.52], lKnee:[0.48,0.35], rKnee:[0.52,0.35], lAnkle:[0.48,0.18], rAnkle:[0.52,0.18] }, faultJoints: ["lElbow", "rElbow"], angles: [{ joint: "lElbow", measured: 162, ideal: 180, label: "Elbow lock" }] } },
-    { timestamp: "4", skill: "Board contact — hurdle", category: "execution", severity: "small", deduction: 0.05, engine: "General", frameRef: 2, correction: "Explosive board contact.", ideal: "Both feet hit board simultaneously.", details: "Slightly uneven board contact.", subFaults: [{ fault: "Feet not simultaneous on board", deduction: 0.05, engine: "General", bodyPoint: "feet", angle: null, correction: "Hurdle to punch drills 20x" }], skeleton: null },
-    { timestamp: "5", skill: "Body position over table", category: "execution", severity: "small", deduction: 0.05, engine: "TPM", frameRef: 2, correction: "Point toes over table.", ideal: "Toes pointed, legs together.", details: "Flexed feet during support phase.", subFaults: [{ fault: "Flexed feet over table", deduction: 0.05, engine: "TPM", bodyPoint: "ankles", angle: { measured: 155, ideal: 180, unit: "degrees" }, correction: "Toe point awareness on every vault" }], skeleton: null },
-    { timestamp: "6", skill: "Post-flight rotation", category: "execution", severity: "small", deduction: 0.10, engine: "KTM", frameRef: 3, correction: "Tight body in post-flight.", ideal: "Legs together, body extended.", details: "Slight leg separation in post-flight.", subFaults: [{ fault: "Leg separation in post-flight", deduction: 0.05, engine: "KTM", bodyPoint: "knees", angle: { measured: 12, ideal: 0, unit: "cm separation" }, correction: "Squeeze block between ankles during drills" }, { fault: "Insufficient height in post-flight", deduction: 0.05, engine: "General", bodyPoint: "global", angle: null, correction: "Power conditioning for better block" }], skeleton: null },
     { timestamp: "6", skill: "Post-flight body position + landing", category: "landing", severity: "large", deduction: 0.30, engine: "Landing", frameRef: 3, correction: "Block landing from table: stick drill. Arms to ears on landing. Pit progression.", ideal: "Extended layout in flight. Stuck landing — feet together, chest up, arms at ears, zero movement.", details: "Piked flight phase and large step on landing — significant combined deduction.",
       subFaults: [{ fault: "Pike in post-flight — body not extended in layout", deduction: 0.10, engine: "VAE", bodyPoint: "hips", angle: { measured: 155, ideal: 180, unit: "degrees hip angle" }, correction: "Block drill from vault: focus on hollow extension in flight" }, { fault: "Large step on landing — forward weight shift", deduction: 0.20, engine: "Landing", bodyPoint: "feet", angle: { measured: 65, ideal: 90, unit: "degrees chest angle" }, correction: "Depth drops onto wedge mat: freeze 3 full seconds on landing" }],
       skeleton: { joints: { head:[0.50,0.14], neck:[0.50,0.20], lShoulder:[0.42,0.24], rShoulder:[0.58,0.24], lElbow:[0.36,0.18], rElbow:[0.64,0.18], lWrist:[0.32,0.12], rWrist:[0.68,0.12], lHip:[0.46,0.42], rHip:[0.54,0.42], lKnee:[0.44,0.58], rKnee:[0.56,0.58], lAnkle:[0.41,0.76], rAnkle:[0.59,0.78] }, faultJoints: ["lAnkle", "rAnkle", "lHip"], angles: [{ joint: "lAnkle", measured: 65, ideal: 90, label: "Chest angle" }] } },
@@ -7967,7 +8280,6 @@ function generateDemoResult(event, profile, frames) {
     totalDeductions: totalDed,
     finalScore,
     isDemo: true,
-    skillAnalysis: deductions.map(d => ({ timestamp: d.timestamp, skill: d.skill, type: d.category === "landing" ? "landing" : d.category === "artistry" ? "dance" : "acro", verdict: d.deduction > 0 ? "deduction" : "clean", score: d.severity === "small" ? "minor" : d.severity === "medium" ? "moderate" : "major", deduction: d.deduction, fault: d.subFaults?.[0]?.fault || d.details || "", correction: d.correction || "", engine: d.engine, measuredVsIdeal: d.subFaults?.[0]?.angle ? `Measured ~${d.subFaults[0].angle.measured}°, required ${d.subFaults[0].angle.ideal}°` : "", skeleton: d.skeleton || null })),
     overallAssessment: `Championship-Strict evaluation of this ${event} routine at ${lvl}. Total deductions: -${totalDed.toFixed(2)}, yielding ${finalScore.toFixed(3)}. This is a "Drip Feed" score — constant small leaks: ${isFloor ? `flat feet in dance (-0.15), the "Cowboy" tuck (-0.20), and landing instability (-0.35 combined)` : isBeam ? `foot form through acro (-0.10), split deficiency (-0.15), and dismount landing (-0.25)` : isBars ? `form breaks through rotation (-0.30) and landing (-0.25)` : `repulsion arm form (-0.15) and landing (-0.30)`}. The single biggest math win: ${deductions.sort((a,b) => b.deduction-a.deduction)[0]?.skill} saves +${deductions.sort((a,b) => b.deduction-a.deduction)[0]?.deduction.toFixed(2)} if cleaned up.`,
     strengths: [
       "Routine completed without falls — confidence and courage on competitive elements",
