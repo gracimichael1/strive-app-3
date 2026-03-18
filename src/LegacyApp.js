@@ -4393,7 +4393,7 @@ function GradedSkillCard({ skill, onSeek, videoUrl }) {
         <div style={{ padding: "0 16px 16px" }}>
 
           {/* ── 2. Video clip + controls ── */}
-          {videoUrl && (
+          {videoUrl ? (
             <div style={{ marginBottom: 14 }}>
               <div style={{ borderRadius: 10, overflow: "hidden", background: "#000",
                 border: "1px solid rgba(255,255,255,0.08)", marginBottom: 8 }}>
@@ -4434,23 +4434,19 @@ function GradedSkillCard({ skill, onSeek, videoUrl }) {
                 </button>
               </div>
             </div>
-          )}
-
-          {/* Jump to timestamp (fallback when no inline video) */}
-          {!videoUrl && onSeek && (
-            <button onClick={() => onSeek(skill.timestampSec || 0)}
-              style={{ display: "flex", alignItems: "center", gap: 6,
-                padding: "7px 14px", borderRadius: 8, marginBottom: 14,
-                background: "rgba(196,152,42,0.1)",
-                border: "1px solid rgba(196,152,42,0.2)",
-                color: "#C4982A", fontSize: 12, fontWeight: 600,
-                cursor: "pointer", fontFamily: "'Outfit', sans-serif" }}>
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
-                <path d="M3 2l7 4-7 4V2z"/>
-              </svg>
-              Jump to {skill.timestamp}
-            </button>
-          )}
+          ) : skill.frameDataUrl ? (
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ borderRadius: 10, overflow: "hidden", background: "#000",
+                border: "1px solid rgba(255,255,255,0.08)" }}>
+                <img src={skill.frameDataUrl} alt={`Frame at ${skill.timestamp}`}
+                  style={{ width: "100%", display: "block", maxHeight: 200, objectFit: "contain" }} />
+              </div>
+              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginTop: 4,
+                fontFamily: "'Space Mono', monospace" }}>
+                Frame at {skill.timestamp}
+              </div>
+            </div>
+          ) : null}
 
           {/* ── 3. Deductions found ── */}
           {!isClean && subFaults.length > 0 && (
@@ -4561,30 +4557,6 @@ function GradedSkillCard({ skill, onSeek, videoUrl }) {
             </div>
           )}
 
-          {/* ── 7. Improvement value bar ── */}
-          {!isClean && skill.gradeDeduction > 0 && (
-            <div style={{ padding: "10px 14px", borderRadius: 10,
-              background: "rgba(196,152,42,0.06)",
-              border: "1px solid rgba(196,152,42,0.15)" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.5)" }}>
-                  Fix this skill and gain
-                </span>
-                <span style={{ fontSize: 16, fontWeight: 900, color: "#C4982A",
-                  fontFamily: "'Space Mono', monospace" }}>
-                  +{(skill.gradeDeduction || 0).toFixed(2)}
-                </span>
-              </div>
-              <div style={{ height: 6, borderRadius: 3, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
-                <div style={{
-                  height: "100%", borderRadius: 3,
-                  background: "linear-gradient(90deg, #C4982A, #f2d06b)",
-                  width: `${Math.min(100, ((skill.gradeDeduction || 0) / 0.50) * 100)}%`,
-                  transition: "width 0.4s ease-out",
-                }} />
-              </div>
-            </div>
-          )}
         </div>
       )}
     </div>
