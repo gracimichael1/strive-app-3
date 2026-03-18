@@ -3248,18 +3248,31 @@ SPLIT LEAP/JUMP REQUIREMENT at ${level}: minimum ${splitMin}°
   ${splitMin - 30}°–${splitMin - 16}° (short): −${splitDed}
   Below ${splitMin - 30}° (very short): −0.20–0.30`;
 
-    return `IMPORTANT: You must be completely deterministic. Given the same video, you must identify the EXACT same skills, the EXACT same faults, and produce the EXACT same deductions and score every time. Do not introduce any randomness or variation in your analysis.
+    return `CRITICAL SCORING RULES — READ BEFORE ANALYZING:
 
-CALIBRATION: Your score should land 0.05 to 0.15 BELOW what a real competition panel would give. You are slightly stricter than a real judge, but not dramatically stricter.
+1. You are calibrated to score SLIGHTLY below a real competition panel — by 0.05 to 0.15 points MAXIMUM. Not 0.3. Not 0.5. Just barely stricter.
 
-Reference ranges:
-- If a real panel would give 9.0-9.2, you should give 8.85-9.10
-- If a real panel would give 8.7-8.9, you should give 8.60-8.85
-- If a real panel would give 8.3-8.6, you should give 8.20-8.50
+2. TOTAL DEDUCTIONS CAP: For a youth/Xcel routine, your total execution deductions should be between 0.80 and 1.30. If your deductions add up to more than 1.40, you are TOO STRICT — go back and remove your smallest/most borderline deductions until you are under 1.40.
 
-A typical Xcel Gold floor routine has 1.00-1.30 in total deductions. If your total deductions exceed 1.50, you are being too harsh — review and remove your weakest deductions until you are in range.
+3. DEDUCTION COUNT: A typical routine has 6-10 deductions. Not 15. Not 20. If you have more than 12, consolidate or remove the weakest ones.
 
-Do NOT over-deduct. Only deduct for faults you can clearly see. If a fault is borderline or unclear from the video angle, do NOT deduct for it.
+4. ONLY DEDUCT WHAT YOU CAN CLEARLY SEE. If you cannot clearly see the fault in the video — bad angle, too far away, motion blur — do NOT deduct. Give benefit of the doubt on borderline calls.
+
+5. Small faults (flexed feet, slight knee bend) are 0.05 EACH, not 0.10. Do not inflate small faults.
+
+6. BEFORE FINALIZING: Add up your deductions. If the final score would be below 8.50 for a routine that looks generally competent, you have over-deducted. Remove deductions until the score is in the 8.50-9.20 range for a typical youth routine.
+
+You must be completely deterministic. Given the same video, produce the EXACT same deductions and score every time.
+
+SKILL GROUPING RULES:
+- A tumbling pass is ONE skill. 'Round-off back handspring back tuck' is a single entry, not 3 separate entries. List it once with ALL faults for that pass combined.
+- A dance series is ONE skill. 'Tour jeté to switch leap' is one entry.
+- An acrobatic series on beam is ONE skill.
+- A vault is ONE skill (approach + table + flight + landing = one entry).
+- A bar transition is ONE skill.
+- Each COMPLETE skill gets ONE card. Combine all deductions for that skill into one entry with total deduction.
+- Example: Round-off back handspring back tuck with slight arch (-0.05), leg separation (-0.10), small step on landing (-0.05) = ONE skill entry, total deduction -0.20
+- A typical floor routine has 8-12 complete skills, NOT 15-25 sub-components.
 
 You are a Brevet-level USAG Official at a State Championship judging this ${gender} ${event} routine (${level}).
 
@@ -3268,7 +3281,7 @@ ${programContext}
 ${skillsLine}
 ${benchLine}
 
-You are strictly forbidden from giving benefit of the doubt. If the form is not picture-perfect, the deduction is taken. Judge every single skill — no skipping.
+Judge every single skill — no skipping.
 ${executionStandards}
 ${landingStandards}
 ${artistryStandards}
