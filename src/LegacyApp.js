@@ -232,7 +232,7 @@ function parseGeminiTable(rawText) {
       else timestamp = String(parseFloat(tsParts[0]) || 0);
     }
 
-    const isArtistry = tsRaw.match(/Global/i) || skill.toLowerCase().includes("artistry");
+    const isArtistry = tsRaw.match(/Global/i) || String(skill || "").toLowerCase().includes("artistry");
     const tsNum = parseInt(timestamp) || 0;
 
     let engine = "General";
@@ -281,7 +281,7 @@ function parseGeminiTable(rawText) {
         else timestamp = String(parseFloat(tsParts[0]) || 0);
       }
 
-      const isArtistry = tsClean.match(/Global/i) || skill.toLowerCase().includes("artistry");
+      const isArtistry = tsClean.match(/Global/i) || String(skill || "").toLowerCase().includes("artistry");
       const tsNum = parseInt(timestamp) || 0;
 
       let engine = "General";
@@ -634,10 +634,10 @@ function ScoreBenchmark({ score, level }) {
   return (
     <div className="card" style={{ padding: 14, marginBottom: 16 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-        <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.5)" }}>
+        <span style={{ fontSize: 16, fontWeight: 700, color: "rgba(255,255,255,0.5)" }}>
           SCORE BENCHMARK — {level}
         </span>
-        <span style={{ fontSize: 13, fontWeight: 800, color: pColor, fontFamily: "'Space Mono', monospace" }}>
+        <span style={{ fontSize: 16, fontWeight: 800, color: pColor, fontFamily: "'Space Mono', monospace" }}>
           {percentile}
         </span>
       </div>
@@ -660,12 +660,12 @@ function ScoreBenchmark({ score, level }) {
           display: "flex", alignItems: "center", justifyContent: "center",
           boxShadow: `0 0 10px ${pColor}50`,
         }}>
-          <span style={{ fontSize: 8, fontWeight: 900, color: "#0B1024", fontFamily: "'Space Mono', monospace" }}>
+          <span style={{ fontSize: 12, fontWeight: 900, color: "#0B1024", fontFamily: "'Space Mono', monospace" }}>
             {score.toFixed(1)}
           </span>
         </div>
       </div>
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 9, color: "rgba(255,255,255,0.25)", fontFamily: "'Space Mono', monospace" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "rgba(255,255,255,0.25)", fontFamily: "'Space Mono', monospace" }}>
         <span>{bench.low.toFixed(1)}</span>
         <span style={{ color: "rgba(245,158,11,0.5)" }}>avg {bench.avg.toFixed(1)}</span>
         <span style={{ color: "rgba(196,152,42,0.5)" }}>top10% {bench.top10.toFixed(1)}</span>
@@ -716,7 +716,7 @@ function SkillsRequiredCard({ profile }) {
         <div style={{ marginTop: 12 }}>
           {events.map(([label, key]) => skills[key] && (
             <div key={key} style={{ marginBottom: 10 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "#C4982A", letterSpacing: 1, marginBottom: 4 }}>{label.toUpperCase()}</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#C4982A", letterSpacing: 1, marginBottom: 4 }}>{String(label || "").toUpperCase()}</div>
               <div style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", lineHeight: 1.7 }}>{skills[key]}</div>
             </div>
           ))}
@@ -1230,7 +1230,7 @@ export default function LegacyApp() {
                     display: "flex", flexDirection: "column", alignItems: "center", gap: 2,
                     padding: "8px 14px",
                     borderRadius: 14, border: "none", cursor: "pointer",
-                    fontFamily: "'Outfit', sans-serif", fontSize: 9, fontWeight: 600,
+                    fontFamily: "'Outfit', sans-serif", fontSize: 12, fontWeight: 600,
                     background: tab.primary ? "rgba(196,152,42,0.08)" : "transparent",
                     color,
                     transition: "all 0.15s", WebkitTapHighlightColor: "transparent",
@@ -1408,30 +1408,26 @@ function OnboardingScreen({ onComplete }) {
   const [gender, setGender] = useState("");
   const [levelCategory, setLevelCategory] = useState("");
   const [level, setLevel] = useState("");
-  const [primaryEvents, setPrimaryEvents] = useState([]);
   const [goals, setGoals] = useState("");
 
   const events = gender === "female" ? WOMEN_EVENTS : gender === "male" ? MEN_EVENTS : [];
+  // Auto-populate all events for the selected gender
+  const primaryEvents = events;
   const levelOptions = gender && levelCategory
     ? LEVELS[gender === "female" ? "women" : "men"][levelCategory] || []
     : [];
-
-  const toggleEvent = (e) => {
-    setPrimaryEvents(prev => prev.includes(e) ? prev.filter(x => x !== e) : [...prev, e]);
-  };
 
   const canProceed = () => {
     if (step === 0) return role !== "";
     if (step === 1) return name.trim().length > 0;
     if (step === 2) return gender !== "";
     if (step === 3) return levelCategory !== "" && level !== "";
-    if (step === 4) return primaryEvents.length > 0;
-    if (step === 5) return true;
+    if (step === 4) return true; // goals step — always can proceed
     return false;
   };
 
   const handleNext = () => {
-    if (step < 5) setStep(step + 1);
+    if (step < 4) setStep(step + 1);
     else onComplete({ role, name, age: age ? parseInt(age) : null, gender, levelCategory, level, primaryEvents, goals: goals.trim() || null, createdAt: Date.now() });
   };
 
@@ -1459,8 +1455,8 @@ function OnboardingScreen({ onComplete }) {
           >
             <div style={{ flexShrink: 0 }}><Icon name={opt.svgIcon} size={24} color={role === opt.val ? "#E8C35A" : "rgba(255,255,255,0.4)"} /></div>
             <div>
-              <div style={{ color: role === opt.val ? "#E8C35A" : "#e2e8f0", fontWeight: 600, fontSize: 15, transition: "color 0.2s" }}>{opt.label}</div>
-              <div style={{ color: "rgba(255,255,255,0.3)", fontSize: 12, marginTop: 2 }}>{opt.desc}</div>
+              <div style={{ color: role === opt.val ? "#E8C35A" : "#e2e8f0", fontWeight: 600, fontSize: 18, transition: "color 0.2s" }}>{opt.label}</div>
+              <div style={{ color: "rgba(255,255,255,0.3)", fontSize: 16, marginTop: 2 }}>{opt.desc}</div>
             </div>
             {role === opt.val && (
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ marginLeft: "auto", flexShrink: 0 }}>
@@ -1503,7 +1499,7 @@ function OnboardingScreen({ onComplete }) {
         ].map(opt => (
           <button
             key={opt.val}
-            onClick={() => { setGender(opt.val); setLevelCategory(""); setLevel(""); setPrimaryEvents([]); }}
+            onClick={() => { setGender(opt.val); setLevelCategory(""); setLevel(""); }}
             style={{
               background: gender === opt.val ? "rgba(196,152,42,0.1)" : "rgba(255,255,255,0.02)",
               border: `1.5px solid ${gender === opt.val ? "rgba(196,152,42,0.4)" : "rgba(255,255,255,0.05)"}`,
@@ -1513,7 +1509,7 @@ function OnboardingScreen({ onComplete }) {
           >
             <div style={{ display: "block", marginBottom: 10, margin: "0 auto" }}><Icon name="star" size={32} color={gender === opt.val ? "#E8C35A" : "rgba(255,255,255,0.3)"} /></div>
             <span style={{ color: gender === opt.val ? "#E8C35A" : "#e2e8f0", fontWeight: 600, fontSize: 14, display: "block" }}>{opt.label}</span>
-            <span style={{ color: "rgba(255,255,255,0.25)", fontSize: 11, marginTop: 4, display: "block", fontFamily: "'Space Mono', monospace" }}>
+            <span style={{ color: "rgba(255,255,255,0.25)", fontSize: 14, marginTop: 4, display: "block", fontFamily: "'Space Mono', monospace" }}>
               {opt.desc}
             </span>
           </button>
@@ -1538,7 +1534,7 @@ function OnboardingScreen({ onComplete }) {
             onClick={() => { setLevelCategory(cat.val); setLevel(""); }}
             style={{
               flex: 1, padding: "10px 8px", borderRadius: 10, border: "none", cursor: "pointer",
-              fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 13,
+              fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 16,
               background: levelCategory === cat.val ? "linear-gradient(135deg, #C4982A, #E8C35A)" : "rgba(255,255,255,0.06)",
               color: levelCategory === cat.val ? "#0B1024" : "rgba(255,255,255,0.6)",
               transition: "all 0.3s",
@@ -1570,40 +1566,14 @@ function OnboardingScreen({ onComplete }) {
       )}
     </div>,
 
-    // Step 4: Events
-    <div key="events" style={{ animation: "fadeIn 0.5s ease-out" }}>
-      <h2 style={{ fontSize: 28, fontWeight: 700, marginBottom: 8 }}>Select Events</h2>
-      <p style={{ color: "rgba(255,255,255,0.5)", marginBottom: 24 }}>
-        Choose the events you compete in. You can analyze any event, but these will be your defaults.
-      </p>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-        {events.map(e => (
-          <button
-            key={e}
-            onClick={() => toggleEvent(e)}
-            style={{
-              padding: 18, borderRadius: 12, cursor: "pointer", textAlign: "center",
-              fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 15,
-              background: primaryEvents.includes(e) ? "rgba(196,152,42,0.15)" : "rgba(255,255,255,0.04)",
-              color: primaryEvents.includes(e) ? "#C4982A" : "rgba(255,255,255,0.5)",
-              border: `2px solid ${primaryEvents.includes(e) ? "#C4982A" : "rgba(255,255,255,0.06)"}`,
-              transition: "all 0.3s",
-            }}
-          >
-            {e}
-          </button>
-        ))}
-      </div>
-    </div>,
-
-    // Step 5: Age & Goals (optional)
+    // Step 4: Age & Goals (optional)
     <div key="goals" style={{ animation: "fadeIn 0.5s ease-out" }}>
       <h2 style={{ fontSize: 28, fontWeight: 700, marginBottom: 8 }}>About {name || "the Gymnast"}</h2>
       <p style={{ color: "rgba(255,255,255,0.5)", marginBottom: 24 }}>
         Optional — helps personalize training, nutrition, and mental prep recommendations for age and goals.
       </p>
       <div style={{ marginBottom: 20 }}>
-        <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, display: "block", color: "rgba(255,255,255,0.6)" }}>AGE</label>
+        <label style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, display: "block", color: "rgba(255,255,255,0.6)" }}>AGE</label>
         <input
           className="input-field"
           type="number"
@@ -1616,8 +1586,8 @@ function OnboardingScreen({ onComplete }) {
         />
       </div>
       <div>
-        <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, display: "block", color: "rgba(255,255,255,0.6)" }}>GOALS</label>
-        <select className="input-field" value={goals} onChange={e => setGoals(e.target.value)} style={{ fontSize: 15, padding: 14 }}>
+        <label style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, display: "block", color: "rgba(255,255,255,0.6)" }}>GOALS</label>
+        <select className="input-field" value={goals} onChange={e => setGoals(e.target.value)} style={{ fontSize: 18, padding: 14 }}>
           <option value="">Select a goal...</option>
           <option value="improve scores">Improve meet scores</option>
           <option value="move up levels">Move up to the next level</option>
@@ -1635,7 +1605,7 @@ function OnboardingScreen({ onComplete }) {
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", padding: "24px 22px", maxWidth: 540, margin: "0 auto" }}>
       {/* Progress */}
       <div style={{ display: "flex", gap: 5, marginBottom: 40 }}>
-        {[0,1,2,3,4,5].map(i => (
+        {[0,1,2,3,4].map(i => (
           <div key={i} style={{
             flex: 1, height: 2.5, borderRadius: 2,
             background: i <= step ? "linear-gradient(90deg, #C4982A, #E8C35A)" : "rgba(255,255,255,0.06)",
@@ -1656,9 +1626,9 @@ function OnboardingScreen({ onComplete }) {
           className="btn-gold"
           onClick={handleNext}
           disabled={!canProceed()}
-          style={{ flex: 2, opacity: canProceed() ? 1 : 0.35, pointerEvents: canProceed() ? "auto" : "none", padding: "14px 24px", fontSize: 15 }}
+          style={{ flex: 2, opacity: canProceed() ? 1 : 0.35, pointerEvents: canProceed() ? "auto" : "none", padding: "14px 24px", fontSize: 18 }}
         >
-          {step === 5 ? "Start analyzing" : "Continue"}
+          {step === 4 ? "Start analyzing" : "Continue"}
         </button>
       </div>
     </div>
@@ -1734,12 +1704,12 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
           <div>
             <h1 style={{ fontSize: 18, fontWeight: 700, lineHeight: 1.2 }}>
               {profile.role === "parent" ? (
-                <><span style={{ color: "rgba(255,255,255,0.35)", fontSize: 12, fontWeight: 400 }}>Tracking </span><span style={{ color: "#E8C35A" }}>{profile.name}</span></>
+                <><span style={{ color: "rgba(255,255,255,0.35)", fontSize: 16, fontWeight: 400 }}>Tracking </span><span style={{ color: "#E8C35A" }}>{profile.name}</span></>
               ) : (
-                <><span style={{ color: "rgba(255,255,255,0.35)", fontSize: 12, fontWeight: 400 }}>Hey, </span><span style={{ color: "#E8C35A" }}>{profile.name}</span></>
+                <><span style={{ color: "rgba(255,255,255,0.35)", fontSize: 16, fontWeight: 400 }}>Hey, </span><span style={{ color: "#E8C35A" }}>{profile.name}</span></>
               )}
             </h1>
-            <p style={{ color: "rgba(255,255,255,0.2)", fontSize: 11, marginTop: 1, letterSpacing: 0.3 }}>
+            <p style={{ color: "rgba(255,255,255,0.2)", fontSize: 14, marginTop: 1, letterSpacing: 0.3 }}>
               {profile.level} · {profile.gender === "female" ? "WAG" : "MAG"}
               {profile.role === "coach" && " · Coach"}
             </p>
@@ -1786,7 +1756,7 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
           }}>
             <div style={{ marginBottom: 10 }}><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#A78BFA" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg></div>
             <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>Monthly limit reached</div>
-            <div style={{ fontSize: 13, color: "#8890AB", lineHeight: 1.6, marginBottom: 16, maxWidth: 280, margin: "0 auto" }}>
+            <div style={{ fontSize: 16, color: "#8890AB", lineHeight: 1.6, marginBottom: 16, maxWidth: 280, margin: "0 auto" }}>
               You've used all 3 free analyses this month. Upgrade to Pro for unlimited video analysis.
             </div>
             <button onClick={() => { try { localStorage.setItem("strive-tier", "pro"); } catch {} window.location.reload(); }} style={{
@@ -1820,10 +1790,10 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
               <Icon name="camera" size={20} />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <span style={{ color: "#E8C35A", fontWeight: 700, fontSize: 15, display: "block" }}>
+              <span style={{ color: "#E8C35A", fontWeight: 700, fontSize: 18, display: "block" }}>
                 Analyze routine
               </span>
-              <span style={{ color: "rgba(255,255,255,0.25)", fontSize: 11, marginTop: 2, display: "block" }}>
+              <span style={{ color: "rgba(255,255,255,0.25)", fontSize: 14, marginTop: 2, display: "block" }}>
                 {isPro ? "Unlimited · 2-pass AI" : `${remaining} free remaining`}
               </span>
             </div>
@@ -1848,7 +1818,7 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
         <div style={{ position: "relative", zIndex: 1 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(196,152,42,0.7)", letterSpacing: 1.5, marginBottom: 8 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(196,152,42,0.7)", letterSpacing: 1.5, marginBottom: 8 }}>
                 TODAY'S FOCUS
               </div>
               <div style={{ fontSize: 14, fontWeight: 500, lineHeight: 1.6, color: "rgba(255,255,255,0.75)", maxWidth: 230 }}>
@@ -1876,7 +1846,7 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
           {/* Stats footer */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 14, paddingTop: 12, borderTop: "1px solid rgba(196,152,42,0.06)" }}>
             {history.length > 0 ? (
-              <div style={{ display: "flex", gap: 16, fontSize: 11 }}>
+              <div style={{ display: "flex", gap: 16, fontSize: 14 }}>
                 <span style={{ color: "rgba(255,255,255,0.25)" }}>
                   Best: <span style={{ color: "rgba(196,152,42,0.8)", fontWeight: 700, fontFamily: "'Space Mono', monospace" }}>
                     {Math.max(...history.filter(h => h.score).map(h => h.score)).toFixed(1)}
@@ -1887,11 +1857,11 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
                 </span>
               </div>
             ) : (
-              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.2)" }}>Upload your first routine to get started</div>
+              <div style={{ fontSize: 14, color: "rgba(255,255,255,0.2)" }}>Upload your first routine to get started</div>
             )}
             {scoreTrend !== 0 && (
               <div style={{
-                fontSize: 11, fontWeight: 700,
+                fontSize: 14, fontWeight: 700,
                 color: scoreTrend > 0 ? "#22c55e" : "#ef4444",
                 background: scoreTrend > 0 ? "rgba(34,197,94,0.08)" : "rgba(239,68,68,0.08)",
                 padding: "3px 10px", borderRadius: 6,
@@ -1912,10 +1882,10 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
         <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
           <span style={{ flexShrink: 0, marginTop: 2 }}><Icon name="sparkle" size={16} color="#C4982A" /></span>
           <div>
-            <div style={{ fontSize: 10, fontWeight: 700, color: "#C4982A", letterSpacing: 0.5, marginBottom: 4 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "#C4982A", letterSpacing: 0.5, marginBottom: 4 }}>
               {history.length >= 2 ? "YOUR DATA SAYS" : "DID YOU KNOW?"}
             </div>
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", lineHeight: 1.7 }}>
+            <div style={{ fontSize: 16, color: "rgba(255,255,255,0.55)", lineHeight: 1.7 }}>
               {(() => {
                 if (history.length >= 2) {
                   // Generate data-driven tips from actual history
@@ -1955,7 +1925,7 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
             <div style={{ fontSize: 20, fontWeight: 800, color: stat.color, fontFamily: "'Space Mono', monospace", lineHeight: 1 }}>
               {stat.value}
             </div>
-            <div style={{ fontSize: 9, color: "rgba(255,255,255,0.2)", fontWeight: 600, marginTop: 6, letterSpacing: 0.5 }}>{stat.label}</div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.2)", fontWeight: 600, marginTop: 6, letterSpacing: 0.5 }}>{stat.label}</div>
           </div>
         ))}
       </div>
@@ -1980,8 +1950,8 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
             background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)",
           }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-              <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.35)" }}>Score Trend</span>
-              <span style={{ fontSize: 10, color: "rgba(255,255,255,0.2)" }}>Last {scores.length} analyses</span>
+              <span style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.35)" }}>Score Trend</span>
+              <span style={{ fontSize: 14, color: "rgba(255,255,255,0.2)" }}>Last {scores.length} analyses</span>
             </div>
             <svg viewBox={`-10 -5 ${w + 20} ${h + 10}`} width="100%" height="65" style={{ display: "block" }}>
               <defs>
@@ -1997,8 +1967,8 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
               <circle cx={points[points.length - 1].x} cy={points[points.length - 1].y} r="6" fill="#C4982A" opacity="0.15" />
             </svg>
             <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
-              <span style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", fontFamily: "'Space Mono', monospace" }}>{scores[0].toFixed(1)}</span>
-              <span style={{ fontSize: 10, color: "#C4982A", fontWeight: 700, fontFamily: "'Space Mono', monospace" }}>{scores[scores.length - 1].toFixed(1)}</span>
+              <span style={{ fontSize: 14, color: "rgba(255,255,255,0.2)", fontFamily: "'Space Mono', monospace" }}>{scores[0].toFixed(1)}</span>
+              <span style={{ fontSize: 14, color: "#C4982A", fontWeight: 700, fontFamily: "'Space Mono', monospace" }}>{scores[scores.length - 1].toFixed(1)}</span>
             </div>
           </div>
         );
@@ -2027,10 +1997,10 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
                 backdropFilter: "blur(8px)", minHeight: 44,
               }}>
                 <div style={{ marginBottom: 2 }}><Icon name={btn.icon} size={20} color="#C4982A" /></div>
-                <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.7)" }}>{btn.label}</span>
-                <span style={{ fontSize: 9, color: "rgba(255,255,255,0.3)" }}>{btn.subtitle}</span>
+                <span style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.7)" }}>{btn.label}</span>
+                <span style={{ fontSize: 12, color: "rgba(255,255,255,0.3)" }}>{btn.subtitle}</span>
                 {btn.pro && !isPro && (
-                  <span style={{ fontSize: 8, fontWeight: 700, padding: "1px 6px", borderRadius: 4, background: "rgba(139,92,246,0.12)", color: "#A78BFA", marginTop: 2 }}>PRO</span>
+                  <span style={{ fontSize: 12, fontWeight: 700, padding: "1px 6px", borderRadius: 4, background: "rgba(139,92,246,0.12)", color: "#A78BFA", marginTop: 2 }}>PRO</span>
                 )}
               </button>
             ))}
@@ -2058,13 +2028,13 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.3)", letterSpacing: 1, marginBottom: 6 }}>LAST ANALYSIS</div>
-                <div style={{ fontSize: 15, fontWeight: 700 }}>{last.event}</div>
-                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 3 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.3)", letterSpacing: 1, marginBottom: 6 }}>LAST ANALYSIS</div>
+                <div style={{ fontSize: 18, fontWeight: 700 }}>{last.event}</div>
+                <div style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", marginTop: 3 }}>
                   {last.meetName || last.date}{last.meetLocation ? ` · ${last.meetLocation}` : ""}
                 </div>
                 {topFault && (
-                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 8 }}>
+                  <div style={{ fontSize: 14, color: "rgba(255,255,255,0.35)", marginTop: 8 }}>
                     Top fix: <span style={{ color: "#C4982A" }}>{safeStr(topFault.skill)}</span> (-{safeNum(topFault.deduction, 0).toFixed(2)})
                   </div>
                 )}
@@ -2073,8 +2043,8 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
                 <div style={{ fontSize: 28, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: scColor }}>
                   {sc.toFixed(1)}
                 </div>
-                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>{dedCount} deductions</div>
-                <div style={{ fontSize: 10, color: "#C4982A", marginTop: 4 }}>tap to review →</div>
+                <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)" }}>{dedCount} deductions</div>
+                <div style={{ fontSize: 14, color: "#C4982A", marginTop: 4 }}>tap to review →</div>
               </div>
             </div>
           </div>
@@ -2084,11 +2054,11 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
       {/* History — clickable */}
       <div style={{ marginBottom: 20 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 700 }}>Recent Analyses</h3>
+          <h3 style={{ fontSize: 18, fontWeight: 700 }}>Recent Analyses</h3>
           {history.length > 3 && (
             <button onClick={onMeets} style={{
               background: "none", border: "none", color: "#C4982A", cursor: "pointer",
-              fontSize: 12, fontWeight: 600, fontFamily: "'Outfit', sans-serif",
+              fontSize: 16, fontWeight: 600, fontFamily: "'Outfit', sans-serif",
             }}>See all {history.length} →</button>
           )}
         </div>
@@ -2096,7 +2066,7 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
           <div className="card" style={{ textAlign: "center", padding: "32px 24px" }}>
             <div style={{ marginBottom: 12 }}><Icon name="camera" size={36} color="#C4982A" /></div>
             <h4 style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>Ready to see your score?</h4>
-            <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, lineHeight: 1.6, maxWidth: 280, margin: "0 auto 16px" }}>
+            <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 16, lineHeight: 1.6, maxWidth: 280, margin: "0 auto 16px" }}>
               Upload a routine video and STRIVE's 2-pass AI engine will break down every deduction — just like a real judge.
             </p>
             <button className="btn-gold" onClick={onUpload} style={{ fontSize: 14, padding: "12px 32px" }}>
@@ -2131,7 +2101,7 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
                   </div>
                   <div>
                     <div style={{ fontWeight: 600, fontSize: 14 }}>{h.event}</div>
-                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>
+                    <div style={{ fontSize: 14, color: "rgba(255,255,255,0.35)" }}>
                       {h.meetName || h.date}{h.meetLocation ? ` · ${h.meetLocation}` : ""}
                     </div>
                   </div>
@@ -2140,7 +2110,7 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
                   <div style={{ fontWeight: 800, fontSize: 18, color: scColor, fontFamily: "'Space Mono', monospace" }}>
                     {sc > 0 ? sc.toFixed(3) : "—"}
                   </div>
-                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.25)" }}>
+                  <div style={{ fontSize: 14, color: "rgba(255,255,255,0.25)" }}>
                     {trend !== null && Math.abs(trend) >= 0.01 ? (
                       <span style={{ color: trend > 0 ? "#22c55e" : "#ef4444", fontWeight: 600 }}>
                         {trend > 0 ? "▲" : "▼"} {Math.abs(trend).toFixed(2)}
@@ -2162,14 +2132,14 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
       {/* Quick Reference — condensed */}
       <div className="card" style={{ padding: 16, marginBottom: 12, borderColor: "rgba(196,152,42,0.1)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-          <h3 style={{ fontSize: 13, fontWeight: 700, color: "#C4982A" }}>
+          <h3 style={{ fontSize: 16, fontWeight: 700, color: "#C4982A" }}>
             Scoring at {profile.level}
           </h3>
-          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.25)" }}>
+          <span style={{ fontSize: 14, color: "rgba(255,255,255,0.25)" }}>
             {profile.levelCategory === "compulsory" ? "Compulsory — SV 10.0" : profile.levelCategory === "xcel" ? "Xcel — SV 10.0" : "Optional — D-Score + E-Score"}
           </span>
         </div>
-        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: 1.7 }}>
+        <div style={{ fontSize: 16, color: "rgba(255,255,255,0.45)", lineHeight: 1.7 }}>
           {profile.levelCategory === "compulsory" ?
             "Same routine for everyone. Judges deduct for any deviation from the prescribed choreography. 9.0+ is strong." :
            profile.levelCategory === "xcel" ?
@@ -2192,8 +2162,8 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
           borderColor: "rgba(196,152,42,0.1)",
           textAlign: "center",
         }}>
-          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>Know a gymnast or coach?</div>
-          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginBottom: 12, lineHeight: 1.5 }}>
+          <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>Know a gymnast or coach?</div>
+          <div style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", marginBottom: 12, lineHeight: 1.5 }}>
             STRIVE helps every gymnast understand their score and improve faster.
           </div>
           <button
@@ -2208,7 +2178,7 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
             style={{
               background: "rgba(196,152,42,0.1)", border: "1px solid rgba(196,152,42,0.2)",
               borderRadius: 10, padding: "10px 24px", cursor: "pointer",
-              color: "#C4982A", fontSize: 13, fontWeight: 600, fontFamily: "'Outfit', sans-serif",
+              color: "#C4982A", fontSize: 16, fontWeight: 600, fontFamily: "'Outfit', sans-serif",
             }}
           >
             Share STRIVE
@@ -2223,7 +2193,7 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
           background: "linear-gradient(135deg, #C4982A, #E8C35A)", backgroundClip: "text",
           WebkitBackgroundClip: "text", color: "transparent", marginBottom: 4,
         }}>STRIVE</div>
-        <div style={{ fontSize: 9, color: "rgba(255,255,255,0.12)", letterSpacing: 1 }}>
+        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.12)", letterSpacing: 1 }}>
           v1.0 · 2-Pass AI Engine · {profile.level}
         </div>
       </div>
@@ -3227,7 +3197,7 @@ COACH REPORT:
 - idealComparison: compare to ideal model for ${level}.
 - techniqueProgressionNotes: what to train next.
 
-ATHLETE DEVELOPMENT for ${profile.age ? profile.age + '-year-old' : ''} ${gender.toLowerCase()} gymnast at ${level}${profile.goals ? ' (goal: ' + profile.goals + ')' : ''}:
+ATHLETE DEVELOPMENT for ${profile.age ? profile.age + '-year-old' : ''} ${String(gender || "").toLowerCase()} gymnast at ${level}${profile.goals ? ' (goal: ' + profile.goals + ')' : ''}:
 - mentalTraining: ${profile.goals ? 'techniques for goal of "' + profile.goals + '"' : 'visualization, pressure management'} appropriate for age.
 - goalSpecificAdvice: ${profile.goals ? 'Specific advice for "' + profile.goals + '" at ' + level + '.' : 'General development advice for ' + level + '.'}
 
@@ -3756,7 +3726,7 @@ RESPOND WITH VALID JSON ONLY:
               current.deduction = Math.round((current.deduction + d.deduction) * 100) / 100;
               current.fault = current.fault + "; " + d.fault;
               current.details = "Combined " + current.deduction.toFixed(2) + " across multiple faults on this skill";
-              if (d.skill.length > current.skill.length && !d.skill.toLowerCase().match(/landing|foot|arms|entry|exit/)) {
+              if (String(d.skill || "").length > String(current.skill || "").length && !String(d.skill || "").toLowerCase().match(/landing|foot|arms|entry|exit/)) {
                 current.skill = d.skill;
               }
               if (current.deduction >= 0.30) current.severity = "large";
@@ -3772,7 +3742,7 @@ RESPOND WITH VALID JSON ONLY:
 
           // Add corrections based on fault keywords
           grouped.forEach(d => {
-            const f = d.fault.toLowerCase();
+            const f = String(d.fault || "").toLowerCase();
             const corr = [];
             if (f.includes("knee") && (f.includes("sep") || f.includes("cowboy"))) corr.push("Foam block between knees during tuck drills");
             if (f.includes("flex") || f.includes("toe") || f.includes("foot") || f.includes("plantar")) corr.push("Theraband ankle exercises 3x20 daily");
@@ -4077,8 +4047,8 @@ RESPOND WITH VALID JSON ONLY:
           background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)",
           maxWidth: 320, textAlign: "center", animation: "fadeIn 0.5s ease-out",
         }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(196,152,42,0.5)", letterSpacing: 1, marginBottom: 6 }}>DID YOU KNOW?</div>
-          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", lineHeight: 1.6 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(196,152,42,0.5)", letterSpacing: 1, marginBottom: 6 }}>DID YOU KNOW?</div>
+          <div style={{ fontSize: 16, color: "rgba(255,255,255,0.4)", lineHeight: 1.6 }}>
             {[
               "STRIVE uses a 2-pass system: first identifying every skill in the routine, then judging each one for execution errors using USAG criteria.",
               "A typical Level 5-7 routine has 8-12 scoreable elements. Judges evaluate each one independently.",
@@ -4095,7 +4065,66 @@ RESPOND WITH VALID JSON ONLY:
 }
 
 // ─── RESULTS SCREEN — SKILL-BY-SKILL ANALYSIS ──────────────────────
-function ResultsScreen({ result, profile, history, videoUrl, videoFileRef, onBack, onDrills }) {
+function ResultsScreen({ result: rawResult, profile, history, videoUrl, videoFileRef, onBack, onDrills }) {
+  // Defensive: re-validate result to prevent crashes from malformed AI responses
+  const result = React.useMemo(() => {
+    if (!rawResult || typeof rawResult !== "object") return null;
+    // Ensure all required fields exist with safe defaults
+    const r = { ...rawResult };
+    r.finalScore = safeNum(r.finalScore, 0, 0, 10);
+    r.startValue = r.startValue ?? 10.0;
+    r.totalDeductions = safeNum(r.totalDeductions, 0, 0, 10);
+    r.overallAssessment = safeStr(r.overallAssessment || r.truthAnalysis || "");
+    r.strengths = safeArray(r.strengths);
+    r.areasForImprovement = safeArray(r.areasForImprovement);
+    r.topFixes = safeArray(r.topFixes);
+    r.executionDeductions = safeArray(r.executionDeductions).map(d => ({
+      ...d,
+      skill: safeStr(d.skill || "Unknown skill"),
+      fault: safeStr(d.fault || "Execution error"),
+      deduction: safeNum(d.deduction, 0, 0, 2),
+      severity: safeStr(d.severity || "small"),
+      category: safeStr(d.category || "execution"),
+      engine: safeStr(d.engine || ""),
+      details: safeStr(d.details || ""),
+      timestamp: safeStr(d.timestamp || "0:00"),
+    }));
+    // Build skillAnalysis from executionDeductions if missing
+    r.skillAnalysis = safeArray(r.skillAnalysis);
+    if (r.skillAnalysis.length === 0 && r.executionDeductions.length > 0) {
+      r.skillAnalysis = r.executionDeductions.map(d => ({
+        timestamp: d.timestamp,
+        skill: d.skill,
+        type: d.category === "landing" ? "landing" : d.category === "artistry" ? "dance" : "acro",
+        verdict: "deduction",
+        score: safeNum(d.deduction, 0) <= 0.10 ? "minor" : safeNum(d.deduction, 0) <= 0.20 ? "moderate" : "major",
+        deduction: d.deduction,
+        fault: d.fault,
+        correction: safeStr(d.correction || ""),
+        engine: d.engine,
+        measuredVsIdeal: safeStr(d.measuredVsIdeal || d.details || ""),
+        skeleton: d.skeleton || null,
+      }));
+    }
+    r.skillAnalysis = r.skillAnalysis.map(s => ({
+      ...s,
+      skill: safeStr(s.skill || "Unknown skill"),
+      fault: safeStr(s.fault || ""),
+      correction: safeStr(s.correction || ""),
+      engine: safeStr(s.engine || ""),
+      timestamp: safeStr(s.timestamp || "0:00"),
+      deduction: safeNum(s.deduction, 0, 0, 2),
+      score: safeStr(s.score || "clean"),
+    }));
+    if (!r.biomechanics || typeof r.biomechanics !== "object") {
+      r.biomechanics = { keyMoments: [], landingAnalysis: [], injuryRiskFlags: [] };
+    }
+    r.event = safeStr(r.event || "Event");
+    r.level = safeStr(r.level || "Level");
+    if (DEBUG_MODE) console.log("ResultsScreen result keys:", Object.keys(r), "skills:", r.skillAnalysis.length, "deds:", r.executionDeductions.length);
+    return r;
+  }, [rawResult]);
+
   const [activeSkill, setActiveSkill] = useState(null);
   const [actualScore, setActualScore] = useState("");
   const [scoreSaved, setScoreSaved] = useState(false);
@@ -4103,7 +4132,7 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFileRef, onBac
   const [videoLoading, setVideoLoading] = useState(true);
   const [videoPlayError, setVideoPlayError] = useState(false);
   const [freshVideoUrl, setFreshVideoUrl] = useState(null);
-  const [videoOverlay, setVideoOverlay] = useState(null); // {skill, fault, deduction} shown on video
+  const [videoOverlay, setVideoOverlay] = useState(null);
   const videoRef = useRef(null);
   const skillCardRefs = useRef({});
 
@@ -4268,10 +4297,10 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFileRef, onBac
                 animation: "fadeIn 0.15s ease-out", cursor: "pointer", zIndex: 3,
               }}>
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: "#e2e8f0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: "#e2e8f0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                     {videoOverlay.skill}
                   </div>
-                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", marginTop: 1 }}>
+                  <div style={{ fontSize: 14, color: "rgba(255,255,255,0.45)", marginTop: 1 }}>
                     {videoOverlay.fault.substring(0, 50)}
                   </div>
                 </div>
@@ -4287,7 +4316,7 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFileRef, onBac
         {videoPlayError && (
           <div style={{ padding: "16px 18px", background: "rgba(239,68,68,0.06)", borderBottom: "1px solid rgba(239,68,68,0.12)", display: "flex", alignItems: "center", gap: 8 }}>
             <Icon name="warning" size={16} color="#ef4444" />
-            <span style={{ fontSize: 12, color: "rgba(239,68,68,0.8)" }}>Video playback unavailable. Analysis results shown below.</span>
+            <span style={{ fontSize: 16, color: "rgba(239,68,68,0.8)" }}>Video playback unavailable. Analysis results shown below.</span>
           </div>
         )}
 
@@ -4299,21 +4328,21 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFileRef, onBac
         }}>
           <button onClick={onBack} style={{
             background: "none", border: "none", color: "rgba(196,152,42,0.6)", cursor: "pointer",
-            fontFamily: "'Outfit', sans-serif", fontSize: 12, fontWeight: 600,
+            fontFamily: "'Outfit', sans-serif", fontSize: 16, fontWeight: 600,
             display: "flex", alignItems: "center", gap: 3, padding: 0,
           }}>
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M7 2L3 6l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
             Back
           </button>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", letterSpacing: 0.5 }}>
+            <span style={{ fontSize: 14, color: "rgba(255,255,255,0.25)", letterSpacing: 0.5 }}>
               {result.event} · {result.level}
             </span>
-            <span style={{ fontSize: 22, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: scoreColor }}>
+            <span style={{ fontSize: 24, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: scoreColor }}>
               {safeNum(result.finalScore, 0, 0, 10).toFixed(3)}
             </span>
           </div>
-          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", textAlign: "right", lineHeight: 1.4 }}>
+          <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)", textAlign: "right", lineHeight: 1.4 }}>
             <div style={{ color: "#ef4444", fontFamily: "'Space Mono', monospace" }}>-{safeNum(result.totalDeductions, 0).toFixed(2)}</div>
             <div>{deds.length} ded</div>
           </div>
@@ -4339,7 +4368,7 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFileRef, onBac
                   transition: "all 0.15s",
                 }}>
                   <div style={{ width: 6, height: 6, borderRadius: "50%", background: c, flexShrink: 0, boxShadow: s.deduction > 0 ? `0 0 6px ${c}50` : "none" }} />
-                  <span style={{ fontSize: 9, fontWeight: 600, color: isActive ? c : "rgba(255,255,255,0.3)", whiteSpace: "nowrap" }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: isActive ? c : "rgba(255,255,255,0.3)", whiteSpace: "nowrap" }}>
                     {safeStr(s.skill).substring(0, 14)}
                   </span>
                 </button>
@@ -4354,28 +4383,28 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFileRef, onBac
 
         {/* Demo notice */}
         {result.isDemo && (
-          <div style={{ padding: "10px 14px", borderRadius: 12, marginBottom: 14, background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.12)", fontSize: 12, color: "rgba(245,158,11,0.8)" }}>
+          <div style={{ padding: "10px 14px", borderRadius: 12, marginBottom: 14, background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.12)", fontSize: 16, color: "rgba(245,158,11,0.8)" }}>
             Demo — {result.failureReason ? result.failureReason.substring(0, 80) : "upload a video for real analysis"}
           </div>
         )}
 
         {/* Score Math Card */}
         <div style={{ marginBottom: 14, padding: "14px 16px", borderRadius: 14, background: "rgba(196,152,42,0.03)", border: "1px solid rgba(196,152,42,0.08)", animation: "fadeIn 0.4s ease-out" }}>
-          <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(196,152,42,0.5)", letterSpacing: 1, marginBottom: 10 }}>SCORE BREAKDOWN</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(196,152,42,0.5)", letterSpacing: 1, marginBottom: 10 }}>SCORE BREAKDOWN</div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12 }}>
             <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", marginBottom: 4 }}>START</div>
-              <div style={{ fontSize: 22, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: "rgba(255,255,255,0.8)" }}>10.000</div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginBottom: 4 }}>START</div>
+              <div style={{ fontSize: 24, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: "rgba(255,255,255,0.8)" }}>10.000</div>
             </div>
             <span style={{ fontSize: 20, color: "rgba(255,255,255,0.2)", marginTop: 12 }}>-</span>
             <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", marginBottom: 4 }}>DEDUCTIONS</div>
-              <div style={{ fontSize: 22, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: "#ef4444" }}>{safeNum(result.totalDeductions, 0).toFixed(3)}</div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginBottom: 4 }}>DEDUCTIONS</div>
+              <div style={{ fontSize: 24, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: "#ef4444" }}>{safeNum(result.totalDeductions, 0).toFixed(3)}</div>
             </div>
             <span style={{ fontSize: 20, color: "rgba(255,255,255,0.2)", marginTop: 12 }}>=</span>
             <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", marginBottom: 4 }}>FINAL</div>
-              <div style={{ fontSize: 22, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: scoreColor }}>{safeNum(result.finalScore, 0, 0, 10).toFixed(3)}</div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginBottom: 4 }}>FINAL</div>
+              <div style={{ fontSize: 24, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: scoreColor }}>{safeNum(result.finalScore, 0, 0, 10).toFixed(3)}</div>
             </div>
           </div>
         </div>
@@ -4387,11 +4416,11 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFileRef, onBac
           return (
             <div style={{ marginBottom: 14, padding: "12px 14px", borderRadius: 14, background: "rgba(34,197,94,0.03)", border: "1px solid rgba(34,197,94,0.06)" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                <span style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.2)", letterSpacing: 1 }}>FASTEST PATH TO IMPROVEMENT</span>
-                <span style={{ fontSize: 15, fontWeight: 800, color: "#22c55e", fontFamily: "'Space Mono', monospace" }}>+{gain.toFixed(2)}</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.2)", letterSpacing: 1 }}>FASTEST PATH TO IMPROVEMENT</span>
+                <span style={{ fontSize: 18, fontWeight: 800, color: "#22c55e", fontFamily: "'Space Mono', monospace" }}>+{gain.toFixed(2)}</span>
               </div>
               {top3.map((d, i) => (
-                <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "3px 0", fontSize: 12 }}>
+                <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "3px 0", fontSize: 16 }}>
                   <span style={{ color: "rgba(255,255,255,0.45)" }}>{i+1}. {safeStr(d.skill)}</span>
                   <span style={{ color: "#22c55e", fontWeight: 700, fontFamily: "'Space Mono', monospace" }}>+{safeNum(d.deduction, 0).toFixed(2)}</span>
                 </div>
@@ -4401,7 +4430,7 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFileRef, onBac
         })()}
 
         {/* ═══ SKILL-BY-SKILL FEED ═══ */}
-        <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.15)", letterSpacing: 1, marginBottom: 10 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.15)", letterSpacing: 1, marginBottom: 10 }}>
           ROUTINE BREAKDOWN · {skills.length} SKILLS
         </div>
 
@@ -4436,14 +4465,14 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFileRef, onBac
                   background: `${c}12`, display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize: 14,
                 }}>
-                  {hasDed ? <span style={{ fontSize: 11, fontWeight: 800, color: c, fontFamily: "'Space Mono', monospace" }}>-{s.deduction.toFixed(1)}</span> : <span style={{ color: c, fontSize: 13 }}>✓</span>}
+                  {hasDed ? <span style={{ fontSize: 14, fontWeight: 800, color: c, fontFamily: "'Space Mono', monospace" }}>-{s.deduction.toFixed(1)}</span> : <span style={{ color: c, fontSize: 16 }}>✓</span>}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: "#e2e8f0" }}>{safeStr(s.skill)}</span>
-                    <span style={{ fontSize: 9, color: "rgba(255,255,255,0.15)" }}>{s.type || ""}</span>
+                    <span style={{ fontSize: 16, fontWeight: 700, color: "#e2e8f0" }}>{safeStr(s.skill)}</span>
+                    <span style={{ fontSize: 12, color: "rgba(255,255,255,0.15)" }}>{s.type || ""}</span>
                   </div>
-                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", marginTop: 2 }}>
+                  <div style={{ fontSize: 14, color: "rgba(255,255,255,0.25)", marginTop: 2 }}>
                     {s.timestamp}{hasDed ? ` · ${safeStr(s.fault).substring(0, 40)}` : s.verdict === "strength" ? " · Notable strength" : ""}
                   </div>
                 </div>
@@ -4461,16 +4490,16 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFileRef, onBac
                   {hasDed && (
                     <div style={{ padding: "10px 12px", borderRadius: 10, marginBottom: 8, background: `${c}06`, border: `1px solid ${c}15` }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                        <span style={{ fontSize: 10, fontWeight: 700, color: c, letterSpacing: 0.5 }}>
+                        <span style={{ fontSize: 14, fontWeight: 700, color: c, letterSpacing: 0.5 }}>
                           {s.engine && `${s.engine} · `}{s.score?.toUpperCase()}
                         </span>
-                        <span style={{ fontSize: 15, fontWeight: 800, fontFamily: "'Space Mono', monospace", color: c }}>
+                        <span style={{ fontSize: 18, fontWeight: 800, fontFamily: "'Space Mono', monospace", color: c }}>
                           -{safeNum(s.deduction, 0).toFixed(2)}
                         </span>
                       </div>
-                      <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>{safeStr(s.fault)}</div>
+                      <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>{safeStr(s.fault)}</div>
                       {/* Severity explanation */}
-                      <div style={{ marginTop: 6, fontSize: 11, color: "rgba(255,255,255,0.3)", fontStyle: "italic" }}>
+                      <div style={{ marginTop: 6, fontSize: 14, color: "rgba(255,255,255,0.3)", fontStyle: "italic" }}>
                         {getSeverityExplanation(s.deduction)}
                       </div>
                     </div>
@@ -4482,19 +4511,19 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFileRef, onBac
                     const est = !hasAIAngles ? estimated : null;
                     return (hasAIAngles || est) ? (
                       <div style={{ padding: "8px 10px", borderRadius: 8, marginBottom: 8, background: "rgba(59,130,246,0.03)", border: "1px solid rgba(59,130,246,0.06)" }}>
-                        <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(59,130,246,0.6)", letterSpacing: 0.5, marginBottom: 6 }}>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(59,130,246,0.6)", letterSpacing: 0.5, marginBottom: 6 }}>
                           BIOMECHANICS{!hasAIAngles && est ? " (ESTIMATED)" : ""}
                         </div>
                         {/* AI-provided angles */}
                         {s.measuredVsIdeal && (
-                          <div style={{ padding: "5px 8px", borderRadius: 6, background: "rgba(255,255,255,0.02)", fontSize: 11, color: "rgba(255,255,255,0.5)", fontFamily: "'Space Mono', monospace", marginBottom: 4 }}>
+                          <div style={{ padding: "5px 8px", borderRadius: 6, background: "rgba(255,255,255,0.02)", fontSize: 14, color: "rgba(255,255,255,0.5)", fontFamily: "'Space Mono', monospace", marginBottom: 4 }}>
                             {s.measuredVsIdeal}
                           </div>
                         )}
                         {bio?.jointAngles && Object.entries(bio.jointAngles).map(([joint, angle]) => (
                           <div key={joint} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "3px 8px", borderRadius: 4, marginBottom: 2, background: "rgba(59,130,246,0.04)" }}>
-                            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>{joint}</span>
-                            <span style={{ fontSize: 11, fontFamily: "'Space Mono', monospace", color: "rgba(239,68,68,0.8)" }}>
+                            <span style={{ fontSize: 14, color: "rgba(255,255,255,0.5)" }}>{joint}</span>
+                            <span style={{ fontSize: 14, fontFamily: "'Space Mono', monospace", color: "rgba(239,68,68,0.8)" }}>
                               {typeof angle === "number" ? `${angle}°` : angle}
                             </span>
                           </div>
@@ -4503,19 +4532,19 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFileRef, onBac
                         {est && (
                           <>
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 8px", borderRadius: 4, background: "rgba(59,130,246,0.04)", marginBottom: 2 }}>
-                              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>{est.joint}</span>
+                              <span style={{ fontSize: 14, color: "rgba(255,255,255,0.5)" }}>{est.joint}</span>
                               <div style={{ textAlign: "right" }}>
-                                <span style={{ fontSize: 11, fontFamily: "'Space Mono', monospace", color: "#ef4444" }}>{est.measured}</span>
-                                <span style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", margin: "0 4px" }}>vs</span>
-                                <span style={{ fontSize: 11, fontFamily: "'Space Mono', monospace", color: "#22c55e" }}>{est.ideal}</span>
+                                <span style={{ fontSize: 14, fontFamily: "'Space Mono', monospace", color: "#ef4444" }}>{est.measured}</span>
+                                <span style={{ fontSize: 14, color: "rgba(255,255,255,0.2)", margin: "0 4px" }}>vs</span>
+                                <span style={{ fontSize: 14, fontFamily: "'Space Mono', monospace", color: "#22c55e" }}>{est.ideal}</span>
                               </div>
                             </div>
-                            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginTop: 4, lineHeight: 1.5 }}>
+                            <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)", marginTop: 4, lineHeight: 1.5 }}>
                               This {est.deviation} deviation is a {est.severity} deduction per USAG standards.
                             </div>
                           </>
                         )}
-                        {bio?.notes && <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", lineHeight: 1.5, marginTop: 4 }}>{bio.notes}</div>}
+                        {bio?.notes && <div style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", lineHeight: 1.5, marginTop: 4 }}>{bio.notes}</div>}
                       </div>
                     ) : null;
                   })()}
@@ -4523,8 +4552,8 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFileRef, onBac
                   {/* What correct looks like */}
                   {hasDed && estimated && (
                     <div style={{ padding: "8px 10px", borderRadius: 8, marginBottom: 8, background: "rgba(34,197,94,0.02)", border: "1px solid rgba(34,197,94,0.05)" }}>
-                      <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(34,197,94,0.5)", letterSpacing: 0.5, marginBottom: 4 }}>WHAT CORRECT LOOKS LIKE</div>
-                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", lineHeight: 1.6 }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(34,197,94,0.5)", letterSpacing: 0.5, marginBottom: 4 }}>WHAT CORRECT LOOKS LIKE</div>
+                      <div style={{ fontSize: 14, color: "rgba(255,255,255,0.45)", lineHeight: 1.6 }}>
                         {estimated.joint === "Knee" && "Legs completely straight with kneecaps locked back. No visible bend when viewed from the side."}
                         {estimated.joint === "Hips" && "Legs pressed together with no visible gap. Inner thighs, knees, and ankles touching throughout."}
                         {estimated.joint === "Hip" && "Full 180° split or flat body line with no visible pike at the hips."}
@@ -4543,15 +4572,15 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFileRef, onBac
                   {/* Clean skill — what was good */}
                   {!hasDed && (s.correction || s.verdict === "strength") && (
                     <div style={{ padding: "10px 12px", borderRadius: 10, marginBottom: 8, background: "rgba(34,197,94,0.04)", border: "1px solid rgba(34,197,94,0.06)" }}>
-                      <div style={{ fontSize: 10, fontWeight: 700, color: "#22c55e", letterSpacing: 0.5, marginBottom: 4 }}>WELL EXECUTED</div>
-                      <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>{s.correction || "Clean execution — no deductions taken."}</div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: "#22c55e", letterSpacing: 0.5, marginBottom: 4 }}>WELL EXECUTED</div>
+                      <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>{s.correction || "Clean execution — no deductions taken."}</div>
                     </div>
                   )}
 
                   {/* Skeleton overlay — simplified, only when data exists */}
                   {s.skeleton && s.skeleton.joints && (
                     <div style={{ marginBottom: 8, borderRadius: 10, overflow: "hidden", background: "rgba(0,0,0,0.2)", padding: 8, position: "relative", height: 120 }}>
-                      <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.15)", letterSpacing: 0.5, marginBottom: 4 }}>BODY POSITION</div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.15)", letterSpacing: 0.5, marginBottom: 4 }}>BODY POSITION</div>
                       <SkeletonOverlay skeleton={s.skeleton} />
                     </div>
                   )}
@@ -4559,19 +4588,19 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFileRef, onBac
                   {/* Landing analysis */}
                   {landing && (
                     <div style={{ padding: "8px 10px", borderRadius: 8, marginBottom: 8, background: "rgba(196,152,42,0.03)", border: "1px solid rgba(196,152,42,0.06)" }}>
-                      <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(196,152,42,0.6)", letterSpacing: 0.5, marginBottom: 4 }}>LANDING</div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(196,152,42,0.6)", letterSpacing: 0.5, marginBottom: 4 }}>LANDING</div>
                       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                        {landing.kneeFlexionAtImpact && <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 4, background: "rgba(196,152,42,0.06)", color: "rgba(196,152,42,0.7)", fontFamily: "'Space Mono', monospace" }}>Knee: {landing.kneeFlexionAtImpact}°</span>}
-                        {landing.chestAngle && <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 4, background: "rgba(196,152,42,0.06)", color: "rgba(196,152,42,0.7)", fontFamily: "'Space Mono', monospace" }}>Chest: {landing.chestAngle}°</span>}
-                        {landing.stepsAfter != null && <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 4, background: landing.stepsAfter > 0 ? "rgba(239,68,68,0.06)" : "rgba(34,197,94,0.06)", color: landing.stepsAfter > 0 ? "rgba(239,68,68,0.7)" : "rgba(34,197,94,0.7)" }}>{landing.stepsAfter === 0 ? "Stuck!" : `${landing.stepsAfter} step${landing.stepsAfter > 1 ? "s" : ""}`}</span>}
+                        {landing.kneeFlexionAtImpact && <span style={{ fontSize: 14, padding: "2px 8px", borderRadius: 4, background: "rgba(196,152,42,0.06)", color: "rgba(196,152,42,0.7)", fontFamily: "'Space Mono', monospace" }}>Knee: {landing.kneeFlexionAtImpact}°</span>}
+                        {landing.chestAngle && <span style={{ fontSize: 14, padding: "2px 8px", borderRadius: 4, background: "rgba(196,152,42,0.06)", color: "rgba(196,152,42,0.7)", fontFamily: "'Space Mono', monospace" }}>Chest: {landing.chestAngle}°</span>}
+                        {landing.stepsAfter != null && <span style={{ fontSize: 14, padding: "2px 8px", borderRadius: 4, background: landing.stepsAfter > 0 ? "rgba(239,68,68,0.06)" : "rgba(34,197,94,0.06)", color: landing.stepsAfter > 0 ? "rgba(239,68,68,0.7)" : "rgba(34,197,94,0.7)" }}>{landing.stepsAfter === 0 ? "Stuck!" : `${landing.stepsAfter} step${landing.stepsAfter > 1 ? "s" : ""}`}</span>}
                       </div>
-                      {landing.notes && <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 4 }}>{landing.notes}</div>}
+                      {landing.notes && <div style={{ fontSize: 14, color: "rgba(255,255,255,0.35)", marginTop: 4 }}>{landing.notes}</div>}
                     </div>
                   )}
 
                   {/* Injury flag */}
                   {injury && (
-                    <div style={{ padding: "6px 10px", borderRadius: 8, marginBottom: 8, background: "rgba(239,68,68,0.04)", border: "1px solid rgba(239,68,68,0.08)", fontSize: 11, color: "rgba(239,68,68,0.7)" }}>
+                    <div style={{ padding: "6px 10px", borderRadius: 8, marginBottom: 8, background: "rgba(239,68,68,0.04)", border: "1px solid rgba(239,68,68,0.08)", fontSize: 14, color: "rgba(239,68,68,0.7)" }}>
                       {injury.reason} — {injury.recommendation}
                     </div>
                   )}
@@ -4579,16 +4608,16 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFileRef, onBac
                   {/* Correction / how to fix */}
                   {hasDed && s.correction && (
                     <div style={{ padding: "10px 12px", borderRadius: 10, marginBottom: 8, background: "rgba(34,197,94,0.03)", border: "1px solid rgba(34,197,94,0.06)" }}>
-                      <div style={{ fontSize: 9, fontWeight: 700, color: "#22c55e", letterSpacing: 0.5, marginBottom: 4 }}>HOW TO FIX</div>
-                      <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>{safeStr(s.correction)}</div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: "#22c55e", letterSpacing: 0.5, marginBottom: 4 }}>HOW TO FIX</div>
+                      <div style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>{safeStr(s.correction)}</div>
                     </div>
                   )}
 
                   {/* Specific drill recommendation */}
                   {hasDed && (drill || s.correction) && (
                     <div style={{ padding: "8px 10px", borderRadius: 8, marginBottom: 8, background: "rgba(139,92,246,0.03)", border: "1px solid rgba(139,92,246,0.06)" }}>
-                      <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(139,92,246,0.6)", letterSpacing: 0.5, marginBottom: 4 }}>DRILL FOR THIS FAULT</div>
-                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", lineHeight: 1.6 }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(139,92,246,0.6)", letterSpacing: 0.5, marginBottom: 4 }}>DRILL FOR THIS FAULT</div>
+                      <div style={{ fontSize: 14, color: "rgba(255,255,255,0.45)", lineHeight: 1.6 }}>
                         {drill || `Practice this skill with focus on ${safeStr(s.fault).substring(0, 40)}. Film and compare.`}
                       </div>
                     </div>
@@ -4602,7 +4631,7 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFileRef, onBac
                       setVideoOverlay({ skill: safeStr(s.skill), fault: safeStr(s.fault), deduction: safeNum(s.deduction, 0) });
                     }} style={{
                       width: "100%", padding: "8px 10px", borderRadius: 8, border: "1px solid rgba(196,152,42,0.12)",
-                      background: "rgba(196,152,42,0.03)", cursor: "pointer", fontSize: 10, fontWeight: 600,
+                      background: "rgba(196,152,42,0.03)", cursor: "pointer", fontSize: 14, fontWeight: 600,
                       color: "#C4982A", fontFamily: "'Outfit', sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
                     }}>
                       <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 1l7 4-7 4V1z" fill="currentColor"/></svg>
@@ -4624,9 +4653,9 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFileRef, onBac
         <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
           {safeArray(result.strengths).length > 0 && (
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(34,197,94,0.5)", letterSpacing: 0.5, marginBottom: 6 }}>STRENGTHS</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(34,197,94,0.5)", letterSpacing: 0.5, marginBottom: 6 }}>STRENGTHS</div>
               {safeArray(result.strengths).slice(0, 3).map((s, i) => (
-                <div key={i} style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", padding: "4px 0", lineHeight: 1.5 }}>
+                <div key={i} style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", padding: "4px 0", lineHeight: 1.5 }}>
                   <span style={{ color: "#22c55e", marginRight: 4 }}>✓</span>{safeStr(s).substring(0, 50)}
                 </div>
               ))}
@@ -4634,9 +4663,9 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFileRef, onBac
           )}
           {safeArray(result.areasForImprovement).length > 0 && (
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(245,158,11,0.5)", letterSpacing: 0.5, marginBottom: 6 }}>IMPROVE</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(245,158,11,0.5)", letterSpacing: 0.5, marginBottom: 6 }}>IMPROVE</div>
               {safeArray(result.areasForImprovement).slice(0, 3).map((a, i) => (
-                <div key={i} style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", padding: "4px 0", lineHeight: 1.5 }}>
+                <div key={i} style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", padding: "4px 0", lineHeight: 1.5 }}>
                   <span style={{ color: "#f59e0b", marginRight: 4 }}>▲</span>{safeStr(a).substring(0, 50)}
                 </div>
               ))}
@@ -4647,8 +4676,8 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFileRef, onBac
         {/* ═══ ASSESSMENT ═══ */}
         {(result.overallAssessment || result.truthAnalysis) && (
           <div style={{ marginBottom: 14, padding: "12px 14px", borderRadius: 14, background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.03)" }}>
-            <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(196,152,42,0.4)", letterSpacing: 0.5, marginBottom: 6 }}>JUDGE'S ASSESSMENT</div>
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: 1.7 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(196,152,42,0.4)", letterSpacing: 0.5, marginBottom: 6 }}>JUDGE'S ASSESSMENT</div>
+            <div style={{ fontSize: 16, color: "rgba(255,255,255,0.45)", lineHeight: 1.7 }}>
               {safeStr(result.overallAssessment || result.truthAnalysis).substring(0, 500)}
             </div>
           </div>
@@ -4658,18 +4687,18 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFileRef, onBac
         <div style={{ marginBottom: 14, padding: "12px 14px", borderRadius: 14, background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.03)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.15)", letterSpacing: 0.5, marginBottom: 6 }}>ACTUAL MEET SCORE</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.15)", letterSpacing: 0.5, marginBottom: 6 }}>ACTUAL MEET SCORE</div>
               <input className="input-field" type="number" step="0.025" min="0" max="10" placeholder="8.925"
                 value={actualScore} onChange={(e) => { setActualScore(e.target.value); setScoreSaved(false); }}
                 onClick={(e) => e.stopPropagation()}
-                style={{ padding: "10px 12px", fontSize: 15, fontFamily: "'Space Mono', monospace", fontWeight: 700 }} />
+                style={{ padding: "10px 12px", fontSize: 18, fontFamily: "'Space Mono', monospace", fontWeight: 700 }} />
             </div>
             {hasDiff && (
               <div style={{ textAlign: "center", minWidth: 65 }}>
                 <div style={{ fontSize: 18, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: Math.abs(diff) < 0.15 ? "#22c55e" : Math.abs(diff) < 0.4 ? "#f59e0b" : "#ef4444" }}>
                   {diff > 0 ? "+" : ""}{diff.toFixed(2)}
                 </div>
-                <div style={{ fontSize: 8, color: "rgba(255,255,255,0.25)" }}>{Math.abs(diff) < 0.15 ? "Accurate" : Math.abs(diff) < 0.4 ? "Close" : "Off"}</div>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.25)" }}>{Math.abs(diff) < 0.15 ? "Accurate" : Math.abs(diff) < 0.4 ? "Close" : "Off"}</div>
               </div>
             )}
           </div>
@@ -4679,11 +4708,11 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFileRef, onBac
                 data.push({ date: new Date().toISOString(), event: result.event, level: result.level, aiScore: result.finalScore, actualScore: actualNum, diff });
                 await storage.set("strive-calibration", JSON.stringify(data.slice(-50)));
               } catch {} setScoreSaved(true);
-            }} className="btn-outline" style={{ width: "100%", marginTop: 8, padding: "8px", fontSize: 11 }}>
+            }} className="btn-outline" style={{ width: "100%", marginTop: 8, padding: "8px", fontSize: 14 }}>
               {Math.abs(diff) >= 0.3 ? "Submit Score Correction" : "Save — helps calibrate"}
             </button>
           )}
-          {hasDiff && Math.abs(diff) >= 0.3 && !scoreSaved && (<div style={{ fontSize: 11, color: "rgba(245,158,11,0.7)", marginTop: 6, lineHeight: 1.5, padding: "6px 10px", borderRadius: 8, background: "rgba(245,158,11,0.04)" }}>Score differs by {Math.abs(diff).toFixed(2)}. Submitting helps calibrate future analyses.</div>)}
+          {hasDiff && Math.abs(diff) >= 0.3 && !scoreSaved && (<div style={{ fontSize: 14, color: "rgba(245,158,11,0.7)", marginTop: 6, lineHeight: 1.5, padding: "6px 10px", borderRadius: 8, background: "rgba(245,158,11,0.04)" }}>Score differs by {Math.abs(diff).toFixed(2)}. Submitting helps calibrate future analyses.</div>)}
         </div>
 
         {/* ═══ PRO (collapsible) ═══ */}
@@ -4691,7 +4720,7 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFileRef, onBac
           width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
           padding: "12px 14px", borderRadius: 14, marginBottom: 6,
           background: "rgba(139,92,246,0.02)", border: "1px solid rgba(139,92,246,0.06)",
-          cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 12, fontWeight: 600,
+          cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 16, fontWeight: 600,
           color: isPro ? "rgba(167,139,250,0.7)" : "rgba(255,255,255,0.3)",
         }}>
           <span>{isPro ? "Advanced analysis" : "Pro features"}</span>
@@ -4711,10 +4740,10 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFileRef, onBac
             ) : (
               <div style={{ padding: 16, borderRadius: 14, textAlign: "center", background: "rgba(139,92,246,0.02)", border: "1px solid rgba(139,92,246,0.06)" }}>
                 <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>Unlock full analysis</div>
-                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginBottom: 14 }}>Biomechanics, training, what-if, diagnostics</div>
+                <div style={{ fontSize: 14, color: "rgba(255,255,255,0.3)", marginBottom: 14 }}>Biomechanics, training, what-if, diagnostics</div>
                 <button onClick={() => { try { localStorage.setItem("strive-tier", "pro"); } catch {} window.location.reload(); }} style={{
                   background: "linear-gradient(135deg, #8B5CF6, #A78BFA)", color: "#FFF", border: "none",
-                  padding: "10px 28px", borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "'Outfit', sans-serif",
+                  padding: "10px 28px", borderRadius: 10, fontWeight: 700, fontSize: 16, cursor: "pointer", fontFamily: "'Outfit', sans-serif",
                 }}>Upgrade</button>
               </div>
             )}
@@ -4737,7 +4766,7 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFileRef, onBac
           lines.push("— Generated by STRIVE");
           const fullText = lines.join("\n");
           if (navigator.clipboard) navigator.clipboard.writeText(fullText).then(() => alert("Analysis copied to clipboard! Paste into a message to your coach.")).catch(() => {});
-        }} style={{ width: "100%", fontSize: 12, padding: 12, marginTop: 6, borderColor: "rgba(196,152,42,0.2)", color: "#C4982A" }}>
+        }} style={{ width: "100%", fontSize: 16, padding: 12, marginTop: 6, borderColor: "rgba(196,152,42,0.2)", color: "#C4982A" }}>
           Copy Analysis for Coach
         </button>
         <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
@@ -4747,8 +4776,8 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFileRef, onBac
               "", "strive-app-amber.vercel.app"].join("\n");
             if (navigator.share) navigator.share({ title: `STRIVE ${result.event}`, text }).catch(() => {});
             else if (navigator.clipboard) navigator.clipboard.writeText(text).then(() => alert("Copied!"));
-          }} style={{ flex: 1, fontSize: 11, padding: 10 }}>Share</button>
-          <button className="btn-outline" onClick={onBack} style={{ flex: 1, fontSize: 11, padding: 10 }}>New analysis</button>
+          }} style={{ flex: 1, fontSize: 14, padding: 10 }}>Share</button>
+          <button className="btn-outline" onClick={onBack} style={{ flex: 1, fontSize: 14, padding: 10 }}>New analysis</button>
         </div>
       </div>
     </div>
@@ -6107,7 +6136,7 @@ function BodyHeatmap({ deductions }) {
     // Check faultJoints from skeleton
     const fj = d.skeleton?.faultJoints || [];
     fj.forEach(j => {
-      const jl = j.toLowerCase();
+      const jl = String(j || "").toLowerCase();
       if (jl.includes("ankle")) allBodyPoints.push("ankles");
       else if (jl.includes("knee")) allBodyPoints.push("knees");
       else if (jl.includes("hip")) allBodyPoints.push("hips");
@@ -6117,7 +6146,7 @@ function BodyHeatmap({ deductions }) {
     });
 
     allBodyPoints.forEach(bp => {
-      const bl = bp.toLowerCase();
+      const bl = String(bp || "").toLowerCase();
       if (bl.includes("ankle") || bl.includes("foot") || bl.includes("feet") || bl.includes("toe")) hits.push("ankles");
       else if (bl.includes("knee")) hits.push("knees");
       else if (bl.includes("hip") || bl.includes("core") || bl.includes("split")) hits.push("hips");

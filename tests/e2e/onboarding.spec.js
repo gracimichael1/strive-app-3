@@ -65,19 +65,7 @@ test('complete onboarding flow', async ({ page }) => {
     }
   }
 
-  // Step 4: Select events
-  const floorBtn = page.locator('text=/Floor Exercise/i').first();
-  if (await floorBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
-    await floorBtn.click();
-    await page.waitForTimeout(300);
-    const contBtn = page.locator('button:has-text("Continue")').first();
-    if (await contBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await contBtn.click();
-      await page.waitForTimeout(300);
-    }
-  }
-
-  // Step 5: Goals — click "Start analyzing"
+  // Step 4: Goals — click "Start analyzing" (events step was removed — auto-populated)
   const startAnalyzingBtn = page.locator('button:has-text("Start analyzing"), button:has-text("Continue"), button:has-text("Finish")').first();
   if (await startAnalyzingBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
     await startAnalyzingBtn.click();
