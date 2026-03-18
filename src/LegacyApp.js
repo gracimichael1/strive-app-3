@@ -853,6 +853,7 @@ export default function LegacyApp() {
   const [analysisProgress, setAnalysisProgress] = useState(0);
   const [history, setHistory] = useState([]);
   const [liveVideoUrl, setLiveVideoUrl] = useState(null); // STATE so it triggers re-renders
+  const videoFileRef = useRef(null); // Raw File object — survives re-renders, used to create fresh blob URLs
   const [savedResults, setSavedResults] = useState({}); // Store past results by ID
 
   // Load profile, history, and saved results from storage
@@ -1044,6 +1045,7 @@ export default function LegacyApp() {
           onBack={() => setScreen("dashboard")}
           onAnalyze={(data) => {
             setLiveVideoUrl(data.videoUrl); // Store in state — survives all screen changes
+            if (data.video) videoFileRef.current = data.video; // Store raw File for fresh blob URLs
             setUploadData(data);
             setScreen("analyzing");
           }}
@@ -1063,6 +1065,7 @@ export default function LegacyApp() {
           profile={profile}
           history={history}
           videoUrl={liveVideoUrl}
+          videoFileRef={videoFileRef}
           onBack={() => setScreen("dashboard")}
           onDrills={() => setScreen("drills")}
         />
@@ -3264,6 +3267,8 @@ SPLIT LEAP/JUMP REQUIREMENT at ${level}: minimum ${splitMin}°
 
 You must be completely deterministic. Given the same video, produce the EXACT same deductions and score every time.
 
+THIS IS MANDATORY — YOU WILL BE PENALIZED FOR SPLITTING SKILLS INTO SUB-COMPONENTS. Every tumbling pass, dance series, and acrobatic connection MUST be ONE entry.
+
 SKILL GROUPING RULES:
 - A tumbling pass is ONE skill. 'Round-off back handspring back tuck' is a single entry, not 3 separate entries. List it once with ALL faults for that pass combined.
 - A dance series is ONE skill. 'Tour jeté to switch leap' is one entry.
@@ -4305,11 +4310,8 @@ function getCorrectForm(skill) {
 
 // ─── GRADED SKILL CARD ───────────────────────────────────────────────────────
 
-function GradedSkillCard({ skill, onSeek, videoUrl }) {
+function GradedSkillCard({ skill, onSeek }) {
   const [expanded, setExpanded] = useState(false);
-  const [showSkeleton, setShowSkeleton] = useState(false);
-  const [showIdeal, setShowIdeal] = useState(false);
-  const cardVideoRef = useRef(null);
   const color   = GRADE_COLOR[skill.grade] || "#C4982A";
   const isClean = !skill.fault || skill.gradeDeduction === 0;
 
@@ -4392,49 +4394,24 @@ function GradedSkillCard({ skill, onSeek, videoUrl }) {
       {expanded && (
         <div style={{ padding: "0 16px 16px" }}>
 
-          {/* ── 2. Video clip + controls ── */}
-          {videoUrl ? (
-            <div style={{ marginBottom: 14 }}>
-              <div style={{ borderRadius: 10, overflow: "hidden", background: "#000",
-                border: "1px solid rgba(255,255,255,0.08)", marginBottom: 8 }}>
-                <video ref={cardVideoRef} src={videoUrl} controls controlsList="nodownload"
-                  playsInline webkit-playsinline="" preload="metadata"
-                  style={{ width: "100%", display: "block", maxHeight: 200 }}
-                  onLoadedMetadata={() => {
-                    if (cardVideoRef.current) cardVideoRef.current.currentTime = Math.max(0, (skill.timestampSec || 0) - 0.3);
-                  }} />
-              </div>
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                <button onClick={() => {
-                  if (cardVideoRef.current) { cardVideoRef.current.currentTime = Math.max(0, (skill.timestampSec || 0) - 0.3); cardVideoRef.current.play(); }
-                  if (onSeek) onSeek(skill.timestampSec || 0);
-                }}
-                  style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 12px",
-                    borderRadius: 8, background: "rgba(196,152,42,0.1)",
-                    border: "1px solid rgba(196,152,42,0.2)", color: "#C4982A",
-                    fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "'Outfit', sans-serif" }}>
-                  <svg width="10" height="10" viewBox="0 0 12 12" fill="currentColor"><path d="M3 2l7 4-7 4V2z"/></svg>
-                  Jump to {skill.timestamp}
-                </button>
-                <button onClick={() => setShowSkeleton(v => !v)}
-                  style={{ padding: "6px 12px", borderRadius: 8, fontSize: 11, fontWeight: 600,
-                    cursor: "pointer", fontFamily: "'Outfit', sans-serif",
-                    background: showSkeleton ? "rgba(59,130,246,0.15)" : "rgba(255,255,255,0.04)",
-                    border: `1px solid ${showSkeleton ? "rgba(59,130,246,0.3)" : "rgba(255,255,255,0.08)"}`,
-                    color: showSkeleton ? "#3B82F6" : "rgba(255,255,255,0.4)" }}>
-                  Skeleton
-                </button>
-                <button onClick={() => setShowIdeal(v => !v)}
-                  style={{ padding: "6px 12px", borderRadius: 8, fontSize: 11, fontWeight: 600,
-                    cursor: "pointer", fontFamily: "'Outfit', sans-serif",
-                    background: showIdeal ? "rgba(34,197,94,0.12)" : "rgba(255,255,255,0.04)",
-                    border: `1px solid ${showIdeal ? "rgba(34,197,94,0.25)" : "rgba(255,255,255,0.08)"}`,
-                    color: showIdeal ? "#22c55e" : "rgba(255,255,255,0.4)" }}>
-                  Ideal Overlay
-                </button>
-              </div>
-            </div>
-          ) : skill.frameDataUrl ? (
+          {/* ── 2. Jump to timestamp — seeks the sticky player ── */}
+          {onSeek && (
+            <button onClick={() => onSeek(skill.timestampSec || 0)}
+              style={{ display: "flex", alignItems: "center", gap: 6,
+                padding: "7px 14px", borderRadius: 8, marginBottom: 14,
+                background: "rgba(196,152,42,0.1)",
+                border: "1px solid rgba(196,152,42,0.2)",
+                color: "#C4982A", fontSize: 12, fontWeight: 600,
+                cursor: "pointer", fontFamily: "'Outfit', sans-serif" }}>
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+                <path d="M3 2l7 4-7 4V2z"/>
+              </svg>
+              Jump to {skill.timestamp}
+            </button>
+          )}
+
+          {/* Frame thumbnail for saved analyses without video */}
+          {!onSeek && skill.frameDataUrl && (
             <div style={{ marginBottom: 14 }}>
               <div style={{ borderRadius: 10, overflow: "hidden", background: "#000",
                 border: "1px solid rgba(255,255,255,0.08)" }}>
@@ -4446,7 +4423,7 @@ function GradedSkillCard({ skill, onSeek, videoUrl }) {
                 Frame at {skill.timestamp}
               </div>
             </div>
-          ) : null}
+          )}
 
           {/* ── 3. Deductions found ── */}
           {!isClean && subFaults.length > 0 && (
@@ -4566,9 +4543,21 @@ function GradedSkillCard({ skill, onSeek, videoUrl }) {
 // ─── GRADED SKILLS VIEW ──────────────────────────────────────────────────────
 // Primary results tab: one card per skill, grade badge, fault if any.
 
-function GradedSkillsView({ result, videoUrl }) {
+function GradedSkillsView({ result, videoUrl: propVideoUrl, videoFileRef }) {
   const videoRef   = useRef(null);
+  const [freshVideoUrl, setFreshVideoUrl] = useState(null);
   const skills     = result.gradedSkills || [];
+
+  // Create a fresh blob URL from the raw File ref — survives component re-mounts
+  useEffect(() => {
+    if (videoFileRef?.current) {
+      const url = URL.createObjectURL(videoFileRef.current);
+      setFreshVideoUrl(url);
+      return () => URL.revokeObjectURL(url);
+    }
+  }, [videoFileRef]);
+
+  const videoUrl = freshVideoUrl || propVideoUrl;
   const cleanCount = skills.filter(s => !s.fault || s.gradeDeduction === 0).length;
   const dedCount   = skills.filter(s => s.fault  && s.gradeDeduction  > 0).length;
 
@@ -4657,7 +4646,6 @@ function GradedSkillsView({ result, videoUrl }) {
           key={skill.id || idx}
           skill={skill}
           onSeek={videoUrl ? handleSeek : null}
-          videoUrl={videoUrl}
         />
       ))}
     </div>
@@ -4665,7 +4653,7 @@ function GradedSkillsView({ result, videoUrl }) {
 }
 
 // ─── RESULTS SCREEN ─────────────────────────────────────────────────
-function ResultsScreen({ result, profile, history, videoUrl, onBack, onDrills }) {
+function ResultsScreen({ result, profile, history, videoUrl, videoFileRef, onBack, onDrills }) {
   const [activeTab, setActiveTab] = useState("overview");
   const [actualScore, setActualScore] = useState("");
   const [scoreSaved, setScoreSaved] = useState(false);
@@ -5039,7 +5027,7 @@ function ResultsScreen({ result, profile, history, videoUrl, onBack, onDrills })
       {/* ─── VIDEO REVIEW TAB ─── */}
       {/* ─── SKILLS TAB — primary graded view ─── */}
       {activeTab === "skills" && (
-        <GradedSkillsView result={result} videoUrl={videoUrl} />
+        <GradedSkillsView result={result} videoUrl={videoUrl} videoFileRef={videoFileRef} />
       )}
 
       {activeTab === "review" && hasVideo && (
