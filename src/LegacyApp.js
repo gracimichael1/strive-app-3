@@ -3103,7 +3103,7 @@ function AnalyzingScreen({ uploadData, profile, onComplete, onBack }) {
 
   // ── Gemini Generate — call the model with an uploaded file ──
   const geminiGenerate = useCallback(async (fileRef, prompt, apiKey, config = {}) => {
-    const { maxOutputTokens = 65536, thinkingBudget = 24576, label = "analysis" } = config;
+    const { label = "analysis" } = config;
     log.info("gemini", `[${label}] Sending prompt (${prompt.length} chars)`);
 
     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
@@ -3122,7 +3122,6 @@ function AnalyzingScreen({ uploadData, profile, onComplete, onBack }) {
           topK: 1,
           maxOutputTokens: 8000,
           responseMimeType: "application/json",
-          thinkingConfig: { thinkingBudget },
         },
       }),
     });
@@ -3376,8 +3375,6 @@ Respond with valid JSON only — no markdown, no extra text:
       for (let attempt = 1; attempt <= 2; attempt++) {
         try {
           rawResponse = await geminiGenerate(fileRef, prompt, apiKey, {
-            maxOutputTokens: 8192,
-            thinkingBudget:  8192,
             label: `judge-${profile.level}-attempt${attempt}`,
           });
           if (rawResponse && rawResponse.length > 100 && rawResponse.includes('"skills"')) break;
@@ -4315,10 +4312,16 @@ function GradedSkillCard({ skill, onSeek }) {
   const color   = GRADE_COLOR[skill.grade] || "#C4982A";
   const isClean = !skill.fault || skill.gradeDeduction === 0;
 
-  // Parse sub-faults from reason text (split on semicolons or periods for compound faults)
+  // Parse sub-faults from reason text.
+  // Split on semicolons or sentence-ending periods, but NOT periods inside parentheses
+  // like "(-0.05)" or decimal numbers like "0.10".
   const subFaults = (() => {
     if (!skill.fault) return [];
-    const parts = skill.fault.split(/[;.]/).map(s => s.trim()).filter(Boolean);
+    // Split on "; " or ". " but only when the period is NOT inside parentheses or a number
+    const parts = skill.fault
+      .split(/;\s*|(?<!\d)\.(?!\d)(?![^(]*\))\s+/)
+      .map(s => s.trim().replace(/\.$/, ""))
+      .filter(s => s.length > 3);
     if (parts.length <= 1) return [{ text: skill.fault, amount: skill.gradeDeduction || 0 }];
     // Distribute total deduction roughly across sub-faults
     const each = Math.round(((skill.gradeDeduction || 0) / parts.length) * 100) / 100;
