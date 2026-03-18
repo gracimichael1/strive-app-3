@@ -853,7 +853,8 @@ export default function LegacyApp() {
   const [analysisProgress, setAnalysisProgress] = useState(0);
   const [history, setHistory] = useState([]);
   const [liveVideoUrl, setLiveVideoUrl] = useState(null); // STATE so it triggers re-renders
-  const videoFileRef = useRef(null); // Raw File object — survives re-renders, used to create fresh blob URLs
+  const videoFileRef = useRef(null); // Raw File object — survives re-renders
+  const videoBlobRef = useRef(null); // Stable blob URL — created once at upload, never revoked until new upload
   const [savedResults, setSavedResults] = useState({}); // Store past results by ID
 
   // Load profile, history, and saved results from storage
@@ -1044,8 +1045,14 @@ export default function LegacyApp() {
           profile={profile}
           onBack={() => setScreen("dashboard")}
           onAnalyze={(data) => {
-            setLiveVideoUrl(data.videoUrl); // Store in state — survives all screen changes
-            if (data.video) videoFileRef.current = data.video; // Store raw File for fresh blob URLs
+            // Revoke previous blob URL if any
+            if (videoBlobRef.current) { try { URL.revokeObjectURL(videoBlobRef.current); } catch {} }
+            // Store File and create a single stable blob URL that persists across all screens
+            if (data.video) {
+              videoFileRef.current = data.video;
+              videoBlobRef.current = URL.createObjectURL(data.video);
+            }
+            setLiveVideoUrl(videoBlobRef.current || data.videoUrl);
             setUploadData(data);
             setScreen("analyzing");
           }}
@@ -1065,7 +1072,6 @@ export default function LegacyApp() {
           profile={profile}
           history={history}
           videoUrl={liveVideoUrl}
-          videoFileRef={videoFileRef}
           onBack={() => setScreen("dashboard")}
           onDrills={() => setScreen("drills")}
         />
@@ -4597,24 +4603,9 @@ function GradedSkillCard({ skill, onSeek }) {
 // ─── GRADED SKILLS VIEW ──────────────────────────────────────────────────────
 // Primary results tab: one card per skill, grade badge, fault if any.
 
-function GradedSkillsView({ result, videoUrl: propVideoUrl, videoFileRef }) {
+function GradedSkillsView({ result, videoUrl }) {
   const videoRef   = useRef(null);
-  const [freshVideoUrl, setFreshVideoUrl] = useState(null);
   const skills     = result.gradedSkills || [];
-
-  // Create a fresh blob URL from the raw File ref — survives component re-mounts
-  // propVideoUrl as dependency ensures we re-evaluate when the parent URL changes
-  useEffect(() => {
-    if (videoFileRef?.current) {
-      const url = URL.createObjectURL(videoFileRef.current);
-      setFreshVideoUrl(url);
-      return () => URL.revokeObjectURL(url);
-    } else if (propVideoUrl) {
-      setFreshVideoUrl(null); // fall through to propVideoUrl
-    }
-  }, [videoFileRef, propVideoUrl]);
-
-  const videoUrl = freshVideoUrl || propVideoUrl;
   const cleanCount = skills.filter(s => !s.fault || s.gradeDeduction === 0).length;
   const dedCount   = skills.filter(s => s.fault  && s.gradeDeduction  > 0).length;
 
@@ -4628,7 +4619,9 @@ function GradedSkillsView({ result, videoUrl: propVideoUrl, videoFileRef }) {
     const v = videoRef.current;
     if (!v) return;
     v.currentTime = Math.max(0, sec - 0.3);
-    v.pause();
+    v.play().catch(() => {});
+    // Scroll sticky player into view
+    v.scrollIntoView({ behavior: "smooth", block: "nearest" });
   };
 
   if (skills.length === 0) {
@@ -4711,7 +4704,7 @@ function GradedSkillsView({ result, videoUrl: propVideoUrl, videoFileRef }) {
 }
 
 // ─── RESULTS SCREEN ─────────────────────────────────────────────────
-function ResultsScreen({ result, profile, history, videoUrl, videoFileRef, onBack, onDrills }) {
+function ResultsScreen({ result, profile, history, videoUrl, onBack, onDrills }) {
   const [activeTab, setActiveTab] = useState("overview");
   const [actualScore, setActualScore] = useState("");
   const [scoreSaved, setScoreSaved] = useState(false);
@@ -5085,7 +5078,7 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFileRef, onBac
       {/* ─── VIDEO REVIEW TAB ─── */}
       {/* ─── SKILLS TAB — primary graded view ─── */}
       {activeTab === "skills" && (
-        <GradedSkillsView result={result} videoUrl={videoUrl} videoFileRef={videoFileRef} />
+        <GradedSkillsView result={result} videoUrl={videoUrl} />
       )}
 
       {activeTab === "review" && hasVideo && (
