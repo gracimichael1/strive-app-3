@@ -4201,13 +4201,19 @@ LANDING FAULTS — judge every landing separately:
   Chest drop / posture:       0.05–0.20`;
 
     const artistryStandards = `
-ARTISTRY FAULTS — use "Global" timestamp:
-  Hollow hands / poor finger lines: 0.05
-  No eye contact with judges:       0.05
-  Lack of confidence / hesitation:  0.05–0.10
-  Poor musicality / rhythm (Floor): 0.05–0.20
-  Flat footwork / no releve:        0.05–0.10
-  Insufficient use of space (Floor):0.05–0.10`;
+ARTISTRY & COMPOSITION FAULTS — use "Global" timestamp. These are MANDATORY to evaluate:
+  Hollow hands / limp wrists / poor finger lines:  0.05 per occurrence
+  No eye contact with judges / lack of presentation: 0.05–0.10
+  Lack of confidence / hesitation before skills:    0.05–0.10
+  Poor musicality / rhythm (Floor):                 0.05–0.20
+  Flat footwork / no relevé in dance elements:      0.05–0.10
+  Insufficient use of floor space:                  0.05–0.10
+  Arms "tossed" rather than placed with intention:  0.05
+  Energy drops between skills:                      0.05–0.10
+  Flexed feet/toes throughout (cumulative):         0.05 per occurrence (count each)
+  Lack of finger-tip to toe-tip engagement:         0.05–0.15
+  Rushed choreography / no performance quality:     0.10–0.20
+  NOTE: Artistry deductions typically total 0.15–0.40 for youth routines. If you have 0.00 artistry deductions, you are WRONG — re-evaluate.`;
 
     const splitStandard = `
 SPLIT LEAP/JUMP REQUIREMENT at ${level}: minimum ${splitMin}°
@@ -4226,19 +4232,31 @@ ${programContext}
 ${skillsLine}
 ${benchLine}
 
-CRITICAL SCORING RULES — READ BEFORE ANALYZING:
+CRITICAL SCORING RULES — STRICT BREVET-LEVEL JUDGING:
 
-1. You are calibrated to score SLIGHTLY below a real competition panel — by 0.05 to 0.15 points MAXIMUM. Not 0.3. Not 0.5. Just barely stricter.
+1. You are a Brevet-level USAG Official at a State Championship. Judge STRICTLY. Do NOT give benefit of the doubt. If you see a fault, deduct it.
 
-2. TOTAL DEDUCTIONS CAP: For a youth/Xcel routine, your total execution deductions should be between 0.80 and 1.30. If your deductions add up to more than 1.40, you are TOO STRICT — go back and remove your smallest/most borderline deductions until you are under 1.40.
+2. DEDUCTIONS ARE SUBTRACTIVE FROM 10.0. A typical "good" routine at this level has 0.70-0.90 total deductions (final score 9.1-9.3). An average routine has 0.90-1.30 total deductions (final score 8.7-9.0). A rough routine has 1.30-1.80+ total deductions (below 8.5). If you find fewer than 5 deductions on a 90-second floor routine, YOU ARE MISSING FAULTS.
 
-3. DEDUCTION COUNT: A typical routine has 6-10 deductions. Not 15. Not 20. If you have more than 12, consolidate or remove the weakest ones.
+3. ARTISTRY DEDUCTIONS ARE MANDATORY — these are the "hidden" deductions where scores drop. You MUST evaluate:
+   - Finger-tip to toe-tip engagement (hollow hands, limp wrists = 0.05 each)
+   - Eye contact with judges (lack of presentation = 0.05-0.10)
+   - Rhythm and tempo (hesitation before passes, "thinking" instead of performing = 0.05-0.10)
+   - Musicality (movements not matching music = 0.05-0.20)
+   - Flat footwork / no relevé in dance (0.05-0.10)
+   - Insufficient use of floor space (0.05-0.10)
+   - Lack of confidence / energy drops (0.05-0.10)
+   Artistry deductions typically total 0.15-0.40 for youth routines. If your artistry deductions total 0.00, you are NOT judging artistry.
 
-4. ONLY DEDUCT WHAT YOU CAN CLEARLY SEE. If you cannot clearly see the fault in the video — bad angle, too far away, motion blur — do NOT deduct. Give benefit of the doubt on borderline calls.
+4. ACCUMULATED MICRO-DEDUCTIONS: "Death by a thousand 0.05s" is real in gymnastics. Flexed feet throughout a routine is NOT one 0.05 deduction — it is 0.05 for EACH occurrence. Count them individually.
 
-5. Small faults (flexed feet, slight knee bend) are 0.05 EACH, not 0.10. Do not inflate small faults.
+5. LANDING DEDUCTIONS ARE STRICT: Deep squat with chest down = 0.20-0.30 (not 0.10). A step is always at least 0.05. A lunge or large adjustment is 0.20-0.30.
 
-6. BEFORE FINALIZING: Add up your deductions. If the final score would be below 8.50 for a routine that looks generally competent, you have over-deducted. Remove deductions until the score is in the 8.50-9.20 range for a typical youth routine.
+6. SPLIT/LEAP AMPLITUDE: Measure against the level requirement. If the split leap does not reach the required angle, it is an automatic 0.10-0.20 deduction regardless of other quality.
+
+7. ONLY DEDUCT WHAT YOU CAN SEE IN THE VIDEO. If a fault is genuinely not visible due to camera angle, do not deduct it. But do not use video quality as an excuse to skip obvious faults.
+
+8. VALIDATION CHECK: After totaling all deductions, your final score should align with what a strict state-championship panel would give. If your score is 0.50+ above what looks right for the routine quality, you are being too lenient — go back and find the faults you missed.
 
 You must be completely deterministic. Given the same video, produce the EXACT same deductions and score every time.
 
@@ -4290,7 +4308,13 @@ Example lines:
 0:53 | Full turn | dance | 0.00 | Clean | Excellent center of gravity — no wobble
 Global | Artistry | artistry | 0.10 | Hollow fingertips; limited eye contact with judges | Good musicality
 
-SCORING CALIBRATION: A real meet score of 8.935 means approximately 1.05 in total execution deductions. If you find fewer than 5 deductions on a 90-second floor routine, you are missing faults. Be a strict Brevet-level judge. Score 0.05-0.15 BELOW what a lenient judge would give.
+SCORING CALIBRATION — CRITICAL:
+- A real meet score of 8.925 means approximately 1.075 in total deductions (execution + artistry + composition).
+- A routine scoring 9.1-9.3 at a meet has 0.70-0.90 total deductions with 6-8 faults.
+- A routine scoring 8.7-9.0 at a meet has 0.90-1.30 total deductions with 8-12 faults.
+- A routine scoring below 8.5 has 1.30-1.80+ total deductions with 10-15+ faults.
+- If you find fewer than 6 faults on ANY routine, you are missing deductions. Go back and look harder at artistry, feet, landings, and amplitude.
+- You are a STRICT Brevet-level judge. The goal is to match real competition scoring, not to make the gymnast feel good. Accurate feedback helps them improve.
 
 DETERMINISTIC SCORING — MANDATORY:
 1. Each deduction MUST be exactly one of: 0.00, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.50. No other values.
