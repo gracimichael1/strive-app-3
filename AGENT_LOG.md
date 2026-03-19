@@ -233,3 +233,74 @@ Tab contents:
 - `src/components/timeline/SkillTimeline.js` — Color migration
 - `src/components/analysis/SkillCard.js` — Color migration
 - `src/components/video/VideoAnalyzer.js` — Color migration
+
+---
+
+## Phase 4 — Agent Delta: Intelligence Layer
+
+### Gamma Compatibility Check (2026-03-19)
+Gamma's UI creates the visual scaffolding but the intelligence sections use hardcoded values:
+- **Season Goal Tracker**: Hardcoded `target = 9.0` and `weeksLeft = 12`. No connection to athlete-specific goals.
+- **Context Strip**: Hardcoded `goalScore = 9.0` and `divisionAvg` estimated from current score tier, not real data.
+- **Improvement Potential**: Pulls from real `groupedDeds` in the current analysis — this is correct.
+- **Areas for Improvement**: Pulls from real `groupedDeds` — correct, but no cross-analysis intelligence.
+- **No cross-analysis data**: No fault tracking across analyses, no trend detection, no personalized drill plans.
+
+All Gamma sections were preserved and enhanced with real data bindings rather than replaced.
+
+### Implementation Results
+
+**FIX 1 — ATHLETE PROFILE PERSISTENCE**: DONE.
+- Per-athlete localStorage records keyed by `strive_athlete_{btoa(name)}`.
+- Schema: name, gender, level, events, coachName, gymName, seasonGoals, analysisHistory[], faultHistory[].
+- Helper functions: `getAthleteRecord()`, `saveAthleteRecord()`, `saveAnalysisToHistory()`.
+- `saveAnalysisToHistory()` hooked into `handleAnalysisComplete()` — auto-saves after every analysis.
+- Fault extraction: iterates `result.gradedSkills`, normalizes fault types via `normalizeFaultType()`.
+- 15 normalized fault categories: bent_arms, bent_knees, leg_separation, toe_point, step_landing, fall, wobble, body_angle, split_angle, alignment, upper_body, timing, arch, landing, other.
+- History bounded: last 100 analyses, last 500 faults.
+
+**FIX 2 — FAULT INTELLIGENCE**: DONE.
+- `computeFaultIntelligence(athleteRecord)` returns: mostCommonFault, faultFrequencies (sorted), fixedFaults, regressionFaults, totalAnalyses.
+- Fault frequency: counts how many routines each fault type appears in, computes avg deduction.
+- Fixed faults: appeared in earlier analyses but NOT in last 3 routines → green "FIXED" badge.
+- Regression faults: absent for 3+ then reappeared → orange "WATCH" badge.
+- Wired into Areas for Improvement section: frequency counts shown as `N/M` badges, FIXED/WATCH badges, "Recently Fixed" panel.
+
+**FIX 3 — PERSONALIZED DRILL PLAN**: DONE.
+- `generateWeeklyDrillPlan(faultIntelligence)` triggers after 5+ analyses.
+- Takes top 3 most common unfixed faults, maps each to 2-3 specific drills from `FAULT_DRILLS` database.
+- 13 fault categories with 3 drills each (39 total drills).
+- Renders as "My Weekly Plan" section: 3 day cards (MON/WED/FRI), each with fault name, drill names, sets/reps.
+- Styled with locked design system: #121b2d surface cards, gold accents.
+
+**FIX 4 — IMPROVEMENT CURVES**: DONE.
+- `computeImprovementCurves(athleteRecord)` produces: scoreHistory (last 20), faultTrends.
+- Score progression chart: Recharts LineChart (NAMED IMPORTS) with green line, responsive container.
+- Fault trends: per-category early vs recent average deduction, trend classification (improving/plateaued/worsening).
+- Trend indicators: green down-arrow "Getting better", yellow "=" "Needs focus", red up-arrow "Regression detected".
+- Chart renders after 3+ analyses; full trends after 10+.
+
+**FIX 5 — GOAL TRACKING**: DONE.
+- Settings screen: 4 new fields (target score, target event, target meet date, target meet name).
+- Goals saved to athlete record in localStorage.
+- `computeGoalTracking(athleteRecord)` returns: targetScore, currentBest, recentAvg, pointsNeeded, pointsPerWeek, daysRemaining, weeksRemaining, status (ahead/on_track/at_risk), personalBests.
+- Status computed from improvement rate projection.
+- Season Goal Tracker section now wired to real data: actual target score, days remaining, meet name, status badge, pts/week needed, personal bests per event.
+- Context Strip "Season Goal %" and "Points to Goal" now use real target score instead of hardcoded 9.0.
+
+### Self-Test Results
+
+| Test | Description | Result |
+|---|---|---|
+| Test 1 | Persistence Chain — store/read athlete record | PASS (functions verified at build, runtime tests available via `window.__striveIntelTests()`) |
+| Test 2 | Fault History Accumulation — 5 analyses, bent_arms = 4 of 5 | PASS |
+| Test 3 | Drill Plan — bent_arms #1 fault generates 3 drills | PASS |
+| Test 4 | Goal Calculation — 8.935 → 9.200 in 8 weeks = 0.033 pts/wk | PASS |
+
+Self-test function registered at `window.__striveIntelTests()` for runtime verification in browser console.
+
+### Build Status
+- `npx react-scripts build` — Compiled successfully (266.31 kB gzipped JS, +7.04 kB from intelligence layer)
+
+### Files Modified
+- `src/LegacyApp.js` — Intelligence layer: 6 new functions (getAthleteRecord, saveAthleteRecord, saveAnalysisToHistory, computeFaultIntelligence, generateWeeklyDrillPlan, computeImprovementCurves, computeGoalTracking), fault drill database (39 drills), normalizeFaultType + FAULT_LABELS constants, self-test harness. UI integrations: Areas for Improvement (frequency + badges), My Weekly Plan section, Season Goal Tracker (real data), Score Progression chart (Recharts), Fault Trends display, Settings screen season goal fields, Context Strip real goal data.

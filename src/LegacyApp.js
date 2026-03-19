@@ -64,6 +64,557 @@ function parseTimestampToSec(ts) {
   return isNaN(n) ? 0 : n;
 }
 
+// ─── ATHLETE INTELLIGENCE LAYER (Agent Delta) ────────────────────────────────
+// Persistent per-athlete storage: profile, analysis history, fault tracking,
+// drill plans, improvement curves, and goal tracking.
+
+function getAthleteStorageKey(name) {
+  if (!name) return "strive_athlete_default";
+  try { return "strive_athlete_" + btoa(unescape(encodeURIComponent(name))); } catch { return "strive_athlete_default"; }
+}
+
+function getAthleteRecord(profile) {
+  if (!profile) return null;
+  const key = getAthleteStorageKey(profile.name);
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  // Create a new record
+  return {
+    name: profile.name || "",
+    gender: profile.gender || "female",
+    level: profile.level || "",
+    events: profile.primaryEvents || [],
+    coachName: profile.coachName || "",
+    gymName: profile.gymName || "",
+    seasonGoals: {
+      targetScore: null,
+      targetEvent: null,
+      targetMeetDate: null,
+      targetMeetName: "",
+    },
+    analysisHistory: [],
+    faultHistory: [],
+  };
+}
+
+function saveAthleteRecord(record) {
+  if (!record || !record.name) return;
+  const key = getAthleteStorageKey(record.name);
+  try {
+    localStorage.setItem(key, JSON.stringify(record));
+  } catch (e) {
+    log.warn("intelligence", "Failed to save athlete record: " + e.message);
+  }
+}
+
+function saveAnalysisToHistory(profile, result, uploadData) {
+  if (!profile || !result) return null;
+  const record = getAthleteRecord(profile);
+  if (!record) return null;
+
+  // Update profile fields
+  record.gender = profile.gender || record.gender;
+  record.level = profile.level || record.level;
+  record.events = profile.primaryEvents || record.events;
+
+  const routineId = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  const eventType = (uploadData && uploadData.event) || result.event || "";
+
+  // Append analysis summary
+  record.analysisHistory.push({
+    date: new Date().toISOString(),
+    routineId,
+    event: eventType,
+    finalScore: result.finalScore || 0,
+    totalDeductions: result.totalDeductions || 0,
+    skillCount: (result.gradedSkills || []).length,
+    faultCount: (result.executionDeductions || []).length,
+    meetName: (uploadData && uploadData.meetName) || "",
+  });
+
+  // Extract faults from gradedSkills and append to faultHistory
+  const gradedSkills = result.gradedSkills || [];
+  gradedSkills.forEach(skill => {
+    if (skill.deduction > 0 && skill.fault) {
+      // Normalize fault type for grouping
+      const faultType = normalizeFaultType(skill.fault);
+      record.faultHistory.push({
+        date: new Date().toISOString(),
+        routineId,
+        skillName: skill.skill || "",
+        faultType,
+        rawFault: skill.fault || "",
+        severity: skill.severity || "small",
+        deductionAmount: skill.deduction || 0,
+        eventType,
+      });
+    }
+  });
+
+  // Keep history bounded (last 100 analyses, last 500 faults)
+  if (record.analysisHistory.length > 100) record.analysisHistory = record.analysisHistory.slice(-100);
+  if (record.faultHistory.length > 500) record.faultHistory = record.faultHistory.slice(-500);
+
+  saveAthleteRecord(record);
+  log.info("intelligence", `Saved analysis #${record.analysisHistory.length} for ${record.name}. Faults tracked: ${record.faultHistory.length}`);
+  return record;
+}
+
+function normalizeFaultType(fault) {
+  if (!fault) return "other";
+  const f = fault.toLowerCase();
+  if (f.includes("bent arm") || f.includes("arm bend")) return "bent_arms";
+  if (f.includes("bent knee") || f.includes("knee bend") || f.includes("soft knee")) return "bent_knees";
+  if (f.includes("cowboy") || f.includes("leg separation") || f.includes("legs apart")) return "leg_separation";
+  if (f.includes("toe point") || f.includes("flexed foot") || f.includes("flat foot") || f.includes("flat feet") || f.includes("feet not pointed")) return "toe_point";
+  if (f.includes("step") || f.includes("hop") && f.includes("land")) return "step_landing";
+  if (f.includes("fall")) return "fall";
+  if (f.includes("wobble") || f.includes("balance") || f.includes("check")) return "wobble";
+  if (f.includes("pike") || f.includes("hip angle") || f.includes("body angle")) return "body_angle";
+  if (f.includes("split") || f.includes("amplitude")) return "split_angle";
+  if (f.includes("alignment") || f.includes("off center") || f.includes("lean")) return "alignment";
+  if (f.includes("head") || f.includes("chest") || f.includes("shoulder")) return "upper_body";
+  if (f.includes("timing") || f.includes("rhythm") || f.includes("pace")) return "timing";
+  if (f.includes("arch") || f.includes("hyperext")) return "arch";
+  if (f.includes("land") || f.includes("stick")) return "landing";
+  return "other";
+}
+
+const FAULT_LABELS = {
+  bent_arms: "Bent Arms",
+  bent_knees: "Bent Knees",
+  leg_separation: "Leg Separation",
+  toe_point: "Toe Point / Feet",
+  step_landing: "Steps on Landing",
+  fall: "Falls",
+  wobble: "Wobble / Balance",
+  body_angle: "Body Angle (Pike/Hollow)",
+  split_angle: "Split / Amplitude",
+  alignment: "Alignment / Lean",
+  upper_body: "Upper Body Form",
+  timing: "Timing / Rhythm",
+  arch: "Arch / Hyperextension",
+  landing: "Landing",
+  other: "Other",
+};
+
+function computeFaultIntelligence(athleteRecord) {
+  if (!athleteRecord || !athleteRecord.faultHistory || athleteRecord.faultHistory.length === 0) {
+    return { mostCommonFault: null, faultFrequencies: [], fixedFaults: [], regressionFaults: [], totalAnalyses: 0 };
+  }
+
+  const analyses = athleteRecord.analysisHistory || [];
+  const faults = athleteRecord.faultHistory || [];
+  const totalAnalyses = analyses.length;
+
+  // Group faults by routineId to understand per-routine occurrence
+  const routineIds = [...new Set(faults.map(f => f.routineId))];
+
+  // Count how many routines each fault type appears in
+  const faultRoutineCounts = {};
+  const faultTotalDeductions = {};
+  routineIds.forEach(rid => {
+    const routineFaults = faults.filter(f => f.routineId === rid);
+    const typesInRoutine = [...new Set(routineFaults.map(f => f.faultType))];
+    typesInRoutine.forEach(t => {
+      faultRoutineCounts[t] = (faultRoutineCounts[t] || 0) + 1;
+      faultTotalDeductions[t] = (faultTotalDeductions[t] || 0) + routineFaults.filter(f => f.faultType === t).reduce((s, f) => s + f.deductionAmount, 0);
+    });
+  });
+
+  // Sort by frequency
+  const faultFrequencies = Object.entries(faultRoutineCounts)
+    .map(([type, count]) => ({
+      type,
+      label: FAULT_LABELS[type] || type,
+      count,
+      totalRoutines: routineIds.length,
+      avgDeduction: faultTotalDeductions[type] / count,
+      pct: Math.round((count / routineIds.length) * 100),
+    }))
+    .sort((a, b) => b.count - a.count);
+
+  const mostCommonFault = faultFrequencies.length > 0 ? faultFrequencies[0] : null;
+
+  // Fixed faults: appeared in earlier analyses but NOT in the last 3
+  const fixedFaults = [];
+  const regressionFaults = [];
+  if (routineIds.length >= 3) {
+    const last3Ids = routineIds.slice(-3);
+    const earlier = routineIds.slice(0, -3);
+    const last3Types = new Set(faults.filter(f => last3Ids.includes(f.routineId)).map(f => f.faultType));
+    const earlierTypes = new Set(faults.filter(f => earlier.includes(f.routineId)).map(f => f.faultType));
+
+    earlierTypes.forEach(t => {
+      if (!last3Types.has(t)) {
+        fixedFaults.push({ type: t, label: FAULT_LABELS[t] || t });
+      }
+    });
+
+    // Regression: absent for 3+ consecutive analyses then reappeared
+    if (routineIds.length >= 6) {
+      const mid3Ids = routineIds.slice(-6, -3);
+      const mid3Types = new Set(faults.filter(f => mid3Ids.includes(f.routineId)).map(f => f.faultType));
+      const beforeMid = routineIds.slice(0, -6);
+      const beforeMidTypes = new Set(faults.filter(f => beforeMid.includes(f.routineId)).map(f => f.faultType));
+
+      last3Types.forEach(t => {
+        if (!mid3Types.has(t) && beforeMidTypes.has(t)) {
+          regressionFaults.push({ type: t, label: FAULT_LABELS[t] || t });
+        }
+      });
+    }
+  }
+
+  return { mostCommonFault, faultFrequencies, fixedFaults, regressionFaults, totalAnalyses };
+}
+
+// FIX 3 — Personalized drill plan from fault intelligence
+const FAULT_DRILLS = {
+  bent_arms: [
+    { name: "Wall Handstand Holds", reps: "3 x 30s", cue: "Press to handstand against wall. Lock elbows, squeeze triceps, push through shoulders." },
+    { name: "Straight-Arm Plank Walks", reps: "3 x 8 steps", cue: "Walk hands forward and back in plank. Arms must stay locked through entire set." },
+    { name: "Cast to Handstand (Rails)", reps: "10 reps", cue: "Focus on full arm extension through each cast. Partner taps elbows as reminder." },
+  ],
+  bent_knees: [
+    { name: "Releve Walks on Beam Line", reps: "2 x beam length", cue: "Walk in releve with knees fully locked. Squeeze quads with each step." },
+    { name: "Handstand Leg Lifts", reps: "3 x 8 each leg", cue: "From handstand, lift one leg out. Keep support leg completely straight." },
+    { name: "Needle Kick Holds", reps: "3 x 15s each", cue: "Hold scale position with both legs fully extended. No micro-bend allowed." },
+  ],
+  leg_separation: [
+    { name: "Foam Block Squeeze Jumps", reps: "3 x 10", cue: "Place block between ankles during jumps. Squeeze through entire flight." },
+    { name: "Resistance Band Squeezes", reps: "3 x 15s holds", cue: "Band around ankles during handstands to train constant leg squeeze." },
+    { name: "Salto Drill w/ Squeeze Cue", reps: "10 reps", cue: "Practice flips with legs glued together. Cue: 'Zip from hip to toe.'" },
+  ],
+  toe_point: [
+    { name: "Theraband Foot Presses", reps: "3 x 20 each", cue: "Wrap band around ball of foot. Press through full extension, hold 2s." },
+    { name: "Releve Balance (Eyes Closed)", reps: "3 x 20s each foot", cue: "Full releve, eyes closed. Train ankle awareness and point reflex." },
+    { name: "Pointed Foot Running Drill", reps: "2 x floor length", cue: "Jog with exaggerated toe point on each stride. Make it automatic." },
+  ],
+  step_landing: [
+    { name: "Stick Drills (Low Block)", reps: "20 reps", cue: "Jump from low block, land and FREEZE 3 full seconds. Zero movement." },
+    { name: "Drop Landings (Progressive)", reps: "3 x 8", cue: "Step off increasing heights. Absorb through ankles and knees. Freeze on impact." },
+    { name: "Pit-to-Stick Progressions", reps: "10-15 reps", cue: "Land on elevated surface from pit. Chest up, arms up, complete stillness." },
+  ],
+  wobble: [
+    { name: "Single Leg Balance (Beam)", reps: "3 x 30s each", cue: "Stand on one foot on low beam. Arms in position. No correction steps." },
+    { name: "Releve Relevance Walks", reps: "3 x beam length", cue: "Walk full beam in releve. Pause 2 seconds between each step." },
+    { name: "Core Stabilization (Bosu)", reps: "3 x 30s", cue: "Plank on Bosu ball. Engage core to prevent any rocking." },
+  ],
+  split_angle: [
+    { name: "Oversplit Holds (Elevated)", reps: "3 x 30s each", cue: "Front foot on panel mat. Sink past 180 degrees. Breathe and relax into it." },
+    { name: "Grande Battement Series", reps: "3 x 12 each leg", cue: "Controlled kick to maximum height. Both legs fully straight." },
+    { name: "Active Flexibility Pulses", reps: "3 x 15 each", cue: "In split, pulse up 2 inches and back down. Build active range." },
+  ],
+  body_angle: [
+    { name: "Hollow Body Hold", reps: "3 x 30s", cue: "Lower back pressed to floor. Arms by ears, legs straight. No gap." },
+    { name: "Superman Rocks", reps: "3 x 15", cue: "Rock from hollow to arch. Maintain tight body shape throughout." },
+    { name: "Pike Press Conditioning", reps: "3 x 8", cue: "From standing, fold to pike. Hands to floor, legs straight. Hold 3s." },
+  ],
+  alignment: [
+    { name: "Dowel Rod Alignment Check", reps: "5 min warm-up", cue: "Hold dowel along spine during handstands and jumps. Feel when alignment breaks." },
+    { name: "Mirror Wall Drills", reps: "10 reps each skill", cue: "Perform skills facing mirror. Self-correct lean and centering in real time." },
+    { name: "Handstand Shape Holds", reps: "5 x 15s", cue: "Partner checks shoulder-hip-ankle alignment. Squeeze everything tight." },
+  ],
+  landing: [
+    { name: "Stick Landing Series", reps: "20 reps", cue: "Jump off low surface, land perfectly still for 3 seconds. Build the habit." },
+    { name: "Single Leg Landing Hops", reps: "3 x 10 each", cue: "Hop forward on one foot, stick each landing. Build ankle stability." },
+    { name: "Absorb & Freeze Drill", reps: "3 x 10", cue: "Back tuck to stick. Focus: absorb through legs, chest stays up." },
+  ],
+  fall: [
+    { name: "Skill Progressions on Low Beam", reps: "10 reps", cue: "Practice the skill on low beam until 8/10 are clean before moving up." },
+    { name: "Spot Training (Confidence)", reps: "15 reps w/ spot", cue: "Do the skill with a spot. Build confidence before going solo." },
+    { name: "Mental Rehearsal + Walk-Through", reps: "5 min", cue: "Walk through the skill slowly. Visualize each body position before attempting." },
+  ],
+  upper_body: [
+    { name: "Shoulder Flexibility Series", reps: "3 x 30s each", cue: "Wall slides, doorway stretches, band pull-aparts. Open up the shoulders." },
+    { name: "Press Handstand Conditioning", reps: "3 x 5", cue: "Slow press to handstand. Focus: shoulders stack over wrists, chest neutral." },
+    { name: "Posture Board Handstands", reps: "5 x 15s", cue: "Handstand against posture board. Feel correct shoulder and chest position." },
+  ],
+  timing: [
+    { name: "Rhythm Clapping Drill", reps: "3 x full routine", cue: "Clap the rhythm of the routine without doing it. Internalize the timing." },
+    { name: "Music Walk-Through", reps: "3 full routines", cue: "Walk through routine to music. Mark each skill on the correct beat." },
+    { name: "Metronome Tumbling", reps: "10 reps", cue: "Set a metronome. Match tumbling pace to beats. Build consistency." },
+  ],
+  arch: [
+    { name: "Hollow Body Hold", reps: "3 x 30s", cue: "Lower back flat to floor. No arch. Arms by ears, legs straight." },
+    { name: "Plank to Hollow Transitions", reps: "3 x 10", cue: "From plank, round into hollow body. Control the shape change." },
+    { name: "Pike Stretches (Daily)", reps: "3 x 30s", cue: "Seated pike fold. Chest to thighs. Counteracts excessive arch habit." },
+  ],
+};
+
+function generateWeeklyDrillPlan(faultIntelligence) {
+  if (!faultIntelligence || !faultIntelligence.faultFrequencies || faultIntelligence.faultFrequencies.length === 0) return null;
+
+  // Take top 3 most common unfixed faults
+  const fixed = new Set((faultIntelligence.fixedFaults || []).map(f => f.type));
+  const unfixed = faultIntelligence.faultFrequencies.filter(f => !fixed.has(f.type));
+  const top3 = unfixed.slice(0, 3);
+
+  if (top3.length === 0) return null;
+
+  const days = ["monday", "wednesday", "friday"];
+  const plan = {};
+  top3.forEach((fault, i) => {
+    const dayDrills = FAULT_DRILLS[fault.type] || FAULT_DRILLS.body_angle; // fallback
+    plan[days[i]] = {
+      fault: fault.label,
+      faultType: fault.type,
+      count: fault.count,
+      totalRoutines: fault.totalRoutines,
+      drills: dayDrills.slice(0, 3),
+    };
+  });
+
+  // Fill remaining days if fewer than 3 faults
+  days.forEach(day => {
+    if (!plan[day] && top3.length > 0) {
+      const fallbackFault = top3[0];
+      const dayDrills = FAULT_DRILLS[fallbackFault.type] || FAULT_DRILLS.body_angle;
+      plan[day] = {
+        fault: fallbackFault.label + " (Reinforcement)",
+        faultType: fallbackFault.type,
+        count: fallbackFault.count,
+        totalRoutines: fallbackFault.totalRoutines,
+        drills: dayDrills.slice(0, 3),
+      };
+    }
+  });
+
+  return plan;
+}
+
+// FIX 4 — Improvement curves: fault deduction trends over time
+function computeImprovementCurves(athleteRecord) {
+  if (!athleteRecord) return { scoreHistory: [], faultTrends: [] };
+
+  const analyses = (athleteRecord.analysisHistory || []).slice(-20);
+  const faults = athleteRecord.faultHistory || [];
+
+  // Score progression
+  const scoreHistory = analyses.map((a, i) => ({
+    label: `#${i + 1}`,
+    score: a.finalScore,
+    date: a.date,
+    event: a.event,
+  }));
+
+  // Per fault category: average deduction in windows
+  if (analyses.length < 3) return { scoreHistory, faultTrends: [] };
+
+  const routineIds = analyses.map(a => a.routineId);
+  const faultTypes = [...new Set(faults.map(f => f.faultType))];
+
+  const faultTrends = faultTypes.map(type => {
+    const typeFaults = faults.filter(f => f.faultType === type);
+    // Get average deduction per analysis window
+    const recentIds = routineIds.slice(-Math.min(10, routineIds.length));
+    const recentAvg = recentIds.length > 0
+      ? recentIds.reduce((sum, rid) => {
+          const routineFaults = typeFaults.filter(f => f.routineId === rid);
+          return sum + routineFaults.reduce((s, f) => s + f.deductionAmount, 0);
+        }, 0) / recentIds.length
+      : 0;
+
+    // Early average (first half of available data)
+    const halfPoint = Math.floor(routineIds.length / 2);
+    const earlyIds = routineIds.slice(0, Math.max(1, halfPoint));
+    const earlyAvg = earlyIds.length > 0
+      ? earlyIds.reduce((sum, rid) => {
+          const routineFaults = typeFaults.filter(f => f.routineId === rid);
+          return sum + routineFaults.reduce((s, f) => s + f.deductionAmount, 0);
+        }, 0) / earlyIds.length
+      : 0;
+
+    const diff = recentAvg - earlyAvg;
+    const trend = diff < -0.02 ? "improving" : diff > 0.02 ? "worsening" : "plateaued";
+
+    return {
+      type,
+      label: FAULT_LABELS[type] || type,
+      earlyAvg,
+      recentAvg,
+      diff,
+      trend,
+    };
+  }).filter(t => t.earlyAvg > 0 || t.recentAvg > 0);
+
+  return { scoreHistory, faultTrends };
+}
+
+// FIX 5 — Goal tracking calculations
+function computeGoalTracking(athleteRecord) {
+  if (!athleteRecord) return null;
+  const goals = athleteRecord.seasonGoals || {};
+  if (!goals.targetScore) return null;
+
+  const analyses = athleteRecord.analysisHistory || [];
+  const targetEvent = goals.targetEvent || "";
+
+  // Personal best per event
+  const personalBests = {};
+  analyses.forEach(a => {
+    if (!personalBests[a.event] || a.finalScore > personalBests[a.event]) {
+      personalBests[a.event] = a.finalScore;
+    }
+  });
+
+  // Current best for target event (or overall)
+  const relevantAnalyses = targetEvent
+    ? analyses.filter(a => a.event === targetEvent)
+    : analyses;
+  const currentBest = relevantAnalyses.length > 0
+    ? Math.max(...relevantAnalyses.map(a => a.finalScore))
+    : 0;
+
+  // Recent score (last 3 average)
+  const recentScores = relevantAnalyses.slice(-3);
+  const recentAvg = recentScores.length > 0
+    ? recentScores.reduce((s, a) => s + a.finalScore, 0) / recentScores.length
+    : currentBest;
+
+  // Days and weeks remaining
+  const now = new Date();
+  const targetDate = goals.targetMeetDate ? new Date(goals.targetMeetDate) : null;
+  const daysRemaining = targetDate ? Math.max(0, Math.ceil((targetDate - now) / (1000 * 60 * 60 * 24))) : null;
+  const weeksRemaining = daysRemaining !== null ? Math.max(1, Math.ceil(daysRemaining / 7)) : null;
+
+  const pointsNeeded = Math.max(0, goals.targetScore - currentBest);
+  const pointsPerWeek = weeksRemaining ? pointsNeeded / weeksRemaining : null;
+
+  // Trend projection: will they make it?
+  let status = "unknown";
+  if (currentBest >= goals.targetScore) {
+    status = "ahead";
+  } else if (relevantAnalyses.length >= 3) {
+    // Calculate recent improvement rate
+    const oldestRecent = relevantAnalyses[Math.max(0, relevantAnalyses.length - 5)];
+    const newestRecent = relevantAnalyses[relevantAnalyses.length - 1];
+    const daysBetween = Math.max(1, (new Date(newestRecent.date) - new Date(oldestRecent.date)) / (1000 * 60 * 60 * 24));
+    const improvementRate = (newestRecent.finalScore - oldestRecent.finalScore) / daysBetween;
+    const projectedScore = daysRemaining !== null ? newestRecent.finalScore + improvementRate * daysRemaining : null;
+
+    if (projectedScore !== null && projectedScore >= goals.targetScore) {
+      status = "on_track";
+    } else {
+      status = "at_risk";
+    }
+  } else {
+    status = pointsNeeded <= 0.2 ? "on_track" : "at_risk";
+  }
+
+  return {
+    targetScore: goals.targetScore,
+    targetEvent: goals.targetEvent,
+    targetMeetDate: goals.targetMeetDate,
+    targetMeetName: goals.targetMeetName,
+    currentBest,
+    recentAvg,
+    pointsNeeded,
+    pointsPerWeek,
+    daysRemaining,
+    weeksRemaining,
+    status,
+    personalBests,
+  };
+}
+
+// Self-tests for intelligence layer (run in dev console: window.__striveIntelTests())
+if (typeof window !== "undefined") {
+  window.__striveIntelTests = function () {
+    const results = [];
+
+    // Test 1 — Persistence chain
+    try {
+      const testProfile = { name: "TestAthlete", gender: "female", level: "Xcel Gold", primaryEvents: ["Floor", "Beam"] };
+      const record = getAthleteRecord(testProfile);
+      record.gymName = "Test Gym";
+      saveAthleteRecord(record);
+      const readBack = getAthleteRecord(testProfile);
+      const pass = readBack.name === "TestAthlete" && readBack.gymName === "Test Gym" && readBack.gender === "female";
+      results.push({ test: "Persistence Chain", result: pass ? "PASS" : "FAIL", details: pass ? "All fields intact" : "Field mismatch" });
+      // Cleanup
+      localStorage.removeItem(getAthleteStorageKey("TestAthlete"));
+    } catch (e) {
+      results.push({ test: "Persistence Chain", result: "FAIL", details: e.message });
+    }
+
+    // Test 2 — Fault history accumulation
+    try {
+      const testRecord = {
+        name: "TestFaultAthlete",
+        analysisHistory: [],
+        faultHistory: [],
+        seasonGoals: {},
+      };
+      const faultSets = [
+        [{ fault: "bent arms", deduction: 0.15 }, { fault: "cowboy tuck (legs apart)", deduction: 0.20 }],
+        [{ fault: "bent arms on support", deduction: 0.15 }, { fault: "flat feet (no toe point)", deduction: 0.05 }],
+        [{ fault: "bent arms", deduction: 0.10 }, { fault: "split angle short", deduction: 0.20 }],
+        [{ fault: "flat feet", deduction: 0.05 }, { fault: "step on landing", deduction: 0.10 }],
+        [{ fault: "cowboy tuck position", deduction: 0.15 }, { fault: "bent arm on push-off", deduction: 0.10 }],
+      ];
+      faultSets.forEach((set, i) => {
+        const rid = "test_" + i;
+        testRecord.analysisHistory.push({ date: new Date().toISOString(), routineId: rid, event: "Floor", finalScore: 8.5 + i * 0.1, totalDeductions: 0.35, skillCount: 5, faultCount: set.length });
+        set.forEach(s => {
+          testRecord.faultHistory.push({
+            date: new Date().toISOString(), routineId: rid, skillName: "Test Skill",
+            faultType: normalizeFaultType(s.fault), rawFault: s.fault, severity: "medium",
+            deductionAmount: s.deduction, eventType: "Floor",
+          });
+        });
+      });
+      const intel = computeFaultIntelligence(testRecord);
+      const bentArmsEntry = intel.faultFrequencies.find(f => f.type === "bent_arms");
+      const pass = bentArmsEntry && bentArmsEntry.count === 4 && intel.mostCommonFault.type === "bent_arms";
+      results.push({ test: "Fault History Accumulation", result: pass ? "PASS" : "FAIL", details: pass ? `bent_arms = ${bentArmsEntry.count} of 5 routines (most common)` : `Expected 4, got ${bentArmsEntry ? bentArmsEntry.count : "N/A"}` });
+    } catch (e) {
+      results.push({ test: "Fault History Accumulation", result: "FAIL", details: e.message });
+    }
+
+    // Test 3 — Drill plan generation
+    try {
+      const mockIntel = {
+        faultFrequencies: [
+          { type: "bent_arms", label: "Bent Arms", count: 4, totalRoutines: 5 },
+          { type: "toe_point", label: "Toe Point / Feet", count: 3, totalRoutines: 5 },
+        ],
+        fixedFaults: [],
+        regressionFaults: [],
+      };
+      const plan = generateWeeklyDrillPlan(mockIntel);
+      const pass = plan && plan.monday && plan.monday.fault === "Bent Arms" && plan.monday.drills.length >= 2;
+      results.push({ test: "Drill Plan Generation", result: pass ? "PASS" : "FAIL", details: pass ? `Monday: ${plan.monday.fault} (${plan.monday.drills.length} drills)` : "Plan missing or incomplete" });
+    } catch (e) {
+      results.push({ test: "Drill Plan Generation", result: "FAIL", details: e.message });
+    }
+
+    // Test 4 — Goal calculation
+    try {
+      const mockRecord = {
+        name: "GoalTest",
+        analysisHistory: [
+          { date: new Date().toISOString(), routineId: "g1", event: "Floor", finalScore: 8.935 },
+        ],
+        faultHistory: [],
+        seasonGoals: { targetScore: 9.200, targetEvent: "Floor", targetMeetDate: new Date(Date.now() + 56 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10), targetMeetName: "State Meet" },
+      };
+      const goal = computeGoalTracking(mockRecord);
+      const expectedPPW = (9.200 - 8.935) / 8;
+      const pass = goal && Math.abs(goal.pointsPerWeek - expectedPPW) < 0.005;
+      results.push({ test: "Goal Calculation", result: pass ? "PASS" : "FAIL", details: pass ? `points/week = ${goal.pointsPerWeek.toFixed(4)} (expected ~${expectedPPW.toFixed(4)})` : `Got ${goal ? goal.pointsPerWeek : "null"}` });
+    } catch (e) {
+      results.push({ test: "Goal Calculation", result: "FAIL", details: e.message });
+    }
+
+    console.table(results);
+    return results;
+  };
+}
+
 function computeAverageGrade(skills) {
   if (!skills || skills.length === 0) return "B";
   const GRADE_RANK = { "A+":12,"A":11,"A-":10,"B+":9,"B":8,"B-":7,"C+":6,"C":5,"C-":4,"D+":3,"D":2,"F":1 };
@@ -894,6 +1445,10 @@ export default function LegacyApp() {
 
   const handleAnalysisComplete = (result) => {
     setAnalysisResult(result);
+
+    // ── Agent Delta: Save to athlete intelligence layer ──
+    saveAnalysisToHistory(profile, result, uploadData);
+
     const id = Date.now();
     const deds = result.executionDeductions || [];
     const newEntry = {
@@ -5143,6 +5698,13 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFile, onBack, 
 
   if (!result) return null;
 
+  // ── Agent Delta: Compute intelligence data ──
+  const athleteRecord = getAthleteRecord(profile);
+  const faultIntelligence = computeFaultIntelligence(athleteRecord);
+  const drillPlan = faultIntelligence.totalAnalyses >= 5 ? generateWeeklyDrillPlan(faultIntelligence) : null;
+  const improvementData = computeImprovementCurves(athleteRecord);
+  const goalTracking = computeGoalTracking(athleteRecord);
+
   const groupedDeds = result.executionDeductions || [];
   const scoreColor = result.finalScore >= 9.0 ? "#22c55e" : result.finalScore >= 8.0 ? "#ffc15a" : "#dc2626";
   const actualNum = parseFloat(actualScore);
@@ -5578,7 +6140,7 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFile, onBack, 
             const sameEventHistory = (history || []).filter(h => h.event === result.event && h.score);
             const lastScore = sameEventHistory.length > 0 ? sameEventHistory[0].score : null;
             const vsLast = lastScore ? (result.finalScore - lastScore) : null;
-            const goalScore = 9.0;
+            const goalScore = goalTracking ? goalTracking.targetScore : 9.0;
             const goalPct = Math.min(100, Math.round((safeNum(result.finalScore, 0) / goalScore) * 100));
             const pointsToGoal = Math.max(0, goalScore - safeNum(result.finalScore, 0));
             const divisionAvg = result.finalScore >= 9.0 ? 8.65 : result.finalScore >= 8.5 ? 8.45 : 8.25;
@@ -5672,26 +6234,62 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFile, onBack, 
           {/* Deduction timeline */}
           <DeductionTimeline deductions={result.executionDeductions} />
 
-          {/* ── 5. AREAS FOR IMPROVEMENT — Red/orange theme, ranked by impact ── */}
+          {/* ── 5. AREAS FOR IMPROVEMENT — with intelligence badges ── */}
           {groupedDeds.length > 0 && (
             <div style={{ marginBottom: 16, padding: "16px 18px", borderRadius: 14, background: "rgba(220,38,38,0.03)", border: "1px solid rgba(220,38,38,0.1)" }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "#dc2626", letterSpacing: 1, textTransform: "uppercase", marginBottom: 12 }}>
-                Areas for Improvement
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#dc2626", letterSpacing: 1, textTransform: "uppercase" }}>
+                  Areas for Improvement
+                </div>
+                {faultIntelligence.totalAnalyses >= 3 && (
+                  <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", fontFamily: "'Space Mono', monospace" }}>
+                    {faultIntelligence.totalAnalyses} analyses tracked
+                  </div>
+                )}
               </div>
               {[...groupedDeds].sort((a, b) => safeNum(b.deduction, 0) - safeNum(a.deduction, 0)).slice(0, 6).map((d, i) => {
                 const dedAmt = safeNum(d.deduction, 0);
                 const rowColor = dedAmt >= 0.20 ? "#dc2626" : dedAmt >= 0.10 ? "#e06820" : "#ffc15a";
+                // Look up fault frequency from intelligence
+                const faultType = normalizeFaultType(safeStr(d.fault));
+                const freqEntry = faultIntelligence.faultFrequencies.find(f => f.type === faultType);
+                const isFixed = faultIntelligence.fixedFaults.some(f => f.type === faultType);
+                const isRegression = faultIntelligence.regressionFaults.some(f => f.type === faultType);
                 return (
                   <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: i < 5 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>
                     <div style={{ width: 22, height: 22, borderRadius: 6, background: `${rowColor}15`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, color: rowColor, flexShrink: 0 }}>{i + 1}</div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: "#e2e8f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{safeStr(d.skill)}</div>
-                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{safeStr(d.fault).substring(0, 60)}</div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: "#e2e8f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{safeStr(d.skill)}</span>
+                        {isFixed && <span style={{ fontSize: 8, fontWeight: 700, padding: "1px 6px", borderRadius: 3, background: "rgba(34,197,94,0.15)", color: "#22c55e", flexShrink: 0 }}>FIXED</span>}
+                        {isRegression && <span style={{ fontSize: 8, fontWeight: 700, padding: "1px 6px", borderRadius: 3, background: "rgba(224,104,32,0.15)", color: "#e06820", flexShrink: 0 }}>WATCH</span>}
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>{safeStr(d.fault).substring(0, 50)}</span>
+                        {freqEntry && freqEntry.totalRoutines >= 3 && (
+                          <span style={{ fontSize: 9, color: "rgba(255,255,255,0.25)", fontFamily: "'Space Mono', monospace", flexShrink: 0 }}>
+                            {freqEntry.count}/{freqEntry.totalRoutines}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <div style={{ fontSize: 14, fontWeight: 800, fontFamily: "'Space Mono', monospace", color: rowColor, flexShrink: 0 }}>-{dedAmt.toFixed(2)}</div>
                   </div>
                 );
               })}
+              {/* Show fixed faults below if any */}
+              {faultIntelligence.fixedFaults.length > 0 && (
+                <div style={{ marginTop: 12, padding: "10px 12px", borderRadius: 10, background: "rgba(34,197,94,0.04)", border: "1px solid rgba(34,197,94,0.1)" }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "#22c55e", letterSpacing: 0.5, marginBottom: 6 }}>RECENTLY FIXED</div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {faultIntelligence.fixedFaults.map((f, i) => (
+                      <span key={i} style={{ fontSize: 10, padding: "3px 8px", borderRadius: 4, background: "rgba(34,197,94,0.1)", color: "#22c55e", fontWeight: 600 }}>
+                        {f.label}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -5772,19 +6370,66 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFile, onBack, 
             );
           })()}
 
-          {/* ── 8. SEASON GOAL TRACKER ── */}
+          {/* ── 8A. MY PLAN — Personalized drill plan (triggers after 5+ analyses) ── */}
+          {drillPlan && (
+            <div style={{ marginBottom: 16, padding: "16px 18px", borderRadius: 14, background: "rgba(232,150,42,0.03)", border: "1px solid rgba(232,150,42,0.1)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#e8962a", letterSpacing: 1, textTransform: "uppercase" }}>My Weekly Plan</div>
+                <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", fontFamily: "'Space Mono', monospace" }}>Based on {faultIntelligence.totalAnalyses} analyses</div>
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                {[
+                  { key: "monday", label: "MON" },
+                  { key: "wednesday", label: "WED" },
+                  { key: "friday", label: "FRI" },
+                ].map(day => {
+                  const dayPlan = drillPlan[day.key];
+                  if (!dayPlan) return null;
+                  return (
+                    <div key={day.key} style={{ flex: 1, padding: "12px 10px", borderRadius: 12, background: "#121b2d", border: "1px solid rgba(255,255,255,0.07)" }}>
+                      <div style={{ fontSize: 10, fontWeight: 800, color: "#e8962a", letterSpacing: 1, marginBottom: 8, textAlign: "center" }}>{day.label}</div>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.6)", marginBottom: 8, textAlign: "center", lineHeight: 1.3 }}>{dayPlan.fault}</div>
+                      {dayPlan.drills.slice(0, 2).map((drill, di) => (
+                        <div key={di} style={{ marginBottom: 6 }}>
+                          <div style={{ fontSize: 9, fontWeight: 600, color: "rgba(255,255,255,0.5)", lineHeight: 1.3 }}>{drill.name}</div>
+                          <div style={{ fontSize: 8, fontWeight: 700, fontFamily: "'Space Mono', monospace", color: "#e8962a" }}>{drill.reps}</div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* ── 8B. SEASON GOAL TRACKER — wired to real data ── */}
           {(() => {
             const current = safeNum(result.finalScore, 0);
-            const target = 9.0;
+            // Use real goal data if available, fallback to 9.0
+            const target = goalTracking ? goalTracking.targetScore : 9.0;
             const pct = Math.min(100, Math.round((current / target) * 100));
             const remaining = Math.max(0, target - current);
-            const weeksLeft = 12;
+            const weeksLeft = goalTracking && goalTracking.weeksRemaining ? goalTracking.weeksRemaining : 12;
+            const meetName = goalTracking && goalTracking.targetMeetName ? goalTracking.targetMeetName : null;
+            const daysLeft = goalTracking && goalTracking.daysRemaining !== null ? goalTracking.daysRemaining : null;
+            const status = goalTracking ? goalTracking.status : "unknown";
+            const statusColor = status === "ahead" ? "#22c55e" : status === "on_track" ? "#22c55e" : status === "at_risk" ? "#e06820" : "rgba(255,255,255,0.3)";
+            const statusLabel = status === "ahead" ? "Ahead of target" : status === "on_track" ? "On track" : status === "at_risk" ? "At risk" : "";
+            const ppw = goalTracking && goalTracking.pointsPerWeek ? goalTracking.pointsPerWeek : null;
             return (
               <div style={{ marginBottom: 16, padding: "16px 18px", borderRadius: 14, background: "rgba(232,150,42,0.03)", border: "1px solid rgba(232,150,42,0.1)" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: "#e8962a", letterSpacing: 1, textTransform: "uppercase" }}>Season Goal Tracker</div>
-                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", fontFamily: "'Space Mono', monospace" }}>{weeksLeft} weeks left</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    {statusLabel && <span style={{ fontSize: 8, fontWeight: 700, padding: "2px 6px", borderRadius: 3, background: `${statusColor}15`, color: statusColor }}>{statusLabel}</span>}
+                    <span style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", fontFamily: "'Space Mono', monospace" }}>
+                      {daysLeft !== null ? `${daysLeft}d left` : `${weeksLeft}w left`}
+                    </span>
+                  </div>
                 </div>
+                {meetName && (
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginBottom: 8, fontStyle: "italic" }}>{meetName}</div>
+                )}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
                   <span style={{ fontSize: 14, fontWeight: 700, fontFamily: "'Space Mono', monospace", color: scoreColor }}>{current.toFixed(2)}</span>
                   <span style={{ fontSize: 14, fontWeight: 700, fontFamily: "'Space Mono', monospace", color: "#e8962a" }}>{target.toFixed(2)}</span>
@@ -5796,12 +6441,68 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFile, onBack, 
                   {remaining <= 0 ? (
                     <span style={{ color: "#22c55e", fontWeight: 700 }}>Goal reached!</span>
                   ) : (
-                    <span>{remaining.toFixed(2)} points remaining — estimated {Math.ceil(remaining / 0.05)} focused practices</span>
+                    <span>{remaining.toFixed(2)} points remaining{ppw ? ` — ${ppw.toFixed(3)} pts/week needed` : ` — est. ${Math.ceil(remaining / 0.05)} practices`}</span>
                   )}
                 </div>
+                {/* Personal bests per event */}
+                {goalTracking && goalTracking.personalBests && Object.keys(goalTracking.personalBests).length > 0 && (
+                  <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+                    <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.35)", letterSpacing: 0.5, marginBottom: 6 }}>PERSONAL BESTS</div>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                      {Object.entries(goalTracking.personalBests).map(([evt, score]) => (
+                        <div key={evt} style={{ padding: "4px 10px", borderRadius: 6, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                          <span style={{ fontSize: 9, color: "rgba(255,255,255,0.4)" }}>{evt}: </span>
+                          <span style={{ fontSize: 11, fontWeight: 700, fontFamily: "'Space Mono', monospace", color: "#ffc15a" }}>{score.toFixed(3)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })()}
+
+          {/* ── 8C. IMPROVEMENT CURVES — Score progression chart (10+ analyses) ── */}
+          {improvementData.scoreHistory.length >= 3 && (
+            <div style={{ marginBottom: 16, padding: "16px 18px", borderRadius: 14, background: "rgba(34,197,94,0.03)", border: "1px solid rgba(34,197,94,0.1)" }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#22c55e", letterSpacing: 1, textTransform: "uppercase", marginBottom: 14 }}>
+                Score Progression
+              </div>
+              <div style={{ height: 160, marginBottom: 12 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={improvementData.scoreHistory} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
+                    <XAxis dataKey="label" tick={{ fontSize: 9, fill: "rgba(255,255,255,0.3)" }} axisLine={false} tickLine={false} />
+                    <YAxis domain={["auto", "auto"]} tick={{ fontSize: 9, fill: "rgba(255,255,255,0.3)" }} axisLine={false} tickLine={false} />
+                    <Tooltip contentStyle={{ background: "#121b2d", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, fontSize: 11, fontFamily: "'Space Mono', monospace" }}
+                      labelStyle={{ color: "rgba(255,255,255,0.5)" }}
+                      formatter={(val) => [val.toFixed(3), "Score"]} />
+                    <Line type="monotone" dataKey="score" stroke="#22c55e" strokeWidth={2} dot={{ r: 3, fill: "#22c55e" }} activeDot={{ r: 5 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+              {/* Fault trend indicators */}
+              {improvementData.faultTrends.length > 0 && (
+                <div>
+                  <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.35)", letterSpacing: 0.5, marginBottom: 8 }}>FAULT TRENDS</div>
+                  {improvementData.faultTrends.slice(0, 5).map((ft, i) => {
+                    const trendColor = ft.trend === "improving" ? "#22c55e" : ft.trend === "worsening" ? "#dc2626" : "#ffc15a";
+                    const trendIcon = ft.trend === "improving" ? "▼" : ft.trend === "worsening" ? "▲" : "=";
+                    const trendLabel = ft.trend === "improving" ? "Getting better" : ft.trend === "worsening" ? "Regression detected" : "Needs focus";
+                    return (
+                      <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 0", borderBottom: i < 4 ? "1px solid rgba(255,255,255,0.03)" : "none" }}>
+                        <span style={{ fontSize: 12, color: trendColor, width: 14, textAlign: "center" }}>{trendIcon}</span>
+                        <span style={{ flex: 1, fontSize: 11, color: "rgba(255,255,255,0.5)" }}>{ft.label}</span>
+                        <span style={{ fontSize: 9, fontWeight: 600, color: trendColor }}>{trendLabel}</span>
+                        <span style={{ fontSize: 10, fontWeight: 700, fontFamily: "'Space Mono', monospace", color: trendColor, width: 40, textAlign: "right" }}>
+                          {ft.diff >= 0 ? "+" : ""}{ft.diff.toFixed(2)}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* ── Celebrations — what was genuinely good ── */}
           {safeArray(result.celebrations).length > 0 && (
@@ -6350,7 +7051,16 @@ function DeductionsScreen({ onBack, profile }) {
 
 // ─── SETTINGS SCREEN ────────────────────────────────────────────────
 function SettingsScreen({ profile, onSave, onBack, onReset }) {
-  const [editProfile, setEditProfile] = useState({ ...profile });
+  // Load season goals from athlete record into editProfile
+  const athleteRecord = getAthleteRecord(profile);
+  const sg = athleteRecord ? athleteRecord.seasonGoals || {} : {};
+  const [editProfile, setEditProfile] = useState({
+    ...profile,
+    seasonGoalScore: sg.targetScore || null,
+    seasonGoalEvent: sg.targetEvent || null,
+    seasonGoalDate: sg.targetMeetDate || null,
+    seasonGoalMeetName: sg.targetMeetName || "",
+  });
   const [showConfirm, setShowConfirm] = useState(false);
   const [geminiKey, setGeminiKey] = useState("");
   const [keySaved, setKeySaved] = useState(false);
@@ -6452,7 +7162,54 @@ function SettingsScreen({ profile, onSave, onBack, onReset }) {
           </select>
         </div>
 
-      <button className="btn-gold" onClick={() => onSave(editProfile)} style={{ width: "100%", marginTop: 32 }}>
+      {/* ── Agent Delta: Season Goal Settings ── */}
+      <div style={{ marginTop: 32, paddingTop: 24, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+        <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16, color: "#e8962a" }}>Season Goal</h3>
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <div>
+            <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, display: "block", color: "rgba(255,255,255,0.6)" }}>TARGET SCORE</label>
+            <input className="input-field" type="number" step="0.025" min="7.0" max="10.0" placeholder="e.g. 9.200"
+              value={editProfile.seasonGoalScore || ""}
+              onChange={e => setEditProfile({ ...editProfile, seasonGoalScore: e.target.value ? parseFloat(e.target.value) : null })}
+              style={{ fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize: 16 }} />
+          </div>
+          <div>
+            <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, display: "block", color: "rgba(255,255,255,0.6)" }}>TARGET EVENT</label>
+            <select className="input-field" value={editProfile.seasonGoalEvent || ""}
+              onChange={e => setEditProfile({ ...editProfile, seasonGoalEvent: e.target.value || null })}>
+              <option value="">All Events</option>
+              {events.map(ev => <option key={ev} value={ev}>{ev}</option>)}
+            </select>
+          </div>
+          <div>
+            <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, display: "block", color: "rgba(255,255,255,0.6)" }}>TARGET MEET DATE</label>
+            <input className="input-field" type="date"
+              value={editProfile.seasonGoalDate || ""}
+              onChange={e => setEditProfile({ ...editProfile, seasonGoalDate: e.target.value || null })} />
+          </div>
+          <div>
+            <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, display: "block", color: "rgba(255,255,255,0.6)" }}>TARGET MEET NAME</label>
+            <input className="input-field" placeholder="e.g. State Championships"
+              value={editProfile.seasonGoalMeetName || ""}
+              onChange={e => setEditProfile({ ...editProfile, seasonGoalMeetName: e.target.value })} />
+          </div>
+        </div>
+      </div>
+
+      <button className="btn-gold" onClick={() => {
+        // Save season goals to athlete record
+        if (editProfile.name) {
+          const record = getAthleteRecord(editProfile);
+          record.seasonGoals = {
+            targetScore: editProfile.seasonGoalScore || null,
+            targetEvent: editProfile.seasonGoalEvent || null,
+            targetMeetDate: editProfile.seasonGoalDate || null,
+            targetMeetName: editProfile.seasonGoalMeetName || "",
+          };
+          saveAthleteRecord(record);
+        }
+        onSave(editProfile);
+      }} style={{ width: "100%", marginTop: 32 }}>
         <Icon name="save" /> Save Changes
       </button>
 
