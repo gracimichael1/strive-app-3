@@ -387,3 +387,81 @@ Delta added intelligence layer functions and UI sections. All are pure additions
 ### Files Modified
 - `src/LegacyApp.js` — Added: `StriveErrorBoundary` class component, `ShimmerBlock` + `SkillCardShimmer` loading components, `OfflineBanner` component, `isOffline` state + event listeners, offline analysis cache (`strive_recent_analyses`), ResultsScreen null-result fallback. Wrapped: 8 screens + 3 sub-tabs + per-card + 6 charts in error boundaries. Fixed: 1 missing React key in SkeletonOverlay faultList.map.
 - `src/styles/global.css` — Added `.shimmer` utility class.
+
+---
+
+## Phase 7 — Improvement #2: Pre-Meet Focus Card
+
+### What Was Built
+A complete **Pre-Meet Focus Card** — a single-screen mental performance tool gymnasts review before competing. Accessible from a highlighted "Meet Day" button on the Dashboard.
+
+### Components Added
+
+1. **`PreMeetFocusScreen`** — Full focus card screen with 6 sections:
+   - **Header**: "MEET DAY FOCUS" in gold gradient, athlete name, event, today's date
+   - **Top 3 Focus Points**: Pulls from `computeFaultIntelligence` — shows the gymnast's most common faults with sport-specific coaching cues (e.g., "Lock your elbows before hands touch. Think 'straight sticks'"). Green left border, numbered 1-3.
+   - **Confidence Booster**: Lists up to 3 clean skills (deduction = 0.00) from the most recent analysis with green checkmarks and "CLEAN" badges. Gold accent border.
+   - **Visualization Script**: Personalized paragraph using actual skill names from their latest analysis. Purple theme, italic Outfit font. References their specific event apparatus.
+   - **Quick Reminders**: 2x2 grid — Breathe, Salute, First Skill (uses actual first skill name), Finish. Each with SVG icon and coaching cue.
+   - **Coach's Focus**: Displays coach's meet day note from Settings (if entered). Gold border, "COACH SAYS" label.
+   - **Motivational Footer**: "You are ready. Trust your training. Trust yourself. Go compete."
+
+2. **`FOCUS_CUES` constant** — 15 fault-specific coaching cues mapped to all fault types in the system.
+
+3. **Dashboard "Meet Day" button** — Added as first item in Quick Actions row with gold highlight styling to stand out.
+
+4. **Settings: "Coach's Meet Day Note"** — Free-text textarea in Settings for entering what the coach wants the gymnast to focus on. Persisted to `localStorage` key `strive-coach-meet-note`.
+
+5. **Screen routing** — `meetfocus` screen added to main render and bottom nav visibility list.
+
+### Design Decisions
+- All data comes from `localStorage` — works fully offline
+- Calming, empowering aesthetic: large fonts, generous whitespace, warm gold/green/purple palette
+- Not data-heavy: no scores, no charts, no deduction amounts — purely mental performance focused
+- Coaching cues are specific and actionable ("Think 'straight sticks'" not "improve arm form")
+
+### Build Result
+- `npx react-scripts build` — Compiled successfully (269.62 kB gzipped JS, +2.4 kB from focus card)
+
+### Files Modified
+- `src/LegacyApp.js` — Added: `FOCUS_CUES` constant, `PreMeetFocusScreen` component, `onMeetFocus` prop to DashboardScreen, "Meet Day" quick action button with gold highlight, `meetfocus` screen routing + error boundary, "Coach's Meet Day Note" textarea in SettingsScreen with localStorage persistence, `coachMeetNote` in Settings state initialization.
+
+---
+
+## Phase 7 — Improvement #1: PDF Export Report
+
+### What Was Built
+PDF Export Report feature — parents can generate a professional PDF of their gymnast's analysis and share it with their coach.
+
+### Features Added
+
+1. **Export Report button** (gold, Outfit font, upload/export icon) — placed at top of ResultsScreen alongside a Share button
+2. **Print-based PDF generation** — uses `window.print()` with `@media print` CSS, zero external dependencies
+3. **Hidden print container** (`#strive-print-report`) — dynamically populated with formatted report HTML on button click
+4. **Professional PDF layout** containing:
+   - STRIVE branded header with date and URL
+   - Athlete info bar: name, level, event, date
+   - Score card: final score (color-coded), start value, E-score, artistry, neutral deductions
+   - Skill-by-skill table: Skill Name | Timestamp | Deduction | Fault Description | Grade (color-coded)
+   - Two-column layout: Top 3 Areas for Improvement (red theme) + Top 3 Strengths/Celebrations (green theme)
+   - Path to 9.0+ section with current → projected score and per-fix gains
+   - Recommended Drills (top 5, pulled from DRILLS_DATABASE based on fault matching)
+   - STRIVE branded footer
+   - Legal disclaimer: "This analysis is AI-generated and should be reviewed by a qualified coach."
+5. **Share button** — uses Web Share API (`navigator.share`) on mobile, falls back to clipboard copy on desktop
+6. **@media print CSS** in global.css — hides all app UI except the print report, white background, professional typography, proper table styling, page break rules
+
+### Design Decisions
+- No external library (html2pdf, jsPDF) — browser print API produces native PDF with zero bundle cost
+- White background + dark text for print readability (inverted from app's dark theme)
+- Print colors use `-webkit-print-color-adjust: exact` for colored grade indicators and score
+- Report is self-contained: a coach receiving the PDF sees everything without needing the app
+
+### Build Result
+- `npx react-scripts build` — Compiled successfully
+- JS bundle: 272.5 kB gzipped (+2.88 kB from PDF export)
+- CSS: 1.9 kB gzipped (+273 B from print styles)
+
+### Files Modified
+- `src/LegacyApp.js` — Added: Export Report button (gold), Share button (outline), hidden `#strive-print-report` div, PDF report HTML generator with full analysis data, Web Share API / clipboard share handler
+- `src/styles/global.css` — Added: `@media print` block with visibility rules, print-specific typography, table styles, page settings

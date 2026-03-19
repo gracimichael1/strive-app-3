@@ -212,3 +212,58 @@ select.input-field option {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+/* ─── PRINT STYLES — PDF Export Report ─── */
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+  #strive-print-report,
+  #strive-print-report * {
+    visibility: visible !important;
+  }
+  #strive-print-report {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+    background: white !important;
+    color: #1a1a1a !important;
+    padding: 40px !important;
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif !important;
+    font-size: 12px !important;
+    line-height: 1.5 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  #strive-print-report .score {
+    font-family: 'Space Mono', monospace !important;
+    font-size: 36px !important;
+    font-weight: 700 !important;
+  }
+  #strive-print-report table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    page-break-inside: auto !important;
+  }
+  #strive-print-report th,
+  #strive-print-report td {
+    border: 1px solid #ddd !important;
+    padding: 8px !important;
+    text-align: left !important;
+    font-size: 11px !important;
+  }
+  #strive-print-report th {
+    background: #f5f5f5 !important;
+    font-weight: 600 !important;
+  }
+  #strive-print-report tr {
+    page-break-inside: avoid !important;
+  }
+  @page {
+    margin: 0.5in;
+    size: letter;
+  }
+}

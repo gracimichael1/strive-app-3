@@ -1688,6 +1688,7 @@ export default function LegacyApp() {
           onMeets={() => setScreen("meets")}
           onMental={() => setScreen("mental")}
           onGoals={() => setScreen("goals")}
+          onMeetFocus={() => setScreen("meetfocus")}
           onViewResult={(r) => { setAnalysisResult(r); setLiveVideoUrl(null); setScreen("results"); }}
         />
         </StriveErrorBoundary>
@@ -1740,6 +1741,16 @@ export default function LegacyApp() {
         <DrillsScreen
           result={analysisResult}
           onBack={() => setScreen("results")}
+        />
+        </StriveErrorBoundary>
+      )}
+      {screen === "meetfocus" && (
+        <StriveErrorBoundary name="Meet Focus">
+        <PreMeetFocusScreen
+          profile={profile}
+          history={history}
+          savedResults={savedResults}
+          onBack={() => setScreen("dashboard")}
         />
         </StriveErrorBoundary>
       )}
@@ -1860,7 +1871,7 @@ export default function LegacyApp() {
       )}
 
       {/* Bottom Navigation */}
-      {["dashboard", "deductions", "meets", "progress", "mental", "goals", "settings"].includes(screen) && (
+      {["dashboard", "deductions", "meets", "progress", "mental", "goals", "settings", "meetfocus"].includes(screen) && (
         <nav style={{
           position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 100,
           background: "linear-gradient(to top, #070c16 85%, rgba(11,16,36,0.95) 92%, transparent)",
@@ -2281,7 +2292,7 @@ function OnboardingScreen({ onComplete }) {
 }
 
 // ─── DASHBOARD ──────────────────────────────────────────────────────
-function DashboardScreen({ profile, history, savedResults, onUpload, onSettings, onViewDeductions, onViewResult, onProgress, onMeets, onMental, onGoals }) {
+function DashboardScreen({ profile, history, savedResults, onUpload, onSettings, onViewDeductions, onViewResult, onProgress, onMeets, onMental, onGoals, onMeetFocus }) {
   const events = profile.gender === "female" ? WOMEN_EVENTS : MEN_EVENTS;
   const avgScore = history.length > 0
     ? (history.reduce((s, h) => s + (h.score || 0), 0) / history.length).toFixed(3)
@@ -2626,6 +2637,7 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
         return (
           <div style={{ display: "flex", gap: 8, marginBottom: 20, overflowX: "auto", paddingBottom: 4, WebkitOverflowScrolling: "touch" }}>
             {[
+              { emoji: "🔥", label: "Meet Day", action: onMeetFocus, highlight: true },
               { emoji: "📋", label: "Guide", action: onViewDeductions },
               { emoji: "🏆", label: "Meets", action: onMeets },
               { emoji: "📈", label: "Progress", action: onProgress, pro: true },
@@ -2635,9 +2647,10 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
               <button key={i} onClick={btn.action} style={{
                 display: "flex", alignItems: "center", gap: 6,
                 padding: "10px 16px", borderRadius: 12, cursor: "pointer",
-                background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)",
-                fontFamily: "'Outfit', sans-serif", fontSize: 12, fontWeight: 600,
-                color: "rgba(255,255,255,0.55)", whiteSpace: "nowrap",
+                background: btn.highlight ? "rgba(232,150,42,0.1)" : "rgba(255,255,255,0.03)",
+                border: btn.highlight ? "1px solid rgba(232,150,42,0.25)" : "1px solid rgba(255,255,255,0.05)",
+                fontFamily: "'Outfit', sans-serif", fontSize: 12, fontWeight: btn.highlight ? 700 : 600,
+                color: btn.highlight ? "#ffc15a" : "rgba(255,255,255,0.55)", whiteSpace: "nowrap",
                 transition: "all 0.2s", flexShrink: 0,
               }}>
                 <span style={{ fontSize: 14 }}>{btn.emoji}</span>
@@ -2838,6 +2851,247 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
         }}>STRIVE</div>
         <div style={{ fontSize: 9, color: "rgba(255,255,255,0.12)", letterSpacing: 1 }}>
           v1.0 · 3-Pass AI Engine · {profile.level}
+        </div>
+      </div>
+
+    </div>
+  );
+}
+
+// ─── PRE-MEET FOCUS CARD ────────────────────────────────────────────
+const FOCUS_CUES = {
+  bent_arms: "Lock your elbows before hands touch. Think 'straight sticks' from shoulder to fingertip.",
+  bent_knees: "Squeeze your quads on every skill. Imagine zipping your legs from hip to toe.",
+  leg_separation: "Glue your ankles together. Squeeze a pretend block between your legs in the air.",
+  toe_point: "Point through the floor. Every jump, every leap — toes lead the way.",
+  step_landing: "Absorb through your ankles. Chest up, arms up, freeze like a statue.",
+  fall: "Commit 100%. Trust your body — you've done this skill a thousand times in practice.",
+  wobble: "Find your spot on the wall. Breathe, squeeze your core, stay tall.",
+  body_angle: "Hollow body tight. Ribs in, belly button to spine, no arch.",
+  split_angle: "Push past your comfort zone. Show full extension — make the judges see 180.",
+  alignment: "Center your weight. Imagine a laser line from your head through your toes.",
+  upper_body: "Shoulders down and open. Proud chest. You own this routine.",
+  timing: "Feel the rhythm. Let the music carry you — don't rush.",
+  arch: "Tight core, ribs in. Think hollow, not banana.",
+  landing: "Stick it. Land soft, hold strong, show the judges you meant it.",
+  other: "Focus on clean execution. Every detail matters.",
+};
+
+function PreMeetFocusScreen({ profile, history, savedResults, onBack }) {
+  const athleteRecord = getAthleteRecord(profile);
+  const faultIntel = computeFaultIntelligence(athleteRecord);
+
+  // ── TOP 3 FOCUS POINTS from most common faults ──
+  const topFaults = (faultIntel.faultFrequencies || []).slice(0, 3);
+
+  // ── LAST ANALYSIS DATA ──
+  const lastResult = (() => {
+    if (!history || history.length === 0 || !savedResults) return null;
+    for (let i = 0; i < history.length; i++) {
+      const r = savedResults[history[i].id];
+      if (r && r.gradedSkills) return r;
+    }
+    return null;
+  })();
+
+  // ── CLEAN SKILLS (deduction === 0) from last analysis ──
+  const cleanSkills = lastResult
+    ? (lastResult.gradedSkills || []).filter(s => s.deduction === 0 || s.deduction === 0.00).slice(0, 3)
+    : [];
+
+  // ── ALL SKILL NAMES from last analysis for visualization ──
+  const allSkills = lastResult ? (lastResult.gradedSkills || []) : [];
+  const firstSkill = allSkills.length > 0 ? allSkills[0].skill : "first skill";
+  const cleanSkillName = cleanSkills.length > 0 ? cleanSkills[0].skill : "best skill";
+  const lastSkill = allSkills.length > 0 ? allSkills[allSkills.length - 1].skill : "dismount";
+  const lastEvent = history && history.length > 0 ? history[0].event : (profile.primaryEvents && profile.primaryEvents[0]) || "your event";
+
+  // ── COACH NOTE from localStorage ──
+  let coachNote = "";
+  try { coachNote = localStorage.getItem("strive-coach-meet-note") || ""; } catch {}
+
+  const today = new Date();
+  const dateStr = today.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+
+  return (
+    <div style={{
+      minHeight: "100vh", padding: "24px 20px 100px", maxWidth: 540, margin: "0 auto",
+      animation: "fadeIn 0.5s ease-out",
+    }}>
+      {/* Back button */}
+      <button onClick={onBack} style={{
+        background: "none", border: "none", color: "rgba(232,150,42,0.6)", cursor: "pointer",
+        fontFamily: "'Outfit', sans-serif", fontSize: 13, fontWeight: 600, marginBottom: 20,
+        display: "flex", alignItems: "center", gap: 4,
+      }}>
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.5 2.5l-5 5 5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> Dashboard
+      </button>
+
+      {/* ── A. HEADER ── */}
+      <div style={{ textAlign: "center", marginBottom: 32 }}>
+        <div style={{
+          fontSize: 11, fontWeight: 700, letterSpacing: 3, marginBottom: 10,
+          background: "linear-gradient(135deg, #e8962a, #ffc15a)", backgroundClip: "text",
+          WebkitBackgroundClip: "text", color: "transparent",
+        }}>
+          MEET DAY FOCUS
+        </div>
+        <div style={{ fontSize: 28, fontWeight: 800, color: "#ffc15a", fontFamily: "'Outfit', sans-serif", lineHeight: 1.2, marginBottom: 6 }}>
+          {profile.name}
+        </div>
+        <div style={{ fontSize: 14, color: "rgba(255,255,255,0.35)", fontWeight: 400 }}>
+          {lastEvent} &middot; {dateStr}
+        </div>
+      </div>
+
+      {/* ── B. TOP 3 FOCUS POINTS ── */}
+      {topFaults.length > 0 && (
+        <div style={{ marginBottom: 28 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, color: "rgba(34,197,94,0.7)", marginBottom: 14 }}>
+            YOUR TOP FOCUS AREAS
+          </div>
+          {topFaults.map((fault, i) => (
+            <div key={fault.type} style={{
+              display: "flex", gap: 14, alignItems: "flex-start",
+              padding: "16px 18px", marginBottom: 10, borderRadius: 14,
+              background: "#0d1422", borderLeft: "3px solid #22c55e",
+              border: "1px solid rgba(34,197,94,0.08)",
+            }}>
+              <div style={{
+                width: 28, height: 28, borderRadius: 8, flexShrink: 0,
+                background: "rgba(34,197,94,0.1)", display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 14, fontWeight: 800, color: "#22c55e", fontFamily: "'Space Mono', monospace",
+              }}>
+                {i + 1}
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 15, fontWeight: 700, color: "#e2e8f0", marginBottom: 4 }}>
+                  {fault.label}
+                </div>
+                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", lineHeight: 1.7, fontWeight: 400 }}>
+                  {FOCUS_CUES[fault.type] || FOCUS_CUES.other}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ── C. CONFIDENCE BOOSTER ── */}
+      {cleanSkills.length > 0 && (
+        <div style={{
+          marginBottom: 28, padding: "20px 20px", borderRadius: 16,
+          background: "linear-gradient(135deg, rgba(232,150,42,0.06), rgba(232,150,42,0.02))",
+          border: "1px solid rgba(232,150,42,0.15)",
+        }}>
+          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, color: "rgba(232,150,42,0.7)", marginBottom: 6 }}>
+            CONFIDENCE BOOSTER
+          </div>
+          <div style={{ fontSize: 15, fontWeight: 600, color: "#ffc15a", marginBottom: 14, lineHeight: 1.4 }}>
+            You NAILED these last time:
+          </div>
+          {cleanSkills.map((skill, i) => (
+            <div key={i} style={{
+              display: "flex", alignItems: "center", gap: 10,
+              padding: "10px 0",
+              borderBottom: i < cleanSkills.length - 1 ? "1px solid rgba(232,150,42,0.06)" : "none",
+            }}>
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <circle cx="9" cy="9" r="8" fill="rgba(34,197,94,0.15)" stroke="#22c55e" strokeWidth="1.5"/>
+                <path d="M5.5 9.5l2 2 5-5" stroke="#22c55e" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              <span style={{ fontSize: 15, fontWeight: 600, color: "#e2e8f0" }}>{skill.skill}</span>
+              <span style={{ fontSize: 11, color: "rgba(34,197,94,0.7)", marginLeft: "auto", fontFamily: "'Space Mono', monospace", fontWeight: 700 }}>CLEAN</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ── D. VISUALIZATION SCRIPT ── */}
+      <div style={{
+        marginBottom: 28, padding: "24px 22px", borderRadius: 16,
+        background: "linear-gradient(135deg, rgba(139,114,212,0.08), rgba(139,114,212,0.02))",
+        border: "1px solid rgba(139,114,212,0.15)",
+      }}>
+        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, color: "rgba(139,114,212,0.7)", marginBottom: 14 }}>
+          VISUALIZATION
+        </div>
+        <div style={{
+          fontSize: 16, fontStyle: "italic", color: "rgba(255,255,255,0.7)",
+          lineHeight: 1.9, fontFamily: "'Outfit', sans-serif", fontWeight: 400,
+        }}>
+          Close your eyes. See yourself on {lastEvent === "Balance Beam" ? "the beam" : lastEvent === "Uneven Bars" ? "the bars" : lastEvent === "Vault" ? "the runway" : "the floor"}.
+          Your <span style={{ color: "#ffc15a", fontWeight: 600, fontStyle: "normal" }}>{firstSkill}</span> is powerful.
+          {cleanSkills.length > 0 && <> Your <span style={{ color: "#22c55e", fontWeight: 600, fontStyle: "normal" }}>{cleanSkillName}</span> is perfect.</>}
+          {" "}Feel the landing — stuck, solid, confident.
+          Your <span style={{ color: "#ffc15a", fontWeight: 600, fontStyle: "normal" }}>{lastSkill}</span> is strong.
+          You have done this in practice. Now own it.
+        </div>
+      </div>
+
+      {/* ── E. QUICK REMINDERS — 2x2 grid ── */}
+      <div style={{ marginBottom: 28 }}>
+        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, color: "rgba(255,255,255,0.3)", marginBottom: 14 }}>
+          BEFORE YOU COMPETE
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          {[
+            { icon: "M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z", title: "Breathe", sub: "3 deep breaths. In 4, out 4.", color: "#22c55e" },
+            { icon: "M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5", title: "Salute", sub: "Eye contact. Confident smile.", color: "#ffc15a" },
+            { icon: "M13 2L3 14h9l-1 8 10-12h-9l1-8z", title: "First Skill", sub: firstSkill !== "first skill" ? firstSkill : "Commit 100%", color: "#e8962a" },
+            { icon: "M5 3l14 9-14 9V3z", title: "Finish", sub: "Stick it. Hold the pose.", color: "#8b72d4" },
+          ].map((card, i) => (
+            <div key={i} style={{
+              padding: "18px 16px", borderRadius: 14,
+              background: "#0d1422", border: `1px solid ${card.color}15`,
+              textAlign: "center",
+            }}>
+              <div style={{
+                width: 40, height: 40, borderRadius: 12, margin: "0 auto 10px",
+                background: `${card.color}12`, display: "flex", alignItems: "center", justifyContent: "center",
+              }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={card.color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d={card.icon}/>
+                </svg>
+              </div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#e2e8f0", marginBottom: 4 }}>{card.title}</div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", lineHeight: 1.5, fontWeight: 400 }}>{card.sub}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── F. COACH'S FOCUS ── */}
+      {coachNote && (
+        <div style={{
+          marginBottom: 28, padding: "20px 20px", borderRadius: 16,
+          background: "linear-gradient(135deg, rgba(232,150,42,0.06), rgba(232,150,42,0.02))",
+          border: "1.5px solid rgba(232,150,42,0.25)",
+        }}>
+          <div style={{
+            fontSize: 10, fontWeight: 700, letterSpacing: 1.5, color: "#e8962a", marginBottom: 10,
+          }}>
+            COACH SAYS
+          </div>
+          <div style={{
+            fontSize: 16, color: "rgba(255,255,255,0.75)", lineHeight: 1.8,
+            fontFamily: "'Outfit', sans-serif", fontWeight: 500,
+          }}>
+            "{coachNote}"
+          </div>
+        </div>
+      )}
+
+      {/* ── MOTIVATIONAL FOOTER ── */}
+      <div style={{ textAlign: "center", paddingTop: 12, paddingBottom: 32 }}>
+        <div style={{
+          fontSize: 20, fontWeight: 800, color: "#ffc15a",
+          fontFamily: "'Outfit', sans-serif", marginBottom: 6,
+        }}>
+          You are ready.
+        </div>
+        <div style={{ fontSize: 13, color: "rgba(255,255,255,0.3)", fontWeight: 400 }}>
+          Trust your training. Trust yourself. Go compete.
         </div>
       </div>
 
@@ -5873,6 +6127,137 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFile, onBack, 
         Dashboard
       </button>
 
+      {/* ── PDF Export + Share Buttons ── */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+        <button
+          onClick={() => {
+            const printDiv = document.getElementById("strive-print-report");
+            if (!printDiv) return;
+            const topDeds = [...groupedDeds].sort((a, b) => safeNum(b.deduction, 0) - safeNum(a.deduction, 0));
+            const top3Imp = topDeds.slice(0, 3);
+            const celebs = safeArray(result.celebrations);
+            const strs = safeArray(result.strengths);
+            const top3Str = celebs.length > 0
+              ? celebs.slice(0, 3).map(c => ({ title: safeStr(c.skill), note: safeStr(c.note) }))
+              : strs.slice(0, 3).map(s => ({ title: safeStr(s).split(":")[0], note: safeStr(s).split(":").slice(1).join(":").trim() || "Clean execution" }));
+            const gSkills = safeArray(result.gradedSkills);
+            const cur = safeNum(result.finalScore, 0);
+            const pathItems = cur < 9.0 ? top3Imp.map(d => ({ skill: safeStr(d.skill), gain: safeNum(d.deduction, 0) })) : [];
+            const proj = Math.min(10, cur + pathItems.reduce((s, p) => s + p.gain, 0));
+            const getDrillsLocal = (fault) => { for (const [key, drills] of Object.entries(DRILLS_DATABASE)) { if (fault && fault.toLowerCase().includes(key.toLowerCase())) return drills; } return DRILLS_DATABASE.default || []; };
+            const drillSet = new Set(); const recDrills = [];
+            topDeds.forEach(d => { const dr = getDrillsLocal(safeStr(d.fault)); if (dr) dr.forEach(drill => { const nm = drill.name || drill; if (!drillSet.has(nm) && recDrills.length < 5) { drillSet.add(nm); recDrills.push({ name: nm, reps: drill.reps || drill.sets || "", why: drill.why || drill.focus || "" }); } }); });
+            const ds = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+            const sc = cur >= 9.0 ? "#16a34a" : cur >= 8.0 ? "#d97706" : "#dc2626";
+            printDiv.innerHTML = '<div style="max-width:700px;margin:0 auto;">' +
+              '<div style="display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #e8962a;padding-bottom:16px;margin-bottom:24px;">' +
+                '<div><div style="font-family:Georgia,serif;font-size:28px;font-weight:700;letter-spacing:4px;color:#e8962a;">STRIVE</div><div style="font-size:10px;color:#888;letter-spacing:2px;margin-top:2px;">AI GYMNASTICS ANALYSIS REPORT</div></div>' +
+                '<div style="text-align:right;font-size:11px;color:#666;"><div>' + ds + '</div><div style="margin-top:2px;">strive-app-amber.vercel.app</div></div>' +
+              '</div>' +
+              '<div style="display:flex;gap:24px;margin-bottom:24px;padding:16px;background:#f8f8f8;border-radius:8px;">' +
+                '<div style="flex:1;"><div style="font-size:10px;color:#999;text-transform:uppercase;letter-spacing:1px;">Athlete</div><div style="font-size:16px;font-weight:700;color:#1a1a1a;margin-top:2px;">' + safeStr(profile?.name || "Athlete") + '</div></div>' +
+                '<div><div style="font-size:10px;color:#999;text-transform:uppercase;letter-spacing:1px;">Level</div><div style="font-size:14px;font-weight:600;color:#1a1a1a;margin-top:2px;">' + safeStr(result.level) + '</div></div>' +
+                '<div><div style="font-size:10px;color:#999;text-transform:uppercase;letter-spacing:1px;">Event</div><div style="font-size:14px;font-weight:600;color:#1a1a1a;margin-top:2px;">' + safeStr(result.event) + '</div></div>' +
+                '<div><div style="font-size:10px;color:#999;text-transform:uppercase;letter-spacing:1px;">Date</div><div style="font-size:14px;font-weight:600;color:#1a1a1a;margin-top:2px;">' + ds + '</div></div>' +
+              '</div>' +
+              '<div style="text-align:center;padding:24px;border:2px solid #e8962a;border-radius:12px;margin-bottom:24px;">' +
+                '<div class="score" style="font-size:48px;font-weight:900;color:' + sc + ';">' + cur.toFixed(3) + '</div>' +
+                '<div style="font-size:12px;color:#666;margin-top:4px;letter-spacing:1px;">FINAL SCORE</div>' +
+                '<div style="display:flex;justify-content:center;gap:40px;margin-top:16px;">' +
+                  '<div><div style="font-size:10px;color:#999;letter-spacing:0.5px;">START VALUE</div><div style="font-family:Space Mono,monospace;font-size:20px;font-weight:700;color:#1a1a1a;">' + safeNum(result.startValue, 10).toFixed(1) + '</div></div>' +
+                  '<div><div style="font-size:10px;color:#999;letter-spacing:0.5px;">E-SCORE</div><div style="font-family:Space Mono,monospace;font-size:20px;font-weight:700;color:#dc2626;">-' + safeNum(result.totalDeductions, 0).toFixed(2) + '</div></div>' +
+                  '<div><div style="font-size:10px;color:#999;letter-spacing:0.5px;">ARTISTRY</div><div style="font-family:Space Mono,monospace;font-size:20px;font-weight:700;color:#d97706;">-' + safeNum(result.artistryDeductionsTotal, 0).toFixed(2) + '</div></div>' +
+                  '<div><div style="font-size:10px;color:#999;letter-spacing:0.5px;">NEUTRAL</div><div style="font-family:Space Mono,monospace;font-size:20px;font-weight:700;color:#888;">0.00</div></div>' +
+                '</div>' +
+              '</div>' +
+              (gSkills.length > 0 ? '<div style="margin-bottom:24px;"><div style="font-size:14px;font-weight:700;color:#1a1a1a;margin-bottom:10px;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid #ddd;padding-bottom:6px;">Skill-by-Skill Breakdown</div>' +
+              '<table><thead><tr><th style="width:30%;">Skill Name</th><th style="width:10%;text-align:center;">Time</th><th style="width:12%;text-align:center;">Deduction</th><th style="width:38%;">Fault Description</th><th style="width:10%;text-align:center;">Grade</th></tr></thead><tbody>' +
+              gSkills.map(function(s) { var ded = s.gradeDeduction || s.deduction || 0; var gc = ({"A+":"#16a34a","A":"#16a34a","A-":"#22c55e","B+":"#22c55e","B":"#d97706","B-":"#d97706","C+":"#ea580c","C":"#ea580c","C-":"#dc2626","D+":"#dc2626","D":"#dc2626","F":"#7c3aed"})[s.grade] || "#333"; return '<tr><td style="font-weight:600;font-size:11px;">' + safeStr(s.skill) + '</td><td style="text-align:center;font-family:Space Mono,monospace;font-size:11px;">' + (safeStr(s.timestamp) || "\u2014") + '</td><td style="text-align:center;font-family:Space Mono,monospace;font-size:11px;color:' + (ded > 0 ? "#dc2626" : "#16a34a") + ';">' + (ded > 0 ? "-" + ded.toFixed(2) : "0.00") + '</td><td style="font-size:11px;color:#555;">' + safeStr(s.reason || s.fault || (ded > 0 ? "Form break detected" : "Clean execution")) + '</td><td style="text-align:center;font-weight:700;font-size:12px;color:' + gc + ';">' + (safeStr(s.grade) || "\u2014") + '</td></tr>'; }).join("") +
+              '</tbody></table></div>' : '') +
+              '<div style="display:flex;gap:20px;margin-bottom:24px;">' +
+                '<div style="flex:1;padding:16px;border:1px solid #fca5a5;border-radius:8px;background:#fef2f2;">' +
+                  '<div style="font-size:12px;font-weight:700;color:#dc2626;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">Top Areas for Improvement</div>' +
+                  (top3Imp.length > 0 ? top3Imp.map(function(d, i) { return '<div style="margin-bottom:10px;padding-bottom:8px;' + (i < 2 ? "border-bottom:1px solid #fecaca;" : "") + '"><div style="font-size:12px;font-weight:700;color:#1a1a1a;">' + (i+1) + '. ' + safeStr(d.skill) + '</div><div style="font-size:11px;color:#555;margin-top:2px;">' + safeStr(d.fault) + '</div><div style="font-size:11px;font-family:Space Mono,monospace;color:#dc2626;margin-top:2px;">-' + safeNum(d.deduction, 0).toFixed(2) + '</div></div>'; }).join("") : '<div style="font-size:11px;color:#888;">Clean routine.</div>') +
+                '</div>' +
+                '<div style="flex:1;padding:16px;border:1px solid #86efac;border-radius:8px;background:#f0fdf4;">' +
+                  '<div style="font-size:12px;font-weight:700;color:#16a34a;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">Strengths &amp; Celebrations</div>' +
+                  top3Str.map(function(s, i) { return '<div style="margin-bottom:10px;padding-bottom:8px;' + (i < 2 ? "border-bottom:1px solid #bbf7d0;" : "") + '"><div style="font-size:12px;font-weight:700;color:#1a1a1a;">' + s.title + '</div><div style="font-size:11px;color:#555;margin-top:2px;">' + s.note + '</div></div>'; }).join("") +
+                '</div>' +
+              '</div>' +
+              (pathItems.length > 0 ? '<div style="margin-bottom:24px;padding:16px;border:1px solid #86efac;border-radius:8px;background:#f0fdf4;">' +
+                '<div style="font-size:12px;font-weight:700;color:#16a34a;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">Path to 9.0+</div>' +
+                '<div style="display:flex;align-items:center;gap:16px;margin-bottom:12px;">' +
+                  '<div style="text-align:center;"><div style="font-size:9px;color:#999;text-transform:uppercase;">Current</div><div style="font-family:Space Mono,monospace;font-size:18px;font-weight:700;color:#d97706;">' + cur.toFixed(3) + '</div></div>' +
+                  '<div style="font-size:16px;color:#999;">\u2192</div>' +
+                  '<div style="text-align:center;"><div style="font-size:9px;color:#999;text-transform:uppercase;">Projected</div><div style="font-family:Space Mono,monospace;font-size:18px;font-weight:700;color:#16a34a;">' + proj.toFixed(3) + '</div></div>' +
+                '</div>' +
+                pathItems.map(function(p, i) { return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;' + (i < pathItems.length - 1 ? "border-bottom:1px solid #dcfce7;" : "") + '"><div style="font-family:Space Mono,monospace;font-size:12px;font-weight:700;color:#16a34a;">+' + p.gain.toFixed(2) + '</div><div style="font-size:12px;color:#333;">Fix ' + p.skill + '</div></div>'; }).join("") +
+                (result.pathToGoal ? '<div style="margin-top:10px;font-size:11px;color:#555;font-style:italic;">' + safeStr(result.pathToGoal) + '</div>' : '') +
+              '</div>' : '') +
+              (recDrills.length > 0 ? '<div style="margin-bottom:24px;padding:16px;border:1px solid #fde68a;border-radius:8px;background:#fffbeb;">' +
+                '<div style="font-size:12px;font-weight:700;color:#d97706;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">Recommended Drills</div>' +
+                recDrills.map(function(d, i) { return '<div style="margin-bottom:8px;padding-bottom:8px;' + (i < recDrills.length - 1 ? "border-bottom:1px solid #fef3c7;" : "") + '"><div style="font-size:12px;font-weight:700;color:#1a1a1a;">' + (i+1) + '. ' + d.name + '</div>' + (d.reps ? '<div style="font-size:11px;font-family:Space Mono,monospace;color:#d97706;margin-top:2px;">' + d.reps + '</div>' : '') + (d.why ? '<div style="font-size:11px;color:#555;margin-top:2px;">' + d.why + '</div>' : '') + '</div>'; }).join("") +
+              '</div>' : '') +
+              '<div style="border-top:2px solid #e8962a;padding-top:16px;margin-top:32px;">' +
+                '<div style="text-align:center;"><div style="font-family:Georgia,serif;font-size:16px;font-weight:700;letter-spacing:3px;color:#e8962a;">STRIVE</div><div style="font-size:10px;color:#888;letter-spacing:1.5px;margin-top:4px;">SEE YOUR SCORE. OWN YOUR GROWTH.</div></div>' +
+                '<div style="margin-top:16px;padding:10px;background:#f8f8f8;border-radius:6px;text-align:center;">' +
+                  '<div style="font-size:9px;color:#999;line-height:1.6;">This analysis is AI-generated and should be reviewed by a qualified coach.<br/>Scoring uses Championship Strictness calibration (may be 0.05\u20130.15 below actual meet scores).<br/>Generated by STRIVE \u2014 strive-app-amber.vercel.app</div>' +
+                '</div>' +
+              '</div>' +
+            '</div>';
+            window.print();
+          }}
+          style={{
+            flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+            background: "linear-gradient(135deg, #e8962a, #ffc15a)", color: "#070c16",
+            border: "none", borderRadius: 12, padding: "12px 16px", cursor: "pointer",
+            fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 13,
+            letterSpacing: 0.3, transition: "all 0.2s",
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 1v9M7 1l3 3M7 1L4 4M1 10v2h12v-2"/></svg>
+          Export Report
+        </button>
+        <button
+          onClick={() => {
+            const topDeds2 = [...groupedDeds].sort((a, b) => safeNum(b.deduction, 0) - safeNum(a.deduction, 0)).slice(0, 5);
+            const shareText = [
+              "STRIVE Analysis Report",
+              safeStr(profile?.name || "Athlete") + " \u2014 " + result.event + " \u00B7 " + result.level,
+              "Score: " + safeNum(result.finalScore, 0).toFixed(3) + " (Start: " + safeNum(result.startValue, 10).toFixed(1) + " - Deductions: " + safeNum(result.totalDeductions, 0).toFixed(2) + ")",
+              "", "Top deductions:",
+              ...topDeds2.map((d, i) => "  " + (i+1) + ". " + safeStr(d.skill) + " \u2014 " + safeStr(d.fault) + " (-" + safeNum(d.deduction, 0).toFixed(2) + ")"),
+              "", "Strengths: " + safeArray(result.strengths).slice(0, 3).map(s => safeStr(s).substring(0, 60)).join("; "),
+              "", "#1 fix: " + (topDeds2[0] ? safeStr(topDeds2[0].skill) + " (saves +" + safeNum(topDeds2[0].deduction, 0).toFixed(2) + ")" : "See full report"),
+              "", "\u2014 Generated by STRIVE \u00B7 See Your Score. Own Your Growth.",
+              "  strive-app-amber.vercel.app",
+            ].join("\n");
+            if (navigator.share) {
+              navigator.share({ title: "STRIVE Report \u2014 " + safeStr(profile?.name || "Athlete") + " " + result.event + " " + safeNum(result.finalScore, 0).toFixed(3), text: shareText }).catch(function(){});
+            } else if (navigator.clipboard) {
+              navigator.clipboard.writeText(shareText).then(function() { alert("Report summary copied to clipboard! Paste into an email or text to share with your coach."); }).catch(function() {
+                var ta = document.createElement("textarea"); ta.value = shareText; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); document.body.removeChild(ta); alert("Report summary copied!");
+              });
+            } else {
+              var ta = document.createElement("textarea"); ta.value = shareText; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); document.body.removeChild(ta); alert("Report summary copied!");
+            }
+          }}
+          style={{
+            flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+            background: "transparent", color: "#e8962a",
+            border: "1.5px solid rgba(232,150,42,0.4)", borderRadius: 12,
+            padding: "12px 16px", cursor: "pointer",
+            fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 13, transition: "all 0.2s",
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="3" cy="7" r="2"/><circle cx="11" cy="3" r="2"/><circle cx="11" cy="11" r="2"/><path d="M4.7 6.1l4.6-2.2M4.7 7.9l4.6 2.2"/></svg>
+          Share
+        </button>
+      </div>
+
+      {/* Hidden print report container */}
+      <div id="strive-print-report" style={{ position: "absolute", left: "-9999px", top: 0, width: 0, height: 0, overflow: "hidden" }} />
+
       {/* Demo mode notice */}
       {result.isDemo && (
         <div style={{
@@ -7194,12 +7579,17 @@ function SettingsScreen({ profile, onSave, onBack, onReset }) {
   // Load season goals from athlete record into editProfile
   const athleteRecord = getAthleteRecord(profile);
   const sg = athleteRecord ? athleteRecord.seasonGoals || {} : {};
-  const [editProfile, setEditProfile] = useState({
-    ...profile,
-    seasonGoalScore: sg.targetScore || null,
-    seasonGoalEvent: sg.targetEvent || null,
-    seasonGoalDate: sg.targetMeetDate || null,
-    seasonGoalMeetName: sg.targetMeetName || "",
+  const [editProfile, setEditProfile] = useState(() => {
+    let coachNote = "";
+    try { coachNote = localStorage.getItem("strive-coach-meet-note") || ""; } catch {}
+    return {
+      ...profile,
+      seasonGoalScore: sg.targetScore || null,
+      seasonGoalEvent: sg.targetEvent || null,
+      seasonGoalDate: sg.targetMeetDate || null,
+      seasonGoalMeetName: sg.targetMeetName || "",
+      coachMeetNote: coachNote,
+    };
   });
   const [showConfirm, setShowConfirm] = useState(false);
   const [geminiKey, setGeminiKey] = useState("");
@@ -7336,6 +7726,22 @@ function SettingsScreen({ profile, onSave, onBack, onReset }) {
         </div>
       </div>
 
+      {/* ── Coach's Meet Day Note ── */}
+      <div style={{ marginTop: 32, paddingTop: 24, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+        <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 6, color: "#e8962a" }}>Coach's Meet Day Note</h3>
+        <p style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginBottom: 12, lineHeight: 1.5 }}>
+          Enter what the coach wants your gymnast to focus on at the next meet. This shows on the Meet Day Focus Card.
+        </p>
+        <textarea
+          className="input-field"
+          placeholder="e.g. Lock your arms on back handsprings. Squeeze on every jump. Have fun!"
+          value={editProfile.coachMeetNote || ""}
+          onChange={e => setEditProfile({ ...editProfile, coachMeetNote: e.target.value })}
+          rows={3}
+          style={{ resize: "vertical", minHeight: 70, fontFamily: "'Outfit', sans-serif", fontSize: 14, lineHeight: 1.6 }}
+        />
+      </div>
+
       <button className="btn-gold" onClick={() => {
         // Save season goals to athlete record
         if (editProfile.name) {
@@ -7348,6 +7754,8 @@ function SettingsScreen({ profile, onSave, onBack, onReset }) {
           };
           saveAthleteRecord(record);
         }
+        // Save coach meet note to localStorage
+        try { localStorage.setItem("strive-coach-meet-note", editProfile.coachMeetNote || ""); } catch {}
         onSave(editProfile);
       }} style={{ width: "100%", marginTop: 32 }}>
         <Icon name="save" /> Save Changes
