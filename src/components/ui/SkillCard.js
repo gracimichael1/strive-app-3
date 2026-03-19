@@ -37,6 +37,7 @@ const SEV_COLORS = {
   medium: '#f59e0b',
   large: '#e06820',
   veryLarge: '#dc2626',
+  'very large': '#dc2626',
   fall: '#dc2626',
 };
 
@@ -69,6 +70,13 @@ function formatTimestamp(ts) {
   return `${mins}:${secs}`;
 }
 
+function getQualityScoreColor(score) {
+  if (score >= 9.5) return COLORS.green;
+  if (score >= 9.0) return COLORS.gold;
+  if (score >= 8.5) return COLORS.orange;
+  return COLORS.red;
+}
+
 /**
  * Reusable SkillCard for analysis results.
  *
@@ -79,10 +87,11 @@ function formatTimestamp(ts) {
  */
 function SkillCard({ skill, index, onSeek, defaultExpanded }) {
   const [expanded, setExpanded] = useState(defaultExpanded || false);
+  const [mechanicsOpen, setMechanicsOpen] = useState(false);
 
   if (!skill) return null;
 
-  const skillName = safeStr(skill.skill || skill.skillName, 'Unknown Skill');
+  const skillName = safeStr(skill.skill || skill.skillName || skill.name, 'Unknown Skill');
   const deduction = typeof skill.deduction === 'number' ? skill.deduction : 0;
   const grade = skill.grade || getGrade(deduction);
   const gradeConfig = GRADE_CONFIG[grade] || GRADE_CONFIG['B'];
@@ -90,7 +99,12 @@ function SkillCard({ skill, index, onSeek, defaultExpanded }) {
   const faults = safeArray(skill.subFaults || skill.faults || skill.deductionHints);
   const correction = safeStr(skill.correction || skill.fix, '');
   const drill = safeStr(skill.drill || skill.drillRecommendation, '');
-  const hasInjuryRisk = skill.injuryRisk || skill.physicalRisk || false;
+  const hasInjuryRisk = !!(skill.injuryRisk || skill.physicalRisk);
+  const injuryText = safeStr(skill.injuryRisk || skill.injuryNote || skill.physicalRisk, 'This skill has physical risk factors. Ensure proper conditioning before progression.');
+  const drillRec = safeStr(skill.drillRecommendation || skill.drill, '');
+  const strengthNote = safeStr(skill.strengthNote, '');
+  const qualityScore = typeof skill.qualityScore === 'number' ? skill.qualityScore : null;
+  const bodyMechanics = skill.bodyMechanics || null;
 
   return (
     <div
@@ -152,9 +166,26 @@ function SkillCard({ skill, index, onSeek, defaultExpanded }) {
               marginBottom: 2,
               color: COLORS.text,
               fontFamily: "'Outfit', sans-serif",
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
             }}
           >
             {skillName}
+            {/* Quality Score inline */}
+            {qualityScore != null && (
+              <span
+                style={{
+                  fontFamily: "'Space Mono', monospace",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: getQualityScoreColor(qualityScore),
+                }}
+                aria-label={`Quality score ${qualityScore.toFixed(2)} out of 10`}
+              >
+                {qualityScore.toFixed(2)}/10.0
+              </span>
+            )}
           </div>
           <div
             style={{
@@ -172,7 +203,6 @@ function SkillCard({ skill, index, onSeek, defaultExpanded }) {
                   fontWeight: 600,
                   fontSize: 11,
                 }}
-                role="alert"
               >
                 Injury Risk
               </span>
@@ -252,38 +282,65 @@ function SkillCard({ skill, index, onSeek, defaultExpanded }) {
             </button>
           )}
 
-          {/* Injury warning */}
+          {/* Strength note */}
+          {strengthNote && (
+            <div
+              style={{
+                padding: '10px 12px',
+                borderRadius: 10,
+                background: 'rgba(34,197,94,0.06)',
+                border: '1px solid rgba(34,197,94,0.15)',
+                display: 'flex',
+                gap: 8,
+                alignItems: 'flex-start',
+                marginBottom: 12,
+                marginTop: timestamp ? 0 : 12,
+              }}
+            >
+              <span style={{ fontSize: 14, color: COLORS.green, flexShrink: 0 }} aria-hidden="true">&#10003;</span>
+              <span style={{ fontSize: 12, color: COLORS.green, fontFamily: "'Outfit', sans-serif", lineHeight: 1.4 }}>
+                {strengthNote}
+              </span>
+            </div>
+          )}
+
+          {/* Injury Awareness */}
           {hasInjuryRisk && (
             <div
               style={{
                 padding: '10px 12px',
                 borderRadius: 10,
                 background: 'rgba(220,38,38,0.08)',
+                borderLeft: `3px solid ${COLORS.orange}`,
                 border: '1px solid rgba(220,38,38,0.2)',
-                display: 'flex',
-                gap: 8,
-                alignItems: 'center',
+                borderLeftWidth: 3,
+                borderLeftColor: COLORS.orange,
                 marginBottom: 12,
-                marginTop: timestamp ? 0 : 12,
+                marginTop: timestamp && !strengthNote ? 0 : strengthNote ? 0 : 12,
               }}
               role="alert"
             >
-              <span style={{ fontSize: 16 }} aria-hidden="true">&#9888;</span>
-              <span style={{ fontSize: 12, color: COLORS.red, fontWeight: 600, fontFamily: "'Outfit', sans-serif" }}>
-                {safeStr(skill.injuryNote, 'This skill has physical risk factors. Ensure proper conditioning before progression.')}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                <span style={{ fontSize: 14 }} aria-hidden="true">&#9888;&#65039;</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: COLORS.orange, fontFamily: "'Outfit', sans-serif", textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                  Injury Awareness
+                </span>
+              </div>
+              <span style={{ fontSize: 12, color: COLORS.text, fontFamily: "'Outfit', sans-serif", lineHeight: 1.5 }}>
+                {injuryText}
               </span>
             </div>
           )}
 
           {/* Faults list */}
           {faults.length > 0 ? (
-            <div style={{ marginTop: faults.length > 0 && !timestamp ? 12 : 0 }}>
+            <div style={{ marginTop: faults.length > 0 && !timestamp && !strengthNote && !hasInjuryRisk ? 12 : 0 }}>
               {faults.map((fault, i) => {
                 const faultName = safeStr(fault.fault || fault.name || fault, '');
                 const faultFix = safeStr(fault.correction || fault.fix || fault.detail, '');
                 const faultDrill = safeStr(fault.drill || fault.drillRecommendation, '');
                 const severity = fault.severity || 'medium';
-                const sevColor = SEV_COLORS[severity] || COLORS.gold;
+                const sevColor = SEV_COLORS[severity] || SEV_COLORS[severity?.replace(/\s+/g, '')] || COLORS.gold;
                 const faultDed = typeof fault.deduction === 'number' ? fault.deduction : null;
 
                 return (
@@ -403,8 +460,107 @@ function SkillCard({ skill, index, onSeek, defaultExpanded }) {
             </div>
           )}
 
-          {/* Skill-level drill */}
-          {drill && faults.length === 0 && (
+          {/* Body Mechanics Section */}
+          {bodyMechanics && (bodyMechanics.kneeAngle || bodyMechanics.hipAlignment || bodyMechanics.shoulderPosition || bodyMechanics.toePoint) && (
+            <div style={{ marginTop: 12 }}>
+              <button
+                onClick={() => setMechanicsOpen(!mechanicsOpen)}
+                aria-expanded={mechanicsOpen}
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '10px 12px',
+                  borderRadius: 10,
+                  background: COLORS.surface2,
+                  border: `1px solid ${COLORS.border}`,
+                  cursor: 'pointer',
+                  color: COLORS.text,
+                }}
+              >
+                <span style={{ fontSize: 13, fontWeight: 600, fontFamily: "'Outfit', sans-serif" }}>
+                  Body Mechanics
+                </span>
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 14 14"
+                  fill="none"
+                  stroke="rgba(255,255,255,0.4)"
+                  strokeWidth="2"
+                  style={{
+                    transform: mechanicsOpen ? 'rotate(180deg)' : 'none',
+                    transition: 'transform 0.2s',
+                  }}
+                  aria-hidden="true"
+                >
+                  <path d="M2 5l5 4 5-4" />
+                </svg>
+              </button>
+              {mechanicsOpen && (
+                <div
+                  style={{
+                    padding: '8px 0 0',
+                  }}
+                >
+                  {[
+                    { icon: '\uD83E\uDDB5', label: 'Knee Angle', value: bodyMechanics.kneeAngle },
+                    { icon: '\uD83C\uDFCB\uFE0F', label: 'Hip Alignment', value: bodyMechanics.hipAlignment },
+                    { icon: '\uD83D\uDCAA', label: 'Shoulder Position', value: bodyMechanics.shoulderPosition },
+                    { icon: '\uD83E\uDDB6', label: 'Toe Point', value: bodyMechanics.toePoint },
+                  ].filter(row => row.value).map((row, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: 8,
+                        padding: '8px 12px',
+                        borderBottom: i < 3 ? '1px solid rgba(255,255,255,0.03)' : 'none',
+                      }}
+                    >
+                      <span style={{ fontSize: 14, flexShrink: 0 }} aria-hidden="true">{row.icon}</span>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 11, fontWeight: 600, color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: 0.5, fontFamily: "'Outfit', sans-serif", marginBottom: 2 }}>
+                          {row.label}
+                        </div>
+                        <div style={{ fontSize: 13, color: COLORS.text, fontFamily: "'Outfit', sans-serif", lineHeight: 1.4 }}>
+                          {safeStr(row.value, '')}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Drill Recommendation */}
+          {drillRec && (
+            <div
+              style={{
+                marginTop: 12,
+                padding: '10px 12px',
+                borderRadius: 10,
+                background: 'rgba(34,197,94,0.06)',
+                borderLeft: `3px solid ${COLORS.green}`,
+                border: '1px solid rgba(34,197,94,0.15)',
+                borderLeftWidth: 3,
+                borderLeftColor: COLORS.green,
+              }}
+            >
+              <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.green, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4, fontFamily: "'Outfit', sans-serif" }}>
+                Recommended Drill
+              </div>
+              <div style={{ fontSize: 13, color: COLORS.text, fontFamily: "'Outfit', sans-serif", lineHeight: 1.5 }}>
+                {drillRec}
+              </div>
+            </div>
+          )}
+
+          {/* Legacy: Skill-level drill when no faults and no drillRecommendation */}
+          {!drillRec && drill && faults.length === 0 && (
             <div
               style={{
                 marginTop: 8,

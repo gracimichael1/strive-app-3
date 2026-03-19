@@ -4414,18 +4414,123 @@ TIMESTAMP RULES:
 
 DEDUCTION VALUES: 0.00, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.50 ONLY.
 
-RESPONSE FORMAT — respond with a pipe-delimited table ONLY. No JSON, no markdown, no extra text.
-One header line, then one line per skill:
+RESPONSE FORMAT — respond with ONLY a JSON object. No markdown fences, no extra text before or after the JSON.
 
-Timestamp | Skill Name | Skill Type | Deduction | Fault Description | Strength Note
+For each skill, provide a qualityScore from 10.0 (subtract the skill's total deduction from 10.0).
+For each skill, analyze body mechanics: knee angle, hip alignment, shoulder position, toe point.
+For each skill with physical risk, provide an injury risk assessment and prevention note.
+For each skill, provide a specific drill recommendation to fix the biggest fault.
+Provide a "whyThisScore" narrative explaining in 2-3 sentences why this routine scored what it did.
+List 3 celebrations — things the gymnast did WELL. Be specific and enthusiastic.
+List the top 3 improvements ranked by points gained if fixed.
+ALWAYS include artistry and composition as separate sections with itemized deductions.
 
-Example lines:
-0:04 | Opening pose | dance | 0.00 | Clean | Confident presentation — immediate connection with judges
-0:14 | Chassé step | dance | 0.05 | Flat foot instead of high relevé | Good spatial awareness
-0:32 | Round-off BHS back tuck | acro | 0.20 | Slight arch; leg separation; small step on landing | Strong power generation
-0:44 | Split leap | dance | 0.20 | Split ~${splitMin - 10}° — ${level} requires ${splitMin}° minimum | Good takeoff height
-0:53 | Full turn | dance | 0.00 | Clean | Excellent center of gravity — no wobble
-Global | Artistry | artistry | 0.10 | Hollow fingertips; limited eye contact with judges | Good musicality
+{
+  "skills": [
+    {
+      "timestamp": "0:32",
+      "name": "Round-off BHS Back Tuck",
+      "type": "acro",
+      "qualityScore": 9.45,
+      "deduction": 0.55,
+      "faults": [
+        {"fault": "Flat salto — insufficient height", "deduction": 0.20, "severity": "large"},
+        {"fault": "Deep squat on landing, chest dropped", "deduction": 0.20, "severity": "large"},
+        {"fault": "Slight leg separation in flight", "deduction": 0.10, "severity": "medium"},
+        {"fault": "Arms not set on landing", "deduction": 0.05, "severity": "small"}
+      ],
+      "strengthNote": "Strong power generation off the round-off",
+      "bodyMechanics": {
+        "kneeAngle": "Below 90° on landing (deep squat)",
+        "hipAlignment": "Slight pike in tuck phase",
+        "shoulderPosition": "Good snap-down, strong block",
+        "toePoint": "Toes pointed in flight — clean"
+      },
+      "injuryRisk": "Deep squat landings increase ACL stress. Focus on landing drills with proper absorption.",
+      "drillRecommendation": "Practice landing to stick on 8-inch mat. Focus on chest up, arms forward."
+    },
+    {
+      "timestamp": "0:04",
+      "name": "Opening pose",
+      "type": "dance",
+      "qualityScore": 10.0,
+      "deduction": 0.00,
+      "faults": [],
+      "strengthNote": "Confident presentation — immediate connection with judges",
+      "bodyMechanics": {
+        "kneeAngle": "Straight, engaged",
+        "hipAlignment": "Neutral, strong core",
+        "shoulderPosition": "Open, pulled back",
+        "toePoint": "Pointed and clean"
+      },
+      "injuryRisk": null,
+      "drillRecommendation": null
+    },
+    {
+      "timestamp": "0:44",
+      "name": "Split leap",
+      "type": "dance",
+      "qualityScore": 9.80,
+      "deduction": 0.20,
+      "faults": [
+        {"fault": "Split ~${splitMin - 10}° — ${level} requires ${splitMin}° minimum", "deduction": 0.15, "severity": "medium"},
+        {"fault": "Soft front knee on takeoff", "deduction": 0.05, "severity": "small"}
+      ],
+      "strengthNote": "Good takeoff height and air time",
+      "bodyMechanics": {
+        "kneeAngle": "Soft front knee at takeoff",
+        "hipAlignment": "Good hip square in air",
+        "shoulderPosition": "Arms placed with intention",
+        "toePoint": "Pointed in flight"
+      },
+      "injuryRisk": null,
+      "drillRecommendation": "Over-split stretching on panel mat — hold 30s each side, 3 reps."
+    }
+  ],
+  "artistry": {
+    "totalDeduction": 0.20,
+    "details": [
+      {"fault": "Hollow fingertips — hands not fully engaged", "deduction": 0.05},
+      {"fault": "Limited eye contact with judges during opening", "deduction": 0.05},
+      {"fault": "Flat footwork in dance transitions — no relevé", "deduction": 0.10}
+    ]
+  },
+  "composition": {
+    "totalDeduction": 0.10,
+    "details": [
+      {"fault": "Insufficient use of floor space — stayed center", "deduction": 0.05},
+      {"fault": "Rushed choreography between passes", "deduction": 0.05}
+    ]
+  },
+  "summary": {
+    "overallScore": 8.925,
+    "startValue": 10.0,
+    "totalDeductions": 1.075,
+    "executionDeductions": 0.775,
+    "artistryDeductions": 0.20,
+    "compositionDeductions": 0.10,
+    "whyThisScore": "While this is a solid routine with strong tumbling power, accumulated micro-deductions in artistry (0.20) and a significant landing error on the final pass (0.20) pull the score below 9.0. The split leap was approximately ${splitMin - 10}° against the ${splitMin}° requirement, adding another 0.15.",
+    "celebrations": [
+      "Excellent body tension on round-off — powerful snap-down",
+      "Full turn executed with stable center of gravity — no wobble",
+      "Final pose held with confidence and maturity"
+    ],
+    "topImprovements": [
+      {"fix": "Landing on back tuck — chest up, absorb through legs", "pointsGained": 0.20},
+      {"fix": "Split leap amplitude — stretch to ${splitMin}°+", "pointsGained": 0.15},
+      {"fix": "Consistent relevé in dance elements", "pointsGained": 0.10}
+    ]
+  }
+}
+
+IMPORTANT JSON RULES:
+- Output ONLY the JSON object. No text before or after.
+- No markdown code fences. No backticks.
+- All string values must be valid JSON strings (escape quotes with backslash).
+- Every skill in the routine gets an entry in the "skills" array, including clean skills (deduction: 0.00, empty faults array).
+- Severity values must be one of: "small", "medium", "large", "veryLarge", "fall".
+- The sum of individual fault deductions for a skill must equal the skill's total "deduction" field.
+- Do NOT include artistry/composition faults in the skills array — they go in their own sections.
 
 SCORING CALIBRATION — CRITICAL:
 - A real meet score of 8.925 means approximately 1.075 in total deductions (execution + artistry + composition).
@@ -4466,7 +4571,7 @@ DETERMINISTIC SCORING — MANDATORY:
 
     // ── Score caching — return cached result for duplicate submissions ──
     // Fingerprint: file name + size + lastModified + athlete name + level + event
-    const PROMPT_VERSION = "v3_strict_brevet"; // Bump this when prompt changes to invalidate cache
+    const PROMPT_VERSION = "v4_json_rich"; // Bump this when prompt changes to invalidate cache
     const fingerprintParts = [
       PROMPT_VERSION,
       uploadData.video.name || "video",
@@ -4517,7 +4622,7 @@ DETERMINISTIC SCORING — MANDATORY:
             rawResponse = await geminiGenerate(fileRef, prompt, apiKey, {
               label: `judge-${profile.level}-attempt${attempt}`,
             });
-            if (rawResponse && rawResponse.length > 100 && rawResponse.includes(" | ")) break;
+            if (rawResponse && rawResponse.length > 100 && (rawResponse.includes('"skills"') || rawResponse.includes(" | "))) break;
             log.warn("judge", `Attempt ${attempt} short or missing skills (${rawResponse?.length} chars). Retrying...`);
             await new Promise(r => setTimeout(r, 2000));
           } catch (e) {
@@ -4556,47 +4661,107 @@ DETERMINISTIC SCORING — MANDATORY:
       setStatus("Computing score...");
       setProgress(88);
 
-      // ── Parse pipe-delimited table response ─────────────────────
+      // ── Parse response — try JSON first (new format), then pipe-delimited (legacy/cache) ──
       let parsedSkills = [];
       let parsedArtistry = null;
+      let parsedComposition = null;
       let parsedCelebrations = [];
       let whyThisScore = "";
       let pathToGoal = "";
+      let parsedTopImprovements = [];
+      let isRichJSON = false;
 
-      const lines = rawResponse.split("\n").map(l => l.trim()).filter(l => l.includes(" | "));
-      // Skip header line if it contains "Timestamp" or "Skill Name"
-      const dataLines = lines.filter(l => !/^timestamp\s*\|/i.test(l) && !/^-+\s*\|/.test(l));
+      // ── Primary: Parse JSON response (new rich format) ──────────
+      try {
+        const jsonMatch = rawResponse.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          if (parsed.skills && Array.isArray(parsed.skills) && parsed.skills.length > 0) {
+            isRichJSON = true;
+            parsedSkills = parsed.skills.map(s => ({
+              timestamp: s.timestamp || "0:00",
+              skill: s.name || s.skill || "Unknown",
+              type: (s.type || "acro").toLowerCase(),
+              deduction: Math.max(0, parseFloat(s.deduction) || 0),
+              qualityScore: parseFloat(s.qualityScore) || (10.0 - (parseFloat(s.deduction) || 0)),
+              reason: safeArray(s.faults).map(f => f.fault).filter(Boolean).join("; ") || null,
+              faults: safeArray(s.faults).map(f => ({
+                fault: safeStr(f.fault),
+                deduction: parseFloat(f.deduction) || 0,
+                severity: safeStr(f.severity || "small"),
+              })),
+              strength: safeStr(s.strengthNote || s.strength),
+              bodyMechanics: s.bodyMechanics || null,
+              injuryRisk: safeStr(s.injuryRisk),
+              drillRecommendation: safeStr(s.drillRecommendation),
+            }));
 
-      for (const line of dataLines) {
-        const parts = line.split("|").map(p => p.trim());
-        if (parts.length < 5) continue;
-        const [timestamp, skillName, skillType, dedStr, faultDesc, strengthNote] = parts;
-        const deduction = parseFloat(dedStr);
-        if (isNaN(deduction) || !skillName) continue;
-        parsedSkills.push({
-          timestamp: timestamp || "0:00",
-          skill: skillName,
-          type: (skillType || "acro").toLowerCase(),
-          deduction: Math.max(0, Math.min(deduction, 0.50)),
-          reason: (!faultDesc || faultDesc.toLowerCase() === "clean") ? null : faultDesc,
-          strength: (strengthNote && strengthNote.length > 1) ? strengthNote : null,
-        });
+            // Artistry section
+            if (parsed.artistry) {
+              parsedArtistry = {
+                totalDeduction: parseFloat(parsed.artistry.totalDeduction) || 0,
+                details: safeArray(parsed.artistry.details).map(d => ({
+                  fault: safeStr(d.fault),
+                  deduction: parseFloat(d.deduction) || 0,
+                })),
+              };
+            }
+
+            // Composition section
+            if (parsed.composition) {
+              parsedComposition = {
+                totalDeduction: parseFloat(parsed.composition.totalDeduction) || 0,
+                details: safeArray(parsed.composition.details).map(d => ({
+                  fault: safeStr(d.fault),
+                  deduction: parseFloat(d.deduction) || 0,
+                })),
+              };
+            }
+
+            // Summary section
+            if (parsed.summary) {
+              whyThisScore = safeStr(parsed.summary.whyThisScore);
+              parsedCelebrations = safeArray(parsed.summary.celebrations);
+              parsedTopImprovements = safeArray(parsed.summary.topImprovements).map(imp => ({
+                fix: safeStr(imp.fix),
+                pointsGained: parseFloat(imp.pointsGained) || 0,
+              }));
+            }
+
+            log.info("parse", `Parsed rich JSON: ${parsedSkills.length} skills, artistry=${parsedArtistry?.totalDeduction || 0}, composition=${parsedComposition?.totalDeduction || 0}`);
+          }
+        }
+      } catch (e) {
+        log.warn("parse", `JSON parse failed: ${e.message} — trying pipe-delimited fallback`);
       }
 
-      // Fallback: try JSON parse if pipe parsing found nothing (backward compat)
+      // ── Fallback: Parse pipe-delimited table (legacy cached responses) ──
       if (parsedSkills.length === 0) {
-        try {
-          const match = rawResponse.match(/\{[\s\S]*\}/);
-          if (match) {
-            const parsed = JSON.parse(match[0]);
-            parsedSkills = safeArray(parsed.skills).filter(s => s.skill && s.deduction !== undefined);
-            parsedArtistry = parsed.artistry || null;
-            parsedCelebrations = safeArray(parsed.celebrations);
-            whyThisScore = safeStr(parsed.whyThisScore);
-            pathToGoal = safeStr(parsed.pathToNinePointO || parsed.pathToGoal);
-          }
-        } catch (e) {
-          log.warn("parse", `Fallback JSON parse also failed: ${e.message}`);
+        const lines = rawResponse.split("\n").map(l => l.trim()).filter(l => l.includes(" | "));
+        const dataLines = lines.filter(l => !/^timestamp\s*\|/i.test(l) && !/^-+\s*\|/.test(l));
+
+        for (const line of dataLines) {
+          const parts = line.split("|").map(p => p.trim());
+          if (parts.length < 5) continue;
+          const [timestamp, skillName, skillType, dedStr, faultDesc, strengthNote] = parts;
+          const deduction = parseFloat(dedStr);
+          if (isNaN(deduction) || !skillName) continue;
+          parsedSkills.push({
+            timestamp: timestamp || "0:00",
+            skill: skillName,
+            type: (skillType || "acro").toLowerCase(),
+            deduction: Math.max(0, Math.min(deduction, 0.50)),
+            qualityScore: 10.0 - Math.max(0, Math.min(deduction, 0.50)),
+            reason: (!faultDesc || faultDesc.toLowerCase() === "clean") ? null : faultDesc,
+            faults: [],
+            strength: (strengthNote && strengthNote.length > 1) ? strengthNote : null,
+            bodyMechanics: null,
+            injuryRisk: null,
+            drillRecommendation: null,
+          });
+        }
+        if (parsedSkills.length > 0) {
+          log.info("parse", `Parsed ${parsedSkills.length} skills from pipe-delimited (legacy) response`);
         }
       }
 
@@ -4632,6 +4797,8 @@ DETERMINISTIC SCORING — MANDATORY:
           else if (s.deduction > DEDUCTION_CAPS.beamWobbleLarge) s.deduction = DEDUCTION_CAPS.beamWobbleLarge;
         }
         if (/cowboy|leg\s*sep/i.test(r) && s.deduction > DEDUCTION_CAPS.legSeparation) s.deduction = DEDUCTION_CAPS.legSeparation;
+        // Recompute qualityScore after clamping
+        s.qualityScore = Math.round((10.0 - s.deduction) * 100) / 100;
       }
 
       // ── Split angle validation by level — remove split deductions if level doesn't require it ──
@@ -4695,13 +4862,14 @@ DETERMINISTIC SCORING — MANDATORY:
       }
       parsedSkills = merged;
 
-      log.info("parse", `Parsed ${parsedSkills.length} skills from pipe-delimited response`);
+      log.info("parse", `Parsed ${parsedSkills.length} skills (format: ${isRichJSON ? "rich JSON" : "pipe-delimited legacy"})`);
 
       // ── CODE COMPUTES THE SCORE — not Gemini ────────────────────
       const processedSkills = parsedSkills.map((s, idx) => {
         // Clamp to nearest valid 0.05 increment
         const raw = Math.abs(parseFloat(s.deduction) || 0);
         const deduction = Math.round(Math.min(raw, 2.0) / 0.05) * 0.05;
+        const qualityScore = Math.round((10.0 - deduction) * 100) / 100;
         const sec = parseTimestampToSec(s.timestamp || "0:00");
         const isGlobal  = (s.timestamp || "").toLowerCase() === "global";
         const isLanding = /^landing/i.test(s.skill);
@@ -4722,9 +4890,15 @@ DETERMINISTIC SCORING — MANDATORY:
           type:           isLanding ? "landing" : isDance ? "dance" : "acro",
           category,
           deduction,
+          qualityScore,
           reason:         safeStr(s.reason),
           strength:       safeStr(s.strength),   // ← what Gemini praised about this skill
           isGlobal,
+          // ── Rich analysis fields (from JSON format) ──
+          faults:              safeArray(s.faults),
+          bodyMechanics:       s.bodyMechanics || null,
+          injuryRisk:          safeStr(s.injuryRisk),
+          drillRecommendation: safeStr(s.drillRecommendation),
           // Legacy fields for existing tabs
           fault:          safeStr(s.reason),
           engine:         isLanding ? "Landing" : isDance ? "General" : "KTM",
@@ -4749,12 +4923,23 @@ DETERMINISTIC SCORING — MANDATORY:
       const execTotalRaw  = Math.round(execSkills.reduce((sum, s) => sum + s.deduction, 0) * 1000) / 1000;
       const artTotalRaw   = Math.round(artSkills.reduce( (sum, s) => sum + s.deduction, 0) * 1000) / 1000;
 
+      // ── Composition deductions from rich JSON format ────────────
+      const compTotalRaw = parsedComposition
+        ? Math.round((parseFloat(parsedComposition.totalDeduction) || 0) * 1000) / 1000
+        : 0;
+
+      // If we have rich artistry/composition sections, use those totals instead of skill-level artistry
+      const richArtTotal = parsedArtistry
+        ? Math.round((parseFloat(parsedArtistry.totalDeduction) || 0) * 1000) / 1000
+        : artTotalRaw;
+
       // ── USAG 0.025 rounding normalization ──────────────────────
       // USAG E-scores use 0.025 increments. Round total deductions to nearest 0.025.
       const roundToUSAG = (val) => Math.round(val / 0.025) * 0.025;
       const execTotal  = roundToUSAG(execTotalRaw);
-      const artTotal   = roundToUSAG(artTotalRaw);
-      const totalDed   = Math.round((execTotal + artTotal) * 1000) / 1000;
+      const artTotal   = roundToUSAG(isRichJSON ? richArtTotal : artTotalRaw);
+      const compTotal  = roundToUSAG(compTotalRaw);
+      const totalDed   = Math.round((execTotal + artTotal + compTotal) * 1000) / 1000;
 
       // ── Validation: ensure final score = start value - total deductions ──
       const startValue = 10.0;
@@ -4767,7 +4952,7 @@ DETERMINISTIC SCORING — MANDATORY:
         log.warn("validation", `Deduction sum mismatch: individual=${individualSum}, exec+art=${execTotalRaw + artTotalRaw}, diff=${sumDiff}`);
       }
 
-      log.info("score", `FINAL: ${finalScore} | Deductions: ${totalDed} (raw: ${(execTotalRaw + artTotalRaw).toFixed(3)}, USAG-rounded) | Exec: ${execTotal} | Artistry: ${artTotal} | Skills: ${processedSkills.length} | Level: ${profile.level}`);
+      log.info("score", `FINAL: ${finalScore} | Deductions: ${totalDed} (raw: ${(execTotalRaw + richArtTotal + compTotalRaw).toFixed(3)}, USAG-rounded) | Exec: ${execTotal} | Artistry: ${artTotal} | Composition: ${compTotal} | Skills: ${processedSkills.length} | Level: ${profile.level}`);
 
       // Top issues and strengths
       const withDeds   = [...processedSkills].filter(s => s.deduction > 0).sort((a,b) => b.deduction - a.deduction);
@@ -4793,6 +4978,7 @@ DETERMINISTIC SCORING — MANDATORY:
         totalDeductions:          totalDed,
         executionDeductionsTotal: execTotal,
         artistryDeductionsTotal:  artTotal,
+        compositionDeductionsTotal: compTotal,
         neutralDeductionsTotal:   0,
 
         // ── Skill list — drives both Skills tab and legacy tabs ──
@@ -4810,14 +4996,24 @@ DETERMINISTIC SCORING — MANDATORY:
           correction: null,
         })),
 
+        // ── Rich analysis sections (from JSON format) ──
+        artistry:    parsedArtistry,
+        composition: parsedComposition,
+
         // ── Full report — everything Gemini gave us ──
         overallAssessment: whyThisScore || `${profile.level} ${uploadData.event} — ${processedSkills.length} skills judged. ${benchContext}`,
+        whyThisScore:      whyThisScore || "",
         truthAnalysis:     whyThisScore || `${processedSkills.length} skills evaluated at ${profile.level} standard.`,
         pathToGoal,
         celebrations:      parsedCelebrations,
         artistryBreakdown: parsedArtistry,
+        topImprovements:   parsedTopImprovements.length > 0
+          ? parsedTopImprovements
+          : topFixes.map(f => ({ fix: `${f.name}: ${f.drill}`, pointsGained: f.saves })),
         strengths: parsedCelebrations.length > 0
-          ? parsedCelebrations.map(c => `${c.timestamp ? c.timestamp + " — " : ""}${c.skill}: ${c.note}`)
+          ? (typeof parsedCelebrations[0] === "string"
+              ? parsedCelebrations
+              : parsedCelebrations.map(c => typeof c === "string" ? c : `${c.timestamp ? c.timestamp + " — " : ""}${c.skill || ""}: ${c.note || c}`))
           : cleanSkills.map(s => `${s.skill}: ${s.strength || "Clean execution."}`),
         areasForImprovement: withDeds.slice(0,4).map(s => `${s.skill}: ${s.reason}`),
         topFixes,

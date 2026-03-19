@@ -16,25 +16,50 @@ const COLORS = {
 };
 
 function Layer1Free({ result, profile, previousResult, onUpgrade }) {
-  const celebrations = safeArray(result?.celebrations);
-  const strengths = safeArray(result?.strengths);
   const gradedSkills = safeArray(result?.gradedSkills);
   const skillCount = gradedSkills.length;
 
-  // Build summary text — intentionally vague for free tier
-  const positiveText = celebrations.length > 0
-    ? celebrations.slice(0, 2).map(c => safeStr(c.note || c, '')).filter(Boolean).join('. ') || 'Solid execution with some clean elements spotted.'
-    : strengths.length > 0
-      ? strengths.slice(0, 2).map(s => safeStr(s, '')).filter(Boolean).join('. ') || 'Good effort with visible strengths.'
-      : 'Good effort with visible strengths in this routine.';
+  // New summary data — prefer new structure, fall back to legacy
+  const summary = result?.summary || null;
+  const celebrations = safeArray(summary?.celebrations);
+  const topImprovements = safeArray(summary?.topImprovements);
 
-  const deductions = safeArray(result?.executionDeductions);
-  const topFaults = deductions
-    .sort((a, b) => (b.deduction || 0) - (a.deduction || 0))
-    .slice(0, 2);
-  const negativeText = topFaults.length > 0
-    ? topFaults.map(d => safeStr(d.fault || d.skill, '')).filter(Boolean).join(' and ') + ' were the areas with the most room for improvement.'
-    : 'A few areas showed room for improvement with targeted practice.';
+  // Legacy fallbacks
+  const legacyCelebrations = safeArray(result?.celebrations);
+  const legacyStrengths = safeArray(result?.strengths);
+  const legacyDeductions = safeArray(result?.executionDeductions);
+
+  // Build positive text — ONE sentence from celebrations[0]
+  let positiveText;
+  if (celebrations.length > 0) {
+    positiveText = safeStr(celebrations[0], '');
+  } else if (legacyCelebrations.length > 0) {
+    positiveText = safeStr(legacyCelebrations[0]?.note || legacyCelebrations[0], '');
+  } else if (legacyStrengths.length > 0) {
+    positiveText = safeStr(legacyStrengths[0], '');
+  } else {
+    positiveText = 'Good effort with visible strengths in this routine.';
+  }
+
+  // Build negative text — ONE sentence from topImprovements[0].fix
+  let negativeText;
+  if (topImprovements.length > 0) {
+    negativeText = safeStr(topImprovements[0]?.fix, 'A few areas showed room for improvement with targeted practice.');
+  } else if (legacyDeductions.length > 0) {
+    const sorted = [...legacyDeductions].sort((a, b) => (b.deduction || 0) - (a.deduction || 0));
+    const topFault = safeStr(sorted[0]?.fault || sorted[0]?.skill, '');
+    negativeText = topFault
+      ? `${topFault} was the area with the most room for improvement.`
+      : 'A few areas showed room for improvement with targeted practice.';
+  } else {
+    negativeText = 'A few areas showed room for improvement with targeted practice.';
+  }
+
+  // Count total faults across all skills
+  const totalFaults = gradedSkills.reduce((count, skill) => {
+    const faults = safeArray(skill?.faults || skill?.subFaults || skill?.deductionHints);
+    return count + (faults.length > 0 ? faults.length : (skill?.deduction > 0 ? 1 : 0));
+  }, 0);
 
   return (
     <div
@@ -135,6 +160,56 @@ function Layer1Free({ result, profile, previousResult, onUpgrade }) {
         </div>
       </div>
 
+      {/* Teaser stats */}
+      {(skillCount > 0 || totalFaults > 0) && (
+        <div
+          style={{
+            margin: '8px 20px 0',
+            display: 'flex',
+            gap: 8,
+          }}
+        >
+          {skillCount > 0 && (
+            <div
+              style={{
+                flex: 1,
+                background: COLORS.surface,
+                border: `1px solid ${COLORS.border}`,
+                borderRadius: 12,
+                padding: '12px 16px',
+                textAlign: 'center',
+              }}
+            >
+              <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 20, fontWeight: 700, color: COLORS.gold }}>
+                {skillCount}
+              </div>
+              <div style={{ fontSize: 11, color: COLORS.textSecondary, fontFamily: "'Outfit', sans-serif", marginTop: 2 }}>
+                skills analyzed
+              </div>
+            </div>
+          )}
+          {totalFaults > 0 && (
+            <div
+              style={{
+                flex: 1,
+                background: COLORS.surface,
+                border: `1px solid ${COLORS.border}`,
+                borderRadius: 12,
+                padding: '12px 16px',
+                textAlign: 'center',
+              }}
+            >
+              <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 20, fontWeight: 700, color: COLORS.orange }}>
+                {totalFaults}
+              </div>
+              <div style={{ fontSize: 11, color: COLORS.textSecondary, fontFamily: "'Outfit', sans-serif", marginTop: 2 }}>
+                faults found
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Upgrade CTA */}
       <div
         style={{
@@ -161,17 +236,6 @@ function Layer1Free({ result, profile, previousResult, onUpgrade }) {
             }}
           >
             We found more for your gymnast
-          </div>
-          <div
-            style={{
-              fontFamily: "'Space Mono', monospace",
-              fontSize: 28,
-              fontWeight: 700,
-              color: COLORS.gold,
-              margin: '8px 0',
-            }}
-          >
-            {skillCount} skills analyzed
           </div>
           <div
             style={{
