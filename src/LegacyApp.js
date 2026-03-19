@@ -4201,10 +4201,10 @@ const AnalyzingScreen = React.memo(function AnalyzingScreen({ uploadData, profil
           ],
         }],
         generationConfig: {
-          temperature: 0,
+          temperature: 0.1,
           topP: 1,
           topK: 1,
-          maxOutputTokens: 8000,
+          maxOutputTokens: 16384,
           seed: 42,
         },
       }),
@@ -8191,38 +8191,62 @@ const SettingsScreen = React.memo(function SettingsScreen({ profile, onSave, onB
         </div>
       </div>
 
-      {/* STRIVE Competitive Section */}
+      {/* STRIVE Tier Section */}
       <div style={{ marginTop: 24, paddingTop: 24, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
         <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>
-          <span style={{ color: "#A78BFA" }}>★</span> STRIVE Competitive
+          <span style={{ color: "#A78BFA" }}>★</span> STRIVE Tier
         </h3>
         {(() => {
           let currentTier = "free";
           try { currentTier = localStorage.getItem("strive-tier") || "free"; } catch {}
-          return currentTier === "competitive" ? (
-            <div style={{ padding: 16, borderRadius: 12, background: "rgba(139,92,246,0.06)", border: "1px solid rgba(139,92,246,0.2)" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                <span style={{ fontSize: 9, fontWeight: 700, padding: "3px 10px", borderRadius: 4, background: "rgba(139,92,246,0.2)", color: "#A78BFA", letterSpacing: 0.5 }}>COMPETITIVE ACTIVE</span>
-              </div>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>
-                Full access to all features: unlimited analyses, biomechanics, training programs, mental training, what-if simulator, and diagnostics.
-              </div>
-            </div>
-          ) : (
+          const isComp = currentTier === "competitive";
+          const isElite = currentTier === "elite";
+          const activeTierLabel = isElite ? "ELITE" : isComp ? "COMPETITIVE" : "FREE";
+          const activeTierColor = isElite ? "#e8962a" : isComp ? "#A78BFA" : "#8890AB";
+
+          return (
             <div>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", lineHeight: 1.6, marginBottom: 12 }}>
-                Unlock unlimited analyses, full deduction breakdowns, biomechanics dashboard, personalized 5-pillar training programs, and more.
+              {/* Current tier badge */}
+              <div style={{ padding: 16, borderRadius: 12, background: `rgba(${isElite ? "232,150,42" : isComp ? "139,92,246" : "136,144,171"},0.06)`, border: `1px solid rgba(${isElite ? "232,150,42" : isComp ? "139,92,246" : "136,144,171"},0.2)`, marginBottom: 16 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                  <span style={{ fontSize: 9, fontWeight: 700, padding: "3px 10px", borderRadius: 4, background: `rgba(${isElite ? "232,150,42" : isComp ? "139,92,246" : "136,144,171"},0.2)`, color: activeTierColor, letterSpacing: 0.5 }}>{activeTierLabel} ACTIVE</span>
+                </div>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>
+                  {isElite ? "Full access: everything in Competitive plus What-If Simulator, Body Mechanics, Diagnostics, Coach Report, and personalized programming."
+                    : isComp ? "Full access: unlimited analyses, skill breakdowns, artistry analysis, training drills, and score path."
+                    : "Free tier: 3 analyses per month with score and basic feedback."}
+                </div>
               </div>
-              <button onClick={() => setShowUpgradeModal(true)} style={{
-                width: "100%", padding: 14, borderRadius: 12,
-                background: "linear-gradient(135deg, #8B5CF6, #A78BFA)",
-                border: "none", color: "white", cursor: "pointer",
-                fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 14,
-              }}>
-                Upgrade to STRIVE Competitive
-              </button>
-              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", marginTop: 6, textAlign: "center" }}>
-                Payment integration coming soon — tap to preview Competitive features
+
+              {/* Tier preview buttons */}
+              <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+                {["free", "competitive", "elite"].map(t => {
+                  const active = currentTier === t;
+                  const label = t.charAt(0).toUpperCase() + t.slice(1);
+                  const bg = t === "elite" ? "#e8962a" : t === "competitive" ? "#8B5CF6" : "#4A5568";
+                  return (
+                    <button
+                      key={t}
+                      onClick={() => {
+                        try { localStorage.setItem("strive-tier", t); } catch {}
+                        setUserTier(t);
+                      }}
+                      style={{
+                        flex: 1, padding: "12px 8px", borderRadius: 12,
+                        background: active ? bg : "rgba(255,255,255,0.04)",
+                        border: active ? "none" : "1px solid rgba(255,255,255,0.08)",
+                        color: active ? "#FFF" : "rgba(255,255,255,0.5)",
+                        cursor: "pointer", fontFamily: "'Outfit', sans-serif",
+                        fontWeight: 700, fontSize: 12, transition: "all 0.2s",
+                      }}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.15)", textAlign: "center" }}>
+                Payment integration coming soon — switch tiers to preview features
               </div>
             </div>
           );
