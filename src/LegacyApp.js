@@ -3127,7 +3127,6 @@ function AnalyzingScreen({ uploadData, profile, onComplete, onBack }) {
           topP: 1,
           topK: 1,
           maxOutputTokens: 8000,
-          responseMimeType: "application/json",
         },
       }),
     });
@@ -3256,7 +3255,18 @@ SPLIT LEAP/JUMP REQUIREMENT at ${level}: minimum ${splitMin}°
   ${splitMin - 30}°–${splitMin - 16}° (short): −${splitDed}
   Below ${splitMin - 30}° (very short): −0.20–0.30`;
 
-    return `CRITICAL SCORING RULES — READ BEFORE ANALYZING:
+    const athleteName = profile.name || "the gymnast";
+
+    return `ATHLETE: ${athleteName} | GENDER: ${gender} | LEVEL: ${level} | EVENT: ${event}
+
+You are a Brevet-level USAG Official at a State Championship judging this ${gender} ${event} routine (${level}).
+
+${programContext}
+
+${skillsLine}
+${benchLine}
+
+CRITICAL SCORING RULES — READ BEFORE ANALYZING:
 
 1. You are calibrated to score SLIGHTLY below a real competition panel — by 0.05 to 0.15 points MAXIMUM. Not 0.3. Not 0.5. Just barely stricter.
 
@@ -3284,13 +3294,6 @@ SKILL GROUPING RULES:
 - Example: Round-off back handspring back tuck with slight arch (-0.05), leg separation (-0.10), small step on landing (-0.05) = ONE skill entry, total deduction -0.20
 - A typical floor routine has 8-12 complete skills, NOT 15-25 sub-components.
 
-You are a Brevet-level USAG Official at a State Championship judging this ${gender} ${event} routine (${level}).
-
-${programContext}
-
-${skillsLine}
-${benchLine}
-
 Judge every single skill — no skipping.
 ${executionStandards}
 ${landingStandards}
@@ -3300,13 +3303,11 @@ ${splitStandard}
 JUDGING INSTRUCTIONS:
 1. Watch the full routine from start to finish
 2. Identify EVERY distinct skill — including skills done perfectly (deduction = 0.00)
-3. For tumbling passes: list EACH skill separately (round-off, BHS, tuck = 3 rows, timestamps 1 second apart)
-4. Judge EVERY landing as its own separate row
-5. Use "Global" for artistry faults applying to the whole routine
-6. Assign a deduction in 0.05 increments — 0.00 means genuinely clean, celebrate it
-7. Give one specific reason for each deduction AND a strength note for clean skills
-
-IMPORTANT: Include skills with 0.00 deduction — a clean skill deserves recognition. The gymnast and parent need to know what's working, not just what's wrong.
+3. Each tumbling pass is ONE row — "Round-off BHS back tuck" not 3 separate rows
+4. Use "Global" for artistry faults applying to the whole routine
+5. Assign a deduction in 0.05 increments — 0.00 means genuinely clean, celebrate it
+6. Give one specific reason for each deduction AND a strength note for clean skills
+7. Include skills with 0.00 deduction — clean skills deserve recognition
 
 TIMESTAMP RULES:
 - The video starts at exactly 0:00. All timestamps must be relative to the start of the video.
@@ -3316,36 +3317,20 @@ TIMESTAMP RULES:
 
 DEDUCTION VALUES: 0.00, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.50 ONLY.
 
-Respond with valid JSON only — no markdown, no extra text:
-{
-  "startValue": 10.00,
-  "skills": [
-    {"timestamp": "0:04", "skill": "Opening pose",     "deduction": 0.00, "reason": null,        "strength": "Confident presentation — immediate connection with judges."},
-    {"timestamp": "0:14", "skill": "Dance step",       "deduction": 0.05, "reason": "Flat foot instead of high releve throughout.", "strength": null},
-    {"timestamp": "0:32", "skill": "Round-off",        "deduction": 0.10, "reason": "Knees softened during flight phase.", "strength": "Strong power generation."},
-    {"timestamp": "0:33", "skill": "Back handspring",  "deduction": 0.15, "reason": "Head thrown back early; arms bent on hand contact.", "strength": null},
-    {"timestamp": "0:34", "skill": "Back tuck",        "deduction": 0.20, "reason": "Cowboy position — knees outside shoulder width.", "strength": null},
-    {"timestamp": "0:35", "skill": "Landing",          "deduction": 0.10, "reason": "Chest dropped forward at impact.", "strength": null},
-    {"timestamp": "0:44", "skill": "Split leap",       "deduction": 0.20, "reason": "Split ~${splitMin - 10}° — ${level} requires ${splitMin}° minimum.", "strength": null},
-    {"timestamp": "0:53", "skill": "Full turn",        "deduction": 0.00, "reason": null, "strength": "Excellent center of gravity — no wobble, full rotation completed."},
-    {"timestamp": "Global","skill": "Artistry",        "deduction": 0.10, "reason": "Hollow fingertips; limited eye contact with judges.", "strength": null}
-  ],
-  "artistry": {
-    "fingerLines":   {"deduction": 0.05, "note": "Fingertips hollow rather than engaged throughout."},
-    "eyeContact":    {"deduction": 0.05, "note": "Limited eye contact with judges panel."},
-    "musicality":    {"deduction": 0.00, "note": "Good connection to music tempo."},
-    "confidence":    {"deduction": 0.00, "note": "Strong stage presence — routine performed not just executed."},
-    "footwork":      {"deduction": 0.05, "note": "Flat footwork in dance sections — needs releve."},
-    "spaceUsage":    {"deduction": 0.00, "note": "Good use of floor space."}
-  },
-  "celebrations": [
-    {"timestamp": "0:53", "skill": "Full turn", "note": "Most ${level} gymnasts wobble or hop out of a full turn. Her center of gravity was perfectly controlled — this shows real core strength and balance training."},
-    {"timestamp": "0:32", "skill": "Round-off snap-down", "note": "Excellent power generation for her size. The snap-down created real momentum into the tumbling pass."},
-    {"timestamp": "1:05", "skill": "Final pose", "note": "Held with confidence and maturity. She did not rush off the floor — this shows respect for the judges and performance experience."}
-  ],
-  "whyThisScore": "Two to three sentences explaining specifically why this routine earned this score at ${level}. Reference the biggest deductions, the accumulated micro-faults, and what separates this from a 9.0+ routine.",
-  "pathToNinePointO": "Two to three sentences on exactly what needs to change to break 9.0 at ${level}. Be specific — name the skills and the fixes."
-}`;
+RESPONSE FORMAT — respond with a pipe-delimited table ONLY. No JSON, no markdown, no extra text.
+One header line, then one line per skill:
+
+Timestamp | Skill Name | Skill Type | Deduction | Fault Description | Strength Note
+
+Example lines:
+0:04 | Opening pose | dance | 0.00 | Clean | Confident presentation — immediate connection with judges
+0:14 | Chassé step | dance | 0.05 | Flat foot instead of high relevé | Good spatial awareness
+0:32 | Round-off BHS back tuck | acro | 0.20 | Slight arch; leg separation; small step on landing | Strong power generation
+0:44 | Split leap | dance | 0.20 | Split ~${splitMin - 10}° — ${level} requires ${splitMin}° minimum | Good takeoff height
+0:53 | Full turn | dance | 0.00 | Clean | Excellent center of gravity — no wobble
+Global | Artistry | artistry | 0.10 | Hollow fingertips; limited eye contact with judges | Good musicality
+
+SCORING CALIBRATION: A real meet score of 8.935 means approximately 1.05 in total execution deductions. If you find fewer than 5 deductions on a 90-second floor routine, you are missing faults. Be a strict Brevet-level judge. Score 0.05-0.15 BELOW what a lenient judge would give.`;
   }, [profile, uploadData]);
 
   // ── Main analysis orchestrator — single pass ─────────────────────
@@ -3366,6 +3351,25 @@ Respond with valid JSON only — no markdown, no extra text:
     if (!apiKey) throw new Error("No API key. Go to Settings and paste your Gemini key from aistudio.google.com/apikey");
     if (!uploadData.video) throw new Error("No video file available.");
 
+    // ── Score caching — return cached result for duplicate submissions ──
+    const cacheKey = `strive_cache_${btoa(unescape(encodeURIComponent(
+      (uploadData.video.name || "video") + "_" + (uploadData.video.size || 0) + "_" + (profile.level || "L6") + "_" + (uploadData.event || "floor")
+    )))}`;
+    try {
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        const { result, timestamp } = JSON.parse(cached);
+        const ageHours = (Date.now() - timestamp) / (1000 * 60 * 60);
+        if (ageHours < 24 && result && result.gradedSkills) {
+          log.info("cache", `Returning cached result (${ageHours.toFixed(1)}h old, ${result.gradedSkills.length} skills)`);
+          result._cached = true;
+          setProgress(100);
+          setStatus("Score verified — analyzed previously");
+          return result;
+        }
+      }
+    } catch (e) { log.warn("cache", `Cache read failed: ${e.message}`); }
+
     try {
       // Upload video once
       const fileRef = await uploadVideoToGemini(uploadData.video, apiKey);
@@ -3383,7 +3387,7 @@ Respond with valid JSON only — no markdown, no extra text:
           rawResponse = await geminiGenerate(fileRef, prompt, apiKey, {
             label: `judge-${profile.level}-attempt${attempt}`,
           });
-          if (rawResponse && rawResponse.length > 100 && rawResponse.includes('"skills"')) break;
+          if (rawResponse && rawResponse.length > 100 && rawResponse.includes(" | ")) break;
           log.warn("judge", `Attempt ${attempt} short or missing skills (${rawResponse?.length} chars). Retrying...`);
           await new Promise(r => setTimeout(r, 2000));
         } catch (e) {
@@ -3402,49 +3406,146 @@ Respond with valid JSON only — no markdown, no extra text:
       setStatus("Computing score...");
       setProgress(88);
 
+      // ── Parse pipe-delimited table response ─────────────────────
       let parsedSkills = [];
       let parsedArtistry = null;
       let parsedCelebrations = [];
       let whyThisScore = "";
       let pathToGoal = "";
 
-      try {
-        const match = rawResponse.match(/\{[\s\S]*\}/);
-        if (match) {
-          const parsed = JSON.parse(match[0]);
-          parsedSkills       = safeArray(parsed.skills).filter(s => s.skill && s.deduction !== undefined);
-          parsedArtistry     = parsed.artistry     || null;
-          parsedCelebrations = safeArray(parsed.celebrations);
-          whyThisScore       = safeStr(parsed.whyThisScore);
-          pathToGoal         = safeStr(parsed.pathToNinePointO || parsed.pathToGoal);
-        }
-      } catch (e) {
-        log.warn("parse", `JSON parse failed: ${e.message}. Attempting repair...`);
+      const lines = rawResponse.split("\n").map(l => l.trim()).filter(l => l.includes(" | "));
+      // Skip header line if it contains "Timestamp" or "Skill Name"
+      const dataLines = lines.filter(l => !/^timestamp\s*\|/i.test(l) && !/^-+\s*\|/.test(l));
+
+      for (const line of dataLines) {
+        const parts = line.split("|").map(p => p.trim());
+        if (parts.length < 5) continue;
+        const [timestamp, skillName, skillType, dedStr, faultDesc, strengthNote] = parts;
+        const deduction = parseFloat(dedStr);
+        if (isNaN(deduction) || !skillName) continue;
+        parsedSkills.push({
+          timestamp: timestamp || "0:00",
+          skill: skillName,
+          type: (skillType || "acro").toLowerCase(),
+          deduction: Math.max(0, Math.min(deduction, 0.50)),
+          reason: (!faultDesc || faultDesc.toLowerCase() === "clean") ? null : faultDesc,
+          strength: (strengthNote && strengthNote.length > 1) ? strengthNote : null,
+        });
+      }
+
+      // Fallback: try JSON parse if pipe parsing found nothing (backward compat)
+      if (parsedSkills.length === 0) {
         try {
-          let rep = rawResponse.replace(/^```json\s*/i,"").replace(/```\s*$/,"").trim();
-          const si = rep.indexOf("{"); if (si > 0) rep = rep.substring(si);
-          let braces = 0, brackets = 0;
-          for (const ch of rep) {
-            if (ch==="{") braces++;   if (ch==="}") braces--;
-            if (ch==="[") brackets++; if (ch==="]") brackets--;
+          const match = rawResponse.match(/\{[\s\S]*\}/);
+          if (match) {
+            const parsed = JSON.parse(match[0]);
+            parsedSkills = safeArray(parsed.skills).filter(s => s.skill && s.deduction !== undefined);
+            parsedArtistry = parsed.artistry || null;
+            parsedCelebrations = safeArray(parsed.celebrations);
+            whyThisScore = safeStr(parsed.whyThisScore);
+            pathToGoal = safeStr(parsed.pathToNinePointO || parsed.pathToGoal);
           }
-          if (brackets > 0) rep += "]".repeat(brackets);
-          if (braces   > 0) rep += "}".repeat(braces);
-          const parsed = JSON.parse(rep);
-          parsedSkills       = safeArray(parsed.skills).filter(s => s.skill && s.deduction !== undefined);
-          parsedArtistry     = parsed.artistry     || null;
-          parsedCelebrations = safeArray(parsed.celebrations);
-          whyThisScore       = safeStr(parsed.whyThisScore);
-          pathToGoal         = safeStr(parsed.pathToNinePointO || parsed.pathToGoal);
-          log.info("parse", `Repaired — ${parsedSkills.length} skills recovered`);
-        } catch (re) {
-          throw new Error(`Could not parse response: ${re.message}. Raw: ${rawResponse.substring(0,300)}`);
+        } catch (e) {
+          log.warn("parse", `Fallback JSON parse also failed: ${e.message}`);
         }
       }
 
       if (parsedSkills.length === 0) {
         throw new Error("No skills found in response. Raw: " + rawResponse.substring(0,300));
       }
+
+      // ── Hardcoded deduction validation — clamp Gemini's output ────
+      const DEDUCTION_CAPS = {
+        bentArms: 0.30, bentKnees: 0.30, flexedFoot: 0.05,
+        landingStepSmall: 0.05, landingStepMedium: 0.10, landingStepLarge: 0.20, landingFall: 0.50,
+        beamWobbleSmall: 0.10, beamWobbleMedium: 0.20, beamWobbleLarge: 0.30,
+        legSeparation: 0.20,
+      };
+      for (const s of parsedSkills) {
+        if (!s.reason) continue;
+        const r = s.reason.toLowerCase();
+        if (/bent\s*arm/i.test(r) && s.deduction > DEDUCTION_CAPS.bentArms) s.deduction = DEDUCTION_CAPS.bentArms;
+        if (/bent\s*knee/i.test(r) && s.deduction > DEDUCTION_CAPS.bentKnees) s.deduction = DEDUCTION_CAPS.bentKnees;
+        if (/flexed\s*(foot|feet)|sickle/i.test(r) && s.deduction > DEDUCTION_CAPS.flexedFoot) s.deduction = DEDUCTION_CAPS.flexedFoot;
+        // Landing step caps by severity
+        if (/landing/i.test(r) || /step/i.test(r) || /lunge/i.test(r)) {
+          if (/fall/i.test(r) && s.deduction > DEDUCTION_CAPS.landingFall) s.deduction = DEDUCTION_CAPS.landingFall;
+          else if (/large|lunge/i.test(r) && s.deduction > DEDUCTION_CAPS.landingStepLarge) s.deduction = DEDUCTION_CAPS.landingStepLarge;
+          else if (/medium/i.test(r) && s.deduction > DEDUCTION_CAPS.landingStepMedium) s.deduction = DEDUCTION_CAPS.landingStepMedium;
+          else if (/small/i.test(r) && s.deduction > DEDUCTION_CAPS.landingStepSmall) s.deduction = DEDUCTION_CAPS.landingStepSmall;
+        }
+        // Beam wobble caps by severity
+        if (/wobble/i.test(r)) {
+          if (/large|significant/i.test(r) && s.deduction > DEDUCTION_CAPS.beamWobbleLarge) s.deduction = DEDUCTION_CAPS.beamWobbleLarge;
+          else if (/medium|moderate/i.test(r) && s.deduction > DEDUCTION_CAPS.beamWobbleMedium) s.deduction = DEDUCTION_CAPS.beamWobbleMedium;
+          else if (/small|slight/i.test(r) && s.deduction > DEDUCTION_CAPS.beamWobbleSmall) s.deduction = DEDUCTION_CAPS.beamWobbleSmall;
+          else if (s.deduction > DEDUCTION_CAPS.beamWobbleLarge) s.deduction = DEDUCTION_CAPS.beamWobbleLarge;
+        }
+        if (/cowboy|leg\s*sep/i.test(r) && s.deduction > DEDUCTION_CAPS.legSeparation) s.deduction = DEDUCTION_CAPS.legSeparation;
+      }
+
+      // ── Split angle validation by level — remove split deductions if level doesn't require it ──
+      const splitMinByLevel = (() => {
+        const lv = profile.level || "Level 6";
+        const xc = (profile.levelCategory || "") === "xcel";
+        if (xc) {
+          if (lv.includes("Bronze")) return 0;   // no minimum
+          if (lv.includes("Silver")) return 90;
+          if (lv.includes("Gold")) return 120;
+          if (lv.includes("Platinum")) return 150;
+          return 180; // Diamond/Sapphire
+        }
+        if (["Level 1","Level 2","Level 3","Level 4"].includes(lv)) return 90;
+        if (lv === "Level 5") return 120;
+        if (lv === "Level 6" || lv === "Level 7") return 150;
+        return 180;
+      })();
+      for (const s of parsedSkills) {
+        if (!s.reason) continue;
+        const r = s.reason.toLowerCase();
+        // If this is a split deduction and the reason mentions an angle that meets the level minimum, remove it
+        if (/split/i.test(r) && s.deduction > 0) {
+          const angleMatch = r.match(/(\d{2,3})\s*°/);
+          if (angleMatch) {
+            const observedAngle = parseInt(angleMatch[1], 10);
+            if (observedAngle >= splitMinByLevel) {
+              // The split met the minimum for this level — remove the deduction
+              s.deduction = 0;
+              s.reason = `Split at ${observedAngle}° meets ${profile.level} minimum of ${splitMinByLevel}° — no deduction`;
+            }
+          }
+        }
+      }
+
+      // ── Merge combination tumbling passes within 2 seconds ────────
+      const merged = [];
+      for (let i = 0; i < parsedSkills.length; i++) {
+        const s = parsedSkills[i];
+        const sec = parseTimestampToSec(s.timestamp);
+        // Check if this skill should merge into the previous one
+        if (merged.length > 0) {
+          const prev = merged[merged.length - 1];
+          const prevSec = parseTimestampToSec(prev.timestamp);
+          const timeDiff = Math.abs(sec - prevSec);
+          const isCombo = timeDiff <= 2
+            && prev.type !== "artistry" && s.type !== "artistry"
+            && !/global/i.test(s.timestamp) && !/global/i.test(prev.timestamp)
+            && (/back\s*handspring|bhs|round[\s-]*off|front\s*handspring|front\s*walkover/i.test(s.skill)
+              || /back\s*handspring|bhs|round[\s-]*off|front\s*handspring|front\s*walkover/i.test(prev.skill));
+          if (isCombo) {
+            // Merge into previous
+            prev.skill = prev.skill + " " + s.skill;
+            prev.deduction = Math.min(0.50, Math.round((prev.deduction + s.deduction) * 100) / 100);
+            if (s.reason) prev.reason = [prev.reason, s.reason].filter(Boolean).join("; ");
+            if (s.strength && !prev.strength) prev.strength = s.strength;
+            continue;
+          }
+        }
+        merged.push({ ...s });
+      }
+      parsedSkills = merged;
+
+      log.info("parse", `Parsed ${parsedSkills.length} skills from pipe-delimited response`);
 
       // ── CODE COMPUTES THE SCORE — not Gemini ────────────────────
       const processedSkills = parsedSkills.map((s, idx) => {
@@ -3519,7 +3620,7 @@ Respond with valid JSON only — no markdown, no extra text:
         ? `${profile.level} ${uploadData.event} typical range: ${bench.low}–${bench.high} (avg ${bench.avg}).`
         : "";
 
-      return {
+      const analysisResult = {
         // ── Core score ──
         startValue:               10.0,
         finalScore,
@@ -3579,6 +3680,17 @@ Respond with valid JSON only — no markdown, no extra text:
         videoUrl: uploadData.videoUrl,
         rawResponse,
       };
+
+      // ── Cache the result for duplicate submissions ──────────────
+      try {
+        localStorage.setItem(cacheKey, JSON.stringify({
+          result: analysisResult,
+          timestamp: Date.now(),
+        }));
+        log.info("cache", `Cached result under ${cacheKey}`);
+      } catch (e) { log.warn("cache", `Cache write failed: ${e.message}`); }
+
+      return analysisResult;
 
     } catch (err) {
       log.error("pipeline", `Analysis failed: ${err.message}`);
