@@ -1047,6 +1047,78 @@ const Icon = ({ name, size = 20 }) => {
   return <span style={{ fontSize: size }}>{icons[name] || "•"}</span>;
 };
 
+// ─── ERROR BOUNDARY (Agent Epsilon) ─────────────────────────────────
+// Class-based React error boundary — wraps major sections to prevent
+// full-page crashes. Provides retry button and error logging.
+class StriveErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, info) {
+    console.error(`[STRIVE] ${this.props.name || 'Component'} crashed:`, error, info);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ background: '#121b2d', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 20, margin: '12px 0', textAlign: 'center' }}>
+          <div style={{ color: '#dc2626', fontSize: 16, fontFamily: 'Outfit, sans-serif', fontWeight: 600, marginBottom: 8 }}>Something went wrong</div>
+          <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13, fontFamily: 'Outfit, sans-serif', marginBottom: 16 }}>{this.props.name || 'This section'} could not load.</div>
+          <button onClick={() => this.setState({ hasError: false, error: null })} style={{ background: '#e8962a', color: '#070c16', border: 'none', borderRadius: 8, padding: '10px 20px', fontFamily: 'Outfit, sans-serif', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>Tap to retry</button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+// ─── SHIMMER LOADING PLACEHOLDER (Agent Epsilon) ────────────────────
+function ShimmerBlock({ width = "100%", height = 20, borderRadius = 8, style = {} }) {
+  return (
+    <div style={{
+      width, height, borderRadius,
+      background: "linear-gradient(90deg, #121b2d 25%, #1a2540 50%, #121b2d 75%)",
+      backgroundSize: "400px 100%",
+      animation: "shimmer 1.5s infinite",
+      ...style,
+    }} />
+  );
+}
+
+function SkillCardShimmer() {
+  return (
+    <div style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.04)", borderRadius: 18, padding: 18, marginBottom: 12 }}>
+      <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 12 }}>
+        <ShimmerBlock width={40} height={40} borderRadius={20} />
+        <div style={{ flex: 1 }}>
+          <ShimmerBlock width="60%" height={14} style={{ marginBottom: 6 }} />
+          <ShimmerBlock width="40%" height={10} />
+        </div>
+      </div>
+      <ShimmerBlock width="100%" height={8} borderRadius={4} />
+    </div>
+  );
+}
+
+// ─── OFFLINE BANNER (Agent Epsilon) ─────────────────────────────────
+function OfflineBanner({ isOffline }) {
+  if (!isOffline) return null;
+  return (
+    <div style={{
+      position: "fixed", top: 0, left: 0, right: 0, zIndex: 9999,
+      background: "linear-gradient(135deg, #e8962a, #ffc15a)", color: "#070c16",
+      padding: "8px 16px", textAlign: "center",
+      fontFamily: "'Outfit', sans-serif", fontSize: 13, fontWeight: 600,
+      boxShadow: "0 2px 12px rgba(0,0,0,0.3)",
+    }}>
+      You are offline — showing last saved analysis
+    </div>
+  );
+}
+
 // ─── SKELETON OVERLAY COMPONENT ─────────────────────────────────────
 // SkeletonOverlay accepts either legacy {joints, faultJoints} or new skeleton data format
 // New format: skeleton = {joints, faultJoints, angles: [{joint, measured, ideal, label}]}
@@ -1103,10 +1175,10 @@ function SkeletonOverlay({ joints, faultJoints, skeleton, angles: anglesFromProp
       {faultList.map((name) => {
         const pos = j[name];
         if (!pos) return null;
-        return [0.008, 0.016].map((off, oi) => (
+        return <React.Fragment key={`trail-${name}`}>{[0.008, 0.016].map((off, oi) => (
           <circle key={`trail-${name}-${oi}`} cx={pos[0] + off} cy={pos[1] - off * 0.5}
             r={0.012} fill="#dc2626" opacity={0.12 - oi * 0.04} />
-        ));
+        ))}</React.Fragment>;
       })}
 
       {/* Draw connections */}
@@ -1407,6 +1479,19 @@ export default function LegacyApp() {
   const videoFileRef = useRef(null); // Raw File object — survives re-renders
   const videoBlobRef = useRef(null); // Stable blob URL — created once at upload, never revoked until new upload
   const [savedResults, setSavedResults] = useState({}); // Store past results by ID
+  const [isOffline, setIsOffline] = useState(typeof navigator !== "undefined" ? !navigator.onLine : false);
+
+  // ── Agent Epsilon: Offline detection ──
+  useEffect(() => {
+    const goOffline = () => setIsOffline(true);
+    const goOnline = () => setIsOffline(false);
+    window.addEventListener("online", goOnline);
+    window.addEventListener("offline", goOffline);
+    return () => {
+      window.removeEventListener("online", goOnline);
+      window.removeEventListener("offline", goOffline);
+    };
+  }, []);
 
   // Load profile, history, and saved results from storage
   useEffect(() => {
@@ -1475,6 +1560,15 @@ export default function LegacyApp() {
     setSavedResults(newSaved);
     try { storage.set("strive-saved-results", JSON.stringify(newSaved)); } catch {}
 
+    // ── Agent Epsilon: Cache last 5 analyses for offline access ──
+    try {
+      const cacheRaw = localStorage.getItem("strive_recent_analyses");
+      let recentCache = cacheRaw ? JSON.parse(cacheRaw) : [];
+      recentCache.unshift({ id, result: lightResult, date: new Date().toISOString(), event: uploadData?.event });
+      recentCache = recentCache.slice(0, 5);
+      localStorage.setItem("strive_recent_analyses", JSON.stringify(recentCache));
+    } catch (e) { log.warn("cache", "Failed to cache recent analysis: " + (e.message || "")); }
+
     // Track analysis count for free tier limit (3/month)
     try {
       const now = new Date();
@@ -1501,6 +1595,7 @@ export default function LegacyApp() {
       position: "relative",
       overflow: "hidden",
     }}>
+      <OfflineBanner isOffline={isOffline} />
       <style>{fonts}</style>
       <style>{`
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -1581,6 +1676,7 @@ export default function LegacyApp() {
       {screen === "splash" && <SplashScreen onStart={() => setScreen("onboarding")} />}
       {screen === "onboarding" && <OnboardingScreen onComplete={(p) => { saveProfile(p); setScreen("dashboard"); }} />}
       {screen === "dashboard" && (
+        <StriveErrorBoundary name="Dashboard">
         <DashboardScreen
           profile={profile}
           history={history}
@@ -1594,8 +1690,10 @@ export default function LegacyApp() {
           onGoals={() => setScreen("goals")}
           onViewResult={(r) => { setAnalysisResult(r); setLiveVideoUrl(null); setScreen("results"); }}
         />
+        </StriveErrorBoundary>
       )}
       {screen === "upload" && (
+        <StriveErrorBoundary name="Upload">
         <UploadScreen
           profile={profile}
           onBack={() => setScreen("dashboard")}
@@ -1612,16 +1710,20 @@ export default function LegacyApp() {
             setScreen("analyzing");
           }}
         />
+        </StriveErrorBoundary>
       )}
       {screen === "analyzing" && (
+        <StriveErrorBoundary name="Analysis">
         <AnalyzingScreen
           uploadData={uploadData}
           profile={profile}
           onComplete={handleAnalysisComplete}
           onBack={() => setScreen("upload")}
         />
+        </StriveErrorBoundary>
       )}
       {screen === "results" && (
+        <StriveErrorBoundary name="Results">
         <ResultsScreen
           result={analysisResult}
           profile={profile}
@@ -1631,17 +1733,23 @@ export default function LegacyApp() {
           onBack={() => setScreen("dashboard")}
           onDrills={() => setScreen("drills")}
         />
+        </StriveErrorBoundary>
       )}
       {screen === "drills" && (
+        <StriveErrorBoundary name="Drills">
         <DrillsScreen
           result={analysisResult}
           onBack={() => setScreen("results")}
         />
+        </StriveErrorBoundary>
       )}
       {screen === "deductions" && (
+        <StriveErrorBoundary name="Deductions Guide">
         <DeductionsScreen onBack={() => setScreen("dashboard")} profile={profile} />
+        </StriveErrorBoundary>
       )}
       {screen === "settings" && (
+        <StriveErrorBoundary name="Settings">
         <SettingsScreen
           profile={profile}
           onSave={(p) => { saveProfile(p); setScreen("dashboard"); }}
@@ -1656,6 +1764,7 @@ export default function LegacyApp() {
             setScreen("splash");
           }}
         />
+        </StriveErrorBoundary>
       )}
       {screen === "progress" && (
         (() => {
@@ -1686,10 +1795,12 @@ export default function LegacyApp() {
         })()
       )}
       {screen === "meets" && (
+        <StriveErrorBoundary name="Meets">
         <MeetsScreen history={history} savedResults={savedResults} profile={profile}
           onBack={() => setScreen("dashboard")}
           onViewResult={(r) => { setAnalysisResult(r); setLiveVideoUrl(null); setScreen("results"); }}
         />
+        </StriveErrorBoundary>
       )}
       {screen === "mental" && (
         (() => {
@@ -5678,12 +5789,13 @@ function GradedSkillsView({ result, videoUrl, videoFile }) {
       )}
 
       {skills.map((skill, idx) => (
+        <StriveErrorBoundary key={skill.id || idx} name="Skill Card">
         <GradedSkillCard
-          key={skill.id || idx}
           skill={skill}
           onSeek={videoUrl ? handleSeek : null}
           videoFile={videoFile}
         />
+        </StriveErrorBoundary>
       ))}
     </div>
   );
@@ -5696,7 +5808,27 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFile, onBack, 
   const [scoreSaved, setScoreSaved] = useState(false);
   const [showSkeleton, setShowSkeleton] = useState(true);
 
-  if (!result) return null;
+  // ── Agent Epsilon: Never blank screen — fall back to cached analysis if result is null ──
+  if (!result) {
+    try {
+      const cached = localStorage.getItem("strive_recent_analyses");
+      if (cached) {
+        const recent = JSON.parse(cached);
+        if (recent.length > 0 && recent[0].result) {
+          result = recent[0].result;
+        }
+      }
+    } catch {}
+    if (!result) {
+      return (
+        <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 32 }}>
+          <div style={{ fontSize: 18, fontWeight: 700, color: "rgba(255,255,255,0.5)", marginBottom: 12 }}>No analysis available</div>
+          <div style={{ fontSize: 13, color: "rgba(255,255,255,0.3)", marginBottom: 24, textAlign: "center", maxWidth: 280 }}>Upload a video to get your first analysis, or check back when you are online.</div>
+          <button onClick={onBack} className="btn-gold" style={{ padding: "12px 28px", fontSize: 14 }}>Go to Dashboard</button>
+        </div>
+      );
+    }
+  }
 
   // ── Agent Delta: Compute intelligence data ──
   const athleteRecord = getAthleteRecord(profile);
@@ -6071,13 +6203,18 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFile, onBack, 
       {/* ─── VIDEO REVIEW TAB ─── */}
       {/* ─── SKILLS TAB — primary graded view ─── */}
       {activeTab === "skills" && (
+        <StriveErrorBoundary name="Skills">
         <GradedSkillsView result={result} videoUrl={videoUrl} videoFile={videoFile} />
+        </StriveErrorBoundary>
       )}
 
       {activeTab === "review" && hasVideo && (
+        <StriveErrorBoundary name="Video Player">
         <VideoReviewPlayer videoUrl={videoUrl} result={result} />
+        </StriveErrorBoundary>
       )}
       {activeTab === "overview" && (
+        <StriveErrorBoundary name="Overview">
         <div style={{ animation: "fadeIn 0.4s ease-out" }}>
 
           {/* ── 1. HERO SCORE RING ── */}
@@ -6469,6 +6606,7 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFile, onBack, 
                 Score Progression
               </div>
               <div style={{ height: 160, marginBottom: 12 }}>
+                <StriveErrorBoundary name="Chart">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={improvementData.scoreHistory} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
                     <XAxis dataKey="label" tick={{ fontSize: 9, fill: "rgba(255,255,255,0.3)" }} axisLine={false} tickLine={false} />
@@ -6479,6 +6617,7 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFile, onBack, 
                     <Line type="monotone" dataKey="score" stroke="#22c55e" strokeWidth={2} dot={{ r: 3, fill: "#22c55e" }} activeDot={{ r: 5 }} />
                   </LineChart>
                 </ResponsiveContainer>
+                </StriveErrorBoundary>
               </div>
               {/* Fault trend indicators */}
               {improvementData.faultTrends.length > 0 && (
@@ -6575,6 +6714,7 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFile, onBack, 
             </div>
           </div>
         </div>
+        </StriveErrorBoundary>
       )}
 
       {activeTab === "deductions" && (
@@ -7468,6 +7608,7 @@ function ProgressScreen({ history, profile, onBack }) {
           <div className="card" style={{ padding: 16, marginBottom: 16 }}>
             <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12 }}>Score Trend</h3>
             {LineChart && ResponsiveContainer ? (
+              <StriveErrorBoundary name="Chart">
               <ResponsiveContainer width="100%" height={200}>
                 <LineChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
@@ -7477,6 +7618,7 @@ function ProgressScreen({ history, profile, onBack }) {
                   <Line type="monotone" dataKey="score" stroke="#e8962a" strokeWidth={2} dot={{ fill: "#e8962a", r: 4 }} />
                 </LineChart>
               </ResponsiveContainer>
+              </StriveErrorBoundary>
             ) : (
               <div style={{ padding: 20, textAlign: "center", color: "rgba(255,255,255,0.3)", fontSize: 13 }}>
                 {chartData.map((d, i) => (
@@ -8710,6 +8852,7 @@ function PillarProgress({ history, profile }) {
       {scoreTrend.length >= 2 && (
         <div style={{ marginBottom: 12 }}>
           <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.6)", marginBottom: 6 }}>Score Trend</div>
+          <StriveErrorBoundary name="Chart">
           <ResponsiveContainer width="100%" height={80}>
             <LineChart data={scoreTrend} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
               <XAxis dataKey="label" tick={{ fill: "rgba(255,255,255,0.2)", fontSize: 9 }} />
@@ -8717,6 +8860,7 @@ function PillarProgress({ history, profile }) {
               <Line type="monotone" dataKey="score" stroke="#e8962a" strokeWidth={2} dot={{ r: 3, fill: "#e8962a" }} />
             </LineChart>
           </ResponsiveContainer>
+          </StriveErrorBoundary>
         </div>
       )}
 
@@ -8746,6 +8890,7 @@ function PillarProgress({ history, profile }) {
       {strengthTrend.length >= 2 && (strengthTrend[0].landing > 0 || strengthTrend[0].knees > 0 || strengthTrend[0].toes > 0) && (
         <div style={{ marginTop: 12 }}>
           <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.6)", marginBottom: 6 }}>Deduction Patterns Over Time</div>
+          <StriveErrorBoundary name="Chart">
           <ResponsiveContainer width="100%" height={80}>
             <LineChart data={strengthTrend} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
               <XAxis dataKey="label" tick={{ fill: "rgba(255,255,255,0.2)", fontSize: 9 }} />
@@ -8755,6 +8900,7 @@ function PillarProgress({ history, profile }) {
               <Line type="monotone" dataKey="toes" name="Toes" stroke="#8b5cf6" strokeWidth={1.5} dot={{ r: 2 }} />
             </LineChart>
           </ResponsiveContainer>
+          </StriveErrorBoundary>
           <div style={{ display: "flex", gap: 12, justifyContent: "center", marginTop: 4 }}>
             {[{label: "Landings", color: "#dc2626"}, {label: "Knees", color: "#e06820"}, {label: "Toes", color: "#8b5cf6"}].map(l => (
               <div key={l.label} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 9, color: "rgba(255,255,255,0.3)" }}>
@@ -9297,6 +9443,7 @@ function BiomechanicsDashboard({ result }) {
       {timelineData.length > 0 && (
         <div className="card" style={{ padding: 16, marginBottom: 12 }}>
           {sectionHead("When Do Errors Happen?", "This chart shows where in the routine deductions occur — taller bars mean bigger point losses")}
+          <StriveErrorBoundary name="Chart">
           <ResponsiveContainer width="100%" height={140}>
             <LineChart data={timelineData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
@@ -9310,6 +9457,7 @@ function BiomechanicsDashboard({ result }) {
               <Line type="stepAfter" dataKey="deduction" stroke="#dc2626" strokeWidth={2} dot={{ r: 4, fill: "#dc2626" }} activeDot={{ r: 6 }} />
             </LineChart>
           </ResponsiveContainer>
+          </StriveErrorBoundary>
           <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginTop: 8, lineHeight: 1.5 }}>
             {timelineData.length > 3 && timelineData.slice(-2).reduce((s, d) => s + d.deduction, 0) > timelineData.slice(0, 2).reduce((s, d) => s + d.deduction, 0)
               ? "📊 More errors happen toward the end of the routine — this often means fatigue. Endurance conditioning can help."
@@ -9323,6 +9471,7 @@ function BiomechanicsDashboard({ result }) {
       {angleData.length > 0 && (
         <div className="card" style={{ padding: 16, marginBottom: 12 }}>
           {sectionHead("Body Positions During Skills", "Joint angles show how straight or bent the knees and hips are at key moments. Judges want to see fully extended (straight) positions — around 180° for knees and hips.")}
+          <StriveErrorBoundary name="Chart">
           <ResponsiveContainer width="100%" height={160}>
             <LineChart data={angleData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
@@ -9336,6 +9485,7 @@ function BiomechanicsDashboard({ result }) {
               <Line type="monotone" dataKey="rHip" name="R Hip" stroke="#8b5cf6" strokeWidth={2} dot={{ r: 3 }} connectNulls />
             </LineChart>
           </ResponsiveContainer>
+          </StriveErrorBoundary>
           <div style={{ display: "flex", gap: 12, marginTop: 6, justifyContent: "center" }}>
             {[{label: "L Knee", color: "#dc2626"}, {label: "R Knee", color: "#e06820"}, {label: "L Hip", color: "#3b82f6"}, {label: "R Hip", color: "#8b5cf6"}].map(l => (
               <div key={l.label} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10, color: "rgba(255,255,255,0.4)" }}>

@@ -80,6 +80,11 @@ body {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
 }
+.shimmer {
+  background: linear-gradient(90deg, #121b2d 25%, #1a2540 50%, #121b2d 75%);
+  background-size: 400px 100%;
+  animation: shimmer 1.5s infinite;
+}
 
 @keyframes floatIn {
   from { opacity: 0; transform: translateY(6px) scale(0.98); }
