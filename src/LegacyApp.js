@@ -4350,17 +4350,21 @@ ${skillsLine}
 ${benchLine}
 
 KEY RULES:
-1. INDIVIDUAL ELEMENTS: Break every skill apart. A Round-off, Back Handspring, and Back Tuck in one tumbling pass = THREE separate entries, each judged individually. A typical floor routine has 9-15 individual elements. Do NOT group connected skills into one entry.
-2. DEATH BY 0.05s: Every flexed foot, soft knee, micro-bend, leg separation, relaxed hand — each is 0.05. These add up fast. A single tumbling pass often has 3-5 micro-deductions across its individual elements. Count every one.
-3. LANDINGS ARE STRICT: Deep squat = 0.20-0.30. Low chest = 0.10-0.20. Any step = 0.05-0.10. Almost no youth gymnast sticks perfectly.
-4. ARTISTRY — THE HIDDEN DEDUCTIONS (typically 0.25-0.50 total for youth):
+1. INDIVIDUAL ELEMENTS: Break every skill apart for FEEDBACK purposes. A Round-off, Back Handspring, and Back Tuck in one tumbling pass = THREE separate entries. HOWEVER, connecting elements within a pass share momentum — only deduct faults you can CLEARLY SEE on each individual element. Do not assume faults on connecting elements. If a round-off looks clean, score it clean (0.00 deduction). Most elements in a competent routine have 0-1 visible faults.
+2. MICRO-DEDUCTIONS: Flexed feet, soft knees, micro-bends — deduct 0.05 each, but ONLY when clearly visible. Do not guess or assume. A typical skill has 0-2 micro-faults, not 3-4.
+3. LANDINGS: Only the FINAL landing of a tumbling pass gets full landing deductions. Intermediate landings (between RO and BHS, between BHS and tuck) are transitional and only deducted if there's a clear error (stumble, extra step, loss of momentum). Final landing: step = 0.05-0.10, squat = 0.10-0.20, deep squat = 0.20-0.30.
+4. ARTISTRY — THE HIDDEN DEDUCTIONS (typically 0.15-0.35 total for youth):
    - Finger-tip to toe-tip engagement, arms tossed vs placed (0.05-0.10)
-   - Hesitations before passes, "thinking" not performing (0.05-0.10)
-   - Flexed feet throughout dance/transitions — count cumulatively (0.10-0.20)
-   - Composition: floor space, transitions, choreographic variety (0.05-0.15)
-   If your artistry deductions total 0.00, you are WRONG.
+   - Hesitations before passes (0.05-0.10)
+   - Flexed feet in dance/transitions — cumulative (0.05-0.15)
+   - Composition: floor space, transitions, variety (0.05-0.10)
 5. SPLIT LEAPS: ${level} requires ${splitMin}°. Short = 0.10-0.20 deduction.
-6. CALIBRATION CHECK: Most ${level} routines at State score 8.5-9.2. If your total deductions are below 0.80, you are being too lenient — go back and recount. A score above 9.2 for ${level} should be extremely rare.
+6. CALIBRATION — THIS IS CRITICAL:
+   - Target range for total deductions: 0.80–1.30 for most ${level} routines.
+   - A score of 8.7–9.2 is typical at State Championships for ${level}.
+   - If your total deductions are below 0.80, you are too LENIENT — find more faults.
+   - If your total deductions are above 1.50, you are too HARSH — you are likely double-counting faults across connected elements or deducting faults you cannot clearly see. Remove uncertain deductions.
+   - The sum of all individual skill deductions (execution) should typically be 0.50–0.90. Artistry + composition add another 0.20–0.40.
 
 ${executionStandards}
 ${landingStandards}
@@ -4454,7 +4458,8 @@ JSON RULES:
 - Artistry/composition faults go in their own sections, NOT in skills array.
 - Each deduction exactly two decimal places. Only values: 0.00, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.50.
 - Chronological order by timestamp.
-- If total deductions < 0.80, you are too lenient. Re-evaluate before responding.`;
+- If total deductions < 0.80, you are too lenient. Re-evaluate.
+- If total deductions > 1.50, you are too harsh — remove uncertain deductions. Target: 0.90–1.20 total.`;
   }, [profile, uploadData]);
 
   // ── Main analysis orchestrator — single pass ─────────────────────

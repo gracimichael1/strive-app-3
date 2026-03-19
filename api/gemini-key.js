@@ -5,7 +5,7 @@ const ALLOWED_ORIGINS = [
 ];
 
 function isAllowedOrigin(origin) {
-  if (!origin) return false;
+  if (!origin) return true; // Same-origin requests don't send Origin header — allow them
   if (ALLOWED_ORIGINS.includes(origin)) return true;
   // Allow all Vercel preview/deployment URLs for this project
   if (origin.match(/^https:\/\/strive-app.*\.vercel\.app$/)) return true;
