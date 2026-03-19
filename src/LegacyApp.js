@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { LineChart, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Line, ResponsiveContainer, RadarChart, Radar, PolarGrid, PolarAngleAxis, Cell } from "recharts";
+import { LineChart, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Line, ResponsiveContainer, RadarChart, Radar, PolarGrid, PolarAngleAxis, Cell, ReferenceLine } from "recharts";
 
 // ─── STORAGE WRAPPER — works in Claude artifacts AND real browsers ──
 const storage = {
@@ -1479,6 +1479,7 @@ export default function LegacyApp() {
   const videoFileRef = useRef(null); // Raw File object — survives re-renders
   const videoBlobRef = useRef(null); // Stable blob URL — created once at upload, never revoked until new upload
   const [savedResults, setSavedResults] = useState({}); // Store past results by ID
+  const [comparePreselect, setComparePreselect] = useState(null); // Pre-selected analysis ID for comparison
   const [isOffline, setIsOffline] = useState(typeof navigator !== "undefined" ? !navigator.onLine : false);
 
   // ── Agent Epsilon: Offline detection ──
@@ -1781,7 +1782,7 @@ export default function LegacyApp() {
         (() => {
           let tier = "free"; try { tier = localStorage.getItem("strive-tier") || "free"; } catch {}
           return tier === "pro" ? (
-            <ProgressScreen history={history} profile={profile} onBack={() => setScreen("dashboard")} />
+            <ProgressScreen history={history} profile={profile} savedResults={savedResults} comparePreselect={comparePreselect} onClearPreselect={() => setComparePreselect(null)} onBack={() => setScreen("dashboard")} />
           ) : (
             <div style={{ minHeight: "100vh", padding: "16px 18px 90px", maxWidth: 540, margin: "0 auto" }}>
               <button onClick={() => setScreen("dashboard")} style={{ background: "none", border: "none", color: "#e8962a", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 20 }}>← Dashboard</button>
@@ -1810,6 +1811,7 @@ export default function LegacyApp() {
         <MeetsScreen history={history} savedResults={savedResults} profile={profile}
           onBack={() => setScreen("dashboard")}
           onViewResult={(r) => { setAnalysisResult(r); setLiveVideoUrl(null); setScreen("results"); }}
+          onCompare={(id) => { setComparePreselect(id); setScreen("progress"); }}
         />
         </StriveErrorBoundary>
       )}
@@ -7970,15 +7972,46 @@ function WhatIfSimulator({ result }) {
 }
 
 // ─── PROGRESS SCREEN ────────────────────────────────────────────────
-function ProgressScreen({ history, profile, onBack }) {
+function ProgressScreen({ history, profile, savedResults, comparePreselect, onClearPreselect, onBack }) {
   const events = profile.gender === "female" ? WOMEN_EVENTS : MEN_EVENTS;
 
-  // Score trend data
+  // Build list of analyses that have saved results for comparison
+  const comparableAnalyses = history.filter(h => savedResults && savedResults[h.id]);
+
+  // Comparison state
+  const [idA, setIdA] = useState(() => {
+    if (comparePreselect && comparableAnalyses.find(h => h.id === comparePreselect)) return comparePreselect;
+    return comparableAnalyses.length > 0 ? comparableAnalyses[0].id : null;
+  });
+  const [idB, setIdB] = useState(() => {
+    if (comparePreselect && comparableAnalyses.length > 1) {
+      const other = comparableAnalyses.find(h => h.id !== comparePreselect);
+      return other ? other.id : null;
+    }
+    return comparableAnalyses.length > 1 ? comparableAnalyses[1].id : null;
+  });
+
+  // Clear preselect after initial render
+  const preselectCleared = useRef(false);
+  useEffect(() => {
+    if (!preselectCleared.current && comparePreselect && onClearPreselect) {
+      preselectCleared.current = true;
+      onClearPreselect();
+    }
+  });
+
+  // Score trend data (chronological order)
   const chartData = [...history].reverse().map((h, i) => ({
-    name: h.meetName || h.date || `#${i+1}`,
+    name: h.meetName ? h.meetName.slice(0, 10) : (h.date || `#${i+1}`),
     score: h.score || 0,
     event: h.event,
+    deductions: h.deductions || 0,
+    date: h.date || "",
   }));
+
+  // Target score from athlete record
+  const athleteRecord = getAthleteRecord(profile);
+  const targetScore = athleteRecord?.seasonGoals?.targetScore || null;
 
   // Personal bests per event
   const bests = {};
@@ -7986,44 +8019,214 @@ function ProgressScreen({ history, profile, onBack }) {
     if (!bests[h.event] || h.score > bests[h.event]) bests[h.event] = h.score;
   });
 
-  // Most common deductions (from saved calibration)
-  const deductionFreq = {};
-  history.forEach(h => {
-    if (h.deductions) {
-      const key = h.event || "General";
-      deductionFreq[key] = (deductionFreq[key] || 0) + 1;
+  // Get full result data for comparison
+  const resultA = idA && savedResults ? savedResults[idA] : null;
+  const resultB = idB && savedResults ? savedResults[idB] : null;
+  const histA = idA ? history.find(h => h.id === idA) : null;
+  const histB = idB ? history.find(h => h.id === idB) : null;
+
+  // Grade distribution helper
+  const gradeDistribution = (result) => {
+    if (!result || !result.gradedSkills) return { A: 0, B: 0, C: 0, D: 0 };
+    const dist = { A: 0, B: 0, C: 0, D: 0 };
+    (result.gradedSkills || []).forEach(s => {
+      const g = (s.grade || "").charAt(0);
+      if (g === "A") dist.A++;
+      else if (g === "B") dist.B++;
+      else if (g === "C") dist.C++;
+      else dist.D++;
+    });
+    return dist;
+  };
+
+  // Fuzzy match skills between two analyses
+  const matchSkills = (rA, rB) => {
+    if (!rA?.gradedSkills || !rB?.gradedSkills) return [];
+    const skillsA = rA.gradedSkills || [];
+    const skillsB = rB.gradedSkills || [];
+    const matched = [];
+    const usedB = new Set();
+
+    const normalize = (s) => (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+
+    skillsA.forEach(sA => {
+      const nameA = normalize(sA.skill);
+      let bestIdx = -1;
+      let bestScore = 0;
+      skillsB.forEach((sB, idx) => {
+        if (usedB.has(idx)) return;
+        const nameB = normalize(sB.skill);
+        // Exact match
+        if (nameA === nameB) { bestIdx = idx; bestScore = 100; return; }
+        // Partial match — check if one contains the other
+        if (nameA.includes(nameB) || nameB.includes(nameA)) {
+          const sc = Math.min(nameA.length, nameB.length) / Math.max(nameA.length, nameB.length) * 80;
+          if (sc > bestScore) { bestIdx = idx; bestScore = sc; }
+        }
+      });
+      if (bestIdx >= 0 && bestScore > 40) {
+        usedB.add(bestIdx);
+        matched.push({ skillName: sA.skill, a: sA, b: skillsB[bestIdx] });
+      } else {
+        matched.push({ skillName: sA.skill, a: sA, b: null });
+      }
+    });
+    // Add unmatched B skills
+    skillsB.forEach((sB, idx) => {
+      if (!usedB.has(idx)) {
+        matched.push({ skillName: sB.skill, a: null, b: sB });
+      }
+    });
+    return matched;
+  };
+
+  // Progress summary across all history
+  const progressSummary = (() => {
+    if (history.length < 2) return null;
+    const sorted = [...history].reverse(); // chronological
+    const earliest = sorted[0];
+    const latest = sorted[sorted.length - 1];
+    const scoreImprovement = (latest.score || 0) - (earliest.score || 0);
+
+    // Fault analysis across all saved results
+    const allFaults = {};
+    const firstFaults = new Set();
+    const latestFaults = new Set();
+    comparableAnalyses.forEach((h, idx) => {
+      const r = savedResults[h.id];
+      if (!r?.gradedSkills) return;
+      r.gradedSkills.forEach(s => {
+        if (s.fault) {
+          const key = (s.fault || "").toLowerCase().slice(0, 50);
+          if (!allFaults[key]) allFaults[key] = { name: s.fault, scores: [] };
+          allFaults[key].scores.push(s.deduction || 0);
+          if (idx === 0) firstFaults.add(key);
+          if (idx === comparableAnalyses.length - 1) latestFaults.add(key);
+        }
+      });
+    });
+
+    const fixed = [...firstFaults].filter(f => !latestFaults.has(f)).map(f => allFaults[f]?.name || f);
+    const emerged = [...latestFaults].filter(f => !firstFaults.has(f)).map(f => allFaults[f]?.name || f);
+
+    // Most improved skill — biggest deduction decrease
+    let mostImproved = null;
+    if (resultA && resultB) {
+      const skills = matchSkills(resultA, resultB);
+      let biggestDrop = 0;
+      skills.forEach(s => {
+        if (s.a && s.b) {
+          const delta = (s.a.deduction || 0) - (s.b.deduction || 0);
+          if (delta > biggestDrop) { biggestDrop = delta; mostImproved = s.skillName; }
+        }
+      });
     }
-  });
+
+    // Most consistent skill (lowest variance)
+    let mostConsistent = null;
+    const skillVariances = {};
+    comparableAnalyses.forEach(h => {
+      const r = savedResults[h.id];
+      if (!r?.gradedSkills) return;
+      r.gradedSkills.forEach(s => {
+        const key = (s.skill || "").toLowerCase();
+        if (!skillVariances[key]) skillVariances[key] = { name: s.skill, scores: [] };
+        skillVariances[key].scores.push(s.deduction || 0);
+      });
+    });
+    let lowestVar = Infinity;
+    Object.values(skillVariances).forEach(sv => {
+      if (sv.scores.length < 2) return;
+      const mean = sv.scores.reduce((a, b) => a + b, 0) / sv.scores.length;
+      const variance = sv.scores.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / sv.scores.length;
+      if (variance < lowestVar) { lowestVar = variance; mostConsistent = sv.name; }
+    });
+
+    return {
+      earliestDate: earliest.date,
+      scoreImprovement,
+      fixed,
+      emerged,
+      mostImproved,
+      mostConsistent,
+    };
+  })();
+
+  // Dropdown label helper
+  const analysisLabel = (h) => {
+    if (!h) return "—";
+    const d = h.date || "";
+    const evt = h.event || "";
+    const sc = h.score ? h.score.toFixed(3) : "—";
+    return `${d} · ${evt} · ${sc}`;
+  };
+
+  const scoreColor = (sc) => sc >= 9.0 ? "#22c55e" : sc >= 8.0 ? "#ffc15a" : sc > 0 ? "#dc2626" : "rgba(255,255,255,0.3)";
+
+  const selectStyle = {
+    width: "100%", padding: "10px 12px", borderRadius: 10,
+    background: "#121b2d", border: "1px solid rgba(232,150,42,0.15)",
+    color: "#e2e8f0", fontFamily: "'Space Mono', monospace", fontSize: 12,
+    cursor: "pointer", outline: "none", appearance: "none",
+    WebkitAppearance: "none",
+    backgroundImage: `url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23e8962a' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`,
+    backgroundRepeat: "no-repeat", backgroundPosition: "right 12px center",
+    paddingRight: 32,
+  };
 
   return (
     <div style={{ minHeight: "100vh", padding: "16px 18px 90px", maxWidth: 540, margin: "0 auto" }}>
       <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(232,150,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 13, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.5 2.5l-5 5 5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> Dashboard
       </button>
-      <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Progress Tracking</h2>
-      <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 14, marginBottom: 24 }}>Your scoring trends over time</p>
+      <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Progress & Comparison</h2>
+      <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 14, marginBottom: 24 }}>Track improvement and compare analyses side by side</p>
 
       {history.length < 2 ? (
         <div className="card" style={{ padding: 40, textAlign: "center" }}>
-          <Icon name="chart" size={32} />
-          <p style={{ color: "rgba(255,255,255,0.4)", marginTop: 12, fontSize: 14 }}>
-            Analyze at least 2 routines to see progress charts. Keep uploading!
+          <svg width="40" height="40" viewBox="0 0 20 20" fill="none" stroke="#e8962a" strokeWidth="1.5" strokeLinecap="round" style={{ marginBottom: 12 }}>
+            <path d="M3 17l4-6 3 3 4-7 3 4" />
+          </svg>
+          <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>Almost There!</h3>
+          <p style={{ color: "rgba(255,255,255,0.4)", marginTop: 0, fontSize: 14, lineHeight: 1.6 }}>
+            Complete at least 2 analyses to compare progress and see your improvement over time. Every routine you analyze builds your journey.
           </p>
+          <div style={{ marginTop: 16, padding: "10px 20px", borderRadius: 10, background: "rgba(232,150,42,0.06)", border: "1px solid rgba(232,150,42,0.1)", display: "inline-block" }}>
+            <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 22, fontWeight: 700, color: "#e8962a" }}>{history.length}</span>
+            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginLeft: 6 }}>of 2 analyses completed</span>
+          </div>
         </div>
       ) : (
         <>
-          {/* Score Trend Line Chart */}
+          {/* ═══ A. SCORE HISTORY CHART ═══ */}
           <div className="card" style={{ padding: 16, marginBottom: 16 }}>
-            <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12 }}>Score Trend</h3>
+            <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12 }}>Score History</h3>
             {LineChart && ResponsiveContainer ? (
-              <StriveErrorBoundary name="Chart">
-              <ResponsiveContainer width="100%" height={200}>
-                <LineChart data={chartData}>
+              <StriveErrorBoundary name="ProgressChart">
+              <ResponsiveContainer width="100%" height={220}>
+                <LineChart data={chartData} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
-                  <XAxis dataKey="name" tick={{ fill: "rgba(255,255,255,0.3)", fontSize: 10 }} />
-                  <YAxis domain={[7, 10]} tick={{ fill: "rgba(255,255,255,0.3)", fontSize: 10 }} />
-                  <Tooltip contentStyle={{ background: "#0d1422", border: "1px solid rgba(232,150,42,0.2)", borderRadius: 8, color: "#e2e8f0", fontSize: 12 }} />
-                  <Line type="monotone" dataKey="score" stroke="#e8962a" strokeWidth={2} dot={{ fill: "#e8962a", r: 4 }} />
+                  <XAxis dataKey="name" tick={{ fill: "rgba(255,255,255,0.3)", fontSize: 9, fontFamily: "'Space Mono', monospace" }} interval="preserveStartEnd" />
+                  <YAxis domain={['auto', 'auto']} tick={{ fill: "rgba(255,255,255,0.3)", fontSize: 10, fontFamily: "'Space Mono', monospace" }} tickFormatter={(v) => v.toFixed(1)} />
+                  <Tooltip
+                    contentStyle={{ background: "#0d1422", border: "1px solid rgba(232,150,42,0.2)", borderRadius: 10, color: "#e2e8f0", fontSize: 12, fontFamily: "'Space Mono', monospace" }}
+                    formatter={(value, name) => [value?.toFixed(3), name === "score" ? "Score" : name]}
+                    labelFormatter={(label) => label}
+                    content={({ active, payload, label }) => {
+                      if (!active || !payload || !payload[0]) return null;
+                      const d = payload[0].payload;
+                      return (
+                        <div style={{ background: "#0d1422", border: "1px solid rgba(232,150,42,0.2)", borderRadius: 10, padding: "10px 14px", fontSize: 12 }}>
+                          <div style={{ fontWeight: 700, marginBottom: 4 }}>{d.date || label}</div>
+                          <div style={{ fontFamily: "'Space Mono', monospace", color: "#e8962a", fontSize: 16, fontWeight: 700 }}>{d.score?.toFixed(3)}</div>
+                          <div style={{ color: "rgba(255,255,255,0.4)", marginTop: 2 }}>{d.event}</div>
+                          <div style={{ color: "rgba(255,255,255,0.3)", fontSize: 10 }}>Deductions: {d.deductions?.toFixed(3) || "—"}</div>
+                        </div>
+                      );
+                    }}
+                  />
+                  {targetScore && <ReferenceLine y={targetScore} stroke="#22c55e" strokeDasharray="5 5" strokeWidth={1.5} label={{ value: `Goal: ${targetScore}`, fill: "#22c55e", fontSize: 10, fontFamily: "'Space Mono', monospace", position: "right" }} />}
+                  <Line type="monotone" dataKey="score" stroke="#e8962a" strokeWidth={2.5} dot={{ fill: "#e8962a", r: 5, strokeWidth: 2, stroke: "#0d1422" }} activeDot={{ r: 7, fill: "#ffc15a" }} />
                 </LineChart>
               </ResponsiveContainer>
               </StriveErrorBoundary>
@@ -8034,25 +8237,267 @@ function ProgressScreen({ history, profile, onBack }) {
                 ))}
               </div>
             )}
+            {/* Personal Bests row */}
+            {Object.keys(bests).length > 0 && (
+              <div style={{ display: "flex", gap: 8, marginTop: 12, overflowX: "auto", paddingBottom: 4 }}>
+                {Object.entries(bests).map(([evt, sc]) => (
+                  <div key={evt} style={{ flex: "0 0 auto", padding: "8px 12px", borderRadius: 8, background: "rgba(232,150,42,0.06)", border: "1px solid rgba(232,150,42,0.08)", textAlign: "center" }}>
+                    <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", letterSpacing: 0.5 }}>PB {evt.replace("Exercise","").replace("Uneven ","")}</div>
+                    <div style={{ fontSize: 15, fontWeight: 800, fontFamily: "'Space Mono', monospace", color: "#e8962a", marginTop: 2 }}>{sc?.toFixed(2)}</div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* Personal Bests */}
-          <div className="card" style={{ padding: 16, marginBottom: 16 }}>
-            <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12 }}><Icon name="trophy" size={14} /> Personal Bests</h3>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-              {Object.entries(bests).map(([evt, score]) => (
-                <div key={evt} style={{
-                  padding: "12px 14px", borderRadius: 10,
-                  background: "rgba(232,150,42,0.06)", border: "1px solid rgba(232,150,42,0.1)",
-                }}>
-                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>{evt}</div>
-                  <div style={{ fontSize: 22, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: "#e8962a" }}>
-                    {score?.toFixed(3)}
+          {/* ═══ B. COMPARISON PICKER ═══ */}
+          {comparableAnalyses.length >= 2 && (
+            <>
+            <div className="card" style={{ padding: 16, marginBottom: 16 }}>
+              <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 14 }}>Compare Analyses</h3>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <div>
+                  <label style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", letterSpacing: 0.5, marginBottom: 6, display: "block" }}>ANALYSIS A (Earlier)</label>
+                  <select value={idA || ""} onChange={(e) => setIdA(Number(e.target.value))} style={selectStyle}>
+                    {comparableAnalyses.map(h => (
+                      <option key={h.id} value={h.id}>{analysisLabel(h)}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", letterSpacing: 0.5, marginBottom: 6, display: "block" }}>ANALYSIS B (Later)</label>
+                  <select value={idB || ""} onChange={(e) => setIdB(Number(e.target.value))} style={selectStyle}>
+                    {comparableAnalyses.map(h => (
+                      <option key={h.id} value={h.id}>{analysisLabel(h)}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              {histA && histB && histA.event !== histB.event && (
+                <div style={{ marginTop: 10, padding: "6px 12px", borderRadius: 8, background: "rgba(224,104,32,0.08)", border: "1px solid rgba(224,104,32,0.15)", fontSize: 11, color: "#e06820" }}>
+                  Different events ({histA.event} vs {histB.event}) — comparison may be less meaningful
+                </div>
+              )}
+            </div>
+
+            {/* ═══ C. SIDE-BY-SIDE COMPARISON CARD ═══ */}
+            {resultA && resultB && histA && histB && (
+              <div className="card" style={{ padding: 0, marginBottom: 16, overflow: "hidden" }}>
+                <div style={{ padding: "12px 16px", background: "rgba(232,150,42,0.04)", borderBottom: "1px solid rgba(232,150,42,0.08)" }}>
+                  <h3 style={{ fontSize: 14, fontWeight: 700, margin: 0 }}>Head to Head</h3>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 0 }}>
+                  {/* Column A */}
+                  <div style={{ padding: "14px 16px", borderRight: "1px solid rgba(255,255,255,0.04)" }}>
+                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", letterSpacing: 0.5, marginBottom: 2 }}>ANALYSIS A</div>
+                    <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 2 }}>{histA.date}</div>
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginBottom: 10 }}>{histA.event}</div>
+                    <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 28, fontWeight: 900, color: scoreColor(histA.score || 0), marginBottom: 8 }}>
+                      {(histA.score || 0).toFixed(3)}
+                    </div>
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>
+                      <div>Deductions: <span style={{ fontFamily: "'Space Mono', monospace", color: "#e06820" }}>{(histA.deductions || 0).toFixed(3)}</span></div>
+                      <div style={{ marginTop: 4 }}>Skills: <span style={{ fontFamily: "'Space Mono', monospace" }}>{(resultA.gradedSkills || []).length}</span></div>
+                      <div style={{ marginTop: 4 }}>Faults: <span style={{ fontFamily: "'Space Mono', monospace" }}>{(resultA.executionDeductions || []).length}</span></div>
+                    </div>
+                    {/* Grade distribution */}
+                    <div style={{ display: "flex", gap: 4, marginTop: 10 }}>
+                      {Object.entries(gradeDistribution(resultA)).map(([g, c]) => (
+                        <div key={g} style={{ flex: 1, textAlign: "center", padding: "4px 0", borderRadius: 6, background: c > 0 ? "rgba(255,255,255,0.04)" : "transparent" }}>
+                          <div style={{ fontSize: 9, color: g === "A" ? "#22c55e" : g === "B" ? "#ffc15a" : g === "C" ? "#e06820" : "#dc2626", fontWeight: 700 }}>{g}</div>
+                          <div style={{ fontSize: 13, fontFamily: "'Space Mono', monospace", fontWeight: 700 }}>{c}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Delta column */}
+                  <div style={{ padding: "14px 8px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minWidth: 60, background: "rgba(255,255,255,0.02)" }}>
+                    <div style={{ fontSize: 8, color: "rgba(255,255,255,0.25)", letterSpacing: 0.5, marginBottom: 8 }}>DELTA</div>
+                    {(() => {
+                      const scoreDelta = (histB.score || 0) - (histA.score || 0);
+                      const dedDelta = (histB.deductions || 0) - (histA.deductions || 0);
+                      return (
+                        <>
+                          <div style={{
+                            fontFamily: "'Space Mono', monospace", fontSize: 14, fontWeight: 700,
+                            color: scoreDelta > 0 ? "#22c55e" : scoreDelta < 0 ? "#dc2626" : "rgba(255,255,255,0.3)",
+                            marginBottom: 12,
+                          }}>
+                            {scoreDelta > 0 ? "+" : ""}{scoreDelta.toFixed(3)}
+                          </div>
+                          <div style={{ fontSize: 8, color: "rgba(255,255,255,0.25)", marginBottom: 2 }}>DED</div>
+                          <div style={{
+                            fontFamily: "'Space Mono', monospace", fontSize: 12, fontWeight: 700,
+                            color: dedDelta < 0 ? "#22c55e" : dedDelta > 0 ? "#dc2626" : "rgba(255,255,255,0.3)",
+                          }}>
+                            {dedDelta > 0 ? "+" : ""}{dedDelta.toFixed(3)}
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </div>
+
+                  {/* Column B */}
+                  <div style={{ padding: "14px 16px" }}>
+                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", letterSpacing: 0.5, marginBottom: 2 }}>ANALYSIS B</div>
+                    <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 2 }}>{histB.date}</div>
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginBottom: 10 }}>{histB.event}</div>
+                    <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 28, fontWeight: 900, color: scoreColor(histB.score || 0), marginBottom: 8 }}>
+                      {(histB.score || 0).toFixed(3)}
+                    </div>
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>
+                      <div>Deductions: <span style={{ fontFamily: "'Space Mono', monospace", color: "#e06820" }}>{(histB.deductions || 0).toFixed(3)}</span></div>
+                      <div style={{ marginTop: 4 }}>Skills: <span style={{ fontFamily: "'Space Mono', monospace" }}>{(resultB.gradedSkills || []).length}</span></div>
+                      <div style={{ marginTop: 4 }}>Faults: <span style={{ fontFamily: "'Space Mono', monospace" }}>{(resultB.executionDeductions || []).length}</span></div>
+                    </div>
+                    {/* Grade distribution */}
+                    <div style={{ display: "flex", gap: 4, marginTop: 10 }}>
+                      {Object.entries(gradeDistribution(resultB)).map(([g, c]) => (
+                        <div key={g} style={{ flex: 1, textAlign: "center", padding: "4px 0", borderRadius: 6, background: c > 0 ? "rgba(255,255,255,0.04)" : "transparent" }}>
+                          <div style={{ fontSize: 9, color: g === "A" ? "#22c55e" : g === "B" ? "#ffc15a" : g === "C" ? "#e06820" : "#dc2626", fontWeight: 700 }}>{g}</div>
+                          <div style={{ fontSize: 13, fontFamily: "'Space Mono', monospace", fontWeight: 700 }}>{c}</div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              ))}
+              </div>
+            )}
+
+            {/* ═══ D. SKILL-BY-SKILL DELTA ═══ */}
+            {resultA && resultB && (
+              <div className="card" style={{ padding: 0, marginBottom: 16, overflow: "hidden" }}>
+                <div style={{ padding: "12px 16px", background: "rgba(232,150,42,0.04)", borderBottom: "1px solid rgba(232,150,42,0.08)" }}>
+                  <h3 style={{ fontSize: 14, fontWeight: 700, margin: 0 }}>Skill-by-Skill Comparison</h3>
+                </div>
+                {matchSkills(resultA, resultB).map((m, idx) => {
+                  const dedA = m.a ? (m.a.deduction || m.a.gradeDeduction || 0) : null;
+                  const dedB = m.b ? (m.b.deduction || m.b.gradeDeduction || 0) : null;
+                  const delta = dedA !== null && dedB !== null ? dedB - dedA : null;
+
+                  let badge = null;
+                  let badgeColor = "";
+                  let rowBg = "transparent";
+                  if (m.a && !m.b) {
+                    // Skill only in A — if it had a fault, it might be fixed
+                    if (dedA > 0) { badge = "Fixed!"; badgeColor = "#22c55e"; rowBg = "rgba(34,197,94,0.04)"; }
+                  } else if (!m.a && m.b) {
+                    // Skill only in B
+                    if (dedB > 0) { badge = "New"; badgeColor = "#dc2626"; rowBg = "rgba(220,38,38,0.04)"; }
+                  } else if (delta !== null) {
+                    if (delta < -0.01) { badge = "Improved"; badgeColor = "#22c55e"; rowBg = "rgba(34,197,94,0.04)"; }
+                    else if (delta > 0.01) { badge = "Needs work"; badgeColor = "#e06820"; rowBg = "rgba(224,104,32,0.04)"; }
+                  }
+
+                  return (
+                    <div key={idx} style={{
+                      display: "grid", gridTemplateColumns: "1fr auto auto auto auto",
+                      alignItems: "center", gap: 8,
+                      padding: "10px 16px", background: rowBg,
+                      borderBottom: "1px solid rgba(255,255,255,0.03)",
+                    }}>
+                      <div style={{ fontSize: 12, fontWeight: 600, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {m.skillName}
+                      </div>
+                      <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, color: dedA !== null ? (dedA > 0 ? "#e06820" : "#22c55e") : "rgba(255,255,255,0.2)", textAlign: "right", minWidth: 42 }}>
+                        {dedA !== null ? dedA.toFixed(2) : "N/A"}
+                      </div>
+                      <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, color: dedB !== null ? (dedB > 0 ? "#e06820" : "#22c55e") : "rgba(255,255,255,0.2)", textAlign: "right", minWidth: 42 }}>
+                        {dedB !== null ? dedB.toFixed(2) : "N/A"}
+                      </div>
+                      <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700, textAlign: "right", minWidth: 38,
+                        color: delta !== null ? (delta < 0 ? "#22c55e" : delta > 0 ? "#dc2626" : "rgba(255,255,255,0.2)") : "rgba(255,255,255,0.15)"
+                      }}>
+                        {delta !== null ? (delta > 0 ? "+" : "") + delta.toFixed(2) : "—"}
+                      </div>
+                      <div style={{ minWidth: 65, textAlign: "right" }}>
+                        {badge && (
+                          <span style={{
+                            fontSize: 9, fontWeight: 700, padding: "3px 8px", borderRadius: 6,
+                            background: `${badgeColor}15`, color: badgeColor, letterSpacing: 0.3,
+                          }}>{badge}</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+                {matchSkills(resultA, resultB).length === 0 && (
+                  <div style={{ padding: 24, textAlign: "center", color: "rgba(255,255,255,0.3)", fontSize: 13 }}>
+                    No skills found in either analysis
+                  </div>
+                )}
+                {/* Legend */}
+                <div style={{ display: "flex", gap: 12, padding: "8px 16px", borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.25)" }}>A ded</div>
+                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.25)" }}>|</div>
+                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.25)" }}>B ded</div>
+                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.25)" }}>|</div>
+                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.25)" }}>Delta</div>
+                  </div>
+                </div>
+              </div>
+            )}
+            </>
+          )}
+
+          {/* ═══ E. PROGRESS SUMMARY ═══ */}
+          {progressSummary && (
+            <div className="card" style={{ padding: 16, marginBottom: 16 }}>
+              <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 14 }}>Progress Summary</h3>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: 12 }}>
+                Since {progressSummary.earliestDate}:
+              </div>
+
+              {/* Score improvement */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", borderRadius: 10, background: "rgba(255,255,255,0.03)", marginBottom: 8 }}>
+                <span style={{ fontSize: 13, fontWeight: 600 }}>Score Change</span>
+                <span style={{
+                  fontFamily: "'Space Mono', monospace", fontSize: 18, fontWeight: 900,
+                  color: progressSummary.scoreImprovement > 0 ? "#22c55e" : progressSummary.scoreImprovement < 0 ? "#dc2626" : "rgba(255,255,255,0.3)",
+                }}>
+                  {progressSummary.scoreImprovement > 0 ? "+" : ""}{progressSummary.scoreImprovement.toFixed(3)}
+                </span>
+              </div>
+
+              {/* Faults fixed */}
+              {progressSummary.fixed.length > 0 && (
+                <div style={{ padding: "10px 14px", borderRadius: 10, background: "rgba(34,197,94,0.04)", border: "1px solid rgba(34,197,94,0.1)", marginBottom: 8 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#22c55e", marginBottom: 6 }}>Faults Fixed ({progressSummary.fixed.length})</div>
+                  {progressSummary.fixed.slice(0, 5).map((f, i) => (
+                    <div key={i} style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", padding: "2px 0" }}>{f}</div>
+                  ))}
+                </div>
+              )}
+
+              {/* Faults emerged */}
+              {progressSummary.emerged.length > 0 && (
+                <div style={{ padding: "10px 14px", borderRadius: 10, background: "rgba(220,38,38,0.04)", border: "1px solid rgba(220,38,38,0.1)", marginBottom: 8 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#dc2626", marginBottom: 6 }}>New Faults ({progressSummary.emerged.length})</div>
+                  {progressSummary.emerged.slice(0, 5).map((f, i) => (
+                    <div key={i} style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", padding: "2px 0" }}>{f}</div>
+                  ))}
+                </div>
+              )}
+
+              {/* Most improved / most consistent */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 8 }}>
+                <div style={{ padding: "10px 14px", borderRadius: 10, background: "rgba(255,255,255,0.03)" }}>
+                  <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", letterSpacing: 0.5, marginBottom: 4 }}>MOST IMPROVED</div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: progressSummary.mostImproved ? "#22c55e" : "rgba(255,255,255,0.2)" }}>
+                    {progressSummary.mostImproved || "—"}
+                  </div>
+                </div>
+                <div style={{ padding: "10px 14px", borderRadius: 10, background: "rgba(255,255,255,0.03)" }}>
+                  <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", letterSpacing: 0.5, marginBottom: 4 }}>MOST CONSISTENT</div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: progressSummary.mostConsistent ? "#e8962a" : "rgba(255,255,255,0.2)" }}>
+                    {progressSummary.mostConsistent || "—"}
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Event Breakdown */}
           <div className="card" style={{ padding: 16, marginBottom: 16 }}>
@@ -8076,7 +8521,7 @@ function ProgressScreen({ history, profile, onBack }) {
 }
 
 // ─── MEETS SCREEN ───────────────────────────────────────────────────
-function MeetsScreen({ history, savedResults, profile, onBack, onViewResult }) {
+function MeetsScreen({ history, savedResults, profile, onBack, onViewResult, onCompare }) {
   // Group history entries by meet
   const meets = {};
   history.forEach(h => {
@@ -8189,9 +8634,22 @@ function MeetsScreen({ history, savedResults, profile, onBack, onViewResult }) {
                       <div style={{ fontSize: 13, fontWeight: 600 }}>{h.event}</div>
                       {hasR && <div style={{ fontSize: 10, color: "#e8962a" }}>tap to review →</div>}
                     </div>
-                    <div style={{ textAlign: "right" }}>
-                      <div style={{ fontWeight: 800, fontSize: 17, fontFamily: "'Space Mono', monospace", color: scColor }}>
-                        {sc > 0 ? sc.toFixed(3) : "—"}
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      {hasR && history.length >= 2 && onCompare && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); onCompare(h.id); }}
+                          style={{
+                            background: "rgba(232,150,42,0.08)", border: "1px solid rgba(232,150,42,0.15)",
+                            color: "#e8962a", fontSize: 10, fontWeight: 600, padding: "4px 10px",
+                            borderRadius: 8, cursor: "pointer", fontFamily: "'Outfit', sans-serif",
+                            whiteSpace: "nowrap",
+                          }}
+                        >Compare</button>
+                      )}
+                      <div style={{ textAlign: "right" }}>
+                        <div style={{ fontWeight: 800, fontSize: 17, fontFamily: "'Space Mono', monospace", color: scColor }}>
+                          {sc > 0 ? sc.toFixed(3) : "—"}
+                        </div>
                       </div>
                     </div>
                   </div>

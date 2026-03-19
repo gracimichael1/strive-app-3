@@ -465,3 +465,63 @@ PDF Export Report feature — parents can generate a professional PDF of their g
 ### Files Modified
 - `src/LegacyApp.js` — Added: Export Report button (gold), Share button (outline), hidden `#strive-print-report` div, PDF report HTML generator with full analysis data, Web Share API / clipboard share handler
 - `src/styles/global.css` — Added: `@media print` block with visibility rules, print-specific typography, table styles, page settings
+
+---
+
+## Phase 7 — Improvement #3: Video Comparison / Progress
+
+### What Was Built
+Complete **Progress & Comparison** screen replacing the basic ProgressScreen with a comprehensive 5-section view:
+
+**A. Score History Chart**
+- Recharts LineChart showing finalScore over time with gold line and dot markers
+- Custom tooltip displaying date, score, event, and deduction count (Space Mono)
+- Green ReferenceLine at target score (from season goals)
+- Personal bests row displayed below chart per event
+
+**B. Comparison Picker**
+- Two dropdown selects populated from analysis history (entries with saved results)
+- Labels show: date, event, score (Space Mono)
+- Defaults to most recent vs second most recent
+- Different-event warning banner when comparing cross-event analyses
+
+**C. Side-by-Side Comparison Card**
+- Three-column grid: Analysis A | Delta | Analysis B
+- Each column: date, event, large score (color-coded), deductions, skill count, fault count
+- Grade distribution (A/B/C/D counts) with color-coded letters
+- Delta column: score delta (green/red) and deduction delta (inverted: fewer deductions = green)
+
+**D. Skill-by-Skill Delta**
+- Fuzzy matching of skills between analyses by normalized name (exact match + substring containment)
+- Per-skill row: skill name, A deduction, B deduction, delta (colored), badge
+- Badges: "Improved" (green), "Needs work" (orange), "New" (red), "Fixed!" (green)
+- Unmatched skills show "N/A" in the missing column
+- Legend row at bottom
+
+**E. Progress Summary**
+- "Since [earliest date]:" header
+- Total score improvement (green if positive, red if negative)
+- Faults Fixed list (faults in earliest analysis not in latest)
+- New Faults list (faults in latest not in earliest)
+- Most Improved skill (biggest deduction decrease between selected analyses)
+- Most Consistent skill (lowest variance across all analyses)
+
+**Additional Changes:**
+- "Compare" button on each routine in MeetsScreen (History screen) — pre-selects that analysis as Analysis A and navigates to Progress screen
+- `comparePreselect` state in main app for cross-screen navigation
+- `ReferenceLine` added to recharts imports
+- Event Breakdown section preserved from original ProgressScreen
+
+### Edge Cases Handled
+- Less than 2 analyses: encouraging message with progress indicator ("1 of 2 analyses completed")
+- Different events: orange warning banner shown
+- Missing skills: "N/A" displayed in comparison column
+- No saved results: comparison picker and cards hidden, chart still shows
+- Null/undefined safety throughout all data access
+
+### Build Result
+- `npx react-scripts build` — Compiled successfully
+- No ESLint errors or warnings
+
+### Files Modified
+- `src/LegacyApp.js` — Replaced ProgressScreen function (~100 lines -> ~330 lines), added `ReferenceLine` to recharts import, added `comparePreselect` state, added `onCompare` prop to MeetsScreen, added Compare button to routine entries, updated ProgressScreen call to pass savedResults/comparePreselect
