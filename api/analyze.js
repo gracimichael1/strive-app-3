@@ -20,7 +20,7 @@ function isAllowedOrigin(origin) {
 
 function setCorsHeaders(req, res) {
   const origin = req.headers.origin;
-  if (isAllowedOrigin(origin)) {
+  if (origin && isAllowedOrigin(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
   }
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');

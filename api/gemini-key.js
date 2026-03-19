@@ -14,8 +14,10 @@ function isAllowedOrigin(origin) {
 
 function setCorsHeaders(req, res) {
   const origin = req.headers.origin;
-  if (isAllowedOrigin(origin)) {
+  if (origin && isAllowedOrigin(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
+  } else if (!origin) {
+    // Same-origin request — no CORS header needed
   }
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
