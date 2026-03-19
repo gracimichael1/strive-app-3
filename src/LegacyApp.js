@@ -1072,6 +1072,7 @@ export default function LegacyApp() {
           profile={profile}
           history={history}
           videoUrl={liveVideoUrl}
+          videoFile={videoFileRef.current}
           onBack={() => setScreen("dashboard")}
           onDrills={() => setScreen("drills")}
         />
@@ -4425,10 +4426,186 @@ function getCorrectForm(skill) {
 
 // ─── GRADED SKILL CARD ───────────────────────────────────────────────────────
 
-function GradedSkillCard({ skill, onSeek }) {
+function GradedSkillCard({ skill, onSeek, videoFile }) {
   const [expanded, setExpanded] = useState(false);
+  const [cardVideoUrl, setCardVideoUrl] = useState(null);
+  const [showSkel, setShowSkel] = useState(false);
+  const [playbackRate, setPlaybackRate] = useState(1);
+  const cardVideoRef = useRef(null);
+  const cardCanvasRef = useRef(null);
+  const poseRef = useRef(null);       // MediaPipe Pose instance
+  const rafRef = useRef(null);         // requestAnimationFrame ID
   const color   = GRADE_COLOR[skill.grade] || "#C4982A";
   const isClean = !skill.fault || skill.gradeDeduction === 0;
+
+  // Create/revoke blob URL when card expands/collapses
+  useEffect(() => {
+    if (expanded && videoFile && !cardVideoUrl) {
+      const url = URL.createObjectURL(videoFile);
+      setCardVideoUrl(url);
+    }
+    if (!expanded && cardVideoUrl) {
+      URL.revokeObjectURL(cardVideoUrl);
+      setCardVideoUrl(null);
+      setShowSkel(false);
+      setPlaybackRate(1);
+      // Cancel any running skeleton loop
+      if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
+    }
+    // eslint-disable-next-line
+  }, [expanded, videoFile]);
+
+  // Seek video to skill timestamp when expanded and video is ready
+  useEffect(() => {
+    const v = cardVideoRef.current;
+    if (!v || !expanded || !cardVideoUrl) return;
+    const onLoaded = () => {
+      const sec = skill.timestampSec || 0;
+      v.currentTime = Math.max(0, sec);
+      v.play().catch(() => {});
+    };
+    v.addEventListener("loadedmetadata", onLoaded, { once: true });
+    return () => v.removeEventListener("loadedmetadata", onLoaded);
+  }, [expanded, cardVideoUrl, skill.timestampSec]);
+
+  // Update playback rate
+  useEffect(() => {
+    const v = cardVideoRef.current;
+    if (v) v.playbackRate = playbackRate;
+  }, [playbackRate]);
+
+  // Pause video when card collapses
+  useEffect(() => {
+    if (!expanded) {
+      const v = cardVideoRef.current;
+      if (v) v.pause();
+    }
+  }, [expanded]);
+
+  // Skeleton overlay — angle helper
+  const calcAngle = (a, b, c) => {
+    const ab = { x: a.x - b.x, y: a.y - b.y };
+    const cb = { x: c.x - b.x, y: c.y - b.y };
+    const dot = ab.x * cb.x + ab.y * cb.y;
+    const magAB = Math.sqrt(ab.x * ab.x + ab.y * ab.y);
+    const magCB = Math.sqrt(cb.x * cb.x + cb.y * cb.y);
+    if (magAB === 0 || magCB === 0) return 180;
+    const cosA = Math.min(1, Math.max(-1, dot / (magAB * magCB)));
+    return Math.round((Math.acos(cosA) * 180) / Math.PI);
+  };
+
+  // Color by angle deviation from ideal (180 degrees for key joints)
+  const jointColor = (angle, ideal) => {
+    const diff = Math.abs(angle - (ideal || 180));
+    if (diff <= 5) return "#22c55e";
+    if (diff <= 15) return "#ffc15a";
+    return "#dc2626";
+  };
+
+  // Skeleton toggle — start/stop pose detection loop
+  useEffect(() => {
+    if (!showSkel || !expanded || !cardVideoUrl) {
+      if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
+      const canvas = cardCanvasRef.current;
+      if (canvas) { canvas.style.opacity = "0"; }
+      return;
+    }
+    const canvas = cardCanvasRef.current;
+    const video = cardVideoRef.current;
+    if (!canvas || !video) return;
+    canvas.style.opacity = "1";
+
+    let running = true;
+
+    const initPose = async () => {
+      // Lazy-load MediaPipe Pose via CDN globals
+      if (!poseRef.current && window.Pose) {
+        const pose = new window.Pose({ locateFile: (file) =>
+          `https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5/${file}`
+        });
+        pose.setOptions({
+          modelComplexity: 1,
+          smoothLandmarks: true,
+          minDetectionConfidence: 0.7,
+          minTrackingConfidence: 0.5,
+        });
+        pose.onResults((results) => {
+          if (!running) return;
+          const ctx = canvas.getContext("2d");
+          const cw = canvas.width;
+          const ch = canvas.height;
+          ctx.clearRect(0, 0, cw, ch);
+
+          if (results.poseLandmarks) {
+            const lm = results.poseLandmarks;
+            // Draw connectors
+            if (window.drawConnectors && window.POSE_CONNECTIONS) {
+              window.drawConnectors(ctx, lm, window.POSE_CONNECTIONS, { color: "rgba(255,255,255,0.3)", lineWidth: 2 });
+            }
+            // Draw landmarks with angle-based coloring for key joints
+            // Key joints: knee (23-25-27), elbow (11-13-15), hip (11-23-25)
+            const keyJoints = {
+              25: { a: 23, c: 27, ideal: 180 }, // left knee
+              26: { a: 24, c: 28, ideal: 180 }, // right knee
+              13: { a: 11, c: 15, ideal: 180 }, // left elbow
+              14: { a: 12, c: 16, ideal: 180 }, // right elbow
+              23: { a: 11, c: 25, ideal: 180 }, // left hip
+              24: { a: 12, c: 26, ideal: 180 }, // right hip
+            };
+
+            lm.forEach((pt, idx) => {
+              if ((pt.visibility || 0) < 0.5) return;
+              let color = "rgba(255,255,255,0.7)";
+              const joint = keyJoints[idx];
+              if (joint && lm[joint.a] && lm[joint.c]) {
+                const angle = calcAngle(
+                  { x: lm[joint.a].x * cw, y: lm[joint.a].y * ch },
+                  { x: pt.x * cw, y: pt.y * ch },
+                  { x: lm[joint.c].x * cw, y: lm[joint.c].y * ch }
+                );
+                color = jointColor(angle, joint.ideal);
+              }
+              ctx.beginPath();
+              ctx.arc(pt.x * cw, pt.y * ch, 4, 0, 2 * Math.PI);
+              ctx.fillStyle = color;
+              ctx.fill();
+            });
+          }
+        });
+        await pose.initialize();
+        poseRef.current = pose;
+      }
+
+      // Start detection loop
+      const detectLoop = async () => {
+        if (!running || !poseRef.current || video.paused || video.ended) {
+          if (running) rafRef.current = requestAnimationFrame(detectLoop);
+          return;
+        }
+        // Sync canvas dimensions to video display size
+        const vRect = video.getBoundingClientRect();
+        if (canvas.width !== vRect.width || canvas.height !== vRect.height) {
+          canvas.width = vRect.width;
+          canvas.height = vRect.height;
+        }
+        try {
+          await poseRef.current.send({ image: video });
+        } catch (e) {
+          // MediaPipe may throw if video not ready
+        }
+        rafRef.current = requestAnimationFrame(detectLoop);
+      };
+      rafRef.current = requestAnimationFrame(detectLoop);
+    };
+
+    initPose().catch(e => console.warn("[SkeletonOverlay] init failed:", e.message));
+
+    return () => {
+      running = false;
+      if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
+    };
+    // eslint-disable-next-line
+  }, [showSkel, expanded, cardVideoUrl]);
 
   // Parse sub-faults from reason text.
   // Split on semicolons or sentence-ending periods, but NOT periods inside parentheses
@@ -4531,8 +4708,90 @@ function GradedSkillCard({ skill, onSeek }) {
             </button>
           )}
 
+          {/* ── In-card video player with skeleton overlay ── */}
+          {cardVideoUrl && (
+            <div style={{ marginBottom: 14 }}>
+              {/* Video + Canvas container */}
+              <div style={{ position: "relative", borderRadius: 10, overflow: "hidden",
+                background: "#000", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <video ref={cardVideoRef} src={cardVideoUrl}
+                  playsInline muted controls controlsList="nodownload"
+                  style={{ width: "100%", display: "block", maxHeight: 220 }} />
+                <canvas ref={cardCanvasRef}
+                  style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%",
+                    pointerEvents: "none", opacity: showSkel ? 1 : 0,
+                    transition: "opacity 0.2s" }} />
+              </div>
+
+              {/* Playback speed + Skeleton toggle */}
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8 }}>
+                {[0.25, 0.5, 1].map(rate => (
+                  <button key={rate} onClick={() => setPlaybackRate(rate)}
+                    style={{ padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 700,
+                      fontFamily: "'Space Mono', monospace", cursor: "pointer",
+                      background: playbackRate === rate ? "rgba(196,152,42,0.2)" : "rgba(255,255,255,0.04)",
+                      border: `1px solid ${playbackRate === rate ? "rgba(196,152,42,0.4)" : "rgba(255,255,255,0.08)"}`,
+                      color: playbackRate === rate ? "#C4982A" : "rgba(255,255,255,0.4)" }}>
+                    {rate}x
+                  </button>
+                ))}
+                <div style={{ flex: 1 }} />
+                <button onClick={() => setShowSkel(v => !v)}
+                  style={{ padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 600,
+                    cursor: "pointer",
+                    background: showSkel ? "rgba(34,197,94,0.15)" : "rgba(255,255,255,0.04)",
+                    border: `1px solid ${showSkel ? "rgba(34,197,94,0.3)" : "rgba(255,255,255,0.08)"}`,
+                    color: showSkel ? "#22c55e" : "rgba(255,255,255,0.4)",
+                    fontFamily: "'Outfit', sans-serif" }}>
+                  {showSkel ? "Skeleton ON" : "Skeleton"}
+                </button>
+              </div>
+
+              {/* ── Fault timeline strip ── */}
+              {(() => {
+                const faults = (skill.fault || "").split(/;\s*/).filter(f => f.length > 3);
+                const skillSec = skill.timestampSec || 0;
+                // Estimate a 3-second window for this skill
+                const windowStart = Math.max(0, skillSec - 0.5);
+                const windowEnd = skillSec + 2.5;
+                const windowDur = windowEnd - windowStart;
+                // If we have sub-faults, space them evenly across the window
+                if (faults.length > 0 && windowDur > 0) {
+                  return (
+                    <div style={{ marginTop: 8, position: "relative", height: 20,
+                      background: "rgba(255,255,255,0.03)", borderRadius: 10,
+                      border: "1px solid rgba(255,255,255,0.06)", overflow: "hidden" }}>
+                      {/* Green baseline */}
+                      <div style={{ position: "absolute", top: 9, left: 4, right: 4, height: 2,
+                        background: "rgba(34,197,94,0.2)", borderRadius: 1 }} />
+                      {/* Fault dots */}
+                      {faults.map((f, fi) => {
+                        const pct = faults.length === 1 ? 50 : (fi / (faults.length - 1)) * 80 + 10;
+                        const dotSec = windowStart + (windowDur * pct / 100);
+                        const isRed = skill.gradeDeduction >= 0.20;
+                        return (
+                          <button key={fi}
+                            onClick={() => {
+                              const v = cardVideoRef.current;
+                              if (v) { v.currentTime = dotSec; v.play().catch(() => {}); }
+                            }}
+                            title={f}
+                            style={{ position: "absolute", left: `${pct}%`, top: 5, width: 10, height: 10,
+                              borderRadius: "50%", border: "none", cursor: "pointer", padding: 0,
+                              background: isRed ? "#ef4444" : "#f59e0b", transform: "translateX(-50%)",
+                              boxShadow: `0 0 4px ${isRed ? "rgba(239,68,68,0.5)" : "rgba(245,158,11,0.5)"}` }} />
+                        );
+                      })}
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+            </div>
+          )}
+
           {/* Frame thumbnail for saved analyses without video */}
-          {!onSeek && skill.frameDataUrl && (
+          {!onSeek && !cardVideoUrl && skill.frameDataUrl && (
             <div style={{ marginBottom: 14 }}>
               <div style={{ borderRadius: 10, overflow: "hidden", background: "#000",
                 border: "1px solid rgba(255,255,255,0.08)" }}>
@@ -4715,7 +4974,7 @@ function GradedSkillCard({ skill, onSeek }) {
 // ─── GRADED SKILLS VIEW ──────────────────────────────────────────────────────
 // Primary results tab: one card per skill, grade badge, fault if any.
 
-function GradedSkillsView({ result, videoUrl }) {
+function GradedSkillsView({ result, videoUrl, videoFile }) {
   const videoRef   = useRef(null);
   const skills     = result.gradedSkills || [];
   const cleanCount = skills.filter(s => !s.fault || s.gradeDeduction === 0).length;
@@ -4809,6 +5068,7 @@ function GradedSkillsView({ result, videoUrl }) {
           key={skill.id || idx}
           skill={skill}
           onSeek={videoUrl ? handleSeek : null}
+          videoFile={videoFile}
         />
       ))}
     </div>
@@ -4816,7 +5076,7 @@ function GradedSkillsView({ result, videoUrl }) {
 }
 
 // ─── RESULTS SCREEN ─────────────────────────────────────────────────
-function ResultsScreen({ result, profile, history, videoUrl, onBack, onDrills }) {
+function ResultsScreen({ result, profile, history, videoUrl, videoFile, onBack, onDrills }) {
   const [activeTab, setActiveTab] = useState("overview");
   const [actualScore, setActualScore] = useState("");
   const [scoreSaved, setScoreSaved] = useState(false);
@@ -5190,7 +5450,7 @@ function ResultsScreen({ result, profile, history, videoUrl, onBack, onDrills })
       {/* ─── VIDEO REVIEW TAB ─── */}
       {/* ─── SKILLS TAB — primary graded view ─── */}
       {activeTab === "skills" && (
-        <GradedSkillsView result={result} videoUrl={videoUrl} />
+        <GradedSkillsView result={result} videoUrl={videoUrl} videoFile={videoFile} />
       )}
 
       {activeTab === "review" && hasVideo && (

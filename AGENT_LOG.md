@@ -55,3 +55,55 @@
 ### Files Modified
 - `src/LegacyApp.js` — Cache key fix (line ~3355) + expanded deduction validation (lines ~3457-3510)
 - `src/scoring-engine.test.js` — New test file with 5 scoring engine tests
+
+---
+
+## Phase 2 — Agent Beta: Video + Skeleton
+
+### Alpha Compatibility Check (2026-03-18)
+Alpha changed the response parser from JSON to pipe-delimited format. The parsed skill objects still produce the same `processedSkills` shape with `timestampSec`, `skill`, `fault`, `gradeDeduction`, `grade`, `strength`, `type` fields. GradedSkillCard props are unchanged. No conflict with video rendering.
+
+### Implementation Results
+
+**FIX 1 — VIDEO PROP FLOW**: DONE.
+- Chain: Upload (File) -> `videoFileRef.current` (line 1052) -> `ResultsScreen` prop `videoFile={videoFileRef.current}` (line 1075) -> `GradedSkillsView` prop `videoFile` (line 5453) -> `GradedSkillCard` prop `videoFile` (line 5071)
+- Inside GradedSkillCard: blob URL created from File on expand via `URL.createObjectURL(videoFile)`, revoked on collapse via `URL.revokeObjectURL()`.
+- Memory-safe: each card creates/destroys its own blob URL independently.
+
+**FIX 2 — TIMESTAMP SEEKING**: DONE.
+- On expand: `video.currentTime = skill.timestampSec`, then `video.play()` (muted for iOS autoplay).
+- Playback speed buttons: 0.25x, 0.5x, 1x — updates `video.playbackRate`.
+- On collapse: `video.pause()` + blob URL revoked.
+
+**FIX 3 — MEDIAPIPE CDN**: DONE.
+- Added 3 script tags to `public/index.html` `<head>`: `@mediapipe/pose@0.5/pose.js`, `camera_utils.js`, `drawing_utils.js`. All with `crossorigin="anonymous"` and `defer`.
+
+**FIX 4 — SKELETON OVERLAY**: DONE.
+- `<canvas>` with `position: absolute; top: 0; left: 0; width: 100%; height: 100%` overlays the `<video>`.
+- "Skeleton" toggle button: ON initializes MediaPipe Pose (lazy, only on first toggle), starts `requestAnimationFrame` detection loop; OFF sets canvas opacity to 0 and cancels animation frame.
+- Pose config: `modelComplexity: 1, smoothLandmarks: true, minDetectionConfidence: 0.7`.
+- Joint color coding: within 5 degrees of ideal = green (#22c55e), 6-15 degrees = yellow (#ffc15a), 16+ degrees = red (#dc2626).
+- Key joints tracked: knee (23-25-27), elbow (11-13-15), hip (11-23-25) — all with ideal 180 degrees.
+
+**FIX 5 — FAULT TIMELINE STRIP**: DONE.
+- Horizontal bar at bottom of in-card video player.
+- Green baseline with orange/red dots for fault moments.
+- Dots spaced proportionally across a 3-second estimated skill window.
+- Tapping a dot seeks the video to that approximate timestamp.
+
+### Self-Test Results
+
+| Test | Description | Result |
+|---|---|---|
+| Test 1 | Video Prop Flow — upload -> ref -> prop -> video element | PASS (chain: videoFileRef.current -> ResultsScreen.videoFile -> GradedSkillsView.videoFile -> GradedSkillCard.videoFile -> cardVideoUrl -> `<video src>`) |
+| Test 2 | Video Element Audit — 5 `<video>` elements found, all have src + playsInline + muted | PASS |
+| Test 3 | MediaPipe CDN Check — 3 script tags in public/index.html lines 26-28 | PASS |
+| Test 4 | Skeleton Toggle — showSkel state -> useEffect starts pose loop (requestAnimationFrame) / cancels on OFF | PASS |
+| Test 5 | Canvas Positioning — position:absolute, top:0, left:0, width:100%, height:100%, pointerEvents:none | PASS |
+
+### Build Status
+- `npx react-scripts build` — Compiled successfully
+
+### Files Modified
+- `src/LegacyApp.js` — GradedSkillCard: added videoFile prop, in-card video player with blob URL lifecycle, skeleton overlay (MediaPipe Pose), playback speed controls, fault timeline strip. GradedSkillsView + ResultsScreen: prop threading for videoFile.
+- `public/index.html` — Added 3 MediaPipe CDN script tags.
