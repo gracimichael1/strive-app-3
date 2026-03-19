@@ -1,11 +1,11 @@
 import React from 'react';
 
 const SEV_COLOR = {
-  small:     '#22C55E',
-  medium:    '#F59E0B',
-  large:     '#F97316',
-  veryLarge: '#EF4444',
-  fall:      '#DC2626',
+  small:     '#22c55e',
+  medium:    '#ffc15a',
+  large:     '#e06820',
+  veryLarge: '#dc2626',
+  fall:      '#dc2626',
 };
 
 const SEV_LABEL = {
@@ -20,7 +20,7 @@ function AngleMeter({ label, value, ideal = 160 }) {
   if (value === null || value === undefined) return null;
   const pct   = Math.max(0, Math.min(100, (value / 180) * 100));
   const good  = value >= ideal - 10;
-  const color = good ? '#22C55E' : value >= ideal - 30 ? '#F59E0B' : '#EF4444';
+  const color = good ? '#22c55e' : value >= ideal - 30 ? '#ffc15a' : '#dc2626';
 
   return (
     <div style={{ marginBottom: 10 }}>
@@ -72,7 +72,7 @@ export default function SkillCard({ skill, expanded, onToggle, onSeek }) {
       style={{
         background: 'rgba(255,255,255,0.03)',
         border: expanded
-          ? '1px solid rgba(196,152,42,0.3)'
+          ? '1px solid rgba(232,150,42,0.3)'
           : '1px solid rgba(255,255,255,0.06)',
         borderRadius: 14,
         overflow: 'hidden',
@@ -92,8 +92,8 @@ export default function SkillCard({ skill, expanded, onToggle, onSeek }) {
         {/* Skill index badge */}
         <div style={{
           width: 28, height: 28, borderRadius: 8,
-          background: 'rgba(196,152,42,0.12)',
-          color: '#C4982A',
+          background: 'rgba(232,150,42,0.12)',
+          color: '#e8962a',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 12, fontWeight: 800, flexShrink: 0,
         }}>
@@ -113,8 +113,8 @@ export default function SkillCard({ skill, expanded, onToggle, onSeek }) {
         {totalDed > 0 && (
           <div style={{
             padding: '3px 10px', borderRadius: 20,
-            background: 'rgba(239,68,68,0.12)',
-            color: '#EF4444',
+            background: 'rgba(220,38,38,0.12)',
+            color: '#dc2626',
             fontSize: 12, fontWeight: 700, fontFamily: "'Space Mono', monospace",
             flexShrink: 0,
           }}>
@@ -140,9 +140,9 @@ export default function SkillCard({ skill, expanded, onToggle, onSeek }) {
             style={{
               display: 'flex', alignItems: 'center', gap: 6,
               padding: '7px 14px', borderRadius: 8, marginBottom: 16,
-              background: 'rgba(196,152,42,0.1)',
-              border: '1px solid rgba(196,152,42,0.2)',
-              color: '#C4982A', fontSize: 12, fontWeight: 600,
+              background: 'rgba(232,150,42,0.1)',
+              border: '1px solid rgba(232,150,42,0.2)',
+              color: '#e8962a', fontSize: 12, fontWeight: 600,
               cursor: 'pointer',
             }}
           >
@@ -179,7 +179,7 @@ export default function SkillCard({ skill, expanded, onToggle, onSeek }) {
                   padding: '10px 12px',
                   background: 'rgba(255,255,255,0.02)',
                   borderRadius: 10,
-                  borderLeft: `3px solid ${SEV_COLOR[hint.severity] || '#C4982A'}`,
+                  borderLeft: `3px solid ${SEV_COLOR[hint.severity] || '#e8962a'}`,
                 }}>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 13, fontWeight: 600, color: '#E2E8F0', marginBottom: 2 }}>
@@ -209,7 +209,7 @@ export default function SkillCard({ skill, expanded, onToggle, onSeek }) {
               display: 'flex', gap: 8, alignItems: 'center',
             }}>
               <span style={{ fontSize: 16 }}>✓</span>
-              <span style={{ fontSize: 13, color: '#22C55E' }}>No major biomechanical faults detected</span>
+              <span style={{ fontSize: 13, color: '#22c55e' }}>No major biomechanical faults detected</span>
             </div>
           )}
         </div>

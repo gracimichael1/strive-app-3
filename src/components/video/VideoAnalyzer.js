@@ -24,13 +24,13 @@ function UploadZone({ onFile, disabled }) {
       onDrop={handleDrop}
       onClick={() => !disabled && inputRef.current?.click()}
       style={{
-        border: `2px dashed ${dragging ? 'rgba(196,152,42,0.6)' : 'rgba(255,255,255,0.1)'}`,
+        border: `2px dashed ${dragging ? 'rgba(232,150,42,0.6)' : 'rgba(255,255,255,0.1)'}`,
         borderRadius: 16,
         padding: '48px 32px',
         textAlign: 'center',
         cursor: disabled ? 'not-allowed' : 'pointer',
         transition: 'all 0.25s',
-        background: dragging ? 'rgba(196,152,42,0.04)' : 'rgba(255,255,255,0.02)',
+        background: dragging ? 'rgba(232,150,42,0.04)' : 'rgba(255,255,255,0.02)',
       }}
     >
       <input
@@ -44,10 +44,10 @@ function UploadZone({ onFile, disabled }) {
       {/* Icon */}
       <div style={{ marginBottom: 16 }}>
         <svg width="48" height="48" viewBox="0 0 48 48" fill="none" style={{ margin: '0 auto' }}>
-          <circle cx="24" cy="24" r="22" fill="rgba(196,152,42,0.08)" stroke="rgba(196,152,42,0.2)" strokeWidth="1.5" />
-          <path d="M18 30V22l6-4 6 4v8H18z" stroke="#C4982A" strokeWidth="1.5" strokeLinejoin="round" fill="none" />
-          <path d="M30 22l4-3v10l-4-3" stroke="#C4982A" strokeWidth="1.5" strokeLinejoin="round" fill="none" />
-          <circle cx="24" cy="20" r="1.5" fill="#C4982A" />
+          <circle cx="24" cy="24" r="22" fill="rgba(232,150,42,0.08)" stroke="rgba(232,150,42,0.2)" strokeWidth="1.5" />
+          <path d="M18 30V22l6-4 6 4v8H18z" stroke="#e8962a" strokeWidth="1.5" strokeLinejoin="round" fill="none" />
+          <path d="M30 22l4-3v10l-4-3" stroke="#e8962a" strokeWidth="1.5" strokeLinejoin="round" fill="none" />
+          <circle cx="24" cy="20" r="1.5" fill="#e8962a" />
         </svg>
       </div>
 
@@ -80,7 +80,7 @@ function ProgressBar({ pct, label }) {
         <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', fontWeight: 500 }}>{label}</span>
         <span style={{
           fontSize: 12, fontFamily: "'Space Mono', monospace",
-          color: '#C4982A', fontWeight: 700,
+          color: '#e8962a', fontWeight: 700,
         }}>{pct}%</span>
       </div>
       <div style={{
@@ -89,7 +89,7 @@ function ProgressBar({ pct, label }) {
         <div style={{
           height: '100%',
           width: `${pct}%`,
-          background: 'linear-gradient(90deg, #9E7C1F, #E8C35A)',
+          background: 'linear-gradient(90deg, #b87d22, #ffc15a)',
           borderRadius: 3,
           transition: 'width 0.4s ease',
         }} />
@@ -106,7 +106,7 @@ function ProgressBar({ pct, label }) {
             <div key={s} style={{ textAlign: 'center' }}>
               <div style={{
                 width: 8, height: 8, borderRadius: '50%', margin: '0 auto 4px',
-                background: done ? '#C4982A' : 'rgba(255,255,255,0.1)',
+                background: done ? '#e8962a' : 'rgba(255,255,255,0.1)',
                 transition: 'background 0.3s',
               }} />
               <div style={{ fontSize: 10, color: done ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.15)' }}>{s}</div>
@@ -333,9 +333,9 @@ export default function VideoAnalyzer({ onBack }) {
         {error && (
           <div style={{
             padding: '14px 16px', borderRadius: 12, marginBottom: 16,
-            background: 'rgba(239,68,68,0.08)',
-            border: '1px solid rgba(239,68,68,0.2)',
-            color: '#EF4444', fontSize: 14,
+            background: 'rgba(220,38,38,0.08)',
+            border: '1px solid rgba(220,38,38,0.2)',
+            color: '#dc2626', fontSize: 14,
           }}>
             ⚠ {error}
           </div>
@@ -415,9 +415,9 @@ function ToggleChip({ label, active, onClick }) {
       onClick={onClick}
       style={{
         padding: '5px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600,
-        border: `1px solid ${active ? 'rgba(196,152,42,0.4)' : 'rgba(255,255,255,0.08)'}`,
-        background: active ? 'rgba(196,152,42,0.1)' : 'transparent',
-        color: active ? '#C4982A' : 'rgba(255,255,255,0.35)',
+        border: `1px solid ${active ? 'rgba(232,150,42,0.4)' : 'rgba(255,255,255,0.08)'}`,
+        background: active ? 'rgba(232,150,42,0.1)' : 'transparent',
+        color: active ? '#e8962a' : 'rgba(255,255,255,0.35)',
         cursor: 'pointer', transition: 'all 0.2s',
         fontFamily: "'Outfit', sans-serif",
       }}
@@ -435,7 +435,7 @@ function StatPill({ label, value }) {
       border: '1px solid rgba(255,255,255,0.06)',
       borderRadius: 12,
     }}>
-      <div style={{ fontSize: 18, fontWeight: 800, color: '#C4982A', fontFamily: "'Space Mono', monospace" }}>
+      <div style={{ fontSize: 18, fontWeight: 800, color: '#e8962a', fontFamily: "'Space Mono', monospace" }}>
         {value}
       </div>
       <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: 0.5 }}>

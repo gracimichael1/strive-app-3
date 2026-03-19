@@ -281,9 +281,9 @@ const LEVELS = {
 
 const DEDUCTION_SCALE = {
   small: { range: "0.05 – 0.10", color: "#22c55e" },
-  medium: { range: "0.10 – 0.15", color: "#f59e0b" },
-  large: { range: "0.20 – 0.30", color: "#f97316" },
-  veryLarge: { range: "0.30 – 0.50", color: "#ef4444" },
+  medium: { range: "0.10 – 0.15", color: "#ffc15a" },
+  large: { range: "0.20 – 0.30", color: "#e06820" },
+  veryLarge: { range: "0.30 – 0.50", color: "#dc2626" },
   fall: { range: "0.50 (DP) / 1.00 (FIG)", color: "#dc2626" },
 };
 
@@ -536,7 +536,7 @@ function SkeletonOverlay({ joints, faultJoints, skeleton, angles: anglesFromProp
     const large = (measured > 90) ? 1 : 0;
     return (
       <path d={`M ${pos[0]} ${pos[1]} L ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} Z`}
-        fill="rgba(239,68,68,0.15)" stroke="#ef4444" strokeWidth={0.003} />
+        fill="rgba(220,38,38,0.15)" stroke="#dc2626" strokeWidth={0.003} />
     );
   };
 
@@ -554,7 +554,7 @@ function SkeletonOverlay({ joints, faultJoints, skeleton, angles: anglesFromProp
         if (!pos) return null;
         return [0.008, 0.016].map((off, oi) => (
           <circle key={`trail-${name}-${oi}`} cx={pos[0] + off} cy={pos[1] - off * 0.5}
-            r={0.012} fill="#ef4444" opacity={0.12 - oi * 0.04} />
+            r={0.012} fill="#dc2626" opacity={0.12 - oi * 0.04} />
         ));
       })}
 
@@ -565,7 +565,7 @@ function SkeletonOverlay({ joints, faultJoints, skeleton, angles: anglesFromProp
         const hasFault = faults.has(a) || faults.has(b);
         return (
           <line key={i} x1={ja[0]} y1={ja[1]} x2={jb[0]} y2={jb[1]}
-            stroke={hasFault ? "#ef4444" : "#22c55e"}
+            stroke={hasFault ? "#dc2626" : "#22c55e"}
             strokeWidth={hasFault ? 0.015 : 0.007}
             strokeLinecap="round" opacity={0.9}
             filter={hasFault ? "url(#glow)" : undefined}
@@ -583,11 +583,11 @@ function SkeletonOverlay({ joints, faultJoints, skeleton, angles: anglesFromProp
           <g key={name}>
             {isFault && aiAngle && <AngleArc pos={pos} measured={aiAngle.measured} ideal={aiAngle.ideal} />}
             <circle cx={pos[0]} cy={pos[1]} r={isFault ? 0.018 : 0.01}
-              fill={isFault ? "#ef4444" : "#22c55e"} opacity={0.95}
+              fill={isFault ? "#dc2626" : "#22c55e"} opacity={0.95}
               filter={isFault ? "url(#glow)" : undefined} />
             {isFault && (
               <circle cx={pos[0]} cy={pos[1]} r={0.025}
-                fill="none" stroke="#ef4444" strokeWidth={0.005} opacity={0.7}>
+                fill="none" stroke="#dc2626" strokeWidth={0.005} opacity={0.7}>
                 <animate attributeName="r" values="0.02;0.04;0.02" dur="1.2s" repeatCount="indefinite" />
                 <animate attributeName="opacity" values="0.7;0.2;0.7" dur="1.2s" repeatCount="indefinite" />
               </circle>
@@ -601,7 +601,7 @@ function SkeletonOverlay({ joints, faultJoints, skeleton, angles: anglesFromProp
                 <g>
                   <rect x={badgeX} y={badgeY} width={0.13} height={0.038} rx={0.005} fill="rgba(0,0,0,0.88)" />
                   <text x={badgeX + 0.065} y={badgeY + 0.014} textAnchor="middle"
-                    fill="#ef4444" fontSize="0.018" fontWeight="bold" fontFamily="monospace">{m}°</text>
+                    fill="#dc2626" fontSize="0.018" fontWeight="bold" fontFamily="monospace">{m}°</text>
                   <text x={badgeX + 0.065} y={badgeY + 0.03} textAnchor="middle"
                     fill="#22c55e" fontSize="0.015" fontFamily="monospace">/{ideal}°</text>
                 </g>
@@ -615,8 +615,8 @@ function SkeletonOverlay({ joints, faultJoints, skeleton, angles: anglesFromProp
       <rect x={0.02} y={0.92} width={0.22} height={0.06} rx={0.01} fill="rgba(0,0,0,0.75)" />
       <circle cx={0.04} cy={0.95} r={0.008} fill="#22c55e" />
       <text x={0.055} y={0.955} fill="#22c55e" fontSize="0.018" fontFamily="sans-serif">OK</text>
-      <circle cx={0.11} cy={0.95} r={0.008} fill="#ef4444" />
-      <text x={0.125} y={0.955} fill="#ef4444" fontSize="0.018" fontFamily="sans-serif">Fault</text>
+      <circle cx={0.11} cy={0.95} r={0.008} fill="#dc2626" />
+      <text x={0.125} y={0.955} fill="#dc2626" fontSize="0.018" fontFamily="sans-serif">Fault</text>
     </svg>
   );
 }
@@ -636,10 +636,10 @@ function ScoreBenchmark({ score, level }) {
     score >= bench.avg ? "Above Average" :
     score >= bench.avg - 0.3 ? "Average Range" : "Below Average";
 
-  const pColor = percentile.includes("Top 10") ? "#C4982A" :
+  const pColor = percentile.includes("Top 10") ? "#e8962a" :
     percentile.includes("Top 25") ? "#22c55e" :
     percentile.includes("Above") ? "#22c55e" :
-    percentile.includes("Average R") ? "#f59e0b" : "#ef4444";
+    percentile.includes("Average R") ? "#ffc15a" : "#dc2626";
 
   return (
     <div className="card" style={{ padding: 14, marginBottom: 16 }}>
@@ -655,30 +655,30 @@ function ScoreBenchmark({ score, level }) {
         {/* Average zone */}
         <div style={{
           position: "absolute", left: `${avgPct - 8}%`, width: "16%", top: 0, bottom: 0,
-          background: "rgba(245,158,11,0.1)", borderRadius: 12,
+          background: "rgba(255,193,90,0.1)", borderRadius: 12,
         }} />
         {/* Top 10% zone */}
         <div style={{
           position: "absolute", left: `${topPct}%`, right: 0, top: 0, bottom: 0,
-          background: "rgba(196,152,42,0.08)", borderRadius: "0 12px 12px 0",
+          background: "rgba(232,150,42,0.08)", borderRadius: "0 12px 12px 0",
         }} />
         {/* Score marker */}
         <div style={{
           position: "absolute", top: -2, width: 28, height: 28, borderRadius: "50%",
-          background: pColor, border: "3px solid #0B1024",
+          background: pColor, border: "3px solid #070c16",
           left: `calc(${pct}% - 14px)`,
           display: "flex", alignItems: "center", justifyContent: "center",
           boxShadow: `0 0 10px ${pColor}50`,
         }}>
-          <span style={{ fontSize: 8, fontWeight: 900, color: "#0B1024", fontFamily: "'Space Mono', monospace" }}>
+          <span style={{ fontSize: 8, fontWeight: 900, color: "#070c16", fontFamily: "'Space Mono', monospace" }}>
             {score.toFixed(1)}
           </span>
         </div>
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", fontSize: 9, color: "rgba(255,255,255,0.25)", fontFamily: "'Space Mono', monospace" }}>
         <span>{bench.low.toFixed(1)}</span>
-        <span style={{ color: "rgba(245,158,11,0.5)" }}>avg {bench.avg.toFixed(1)}</span>
-        <span style={{ color: "rgba(196,152,42,0.5)" }}>top10% {bench.top10.toFixed(1)}</span>
+        <span style={{ color: "rgba(255,193,90,0.5)" }}>avg {bench.avg.toFixed(1)}</span>
+        <span style={{ color: "rgba(232,150,42,0.5)" }}>top10% {bench.top10.toFixed(1)}</span>
         <span>{bench.high.toFixed(1)}</span>
       </div>
     </div>
@@ -715,18 +715,18 @@ function SkillsRequiredCard({ profile }) {
     : [["Floor", "floor"], ["Vault", "vault"], ["Bars", "bars"]];
 
   return (
-    <div className="card" style={{ padding: 16, marginBottom: 20, borderColor: "rgba(196,152,42,0.12)" }}>
+    <div className="card" style={{ padding: 16, marginBottom: 20, borderColor: "rgba(232,150,42,0.12)" }}>
       <div onClick={() => setExpanded(!expanded)} style={{ cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <h3 style={{ fontSize: 14, fontWeight: 700 }}>
           <Icon name="star" size={14} /> Skills Required — {profile.level}
         </h3>
-        <span style={{ color: "#C4982A", fontSize: 13, fontWeight: 600 }}>{expanded ? "▲" : "▼"}</span>
+        <span style={{ color: "#e8962a", fontSize: 13, fontWeight: 600 }}>{expanded ? "▲" : "▼"}</span>
       </div>
       {expanded && (
         <div style={{ marginTop: 12 }}>
           {events.map(([label, key]) => skills[key] && (
             <div key={key} style={{ marginBottom: 10 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "#C4982A", letterSpacing: 1, marginBottom: 4 }}>{String(label || '').toUpperCase()}</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#e8962a", letterSpacing: 1, marginBottom: 4 }}>{String(label || '').toUpperCase()}</div>
               <div style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", lineHeight: 1.7 }}>{skills[key]}</div>
             </div>
           ))}
@@ -758,18 +758,18 @@ function GlossaryCard() {
   ];
 
   return (
-    <div className="card" style={{ padding: 16, marginBottom: 16, borderColor: "rgba(196,152,42,0.1)" }}>
+    <div className="card" style={{ padding: 16, marginBottom: 16, borderColor: "rgba(232,150,42,0.1)" }}>
       <div onClick={() => setExpanded(!expanded)} style={{ cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <h3 style={{ fontSize: 14, fontWeight: 700 }}>
           <Icon name="note" size={14} /> Parent's Glossary — Key Terms
         </h3>
-        <span style={{ color: "#C4982A", fontSize: 13, fontWeight: 600 }}>{expanded ? "▲" : "▼"}</span>
+        <span style={{ color: "#e8962a", fontSize: 13, fontWeight: 600 }}>{expanded ? "▲" : "▼"}</span>
       </div>
       {expanded && (
         <div style={{ marginTop: 12 }}>
           {terms.map(([term, def], i) => (
             <div key={i} style={{ marginBottom: 10, paddingBottom: 10, borderBottom: i < terms.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "#C4982A", marginBottom: 3 }}>{term}</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#e8962a", marginBottom: 3 }}>{term}</div>
               <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", lineHeight: 1.6 }}>{def}</div>
             </div>
           ))}
@@ -800,12 +800,12 @@ function MeetDayChecklist({ gender }) {
   ];
 
   return (
-    <div className="card" style={{ padding: 16, marginBottom: 16, borderColor: "rgba(196,152,42,0.1)" }}>
+    <div className="card" style={{ padding: 16, marginBottom: 16, borderColor: "rgba(232,150,42,0.1)" }}>
       <div onClick={() => setExpanded(!expanded)} style={{ cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <h3 style={{ fontSize: 14, fontWeight: 700 }}>
           <Icon name="check" size={14} /> Meet Day Checklist
         </h3>
-        <span style={{ color: "#C4982A", fontSize: 13, fontWeight: 600 }}>{expanded ? "▲" : "▼"}</span>
+        <span style={{ color: "#e8962a", fontSize: 13, fontWeight: 600 }}>{expanded ? "▲" : "▼"}</span>
       </div>
       {expanded && (
         <div style={{ marginTop: 12 }}>
@@ -940,7 +940,7 @@ export default function LegacyApp() {
   return (
     <div style={{
       minHeight: "100vh",
-      background: "#0B1024",
+      background: "#070c16",
       fontFamily: "'Outfit', sans-serif",
       color: "#e2e8f0",
       position: "relative",
@@ -951,7 +951,7 @@ export default function LegacyApp() {
         * { box-sizing: border-box; margin: 0; padding: 0; }
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(196,152,42,0.15); border-radius: 2px; }
+        ::-webkit-scrollbar-thumb { background: rgba(232,150,42,0.15); border-radius: 2px; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes slideUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
@@ -959,25 +959,25 @@ export default function LegacyApp() {
         @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         @keyframes scaleIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
         @keyframes barGrow { from { width: 0%; } to { width: var(--target-width); } }
-        @keyframes glowPulse { 0%, 100% { box-shadow: 0 0 20px rgba(196,152,42,0.12); } 50% { box-shadow: 0 0 40px rgba(196,152,42,0.2); } }
+        @keyframes glowPulse { 0%, 100% { box-shadow: 0 0 20px rgba(232,150,42,0.12); } 50% { box-shadow: 0 0 40px rgba(232,150,42,0.2); } }
         @keyframes floatIn { from { opacity: 0; transform: translateY(6px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
         html { scroll-behavior: smooth; }
         .btn-gold {
-          background: linear-gradient(135deg, #C4982A, #E8C35A);
-          color: #0B1024; border: none; padding: 14px 32px; border-radius: 14px;
+          background: linear-gradient(135deg, #e8962a, #ffc15a);
+          color: #070c16; border: none; padding: 14px 32px; border-radius: 14px;
           font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 15px;
           cursor: pointer; transition: all 0.2s ease; letter-spacing: 0.3px;
-          box-shadow: 0 2px 16px rgba(196,152,42,0.2);
+          box-shadow: 0 2px 16px rgba(232,150,42,0.2);
         }
-        .btn-gold:hover { transform: translateY(-1px); box-shadow: 0 4px 24px rgba(196,152,42,0.3); }
-        .btn-gold:active { transform: translateY(0); box-shadow: 0 2px 12px rgba(196,152,42,0.15); }
+        .btn-gold:hover { transform: translateY(-1px); box-shadow: 0 4px 24px rgba(232,150,42,0.3); }
+        .btn-gold:active { transform: translateY(0); box-shadow: 0 2px 12px rgba(232,150,42,0.15); }
         .btn-gold:disabled { opacity: 0.35; cursor: not-allowed; transform: none; box-shadow: none; }
         .btn-outline {
-          background: rgba(255,255,255,0.02); color: #C4982A; border: 1px solid rgba(196,152,42,0.2);
+          background: rgba(255,255,255,0.02); color: #e8962a; border: 1px solid rgba(232,150,42,0.2);
           padding: 12px 28px; border-radius: 12px; font-family: 'Outfit', sans-serif;
           font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s;
         }
-        .btn-outline:hover { background: rgba(196,152,42,0.06); border-color: rgba(196,152,42,0.35); }
+        .btn-outline:hover { background: rgba(232,150,42,0.06); border-color: rgba(232,150,42,0.35); }
         .card {
           background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.04);
           border-radius: 18px; padding: 18px; transition: border-color 0.2s;
@@ -994,13 +994,13 @@ export default function LegacyApp() {
           border-radius: 12px; padding: 14px 16px; color: #e2e8f0; font-family: 'Outfit', sans-serif;
           font-size: 15px; outline: none; transition: all 0.2s;
         }
-        .input-field:focus { border-color: rgba(196,152,42,0.5); box-shadow: 0 0 0 3px rgba(196,152,42,0.06); }
+        .input-field:focus { border-color: rgba(232,150,42,0.5); box-shadow: 0 0 0 3px rgba(232,150,42,0.06); }
         .input-field::placeholder { color: rgba(255,255,255,0.18); }
         select.input-field { appearance: none; cursor: pointer;
           background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23C4982A' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
           background-repeat: no-repeat; background-position: right 16px center;
         }
-        select.input-field option { background: #111631; color: #e2e8f0; }
+        select.input-field option { background: #0d1422; color: #e2e8f0; }
         .tag {
           display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px;
           font-weight: 600; letter-spacing: 0.5px;
@@ -1014,7 +1014,7 @@ export default function LegacyApp() {
       {/* Background ambient effects */}
       <div style={{
         position: "fixed", top: "-30%", right: "-20%", width: "60vw", height: "60vw",
-        background: "radial-gradient(circle, rgba(196,152,42,0.03) 0%, transparent 60%)",
+        background: "radial-gradient(circle, rgba(232,150,42,0.03) 0%, transparent 60%)",
         pointerEvents: "none", zIndex: 0,
       }} />
       <div style={{
@@ -1109,13 +1109,13 @@ export default function LegacyApp() {
             <ProgressScreen history={history} profile={profile} onBack={() => setScreen("dashboard")} />
           ) : (
             <div style={{ minHeight: "100vh", padding: "16px 18px 90px", maxWidth: 540, margin: "0 auto" }}>
-              <button onClick={() => setScreen("dashboard")} style={{ background: "none", border: "none", color: "#C4982A", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 20 }}>← Dashboard</button>
+              <button onClick={() => setScreen("dashboard")} style={{ background: "none", border: "none", color: "#e8962a", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 20 }}>← Dashboard</button>
               <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>📈 Progress Tracking</h2>
               <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 14, marginBottom: 16 }}>Track your score trends across the season.</p>
               {/* Show basic stats as teaser */}
               {history.length > 0 && (
                 <div className="card" style={{ padding: 16, marginBottom: 16 }}>
-                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>Total analyses: <span style={{ color: "#C4982A", fontWeight: 700 }}>{history.length}</span></div>
+                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>Total analyses: <span style={{ color: "#e8962a", fontWeight: 700 }}>{history.length}</span></div>
                 </div>
               )}
               <div style={{ border: "1.5px solid rgba(139,92,246,0.25)", borderRadius: 16, padding: 24, textAlign: "center", background: "rgba(139,92,246,0.04)" }}>
@@ -1143,12 +1143,12 @@ export default function LegacyApp() {
             <MentalTrainingScreen profile={profile} onBack={() => setScreen("dashboard")} />
           ) : (
             <div style={{ minHeight: "100vh", padding: "16px 18px 90px", maxWidth: 540, margin: "0 auto" }}>
-              <button onClick={() => setScreen("dashboard")} style={{ background: "none", border: "none", color: "#C4982A", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 20 }}>← Dashboard</button>
+              <button onClick={() => setScreen("dashboard")} style={{ background: "none", border: "none", color: "#e8962a", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 20 }}>← Dashboard</button>
               <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>🧠 Mental Training</h2>
               <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 14, marginBottom: 24 }}>Gymnastics is 80% mental. Train the mind alongside the body.</p>
               {/* Free teaser */}
-              <div className="card" style={{ padding: 20, marginBottom: 16, borderColor: "rgba(196,152,42,0.15)" }}>
-                <h3 style={{ fontSize: 14, fontWeight: 700, color: "#C4982A", marginBottom: 10 }}>The 4 Pillars</h3>
+              <div className="card" style={{ padding: 20, marginBottom: 16, borderColor: "rgba(232,150,42,0.15)" }}>
+                <h3 style={{ fontSize: 14, fontWeight: 700, color: "#e8962a", marginBottom: 10 }}>The 4 Pillars</h3>
                 {["Visualization — mentally rehearse routines", "Breathing — control nerves before competing", "Confidence — replace negative self-talk", "Pressure Management — make meets feel familiar"].map((p, i) => (
                   <div key={i} style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", padding: "6px 0", borderBottom: i < 3 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>{p}</div>
                 ))}
@@ -1175,7 +1175,7 @@ export default function LegacyApp() {
             <SeasonGoalsScreen profile={profile} history={history} onBack={() => setScreen("dashboard")} />
           ) : (
             <div style={{ minHeight: "100vh", padding: "16px 18px 90px", maxWidth: 540, margin: "0 auto" }}>
-              <button onClick={() => setScreen("dashboard")} style={{ background: "none", border: "none", color: "#C4982A", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 20 }}>← Dashboard</button>
+              <button onClick={() => setScreen("dashboard")} style={{ background: "none", border: "none", color: "#e8962a", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 20 }}>← Dashboard</button>
               <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>🎯 Season Goals</h2>
               <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 14, marginBottom: 24 }}>Set targets and track progress across the season.</p>
               <div style={{ border: "1.5px solid rgba(139,92,246,0.25)", borderRadius: 16, padding: 24, textAlign: "center", background: "rgba(139,92,246,0.04)" }}>
@@ -1197,7 +1197,7 @@ export default function LegacyApp() {
       {["dashboard", "deductions", "meets", "progress", "mental", "goals", "settings"].includes(screen) && (
         <nav style={{
           position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 100,
-          background: "linear-gradient(to top, #0B1024 85%, rgba(11,16,36,0.95) 92%, transparent)",
+          background: "linear-gradient(to top, #070c16 85%, rgba(11,16,36,0.95) 92%, transparent)",
           paddingBottom: "max(10px, env(safe-area-inset-bottom))",
           paddingTop: 6,
         }}>
@@ -1210,7 +1210,7 @@ export default function LegacyApp() {
               { id: "settings", label: "Profile", svg: `<circle cx="10" cy="7" r="3.5"/><path d="M3.5 18c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"/>` },
             ].map(tab => {
               const isActive = screen === tab.id;
-              const color = tab.primary ? "#C4982A" : isActive ? "#C4982A" : "rgba(255,255,255,0.22)";
+              const color = tab.primary ? "#e8962a" : isActive ? "#e8962a" : "rgba(255,255,255,0.22)";
               return (
                 <button
                   key={tab.id}
@@ -1220,11 +1220,11 @@ export default function LegacyApp() {
                     padding: "8px 16px",
                     borderRadius: 14, border: "none", cursor: "pointer",
                     fontFamily: "'Outfit', sans-serif", fontSize: 9, fontWeight: 600,
-                    background: tab.primary ? "rgba(196,152,42,0.08)" : "transparent",
+                    background: tab.primary ? "rgba(232,150,42,0.08)" : "transparent",
                     color,
                     transition: "all 0.15s", WebkitTapHighlightColor: "transparent",
                     letterSpacing: 0.3,
-                    ...(tab.primary ? { border: "1px solid rgba(196,152,42,0.12)", borderRadius: 16 } : {}),
+                    ...(tab.primary ? { border: "1px solid rgba(232,150,42,0.12)", borderRadius: 16 } : {}),
                   }}
                 >
                   <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" dangerouslySetInnerHTML={{ __html: tab.svg }} />
@@ -1251,13 +1251,13 @@ function SplashScreen({ onStart }) {
       {/* Background grid */}
       <div style={{
         position: "absolute", top: 0, left: 0, right: 0, bottom: 0, pointerEvents: "none",
-        backgroundImage: `linear-gradient(rgba(196,152,42,0.015) 1px, transparent 1px), linear-gradient(90deg, rgba(196,152,42,0.015) 1px, transparent 1px)`,
+        backgroundImage: `linear-gradient(rgba(232,150,42,0.015) 1px, transparent 1px), linear-gradient(90deg, rgba(232,150,42,0.015) 1px, transparent 1px)`,
         backgroundSize: "60px 60px", opacity: 0.5,
       }} />
       <div style={{
         position: "absolute", top: "10%", left: "50%", transform: "translateX(-50%)",
         width: 400, height: 400, borderRadius: "50%",
-        background: "radial-gradient(circle, rgba(196,152,42,0.05) 0%, transparent 60%)",
+        background: "radial-gradient(circle, rgba(232,150,42,0.05) 0%, transparent 60%)",
         pointerEvents: "none",
       }} />
 
@@ -1267,21 +1267,21 @@ function SplashScreen({ onStart }) {
         transition: "all 1s cubic-bezier(0.16, 1, 0.3, 1)",
         marginBottom: 32,
       }}>
-        <svg viewBox="0 0 120 120" width="110" height="110" style={{ filter: "drop-shadow(0 0 24px rgba(196,152,42,0.2))" }}>
+        <svg viewBox="0 0 120 120" width="110" height="110" style={{ filter: "drop-shadow(0 0 24px rgba(232,150,42,0.2))" }}>
           <defs>
             <linearGradient id="sg" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#C4982A" />
-              <stop offset="50%" stopColor="#E8C35A" />
-              <stop offset="100%" stopColor="#C4982A" />
+              <stop offset="0%" stopColor="#e8962a" />
+              <stop offset="50%" stopColor="#ffc15a" />
+              <stop offset="100%" stopColor="#e8962a" />
             </linearGradient>
           </defs>
           <circle cx="60" cy="60" r="56" fill="none" stroke="url(#sg)" strokeWidth="1.2" opacity="0.25" />
           <circle cx="60" cy="60" r="52" fill="none" stroke="url(#sg)" strokeWidth="0.5" opacity="0.1" />
           <g transform="translate(60,62)">
             <path d="M-30 22 Q-10 -32, 20 -20 Q35 -12, 28 22" fill="none" stroke="url(#sg)" strokeWidth="3.5" strokeLinecap="round" />
-            <path d="M-20 16 Q-4 -18, 18 -12" fill="none" stroke="#E8C35A" strokeWidth="1.5" strokeLinecap="round" opacity="0.4" />
-            <circle cx="22" cy="-22" r="3" fill="#E8C35A" opacity="0.85" />
-            <circle cx="22" cy="-22" r="6" fill="#E8C35A" opacity="0.1" />
+            <path d="M-20 16 Q-4 -18, 18 -12" fill="none" stroke="#ffc15a" strokeWidth="1.5" strokeLinecap="round" opacity="0.4" />
+            <circle cx="22" cy="-22" r="3" fill="#ffc15a" opacity="0.85" />
+            <circle cx="22" cy="-22" r="6" fill="#ffc15a" opacity="0.1" />
           </g>
           <text x="60" y="106" textAnchor="middle" fill="url(#sg)" fontFamily="'Space Mono', monospace" fontSize="8" fontWeight="700" opacity="0.2">10.000</text>
         </svg>
@@ -1297,7 +1297,7 @@ function SplashScreen({ onStart }) {
           letterSpacing: 8, marginBottom: 0, lineHeight: 1,
         }}>
           <span style={{
-            background: "linear-gradient(135deg, #C4982A, #E8C35A, #C4982A)",
+            background: "linear-gradient(135deg, #e8962a, #ffc15a, #e8962a)",
             backgroundClip: "text", WebkitBackgroundClip: "text", color: "transparent",
           }}>STRIVE</span>
         </h1>
@@ -1368,7 +1368,7 @@ function SplashScreen({ onStart }) {
         {["USAG Levels 1–10", "Xcel Bronze–Sapphire", "MAG & WAG"].map((badge, i) => (
           <span key={i} style={{
             fontSize: 8, fontWeight: 600, letterSpacing: 1.5,
-            color: "rgba(196,152,42,0.25)", textTransform: "uppercase",
+            color: "rgba(232,150,42,0.25)", textTransform: "uppercase",
           }}>
             {badge}
           </span>
@@ -1426,21 +1426,21 @@ function OnboardingScreen({ onComplete }) {
             onClick={() => setRole(opt.val)}
             style={{
               display: "flex", alignItems: "center", gap: 14, padding: "16px 18px",
-              background: role === opt.val ? "rgba(196,152,42,0.08)" : "rgba(255,255,255,0.02)",
-              border: `1.5px solid ${role === opt.val ? "rgba(196,152,42,0.4)" : "rgba(255,255,255,0.05)"}`,
+              background: role === opt.val ? "rgba(232,150,42,0.08)" : "rgba(255,255,255,0.02)",
+              border: `1.5px solid ${role === opt.val ? "rgba(232,150,42,0.4)" : "rgba(255,255,255,0.05)"}`,
               borderRadius: 16, cursor: "pointer", textAlign: "left",
               transition: "all 0.2s",
             }}
           >
             <span style={{ fontSize: 24, flexShrink: 0 }}>{opt.icon}</span>
             <div>
-              <div style={{ color: role === opt.val ? "#E8C35A" : "#e2e8f0", fontWeight: 600, fontSize: 15, transition: "color 0.2s" }}>{opt.label}</div>
+              <div style={{ color: role === opt.val ? "#ffc15a" : "#e2e8f0", fontWeight: 600, fontSize: 15, transition: "color 0.2s" }}>{opt.label}</div>
               <div style={{ color: "rgba(255,255,255,0.3)", fontSize: 12, marginTop: 2 }}>{opt.desc}</div>
             </div>
             {role === opt.val && (
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ marginLeft: "auto", flexShrink: 0 }}>
-                <circle cx="9" cy="9" r="8" fill="rgba(196,152,42,0.2)" stroke="#C4982A" strokeWidth="1.5"/>
-                <path d="M5.5 9l2.5 2.5 4.5-4.5" stroke="#C4982A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <circle cx="9" cy="9" r="8" fill="rgba(232,150,42,0.2)" stroke="#e8962a" strokeWidth="1.5"/>
+                <path d="M5.5 9l2.5 2.5 4.5-4.5" stroke="#e8962a" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             )}
           </button>
@@ -1480,14 +1480,14 @@ function OnboardingScreen({ onComplete }) {
             key={opt.val}
             onClick={() => { setGender(opt.val); setLevelCategory(""); setLevel(""); }}
             style={{
-              background: gender === opt.val ? "rgba(196,152,42,0.1)" : "rgba(255,255,255,0.02)",
-              border: `1.5px solid ${gender === opt.val ? "rgba(196,152,42,0.4)" : "rgba(255,255,255,0.05)"}`,
+              background: gender === opt.val ? "rgba(232,150,42,0.1)" : "rgba(255,255,255,0.02)",
+              border: `1.5px solid ${gender === opt.val ? "rgba(232,150,42,0.4)" : "rgba(255,255,255,0.05)"}`,
               borderRadius: 16, padding: 20, cursor: "pointer", textAlign: "center",
               transition: "all 0.2s",
             }}
           >
             <span style={{ fontSize: 32, display: "block", marginBottom: 10 }}>{opt.icon}</span>
-            <span style={{ color: gender === opt.val ? "#E8C35A" : "#e2e8f0", fontWeight: 600, fontSize: 14, display: "block" }}>{opt.label}</span>
+            <span style={{ color: gender === opt.val ? "#ffc15a" : "#e2e8f0", fontWeight: 600, fontSize: 14, display: "block" }}>{opt.label}</span>
             <span style={{ color: "rgba(255,255,255,0.25)", fontSize: 11, marginTop: 4, display: "block", fontFamily: "'Space Mono', monospace" }}>
               {opt.desc}
             </span>
@@ -1514,8 +1514,8 @@ function OnboardingScreen({ onComplete }) {
             style={{
               flex: 1, padding: "10px 8px", borderRadius: 10, border: "none", cursor: "pointer",
               fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 13,
-              background: levelCategory === cat.val ? "linear-gradient(135deg, #C4982A, #E8C35A)" : "rgba(255,255,255,0.06)",
-              color: levelCategory === cat.val ? "#0B1024" : "rgba(255,255,255,0.6)",
+              background: levelCategory === cat.val ? "linear-gradient(135deg, #e8962a, #ffc15a)" : "rgba(255,255,255,0.06)",
+              color: levelCategory === cat.val ? "#070c16" : "rgba(255,255,255,0.6)",
               transition: "all 0.3s",
             }}
           >
@@ -1532,9 +1532,9 @@ function OnboardingScreen({ onComplete }) {
               style={{
                 padding: "14px 16px", borderRadius: 10, border: "none", cursor: "pointer",
                 fontFamily: "'Outfit', sans-serif", fontWeight: 500, fontSize: 14, textAlign: "left",
-                background: level === l ? "rgba(196,152,42,0.15)" : "rgba(255,255,255,0.04)",
-                color: level === l ? "#C4982A" : "rgba(255,255,255,0.6)",
-                border: `1.5px solid ${level === l ? "rgba(196,152,42,0.4)" : "rgba(255,255,255,0.06)"}`,
+                background: level === l ? "rgba(232,150,42,0.15)" : "rgba(255,255,255,0.04)",
+                color: level === l ? "#e8962a" : "rgba(255,255,255,0.6)",
+                border: `1.5px solid ${level === l ? "rgba(232,150,42,0.4)" : "rgba(255,255,255,0.06)"}`,
                 transition: "all 0.3s",
               }}
             >
@@ -1587,7 +1587,7 @@ function OnboardingScreen({ onComplete }) {
         {[0,1,2,3,4].map(i => (
           <div key={i} style={{
             flex: 1, height: 2.5, borderRadius: 2,
-            background: i <= step ? "linear-gradient(90deg, #C4982A, #E8C35A)" : "rgba(255,255,255,0.06)",
+            background: i <= step ? "linear-gradient(90deg, #e8962a, #ffc15a)" : "rgba(255,255,255,0.06)",
             transition: "all 0.4s ease-out",
           }} />
         ))}
@@ -1676,16 +1676,16 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <svg viewBox="0 0 28 28" width="24" height="24" style={{ flexShrink: 0 }}>
             <g transform="translate(14,15)">
-              <path d="M-9 7 Q-3 -10, 7 -5 Q11 -2, 8 7" fill="none" stroke="#C4982A" strokeWidth="2.2" strokeLinecap="round"/>
-              <circle cx="8" cy="-6" r="1.3" fill="#E8C35A"/>
+              <path d="M-9 7 Q-3 -10, 7 -5 Q11 -2, 8 7" fill="none" stroke="#e8962a" strokeWidth="2.2" strokeLinecap="round"/>
+              <circle cx="8" cy="-6" r="1.3" fill="#ffc15a"/>
             </g>
           </svg>
           <div>
             <h1 style={{ fontSize: 18, fontWeight: 700, lineHeight: 1.2 }}>
               {profile.role === "parent" ? (
-                <><span style={{ color: "rgba(255,255,255,0.35)", fontSize: 12, fontWeight: 400 }}>Tracking </span><span style={{ color: "#E8C35A" }}>{profile.name}</span></>
+                <><span style={{ color: "rgba(255,255,255,0.35)", fontSize: 12, fontWeight: 400 }}>Tracking </span><span style={{ color: "#ffc15a" }}>{profile.name}</span></>
               ) : (
-                <><span style={{ color: "rgba(255,255,255,0.35)", fontSize: 12, fontWeight: 400 }}>Hey, </span><span style={{ color: "#E8C35A" }}>{profile.name}</span></>
+                <><span style={{ color: "rgba(255,255,255,0.35)", fontSize: 12, fontWeight: 400 }}>Hey, </span><span style={{ color: "#ffc15a" }}>{profile.name}</span></>
               )}
             </h1>
             <p style={{ color: "rgba(255,255,255,0.2)", fontSize: 11, marginTop: 1, letterSpacing: 0.3 }}>
@@ -1751,25 +1751,25 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
             onClick={onUpload}
             style={{
               width: "100%", padding: "16px 18px", borderRadius: 18, cursor: "pointer",
-              background: "linear-gradient(135deg, rgba(196,152,42,0.1), rgba(196,152,42,0.04))",
-              border: "1px solid rgba(196,152,42,0.12)",
+              background: "linear-gradient(135deg, rgba(232,150,42,0.1), rgba(232,150,42,0.04))",
+              border: "1px solid rgba(232,150,42,0.12)",
               display: "flex", alignItems: "center", gap: 14,
               transition: "all 0.2s", marginBottom: 14, textAlign: "left",
               position: "relative", overflow: "hidden",
             }}
           >
             {/* Subtle gradient accent line at top */}
-            <div style={{ position: "absolute", top: 0, left: 20, right: 20, height: 1, background: "linear-gradient(90deg, transparent, rgba(196,152,42,0.2), transparent)" }} />
+            <div style={{ position: "absolute", top: 0, left: 20, right: 20, height: 1, background: "linear-gradient(90deg, transparent, rgba(232,150,42,0.2), transparent)" }} />
             <div style={{
               width: 44, height: 44, borderRadius: 13, flexShrink: 0,
-              background: "linear-gradient(135deg, #C4982A, #E8C35A)",
+              background: "linear-gradient(135deg, #e8962a, #ffc15a)",
               display: "flex", alignItems: "center", justifyContent: "center",
-              boxShadow: "0 2px 12px rgba(196,152,42,0.2)",
+              boxShadow: "0 2px 12px rgba(232,150,42,0.2)",
             }}>
               <Icon name="camera" size={20} />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <span style={{ color: "#E8C35A", fontWeight: 700, fontSize: 15, display: "block" }}>
+              <span style={{ color: "#ffc15a", fontWeight: 700, fontSize: 15, display: "block" }}>
                 Analyze routine
               </span>
               <span style={{ color: "rgba(255,255,255,0.25)", fontSize: 11, marginTop: 2, display: "block" }}>
@@ -1777,7 +1777,7 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
               </span>
             </div>
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0, opacity: 0.3 }}>
-              <path d="M6 3l5 5-5 5" stroke="#C4982A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M6 3l5 5-5 5" stroke="#e8962a" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
         );
@@ -1785,19 +1785,19 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
 
       {/* ── HERO CARD — Daily Focus & Affirmation ── */}
       <div style={{
-        background: "linear-gradient(135deg, rgba(196,152,42,0.08), rgba(196,152,42,0.02))",
-        border: "1px solid rgba(196,152,42,0.12)",
+        background: "linear-gradient(135deg, rgba(232,150,42,0.08), rgba(232,150,42,0.02))",
+        border: "1px solid rgba(232,150,42,0.12)",
         borderRadius: 20, padding: "20px 20px 16px", marginBottom: 16,
         animation: "fadeIn 0.5s ease-out",
         position: "relative", overflow: "hidden",
       }}>
         {/* Subtle ambient glow */}
-        <div style={{ position: "absolute", top: -40, right: -40, width: 120, height: 120, borderRadius: "50%", background: "rgba(196,152,42,0.06)", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", top: -40, right: -40, width: 120, height: 120, borderRadius: "50%", background: "rgba(232,150,42,0.06)", pointerEvents: "none" }} />
 
         <div style={{ position: "relative", zIndex: 1 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(196,152,42,0.7)", letterSpacing: 1.5, marginBottom: 8 }}>
+              <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(232,150,42,0.7)", letterSpacing: 1.5, marginBottom: 8 }}>
                 TODAY'S FOCUS
               </div>
               <div style={{ fontSize: 14, fontWeight: 500, lineHeight: 1.6, color: "rgba(255,255,255,0.75)", maxWidth: 230 }}>
@@ -1814,7 +1814,7 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
                     <div key={i} style={{
                       width: 6, borderRadius: 3,
                       height: h,
-                      background: isLast ? "#C4982A" : "rgba(196,152,42,0.25)",
+                      background: isLast ? "#e8962a" : "rgba(232,150,42,0.25)",
                       transition: "height 0.5s ease-out",
                     }} />
                   );
@@ -1823,16 +1823,16 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
             )}
           </div>
           {/* Stats footer */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 14, paddingTop: 12, borderTop: "1px solid rgba(196,152,42,0.06)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 14, paddingTop: 12, borderTop: "1px solid rgba(232,150,42,0.06)" }}>
             {history.length > 0 ? (
               <div style={{ display: "flex", gap: 16, fontSize: 11 }}>
                 <span style={{ color: "rgba(255,255,255,0.25)" }}>
-                  Best: <span style={{ color: "rgba(196,152,42,0.8)", fontWeight: 700, fontFamily: "'Space Mono', monospace" }}>
+                  Best: <span style={{ color: "rgba(232,150,42,0.8)", fontWeight: 700, fontFamily: "'Space Mono', monospace" }}>
                     {Math.max(...history.filter(h => h.score).map(h => h.score)).toFixed(1)}
                   </span>
                 </span>
                 <span style={{ color: "rgba(255,255,255,0.25)" }}>
-                  Total: <span style={{ color: "rgba(196,152,42,0.8)", fontWeight: 700 }}>{history.length}</span>
+                  Total: <span style={{ color: "rgba(232,150,42,0.8)", fontWeight: 700 }}>{history.length}</span>
                 </span>
               </div>
             ) : (
@@ -1841,8 +1841,8 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
             {scoreTrend !== 0 && (
               <div style={{
                 fontSize: 11, fontWeight: 700,
-                color: scoreTrend > 0 ? "#22c55e" : "#ef4444",
-                background: scoreTrend > 0 ? "rgba(34,197,94,0.08)" : "rgba(239,68,68,0.08)",
+                color: scoreTrend > 0 ? "#22c55e" : "#dc2626",
+                background: scoreTrend > 0 ? "rgba(34,197,94,0.08)" : "rgba(220,38,38,0.08)",
                 padding: "3px 10px", borderRadius: 6,
               }}>
                 {scoreTrend > 0 ? "▲" : "▼"} {Math.abs(scoreTrend).toFixed(2)}
@@ -1855,13 +1855,13 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
       {/* Smart Tip — data-driven when history exists, generic otherwise */}
       <div className="card" style={{
         padding: "12px 16px", marginBottom: 16,
-        borderColor: "rgba(196,152,42,0.12)",
-        background: "rgba(196,152,42,0.03)",
+        borderColor: "rgba(232,150,42,0.12)",
+        background: "rgba(232,150,42,0.03)",
       }}>
         <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
           <span style={{ fontSize: 16, flexShrink: 0, marginTop: 2 }}>💡</span>
           <div>
-            <div style={{ fontSize: 10, fontWeight: 700, color: "#C4982A", letterSpacing: 0.5, marginBottom: 4 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: "#e8962a", letterSpacing: 0.5, marginBottom: 4 }}>
               {history.length >= 2 ? "YOUR DATA SAYS" : "DID YOU KNOW?"}
             </div>
             <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", lineHeight: 1.7 }}>
@@ -1892,9 +1892,9 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
       {/* Quick Stats — sleek row */}
       <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
         {[
-          { label: "Analyzed", value: history.length, color: "rgba(196,152,42,0.7)" },
-          { label: "Avg", value: avgScore, color: "rgba(196,152,42,0.7)" },
-          { label: "Trend", value: scoreTrend !== 0 ? (scoreTrend > 0 ? "+" : "") + scoreTrend.toFixed(2) : "—", color: scoreTrend > 0 ? "#22c55e" : scoreTrend < 0 ? "#ef4444" : "rgba(255,255,255,0.2)" },
+          { label: "Analyzed", value: history.length, color: "rgba(232,150,42,0.7)" },
+          { label: "Avg", value: avgScore, color: "rgba(232,150,42,0.7)" },
+          { label: "Trend", value: scoreTrend !== 0 ? (scoreTrend > 0 ? "+" : "") + scoreTrend.toFixed(2) : "—", color: scoreTrend > 0 ? "#22c55e" : scoreTrend < 0 ? "#dc2626" : "rgba(255,255,255,0.2)" },
         ].map((stat, i) => (
           <div key={i} style={{
             flex: 1, textAlign: "center", padding: "14px 6px",
@@ -1935,19 +1935,19 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
             <svg viewBox={`-10 -5 ${w + 20} ${h + 10}`} width="100%" height="65" style={{ display: "block" }}>
               <defs>
                 <linearGradient id="chartFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#C4982A" stopOpacity="0.15" />
-                  <stop offset="100%" stopColor="#C4982A" stopOpacity="0" />
+                  <stop offset="0%" stopColor="#e8962a" stopOpacity="0.15" />
+                  <stop offset="100%" stopColor="#e8962a" stopOpacity="0" />
                 </linearGradient>
               </defs>
               <path d={area} fill="url(#chartFill)" />
-              <path d={line} fill="none" stroke="#C4982A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path d={line} fill="none" stroke="#e8962a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               {/* End dot */}
-              <circle cx={points[points.length - 1].x} cy={points[points.length - 1].y} r="3.5" fill="#C4982A" />
-              <circle cx={points[points.length - 1].x} cy={points[points.length - 1].y} r="6" fill="#C4982A" opacity="0.15" />
+              <circle cx={points[points.length - 1].x} cy={points[points.length - 1].y} r="3.5" fill="#e8962a" />
+              <circle cx={points[points.length - 1].x} cy={points[points.length - 1].y} r="6" fill="#e8962a" opacity="0.15" />
             </svg>
             <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
               <span style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", fontFamily: "'Space Mono', monospace" }}>{scores[0].toFixed(1)}</span>
-              <span style={{ fontSize: 10, color: "#C4982A", fontWeight: 700, fontFamily: "'Space Mono', monospace" }}>{scores[scores.length - 1].toFixed(1)}</span>
+              <span style={{ fontSize: 10, color: "#e8962a", fontWeight: 700, fontFamily: "'Space Mono', monospace" }}>{scores[scores.length - 1].toFixed(1)}</span>
             </div>
           </div>
         );
@@ -1990,7 +1990,7 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
         const last = history[0];
         const lastResult = savedResults[last.id];
         const sc = last.score || 0;
-        const scColor = sc >= 9.0 ? "#22c55e" : sc >= 8.0 ? "#f59e0b" : "#ef4444";
+        const scColor = sc >= 9.0 ? "#22c55e" : sc >= 8.0 ? "#ffc15a" : "#dc2626";
         const dedCount = lastResult?.executionDeductions?.length || 0;
         const topFault = lastResult?.executionDeductions?.[0];
         return (
@@ -2012,7 +2012,7 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
                 </div>
                 {topFault && (
                   <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 8 }}>
-                    Top fix: <span style={{ color: "#C4982A" }}>{safeStr(topFault.skill)}</span> (-{safeNum(topFault.deduction, 0).toFixed(2)})
+                    Top fix: <span style={{ color: "#e8962a" }}>{safeStr(topFault.skill)}</span> (-{safeNum(topFault.deduction, 0).toFixed(2)})
                   </div>
                 )}
               </div>
@@ -2021,7 +2021,7 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
                   {sc.toFixed(1)}
                 </div>
                 <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>{dedCount} deductions</div>
-                <div style={{ fontSize: 10, color: "#C4982A", marginTop: 4 }}>tap to review →</div>
+                <div style={{ fontSize: 10, color: "#e8962a", marginTop: 4 }}>tap to review →</div>
               </div>
             </div>
           </div>
@@ -2034,7 +2034,7 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
           <h3 style={{ fontSize: 15, fontWeight: 700 }}>Recent Analyses</h3>
           {history.length > 3 && (
             <button onClick={onMeets} style={{
-              background: "none", border: "none", color: "#C4982A", cursor: "pointer",
+              background: "none", border: "none", color: "#e8962a", cursor: "pointer",
               fontSize: 12, fontWeight: 600, fontFamily: "'Outfit', sans-serif",
             }}>See all {history.length} →</button>
           )}
@@ -2054,7 +2054,7 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
           history.slice(0, 3).map((h, i) => {
             const hasResult = savedResults && savedResults[h.id];
             const sc = h.score || 0;
-            const scColor = sc >= 9.0 ? "#22c55e" : sc >= 8.0 ? "#f59e0b" : sc > 0 ? "#ef4444" : "rgba(255,255,255,0.3)";
+            const scColor = sc >= 9.0 ? "#22c55e" : sc >= 8.0 ? "#ffc15a" : sc > 0 ? "#dc2626" : "rgba(255,255,255,0.3)";
             // Show trend vs previous of same event
             const prevSame = history.slice(i + 1).find(p => p.event === h.event && p.score);
             const trend = prevSame ? sc - prevSame.score : null;
@@ -2089,7 +2089,7 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
                   </div>
                   <div style={{ fontSize: 10, color: "rgba(255,255,255,0.25)" }}>
                     {trend !== null && Math.abs(trend) >= 0.01 ? (
-                      <span style={{ color: trend > 0 ? "#22c55e" : "#ef4444", fontWeight: 600 }}>
+                      <span style={{ color: trend > 0 ? "#22c55e" : "#dc2626", fontWeight: 600 }}>
                         {trend > 0 ? "▲" : "▼"} {Math.abs(trend).toFixed(2)}
                       </span>
                     ) : (
@@ -2107,9 +2107,9 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
       <SkillsRequiredCard profile={profile} />
 
       {/* Quick Reference — condensed */}
-      <div className="card" style={{ padding: 16, marginBottom: 12, borderColor: "rgba(196,152,42,0.1)" }}>
+      <div className="card" style={{ padding: 16, marginBottom: 12, borderColor: "rgba(232,150,42,0.1)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-          <h3 style={{ fontSize: 13, fontWeight: 700, color: "#C4982A" }}>
+          <h3 style={{ fontSize: 13, fontWeight: 700, color: "#e8962a" }}>
             Scoring at {profile.level}
           </h3>
           <span style={{ fontSize: 10, color: "rgba(255,255,255,0.25)" }}>
@@ -2135,8 +2135,8 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
       {history.length >= 1 && (
         <div className="card" style={{
           padding: 16, marginBottom: 12,
-          background: "linear-gradient(135deg, rgba(196,152,42,0.04), rgba(139,92,246,0.02))",
-          borderColor: "rgba(196,152,42,0.1)",
+          background: "linear-gradient(135deg, rgba(232,150,42,0.04), rgba(139,92,246,0.02))",
+          borderColor: "rgba(232,150,42,0.1)",
           textAlign: "center",
         }}>
           <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>Know a gymnast or coach?</div>
@@ -2153,9 +2153,9 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
               }
             }}
             style={{
-              background: "rgba(196,152,42,0.1)", border: "1px solid rgba(196,152,42,0.2)",
+              background: "rgba(232,150,42,0.1)", border: "1px solid rgba(232,150,42,0.2)",
               borderRadius: 10, padding: "10px 24px", cursor: "pointer",
-              color: "#C4982A", fontSize: 13, fontWeight: 600, fontFamily: "'Outfit', sans-serif",
+              color: "#e8962a", fontSize: 13, fontWeight: 600, fontFamily: "'Outfit', sans-serif",
             }}
           >
             Share STRIVE
@@ -2167,7 +2167,7 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
       <div style={{ textAlign: "center", paddingTop: 16, paddingBottom: 32, marginTop: 4 }}>
         <div style={{
           fontFamily: "'Georgia', serif", fontSize: 14, fontWeight: 500, letterSpacing: 3,
-          background: "linear-gradient(135deg, #C4982A, #E8C35A)", backgroundClip: "text",
+          background: "linear-gradient(135deg, #e8962a, #ffc15a)", backgroundClip: "text",
           WebkitBackgroundClip: "text", color: "transparent", marginBottom: 4,
         }}>STRIVE</div>
         <div style={{ fontSize: 9, color: "rgba(255,255,255,0.12)", letterSpacing: 1 }}>
@@ -2366,7 +2366,7 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
 
   return (
     <div style={{ minHeight: "100vh", padding: "16px 18px 90px", maxWidth: 540, margin: "0 auto" }}>
-      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(196,152,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 13, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
+      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(232,150,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 13, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.5 2.5l-5 5 5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> Dashboard
       </button>
 
@@ -2380,16 +2380,16 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
       {/* Video Upload / Record */}
       {compressing ? (
         <div style={{
-          border: "2px solid rgba(196,152,42,0.3)", borderRadius: 16, padding: 40,
-          textAlign: "center", marginBottom: 24, background: "rgba(196,152,42,0.03)",
+          border: "2px solid rgba(232,150,42,0.3)", borderRadius: 16, padding: 40,
+          textAlign: "center", marginBottom: 24, background: "rgba(232,150,42,0.03)",
         }}>
           <div style={{
             width: 60, height: 60, borderRadius: "50%", margin: "0 auto 16px",
-            background: "rgba(196,152,42,0.1)", display: "flex", alignItems: "center", justifyContent: "center",
+            background: "rgba(232,150,42,0.1)", display: "flex", alignItems: "center", justifyContent: "center",
           }}>
             <span style={{ fontSize: 28, animation: "pulse 1.5s ease-in-out infinite" }}>🎬</span>
           </div>
-          <div style={{ fontSize: 16, fontWeight: 700, color: "#C4982A", marginBottom: 8 }}>
+          <div style={{ fontSize: 16, fontWeight: 700, color: "#e8962a", marginBottom: 8 }}>
             Optimizing Video...
           </div>
           <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", marginBottom: 16, lineHeight: 1.5 }}>
@@ -2399,11 +2399,11 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
           {/* Progress bar */}
           <div style={{ height: 6, borderRadius: 3, background: "rgba(255,255,255,0.06)", overflow: "hidden", marginBottom: 8 }}>
             <div style={{
-              height: "100%", borderRadius: 3, background: "linear-gradient(90deg, #C4982A, #E8C35A)",
+              height: "100%", borderRadius: 3, background: "linear-gradient(90deg, #e8962a, #ffc15a)",
               width: `${compressProgress}%`, transition: "width 0.3s",
             }} />
           </div>
-          <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 13, fontWeight: 700, color: "#C4982A" }}>
+          <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 13, fontWeight: 700, color: "#e8962a" }}>
             {compressProgress}%
           </div>
         </div>
@@ -2413,18 +2413,18 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
           <div
             onClick={() => fileRef.current?.click()}
             style={{
-              border: "2px dashed rgba(196,152,42,0.3)", borderRadius: 16, padding: 40,
+              border: "2px dashed rgba(232,150,42,0.3)", borderRadius: 16, padding: 40,
               cursor: "pointer", textAlign: "center",
               background: "rgba(255,255,255,0.02)", transition: "all 0.3s",
             }}
           >
             <div style={{
               width: 64, height: 64, borderRadius: "50%", margin: "0 auto 16px",
-              background: "rgba(196,152,42,0.1)", display: "flex", alignItems: "center", justifyContent: "center",
+              background: "rgba(232,150,42,0.1)", display: "flex", alignItems: "center", justifyContent: "center",
             }}>
               <Icon name="upload" size={28} />
             </div>
-            <div style={{ color: "#C4982A", fontWeight: 600, fontSize: 16 }}>Choose Video from Library</div>
+            <div style={{ color: "#e8962a", fontWeight: 600, fontSize: 16 }}>Choose Video from Library</div>
             <div style={{ color: "rgba(255,255,255,0.3)", fontSize: 13, marginTop: 8 }}>
               MP4, MOV, WebM · iPhone recordings work great
             </div>
@@ -2441,7 +2441,7 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
           >
             <div style={{
               width: 44, height: 44, borderRadius: "50%", flexShrink: 0,
-              background: "rgba(239,68,68,0.15)", display: "flex", alignItems: "center", justifyContent: "center",
+              background: "rgba(220,38,38,0.15)", display: "flex", alignItems: "center", justifyContent: "center",
             }}>
               <span style={{ fontSize: 20 }}>🔴</span>
             </div>
@@ -2474,7 +2474,7 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
         <div style={{ marginBottom: 24 }}>
           {/* Video Preview */}
           <div style={{
-            border: `2px solid ${videoReady && !videoError ? "#22c55e" : videoError ? "#f59e0b" : "rgba(196,152,42,0.3)"}`,
+            border: `2px solid ${videoReady && !videoError ? "#22c55e" : videoError ? "#ffc15a" : "rgba(232,150,42,0.3)"}`,
             borderRadius: 16, overflow: "hidden", background: "black", position: "relative",
             transition: "border-color 0.3s",
           }}>
@@ -2498,11 +2498,11 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
               }}>
                 <div style={{
                   width: 56, height: 56, borderRadius: "50%", margin: "0 auto 16px",
-                  background: "rgba(196,152,42,0.15)", display: "flex", alignItems: "center", justifyContent: "center",
+                  background: "rgba(232,150,42,0.15)", display: "flex", alignItems: "center", justifyContent: "center",
                 }}>
                   <Icon name="camera" size={24} />
                 </div>
-                <div style={{ color: "#C4982A", fontWeight: 600, fontSize: 15 }}>
+                <div style={{ color: "#e8962a", fontWeight: 600, fontSize: 15 }}>
                   {video.name?.split('.').pop()?.toUpperCase() || "Video"} File Loaded
                 </div>
                 <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, marginTop: 6 }}>
@@ -2534,7 +2534,7 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
               onClick={() => { setVideo(null); setVideoUrl(null); setVideoReady(false); setVideoError(null); }}
               style={{
                 background: "rgba(255,255,255,0.06)", border: "none", borderRadius: 8,
-                padding: "6px 14px", color: "#C4982A", fontSize: 12, fontWeight: 600,
+                padding: "6px 14px", color: "#e8962a", fontSize: 12, fontWeight: 600,
                 cursor: "pointer", fontFamily: "'Outfit', sans-serif",
               }}
             >
@@ -2546,8 +2546,8 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
           {videoError && (
             <div style={{
               marginTop: 10, padding: "10px 14px", borderRadius: 10,
-              background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.2)",
-              fontSize: 12, color: "rgba(245,158,11,0.8)", lineHeight: 1.5,
+              background: "rgba(255,193,90,0.08)", border: "1px solid rgba(255,193,90,0.2)",
+              fontSize: 12, color: "rgba(255,193,90,0.8)", lineHeight: 1.5,
             }}>
               <Icon name="info" size={12} /> {videoError}
             </div>
@@ -2568,8 +2568,8 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
               style={{
                 padding: "12px 8px", borderRadius: 10, border: "none", cursor: "pointer",
                 fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 12,
-                background: event === e ? "linear-gradient(135deg, #C4982A, #E8C35A)" : "rgba(255,255,255,0.06)",
-                color: event === e ? "#0B1024" : "rgba(255,255,255,0.5)",
+                background: event === e ? "linear-gradient(135deg, #e8962a, #ffc15a)" : "rgba(255,255,255,0.06)",
+                color: event === e ? "#070c16" : "rgba(255,255,255,0.5)",
                 transition: "all 0.2s",
               }}
             >
@@ -2579,7 +2579,7 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
         </div>
         {/* Event-specific filming tip */}
         {event && (
-          <div style={{ marginTop: 8, padding: "8px 12px", borderRadius: 8, background: "rgba(196,152,42,0.04)", fontSize: 11, color: "rgba(255,255,255,0.4)", lineHeight: 1.5 }}>
+          <div style={{ marginTop: 8, padding: "8px 12px", borderRadius: 8, background: "rgba(232,150,42,0.04)", fontSize: 11, color: "rgba(255,255,255,0.4)", lineHeight: 1.5 }}>
             {{
               "Vault": "Best angle: side view, capturing the full run and landing. Get the board contact!",
               "Uneven Bars": "Best angle: side view from the low bar side. Capture transitions between bars.",
@@ -2623,7 +2623,7 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
 
       {/* Video Tips — visual checklist */}
       <div className="card" style={{ padding: 16, marginBottom: 16 }}>
-        <h4 style={{ fontSize: 13, fontWeight: 700, color: "#C4982A", marginBottom: 10 }}>
+        <h4 style={{ fontSize: 13, fontWeight: 700, color: "#e8962a", marginBottom: 10 }}>
           Tips for best results
         </h4>
         {[
@@ -2657,18 +2657,18 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
       {hasApiKey === false ? (
         <div style={{
           padding: 16, borderRadius: 14, marginBottom: 16,
-          background: "rgba(196,152,42,0.04)", border: "1px solid rgba(196,152,42,0.12)",
+          background: "rgba(232,150,42,0.04)", border: "1px solid rgba(232,150,42,0.12)",
         }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "#C4982A", marginBottom: 6 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#e8962a", marginBottom: 6 }}>
             🔑 One-time setup
           </div>
           <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", lineHeight: 1.6, marginBottom: 10 }}>
             STRIVE needs a free Gemini API key to analyze videos. Takes 30 seconds:
           </div>
           <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginBottom: 12, lineHeight: 1.8 }}>
-            <span style={{ color: "#C4982A", fontWeight: 700 }}>1.</span>{" "}<span style={{ color: "#C4982A", cursor: "pointer", textDecoration: "underline" }} onClick={() => window.open("https://aistudio.google.com/apikey", "_blank")}>Open aistudio.google.com/apikey</span><br/>
-            <span style={{ color: "#C4982A", fontWeight: 700 }}>2.</span> Click "Create API Key"<br/>
-            <span style={{ color: "#C4982A", fontWeight: 700 }}>3.</span> Paste below
+            <span style={{ color: "#e8962a", fontWeight: 700 }}>1.</span>{" "}<span style={{ color: "#e8962a", cursor: "pointer", textDecoration: "underline" }} onClick={() => window.open("https://aistudio.google.com/apikey", "_blank")}>Open aistudio.google.com/apikey</span><br/>
+            <span style={{ color: "#e8962a", fontWeight: 700 }}>2.</span> Click "Create API Key"<br/>
+            <span style={{ color: "#e8962a", fontWeight: 700 }}>3.</span> Paste below
           </div>
           <div style={{ display: "flex", gap: 8 }}>
             <input
@@ -2691,8 +2691,8 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
               }}
               disabled={!inlineKey.trim() || keySaving}
               style={{
-                background: "linear-gradient(135deg, #C4982A, #E8C35A)",
-                color: "#0B1024", border: "none", borderRadius: 10,
+                background: "linear-gradient(135deg, #e8962a, #ffc15a)",
+                color: "#070c16", border: "none", borderRadius: 10,
                 padding: "0 20px", fontWeight: 700, fontSize: 13,
                 cursor: inlineKey.trim() ? "pointer" : "not-allowed",
                 opacity: inlineKey.trim() ? 1 : 0.4,
@@ -3589,7 +3589,7 @@ SCORING CALIBRATION: A real meet score of 8.935 means approximately 1.05 in tota
           // Graded skills view compatibility
           grade:          deduction === 0 ? "A" : deduction <= 0.05 ? "A-" : deduction <= 0.10 ? "B" : deduction <= 0.20 ? "C" : deduction <= 0.30 ? "D+" : "F",
           gradeDeduction: deduction,
-          gradeColor:     deduction === 0 ? "#22C55E" : deduction <= 0.05 ? "#4ADE80" : deduction <= 0.10 ? "#F59E0B" : deduction <= 0.20 ? "#F97316" : "#EF4444",
+          gradeColor:     deduction === 0 ? "#22c55e" : deduction <= 0.05 ? "#4ade80" : deduction <= 0.10 ? "#ffc15a" : deduction <= 0.20 ? "#e06820" : "#dc2626",
           coachNote:      null,
         };
       });
@@ -3764,7 +3764,7 @@ SCORING CALIBRATION: A real meet score of 8.935 means approximately 1.05 in tota
       {/* Spinner */}
       <div style={{
         width: 72, height: 72, borderRadius: "50%", margin: "0 auto 24px",
-        border: "3px solid rgba(196,152,42,0.15)", borderTopColor: "#C4982A",
+        border: "3px solid rgba(232,150,42,0.15)", borderTopColor: "#e8962a",
         animation: "rotate 1s linear infinite",
       }} />
 
@@ -3784,7 +3784,7 @@ SCORING CALIBRATION: A real meet score of 8.935 means approximately 1.05 in tota
               {i > 0 && (
                 <div style={{
                   width: 20, height: 2, borderRadius: 1,
-                  background: isDone ? "#C4982A" : "rgba(255,255,255,0.1)",
+                  background: isDone ? "#e8962a" : "rgba(255,255,255,0.1)",
                   transition: "background 0.5s",
                 }} />
               )}
@@ -3793,22 +3793,22 @@ SCORING CALIBRATION: A real meet score of 8.935 means approximately 1.05 in tota
               }}>
                 <div style={{
                   width: 28, height: 28, borderRadius: "50%",
-                  background: isDone ? "rgba(196,152,42,0.2)" : isActive ? "rgba(196,152,42,0.1)" : "rgba(255,255,255,0.04)",
-                  border: `2px solid ${isDone ? "#C4982A" : isActive ? "rgba(196,152,42,0.4)" : "rgba(255,255,255,0.08)"}`,
+                  background: isDone ? "rgba(232,150,42,0.2)" : isActive ? "rgba(232,150,42,0.1)" : "rgba(255,255,255,0.04)",
+                  border: `2px solid ${isDone ? "#e8962a" : isActive ? "rgba(232,150,42,0.4)" : "rgba(255,255,255,0.08)"}`,
                   display: "flex", alignItems: "center", justifyContent: "center",
                   transition: "all 0.5s",
                 }}>
                   {isDone ? (
-                    <span style={{ color: "#C4982A", fontSize: 13, fontWeight: 700 }}>✓</span>
+                    <span style={{ color: "#e8962a", fontSize: 13, fontWeight: 700 }}>✓</span>
                   ) : isActive ? (
-                    <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#C4982A", animation: "pulse 1s infinite" }} />
+                    <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#e8962a", animation: "pulse 1s infinite" }} />
                   ) : (
                     <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 11, fontWeight: 600 }}>{i + 1}</span>
                   )}
                 </div>
                 <span style={{
                   fontSize: 9, fontWeight: 600, letterSpacing: 0.5,
-                  color: isDone ? "#C4982A" : isActive ? "rgba(196,152,42,0.7)" : "rgba(255,255,255,0.2)",
+                  color: isDone ? "#e8962a" : isActive ? "rgba(232,150,42,0.7)" : "rgba(255,255,255,0.2)",
                   transition: "color 0.5s",
                 }}>{pass.label}</span>
               </div>
@@ -3824,7 +3824,7 @@ SCORING CALIBRATION: A real meet score of 8.935 means approximately 1.05 in tota
       }}>
         <div style={{
           height: "100%", borderRadius: 3,
-          background: "linear-gradient(90deg, #C4982A, #E8C35A)",
+          background: "linear-gradient(90deg, #e8962a, #ffc15a)",
           width: `${progress}%`, transition: "width 0.5s ease-out",
         }} />
       </div>
@@ -3834,10 +3834,10 @@ SCORING CALIBRATION: A real meet score of 8.935 means approximately 1.05 in tota
       {error && (
         <div style={{
           marginTop: 20, padding: "16px 20px", borderRadius: 14,
-          background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.15)",
+          background: "rgba(220,38,38,0.06)", border: "1px solid rgba(220,38,38,0.15)",
           maxWidth: 340, textAlign: "center",
         }}>
-          <div style={{ fontSize: 13, color: "#ef4444", fontWeight: 600, marginBottom: 6 }}>Analysis Error</div>
+          <div style={{ fontSize: 13, color: "#dc2626", fontWeight: 600, marginBottom: 6 }}>Analysis Error</div>
           <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: 1.6, marginBottom: 12 }}>
             {error.match(/JSON|parse|Unexpected|truncat/i) ? "The AI returned an incomplete response. This happens occasionally — try again." :
              error.match(/403|401|quota|rate/i) ? "API rate limit hit. Wait 30 seconds and try again." :
@@ -3847,8 +3847,8 @@ SCORING CALIBRATION: A real meet score of 8.935 means approximately 1.05 in tota
           </div>
           <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
             <button onClick={onBack} style={{
-              background: "linear-gradient(135deg, #C4982A, #E8C35A)", border: "none",
-              borderRadius: 10, padding: "10px 24px", color: "#0B1024", fontSize: 13,
+              background: "linear-gradient(135deg, #e8962a, #ffc15a)", border: "none",
+              borderRadius: 10, padding: "10px 24px", color: "#070c16", fontSize: 13,
               fontWeight: 700, cursor: "pointer", fontFamily: "'Outfit', sans-serif",
             }}>Try Again</button>
           </div>
@@ -3865,7 +3865,7 @@ SCORING CALIBRATION: A real meet score of 8.935 means approximately 1.05 in tota
               alt={`Frame ${i + 1}`}
               style={{
                 width: 64, height: 48, objectFit: "cover", borderRadius: 6,
-                border: "1.5px solid rgba(196,152,42,0.2)",
+                border: "1.5px solid rgba(232,150,42,0.2)",
                 animation: `fadeIn 0.3s ease-out ${i * 0.1}s both`,
               }}
             />
@@ -3880,7 +3880,7 @@ SCORING CALIBRATION: A real meet score of 8.935 means approximately 1.05 in tota
           background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)",
           maxWidth: 320, textAlign: "center", animation: "fadeIn 0.5s ease-out",
         }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(196,152,42,0.5)", letterSpacing: 1, marginBottom: 6 }}>DID YOU KNOW?</div>
+          <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(232,150,42,0.5)", letterSpacing: 1, marginBottom: 6 }}>DID YOU KNOW?</div>
           <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", lineHeight: 1.6 }}>
             {[
               "STRIVE uses a 3-pass system: first identifying every skill, then judging each one, then verifying to remove false deductions.",
@@ -3916,8 +3916,8 @@ function SkeletonCanvas({ joints }) {
   ];
 
   const JOINT_COLOR = {
-    leftShoulder: "#C4982A", rightShoulder: "#C4982A",
-    leftElbow: "#E8C35A",   rightElbow: "#E8C35A",
+    leftShoulder: "#e8962a", rightShoulder: "#e8962a",
+    leftElbow: "#ffc15a",   rightElbow: "#ffc15a",
     leftWrist: "#F5E6B8",   rightWrist: "#F5E6B8",
     leftHip: "#3B82F6",     rightHip: "#3B82F6",
     leftKnee: "#60A5FA",    rightKnee: "#60A5FA",
@@ -3937,7 +3937,7 @@ function SkeletonCanvas({ joints }) {
         return (
           <line key={`${a}-${b}`}
             x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y}
-            stroke="rgba(196,152,42,0.85)" strokeWidth="0.008" strokeLinecap="round" />
+            stroke="rgba(232,150,42,0.85)" strokeWidth="0.008" strokeLinecap="round" />
         );
       })}
       {/* Joints */}
@@ -4103,7 +4103,7 @@ function VideoReviewPlayer({ videoUrl: propUrl, result }) {
   };
 
   const ad = activeIdx >= 0 ? sorted[activeIdx] : null;
-  const adColor = ad ? (DEDUCTION_SCALE[ad.severity]?.color || "#f59e0b") : "transparent";
+  const adColor = ad ? (DEDUCTION_SCALE[ad.severity]?.color || "#ffc15a") : "transparent";
 
   // Frame: prefer live capture, fall back to pre-captured result.frames match
   const adFrameFromResult = ad ? result.frames?.find((f, i) => ad.frameRef === i + 1) : null;
@@ -4176,7 +4176,7 @@ function VideoReviewPlayer({ videoUrl: propUrl, result }) {
             <div style={{ marginBottom: 6 }}>
               {ad.subFaults.map((sf, si) => {
                 const sfDed = safeNum(sf.deduction, 0);
-                const sfc = sfDed >= 0.20 ? "#ef4444" : sfDed >= 0.10 ? "#f97316" : "#f59e0b";
+                const sfc = sfDed >= 0.20 ? "#dc2626" : sfDed >= 0.10 ? "#e06820" : "#ffc15a";
                 return (
                   <div key={si} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 2 }}>
                     <span style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", flex: 1 }}>· {safeStr(sf.fault)}</span>
@@ -4198,7 +4198,7 @@ function VideoReviewPlayer({ videoUrl: propUrl, result }) {
               <div style={{ borderRadius: 12, overflow: "hidden", position: "relative", border: `2px solid ${adColor}40`, background: "#000", marginBottom: 8 }}>
                 {capturingFrame ? (
                   <div style={{ width: "100%", aspectRatio: "16/9", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 8 }}>
-                    <div style={{ width: 28, height: 28, borderRadius: "50%", border: "2px solid rgba(196,152,42,0.2)", borderTopColor: "#C4982A", animation: "rotate 1s linear infinite" }} />
+                    <div style={{ width: 28, height: 28, borderRadius: "50%", border: "2px solid rgba(232,150,42,0.2)", borderTopColor: "#e8962a", animation: "rotate 1s linear infinite" }} />
                     <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>Capturing frame…</span>
                   </div>
                 ) : displayFrame ? (
@@ -4217,7 +4217,7 @@ function VideoReviewPlayer({ videoUrl: propUrl, result }) {
                   </div>
                 )}
                 {displayFrame && !capturingFrame && (
-                  <div style={{ position: "absolute", top: 8, left: 8, background: "rgba(239,68,68,0.9)", padding: "3px 10px", borderRadius: 6, fontSize: 11, fontWeight: 700, color: "white" }}>✗ ACTUAL</div>
+                  <div style={{ position: "absolute", top: 8, left: 8, background: "rgba(220,38,38,0.9)", padding: "3px 10px", borderRadius: 6, fontSize: 11, fontWeight: 700, color: "white" }}>✗ ACTUAL</div>
                 )}
                 {ad?.fault && displayFrame && (
                   <div style={{ position: "absolute", bottom: 8, left: 8, right: 8, background: "rgba(0,0,0,0.8)", padding: "6px 10px", borderRadius: 6, fontSize: 11, color: "rgba(255,255,255,0.8)", lineHeight: 1.4 }}>
@@ -4259,7 +4259,7 @@ function VideoReviewPlayer({ videoUrl: propUrl, result }) {
             return (
               <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
                 <a href={`https://www.youtube.com/results?search_query=${ytQuery}`} target="_blank" rel="noopener noreferrer"
-                  style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 4, padding: "8px 6px", borderRadius: 8, fontSize: 10, fontWeight: 700, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.15)", color: "#ef4444", textDecoration: "none" }}>
+                  style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 4, padding: "8px 6px", borderRadius: 8, fontSize: 10, fontWeight: 700, background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.15)", color: "#dc2626", textDecoration: "none" }}>
                   ▶ Watch Perfect Form
                 </a>
                 <a href={`https://www.google.com/search?q=${imgQuery}&tbm=isch`} target="_blank" rel="noopener noreferrer"
@@ -4267,7 +4267,7 @@ function VideoReviewPlayer({ videoUrl: propUrl, result }) {
                   📷 See Examples
                 </a>
                 <a href={`https://www.youtube.com/results?search_query=${levelQuery}`} target="_blank" rel="noopener noreferrer"
-                  style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 4, padding: "8px 6px", borderRadius: 8, fontSize: 10, fontWeight: 700, background: "rgba(196,152,42,0.08)", border: "1px solid rgba(196,152,42,0.15)", color: "#C4982A", textDecoration: "none" }}>
+                  style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 4, padding: "8px 6px", borderRadius: 8, fontSize: 10, fontWeight: 700, background: "rgba(232,150,42,0.08)", border: "1px solid rgba(232,150,42,0.15)", color: "#e8962a", textDecoration: "none" }}>
                   🏅 {levelShort} Examples
                 </a>
               </div>
@@ -4276,7 +4276,7 @@ function VideoReviewPlayer({ videoUrl: propUrl, result }) {
 
           <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
             <button onClick={() => setShowCompare(!showCompare)} className="btn-outline"
-              style={{ flex: 1, padding: "10px 6px", fontSize: 12, fontWeight: 700, color: showCompare ? "#C4982A" : "rgba(255,255,255,0.4)", borderColor: showCompare ? "rgba(196,152,42,0.4)" : undefined }}>
+              style={{ flex: 1, padding: "10px 6px", fontSize: 12, fontWeight: 700, color: showCompare ? "#e8962a" : "rgba(255,255,255,0.4)", borderColor: showCompare ? "rgba(232,150,42,0.4)" : undefined }}>
               📷 {showCompare ? "Hide" : "Show"} Frame Compare
             </button>
             <button onClick={() => setShowSkeleton(!showSkeleton)} className="btn-outline"
@@ -4288,7 +4288,7 @@ function VideoReviewPlayer({ videoUrl: propUrl, result }) {
             <button onClick={() => jumpTo(activeIdx-1)} disabled={activeIdx<=0} className="btn-outline"
               style={{ flex: 1, padding: "10px 6px", fontSize: 13, fontWeight: 600, opacity: activeIdx<=0 ? 0.3 : 1 }}>← Prev</button>
             <button onClick={slowMoReplay} className="btn-outline"
-              style={{ flex: 1.3, padding: "10px 6px", fontSize: 13, fontWeight: 600, color: "#C4982A", borderColor: "rgba(196,152,42,0.5)" }}>🐢 Slow-Mo</button>
+              style={{ flex: 1.3, padding: "10px 6px", fontSize: 13, fontWeight: 600, color: "#e8962a", borderColor: "rgba(232,150,42,0.5)" }}>🐢 Slow-Mo</button>
             <button onClick={() => jumpTo(activeIdx+1)} disabled={activeIdx>=sorted.length-1} className="btn-outline"
               style={{ flex: 1, padding: "10px 6px", fontSize: 13, fontWeight: 600, opacity: activeIdx>=sorted.length-1 ? 0.3 : 1 }}>Next →</button>
           </div>
@@ -4302,7 +4302,7 @@ function VideoReviewPlayer({ videoUrl: propUrl, result }) {
         TAP A SKILL TO JUMP VIDEO
       </div>
       {sorted.map((d, i) => {
-        const c = DEDUCTION_SCALE[d.severity]?.color || "#f59e0b";
+        const c = DEDUCTION_SCALE[d.severity]?.color || "#ffc15a";
         const isActive = i === activeIdx;
         return (
           <div key={i} onClick={() => jumpTo(i)} style={{
@@ -4321,8 +4321,8 @@ function VideoReviewPlayer({ videoUrl: propUrl, result }) {
               {d.confidence != null && (
                 <span style={{
                   fontSize: 9, padding: "1px 5px", borderRadius: 3, fontWeight: 600, marginTop: 3, display: "inline-block",
-                  background: d.confidence >= 0.8 ? "rgba(34,197,94,0.12)" : d.confidence >= 0.6 ? "rgba(245,158,11,0.12)" : "rgba(239,68,68,0.12)",
-                  color: d.confidence >= 0.8 ? "#22c55e" : d.confidence >= 0.6 ? "#f59e0b" : "#ef4444",
+                  background: d.confidence >= 0.8 ? "rgba(34,197,94,0.12)" : d.confidence >= 0.6 ? "rgba(255,193,90,0.12)" : "rgba(220,38,38,0.12)",
+                  color: d.confidence >= 0.8 ? "#22c55e" : d.confidence >= 0.6 ? "#ffc15a" : "#dc2626",
                 }}>{Math.round(d.confidence * 100)}%</span>
               )}
             </div>
@@ -4336,10 +4336,10 @@ function VideoReviewPlayer({ videoUrl: propUrl, result }) {
 // ─── GRADE DISPLAY HELPERS ──────────────────────────────────────────────────
 
 const GRADE_COLOR = {
-  "A+":"#22C55E","A":"#22C55E","A-":"#4ADE80",
-  "B+":"#86EFAC","B":"#F59E0B","B-":"#F59E0B",
-  "C+":"#FB923C","C":"#F97316","C-":"#EF4444",
-  "D+":"#DC2626","D":"#DC2626","F":"#7C3AED",
+  "A+":"#22c55e","A":"#22c55e","A-":"#4ade80",
+  "B+":"#4ade80","B":"#ffc15a","B-":"#ffc15a",
+  "C+":"#e06820","C":"#e06820","C-":"#dc2626",
+  "D+":"#DC2626","D":"#DC2626","F":"#8b72d4",
 };
 
 const GRADE_LABEL_MAP = {
@@ -4350,7 +4350,7 @@ const GRADE_LABEL_MAP = {
 };
 
 function GradeCircle({ grade, size = 52 }) {
-  const color = GRADE_COLOR[grade] || "#C4982A";
+  const color = GRADE_COLOR[grade] || "#e8962a";
   return (
     <div style={{ width: size, height: size, borderRadius: "50%", flexShrink: 0,
       border: `2.5px solid ${color}`, background: `${color}14`,
@@ -4370,9 +4370,9 @@ function GradeCircle({ grade, size = 52 }) {
 // ─── SEVERITY COLOR HELPER ───────────────────────────────────────────────────
 function dedColor(amt) {
   if (amt <= 0.05) return "#22c55e";
-  if (amt <= 0.10) return "#f59e0b";
-  if (amt <= 0.20) return "#f97316";
-  return "#ef4444";
+  if (amt <= 0.10) return "#ffc15a";
+  if (amt <= 0.20) return "#e06820";
+  return "#dc2626";
 }
 
 // ─── BIOMECHANICS ESTIMATION ─────────────────────────────────────────────────
@@ -4428,6 +4428,7 @@ function getCorrectForm(skill) {
 
 function GradedSkillCard({ skill, onSeek, videoFile }) {
   const [expanded, setExpanded] = useState(false);
+  const [cardTab, setCardTab] = useState("overview");
   const [cardVideoUrl, setCardVideoUrl] = useState(null);
   const [showSkel, setShowSkel] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
@@ -4435,7 +4436,10 @@ function GradedSkillCard({ skill, onSeek, videoFile }) {
   const cardCanvasRef = useRef(null);
   const poseRef = useRef(null);       // MediaPipe Pose instance
   const rafRef = useRef(null);         // requestAnimationFrame ID
-  const color   = GRADE_COLOR[skill.grade] || "#C4982A";
+  const color   = GRADE_COLOR[skill.grade] || "#e8962a";
+  // Left border color: green for A grades, gold for B, orange for C, red for D/F
+  const gradeGroup = (skill.grade || "").charAt(0);
+  const borderLeftColor = gradeGroup === "A" ? "#22c55e" : gradeGroup === "B" ? "#e8962a" : gradeGroup === "C" ? "#e06820" : "#dc2626";
   const isClean = !skill.fault || skill.gradeDeduction === 0;
 
   // Create/revoke blob URL when card expands/collapses
@@ -4634,7 +4638,8 @@ function GradedSkillCard({ skill, onSeek, videoFile }) {
   return (
     <div style={{
       background: "rgba(255,255,255,0.03)",
-      border: `1px solid ${expanded ? color + "40" : "rgba(255,255,255,0.06)"}`,
+      border: `1px solid ${expanded ? color + "40" : "rgba(255,255,255,0.07)"}`,
+      borderLeft: `3px solid ${borderLeftColor}`,
       borderRadius: 14, marginBottom: 10, overflow: "hidden", transition: "border-color 0.2s",
     }}>
       {/* ── 1. Header ── */}
@@ -4667,7 +4672,7 @@ function GradedSkillCard({ skill, onSeek, videoFile }) {
         {/* Deduction or clean badge */}
         <div style={{ textAlign: "right", flexShrink: 0 }}>
           {isClean ? (
-            <div style={{ fontSize: 11, fontWeight: 700, color: "#22C55E", padding: "4px 10px",
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#22c55e", padding: "4px 10px",
               borderRadius: 20, background: "rgba(34,197,94,0.1)",
               border: "1px solid rgba(34,197,94,0.2)" }}>
               Clean
@@ -4692,26 +4697,46 @@ function GradedSkillCard({ skill, onSeek, videoFile }) {
       {expanded && (
         <div style={{ padding: "0 16px 16px" }}>
 
-          {/* ── 2. Jump to timestamp — seeks the sticky player ── */}
-          {onSeek && (
-            <button onClick={() => onSeek(skill.timestampSec || 0)}
-              style={{ display: "flex", alignItems: "center", gap: 6,
-                padding: "7px 14px", borderRadius: 8, marginBottom: 14,
-                background: "rgba(196,152,42,0.1)",
-                border: "1px solid rgba(196,152,42,0.2)",
-                color: "#C4982A", fontSize: 12, fontWeight: 600,
-                cursor: "pointer", fontFamily: "'Outfit', sans-serif" }}>
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
-                <path d="M3 2l7 4-7 4V2z"/>
-              </svg>
-              Jump to {skill.timestamp}
-            </button>
-          )}
+          {/* ── Clip bar: timestamp, speed, skeleton ── */}
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12, flexWrap: "wrap" }}>
+            {onSeek && (
+              <button onClick={() => onSeek(skill.timestampSec || 0)}
+                style={{ display: "flex", alignItems: "center", gap: 4,
+                  padding: "5px 10px", borderRadius: 6,
+                  background: "rgba(232,150,42,0.1)",
+                  border: "1px solid rgba(232,150,42,0.2)",
+                  color: "#e8962a", fontSize: 11, fontWeight: 600,
+                  cursor: "pointer", fontFamily: "'Space Mono', monospace" }}>
+                <svg width="10" height="10" viewBox="0 0 12 12" fill="currentColor"><path d="M3 2l7 4-7 4V2z"/></svg>
+                {skill.timestamp}
+              </button>
+            )}
+            {cardVideoUrl && [0.25, 0.5, 1].map(rate => (
+              <button key={rate} onClick={() => setPlaybackRate(rate)}
+                style={{ padding: "4px 8px", borderRadius: 6, fontSize: 10, fontWeight: 700,
+                  fontFamily: "'Space Mono', monospace", cursor: "pointer",
+                  background: playbackRate === rate ? "rgba(232,150,42,0.2)" : "rgba(255,255,255,0.04)",
+                  border: `1px solid ${playbackRate === rate ? "rgba(232,150,42,0.4)" : "rgba(255,255,255,0.08)"}`,
+                  color: playbackRate === rate ? "#e8962a" : "rgba(255,255,255,0.4)" }}>
+                {rate}x
+              </button>
+            ))}
+            {cardVideoUrl && (
+              <button onClick={() => setShowSkel(v => !v)}
+                style={{ padding: "4px 8px", borderRadius: 6, fontSize: 10, fontWeight: 600,
+                  cursor: "pointer", marginLeft: "auto",
+                  background: showSkel ? "rgba(34,197,94,0.15)" : "rgba(255,255,255,0.04)",
+                  border: `1px solid ${showSkel ? "rgba(34,197,94,0.3)" : "rgba(255,255,255,0.08)"}`,
+                  color: showSkel ? "#22c55e" : "rgba(255,255,255,0.4)",
+                  fontFamily: "'Outfit', sans-serif" }}>
+                {showSkel ? "Skel ON" : "Skel"}
+              </button>
+            )}
+          </div>
 
           {/* ── In-card video player with skeleton overlay ── */}
           {cardVideoUrl && (
-            <div style={{ marginBottom: 14 }}>
-              {/* Video + Canvas container */}
+            <div style={{ marginBottom: 12 }}>
               <div style={{ position: "relative", borderRadius: 10, overflow: "hidden",
                 background: "#000", border: "1px solid rgba(255,255,255,0.08)" }}>
                 <video ref={cardVideoRef} src={cardVideoUrl}
@@ -4722,64 +4747,32 @@ function GradedSkillCard({ skill, onSeek, videoFile }) {
                     pointerEvents: "none", opacity: showSkel ? 1 : 0,
                     transition: "opacity 0.2s" }} />
               </div>
-
-              {/* Playback speed + Skeleton toggle */}
-              <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8 }}>
-                {[0.25, 0.5, 1].map(rate => (
-                  <button key={rate} onClick={() => setPlaybackRate(rate)}
-                    style={{ padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 700,
-                      fontFamily: "'Space Mono', monospace", cursor: "pointer",
-                      background: playbackRate === rate ? "rgba(196,152,42,0.2)" : "rgba(255,255,255,0.04)",
-                      border: `1px solid ${playbackRate === rate ? "rgba(196,152,42,0.4)" : "rgba(255,255,255,0.08)"}`,
-                      color: playbackRate === rate ? "#C4982A" : "rgba(255,255,255,0.4)" }}>
-                    {rate}x
-                  </button>
-                ))}
-                <div style={{ flex: 1 }} />
-                <button onClick={() => setShowSkel(v => !v)}
-                  style={{ padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 600,
-                    cursor: "pointer",
-                    background: showSkel ? "rgba(34,197,94,0.15)" : "rgba(255,255,255,0.04)",
-                    border: `1px solid ${showSkel ? "rgba(34,197,94,0.3)" : "rgba(255,255,255,0.08)"}`,
-                    color: showSkel ? "#22c55e" : "rgba(255,255,255,0.4)",
-                    fontFamily: "'Outfit', sans-serif" }}>
-                  {showSkel ? "Skeleton ON" : "Skeleton"}
-                </button>
-              </div>
-
-              {/* ── Fault timeline strip ── */}
+              {/* Fault timeline strip */}
               {(() => {
                 const faults = (skill.fault || "").split(/;\s*/).filter(f => f.length > 3);
                 const skillSec = skill.timestampSec || 0;
-                // Estimate a 3-second window for this skill
                 const windowStart = Math.max(0, skillSec - 0.5);
                 const windowEnd = skillSec + 2.5;
                 const windowDur = windowEnd - windowStart;
-                // If we have sub-faults, space them evenly across the window
                 if (faults.length > 0 && windowDur > 0) {
                   return (
-                    <div style={{ marginTop: 8, position: "relative", height: 20,
-                      background: "rgba(255,255,255,0.03)", borderRadius: 10,
+                    <div style={{ marginTop: 6, position: "relative", height: 18,
+                      background: "rgba(255,255,255,0.03)", borderRadius: 9,
                       border: "1px solid rgba(255,255,255,0.06)", overflow: "hidden" }}>
-                      {/* Green baseline */}
-                      <div style={{ position: "absolute", top: 9, left: 4, right: 4, height: 2,
+                      <div style={{ position: "absolute", top: 8, left: 4, right: 4, height: 2,
                         background: "rgba(34,197,94,0.2)", borderRadius: 1 }} />
-                      {/* Fault dots */}
                       {faults.map((f, fi) => {
                         const pct = faults.length === 1 ? 50 : (fi / (faults.length - 1)) * 80 + 10;
                         const dotSec = windowStart + (windowDur * pct / 100);
                         const isRed = skill.gradeDeduction >= 0.20;
                         return (
                           <button key={fi}
-                            onClick={() => {
-                              const v = cardVideoRef.current;
-                              if (v) { v.currentTime = dotSec; v.play().catch(() => {}); }
-                            }}
+                            onClick={() => { const v = cardVideoRef.current; if (v) { v.currentTime = dotSec; v.play().catch(() => {}); } }}
                             title={f}
-                            style={{ position: "absolute", left: `${pct}%`, top: 5, width: 10, height: 10,
+                            style={{ position: "absolute", left: `${pct}%`, top: 4, width: 10, height: 10,
                               borderRadius: "50%", border: "none", cursor: "pointer", padding: 0,
-                              background: isRed ? "#ef4444" : "#f59e0b", transform: "translateX(-50%)",
-                              boxShadow: `0 0 4px ${isRed ? "rgba(239,68,68,0.5)" : "rgba(245,158,11,0.5)"}` }} />
+                              background: isRed ? "#dc2626" : "#ffc15a", transform: "translateX(-50%)",
+                              boxShadow: `0 0 4px ${isRed ? "rgba(220,38,38,0.5)" : "rgba(255,193,90,0.5)"}` }} />
                         );
                       })}
                     </div>
@@ -4792,7 +4785,7 @@ function GradedSkillCard({ skill, onSeek, videoFile }) {
 
           {/* Frame thumbnail for saved analyses without video */}
           {!onSeek && !cardVideoUrl && skill.frameDataUrl && (
-            <div style={{ marginBottom: 14 }}>
+            <div style={{ marginBottom: 12 }}>
               <div style={{ borderRadius: 10, overflow: "hidden", background: "#000",
                 border: "1px solid rgba(255,255,255,0.08)" }}>
                 <img src={skill.frameDataUrl} alt={`Frame at ${skill.timestamp}`}
@@ -4805,165 +4798,192 @@ function GradedSkillCard({ skill, onSeek, videoFile }) {
             </div>
           )}
 
-          {/* ── 3. Deductions found ── */}
-          {!isClean && subFaults.length > 0 && (
-            <div style={{ marginBottom: 14 }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.35)",
-                letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>
-                Deductions Found
+          {/* ── 5-Tab selector ── */}
+          <div style={{ display: "flex", gap: 2, marginBottom: 14, background: "rgba(255,255,255,0.02)", borderRadius: 10, padding: 2 }}>
+            {[
+              { id: "overview", label: "Overview" },
+              { id: "bio", label: "Bio" },
+              { id: "motion", label: "Motion" },
+              { id: "injury", label: "Injury" },
+              { id: "drills", label: "Drills" },
+            ].map(t => (
+              <button key={t.id} onClick={() => setCardTab(t.id)}
+                style={{
+                  flex: 1, padding: "6px 4px", borderRadius: 8, border: "none", cursor: "pointer",
+                  fontSize: 10, fontWeight: 600, fontFamily: "'Outfit', sans-serif",
+                  background: cardTab === t.id ? "#e8962a" : "transparent",
+                  color: cardTab === t.id ? "#070c16" : "rgba(255,255,255,0.4)",
+                  transition: "all 0.15s",
+                }}>
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          {/* ── TAB 1: OVERVIEW ── */}
+          {cardTab === "overview" && (
+            <>
+              {/* Deductions found (orange border) */}
+              {!isClean && subFaults.length > 0 && (
+                <div style={{ marginBottom: 12, padding: "10px 12px", borderRadius: 10, background: "rgba(224,104,32,0.04)", border: "1px solid rgba(224,104,32,0.15)" }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "#e06820", letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>Deductions</div>
+                  {subFaults.map((sf, i) => {
+                    const sColor = dedColor(sf.amount);
+                    return (
+                      <div key={i} style={{ display: "flex", alignItems: "stretch", gap: 10, marginBottom: 6, padding: "6px 10px", borderRadius: 8, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                        <div style={{ width: 3, borderRadius: 2, background: sColor, flexShrink: 0 }} />
+                        <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 12, color: "#E2E8F0", lineHeight: 1.5 }}>{sf.text}</div></div>
+                        <div style={{ fontSize: 13, fontWeight: 800, color: sColor, fontFamily: "'Space Mono', monospace", flexShrink: 0, alignSelf: "center" }}>-{sf.amount.toFixed(2)}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              {/* Correct form (green border) */}
+              <div style={{ marginBottom: 12, padding: "10px 12px", borderRadius: 10, background: "rgba(34,197,94,0.04)", border: "1px solid rgba(34,197,94,0.15)" }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: "#22c55e", letterSpacing: 1, textTransform: "uppercase", marginBottom: 4 }}>Correct Form</div>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.65)", lineHeight: 1.6 }}>{getCorrectForm(skill)}</div>
               </div>
-              {subFaults.map((sf, i) => {
-                const sColor = dedColor(sf.amount);
-                return (
-                  <div key={i} style={{ display: "flex", alignItems: "stretch", gap: 10,
-                    marginBottom: 6, padding: "8px 12px", borderRadius: 8,
-                    background: "rgba(255,255,255,0.02)",
-                    border: "1px solid rgba(255,255,255,0.05)" }}>
-                    <div style={{ width: 3, borderRadius: 2, background: sColor, flexShrink: 0 }} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, color: "#E2E8F0", lineHeight: 1.5 }}>{sf.text}</div>
-                    </div>
-                    <div style={{ fontSize: 13, fontWeight: 800, color: sColor,
-                      fontFamily: "'Space Mono', monospace", flexShrink: 0, alignSelf: "center" }}>
-                      -{sf.amount.toFixed(2)}
-                    </div>
-                  </div>
-                );
-              })}
+              {/* Strength (gold border) */}
+              {(skill.strength || isClean) && (
+                <div style={{ marginBottom: 12, padding: "10px 12px", borderRadius: 10, background: "rgba(232,150,42,0.04)", border: "1px solid rgba(232,150,42,0.15)" }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "#e8962a", letterSpacing: 1, textTransform: "uppercase", marginBottom: 4 }}>Strength</div>
+                  <div style={{ fontSize: 12, color: "#E2E8F0", lineHeight: 1.6 }}>{skill.strength || "Clean execution — no deduction taken."}</div>
+                </div>
+              )}
+              {skill.coachNote && (
+                <div style={{ marginBottom: 12, padding: "8px 12px", borderRadius: 8, background: "rgba(59,130,246,0.06)", border: "1px solid rgba(59,130,246,0.15)" }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "#3B82F6", letterSpacing: 1, textTransform: "uppercase", marginBottom: 3 }}>Coach Note</div>
+                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", lineHeight: 1.6 }}>{skill.coachNote}</div>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* ── TAB 2: BIOMECHANICS ── */}
+          {cardTab === "bio" && (
+            <div>
+              {bioAngles.length > 0 ? (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+                  {bioAngles.map((a, i) => {
+                    const diff = Math.abs(a.measured - a.ideal);
+                    const aColor = diff > 15 ? "#dc2626" : diff > 10 ? "#ffc15a" : "#22c55e";
+                    const pct = Math.min(100, (a.measured / a.ideal) * 100);
+                    const statusLabel = diff <= 5 ? "Excellent" : diff <= 10 ? "Good" : diff <= 20 ? "Needs work" : "Significant gap";
+                    return (
+                      <div key={i} style={{ padding: "10px 12px", borderRadius: 10, background: "rgba(255,255,255,0.02)", border: `1px solid ${aColor}20` }}>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>{a.label}</div>
+                        <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginBottom: 4 }}>
+                          <span style={{ fontSize: 18, fontWeight: 900, color: aColor, fontFamily: "'Space Mono', monospace" }}>{a.measured}°</span>
+                          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>/</span>
+                          <span style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.4)", fontFamily: "'Space Mono', monospace" }}>{a.ideal}°</span>
+                        </div>
+                        <div style={{ height: 4, background: "rgba(255,255,255,0.06)", borderRadius: 2, overflow: "hidden", marginBottom: 4 }}>
+                          <div style={{ height: "100%", width: `${pct}%`, background: aColor, borderRadius: 2, transition: "width 0.6s ease" }} />
+                        </div>
+                        <div style={{ fontSize: 9, color: aColor, fontWeight: 600 }}>{statusLabel}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div style={{ padding: "20px 0", textAlign: "center", fontSize: 12, color: "rgba(255,255,255,0.35)" }}>
+                  No biomechanics data available for this skill.
+                </div>
+              )}
             </div>
           )}
 
-          {/* ── 4. Biomechanics (2x2 grid) ── */}
-          {!isClean && bioAngles.length > 0 && (
-            <div style={{ marginBottom: 14 }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.35)",
-                letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>
-                Biomechanics
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
-                {bioAngles.map((a, i) => {
-                  const diff = Math.abs(a.measured - a.ideal);
-                  const aColor = diff > 10 ? "#f59e0b" : "#22c55e";
-                  return (
-                    <div key={i} style={{ padding: "10px 12px", borderRadius: 10,
-                      background: "rgba(255,255,255,0.02)",
-                      border: `1px solid ${aColor}25` }}>
-                      <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.4)",
-                        textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>
-                        {a.label}
-                      </div>
-                      <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
-                        <span style={{ fontSize: 20, fontWeight: 900, color: aColor,
-                          fontFamily: "'Space Mono', monospace" }}>{a.measured}°</span>
-                        <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>/</span>
-                        <span style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.4)",
-                          fontFamily: "'Space Mono', monospace" }}>{a.ideal}°</span>
-                      </div>
-                      <div style={{ fontSize: 10, color: aColor, fontWeight: 600, marginTop: 2 }}>
-                        {diff <= 5 ? "Excellent" : diff <= 10 ? "Good" : diff <= 20 ? "Needs work" : "Significant gap"}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+          {/* ── TAB 3: MOTION (frame strip placeholder) ── */}
+          {cardTab === "motion" && (
+            <div style={{ padding: "20px 0", textAlign: "center" }}>
+              {skill.frameDataUrl ? (
+                <div style={{ borderRadius: 10, overflow: "hidden", background: "#000", border: "1px solid rgba(255,255,255,0.08)" }}>
+                  <img src={skill.frameDataUrl} alt={`Frame at ${skill.timestamp}`} style={{ width: "100%", display: "block", maxHeight: 200, objectFit: "contain" }} />
+                  <div style={{ padding: 8, fontSize: 10, color: "rgba(255,255,255,0.3)", fontFamily: "'Space Mono', monospace" }}>Peak frame at {skill.timestamp}</div>
+                </div>
+              ) : (
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.35)" }}>
+                  Frame strip available with video analysis. Upload a video to see motion capture data.
+                </div>
+              )}
             </div>
           )}
 
-          {/* ── 4b. Injury Awareness ── */}
-          {(() => {
+          {/* ── TAB 4: INJURY ── */}
+          {cardTab === "injury" && (() => {
             const f = (skill.fault || "").toLowerCase();
             const risks = [];
-            // Check biomechanics angles for significant knee deviation
             const kneeAngle = bioAngles.find(a => a.label.toLowerCase().includes("knee"));
             if (kneeAngle && Math.abs(kneeAngle.measured - kneeAngle.ideal) > 15)
-              risks.push("Repeated landing with knee flexion at " + kneeAngle.measured + "\u00B0 increases ACL strain risk. Focus on building quad strength and landing mechanics.");
+              risks.push({ area: "Knee / ACL", desc: "Repeated landing with knee flexion at " + kneeAngle.measured + "\u00B0 increases ACL strain risk.", prevention: "Quad strengthening: wall sits 3x30s, single-leg squats 3x10 each leg." });
             else if (f.includes("knee") || f.includes("squat") || f.includes("deep"))
-              risks.push("Repeated landing with excess knee bend increases ACL strain risk. Focus on building quad strength and landing mechanics.");
+              risks.push({ area: "Knee / ACL", desc: "Excess knee bend on landing increases strain.", prevention: "Wall sits 3x30s, box jump landings 3x8 focusing on soft knees." });
             if (f.includes("arch") || f.includes("hyperext") || f.includes("back"))
-              risks.push("Repeated hyperextension in back handsprings can stress lumbar vertebrae. Hollow body conditioning recommended.");
+              risks.push({ area: "Lower Back", desc: "Repeated hyperextension can stress lumbar vertebrae.", prevention: "Hollow body holds 3x20s, plank 3x30s, pike stretches daily." });
             if (f.includes("cowboy") || f.includes("leg separation") || f.includes("asymmetric"))
-              risks.push("Asymmetric leg positions during rotation increase ankle roll risk on landing.");
-            const hasRisk = risks.length > 0;
+              risks.push({ area: "Ankle / Foot", desc: "Asymmetric leg positions increase ankle roll risk on landing.", prevention: "Single-leg balance 3x30s each, resistance band ankle circles 3x15." });
             return (
-              <div style={{ marginBottom: 12, padding: "10px 14px", borderRadius: 10,
-                background: hasRisk ? "rgba(249,115,22,0.05)" : "rgba(34,197,94,0.04)",
-                border: `1px solid ${hasRisk ? "rgba(249,115,22,0.2)" : "rgba(34,197,94,0.15)"}`,
-                borderLeft: `3px solid ${hasRisk ? "#f97316" : "#22c55e"}` }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-                  {hasRisk ? (
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                      <circle cx="7" cy="7" r="6" stroke="#f97316" strokeWidth="1.5"/>
-                      <path d="M7 4v3.5M7 9.5v.5" stroke="#f97316" strokeWidth="1.5" strokeLinecap="round"/>
-                    </svg>
-                  ) : (
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                      <circle cx="7" cy="7" r="6" stroke="#22c55e" strokeWidth="1.5"/>
-                      <path d="M4.5 7l2 2 3-3.5" stroke="#22c55e" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  )}
-                  <div style={{ fontSize: 10, fontWeight: 700, color: hasRisk ? "#f97316" : "#22c55e",
-                    letterSpacing: 1, textTransform: "uppercase" }}>
-                    Injury Awareness
-                  </div>
-                </div>
-                {hasRisk ? risks.map((r, i) => (
-                  <div key={i} style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", lineHeight: 1.6,
-                    marginTop: i === 0 ? 2 : 6 }}>
-                    {r}
+              <div>
+                {risks.length > 0 ? risks.map((r, i) => (
+                  <div key={i} style={{ marginBottom: 10, padding: "12px 14px", borderRadius: 10, background: "rgba(220,38,38,0.04)", border: "1px solid rgba(220,38,38,0.12)" }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#dc2626", marginBottom: 4 }}>{r.area}</div>
+                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", lineHeight: 1.6, marginBottom: 8 }}>{r.desc}</div>
+                    <div style={{ padding: "8px 10px", borderRadius: 8, background: "rgba(34,197,94,0.04)", border: "1px solid rgba(34,197,94,0.1)" }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: "#22c55e", letterSpacing: 0.5, marginBottom: 2 }}>PREVENTION</div>
+                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", lineHeight: 1.5 }}>{r.prevention}</div>
+                    </div>
                   </div>
                 )) : (
-                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.6, marginTop: 2 }}>
-                    All clear — no elevated injury risk detected for this skill.
+                  <div style={{ padding: "20px 14px", borderRadius: 10, background: "rgba(34,197,94,0.04)", border: "1px solid rgba(34,197,94,0.12)", textAlign: "center" }}>
+                    <div style={{ fontSize: 12, color: "#22c55e", fontWeight: 600 }}>No elevated injury risk detected</div>
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 4 }}>Maintain current form and conditioning.</div>
                   </div>
                 )}
               </div>
             );
           })()}
 
-          {/* ── 5. Correct form (green border) ── */}
-          <div style={{ marginBottom: 12, padding: "10px 14px", borderRadius: 10,
-            background: "rgba(34,197,94,0.04)",
-            border: "1px solid rgba(34,197,94,0.2)",
-            borderLeft: "3px solid #22C55E" }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: "#22C55E",
-              letterSpacing: 1, textTransform: "uppercase", marginBottom: 4 }}>
-              Correct Form
-            </div>
-            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", lineHeight: 1.6 }}>
-              {getCorrectForm(skill)}
-            </div>
-          </div>
-
-          {/* ── 6. Strength (gold border) ── */}
-          {(skill.strength || isClean) && (
-            <div style={{ marginBottom: 12, padding: "10px 14px", borderRadius: 10,
-              background: "rgba(196,152,42,0.04)",
-              border: "1px solid rgba(196,152,42,0.2)",
-              borderLeft: "3px solid #C4982A" }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: "#C4982A",
-                letterSpacing: 1, textTransform: "uppercase", marginBottom: 4 }}>
-                Strength
+          {/* ── TAB 5: DRILLS ── */}
+          {cardTab === "drills" && (() => {
+            const name = (skill.skill || "").toLowerCase();
+            const drills = [];
+            if (name.includes("handspring") || name.includes("bhs")) {
+              drills.push({ name: "Snap-down drill", reps: "3 x 10", cue: "Focus on tight arch to hollow snap. Chest stays up on snap-down." });
+              drills.push({ name: "Handstand flat-back fall", reps: "3 x 8", cue: "Lock arms through support. Feel shoulders stack over wrists." });
+              drills.push({ name: "Bridge kickover", reps: "3 x 6", cue: "Push through shoulders, squeeze legs together at vertical." });
+            } else if (name.includes("tuck") || name.includes("flip") || name.includes("layout") || name.includes("pike")) {
+              drills.push({ name: "Tuck jump series", reps: "3 x 10", cue: "Drive arms up, pull knees to chest quickly. Spot landing early." });
+              drills.push({ name: "Candle stick rolls", reps: "3 x 8", cue: "Tight body position through full rotation. Arms by ears." });
+              drills.push({ name: "Block jumps", reps: "3 x 8", cue: "Maximum height, hollow body at peak. Land with chest up." });
+            } else if (name.includes("leap") || name.includes("split") || name.includes("switch")) {
+              drills.push({ name: "Split hold at barre", reps: "3 x 20s", cue: "Hips square, maximum extension. Both legs fully straight." });
+              drills.push({ name: "Grande battement", reps: "3 x 12 each", cue: "Controlled kick to maximum height. Point through toes." });
+              drills.push({ name: "Split leap over line", reps: "3 x 8", cue: "Drive off back foot, hit peak split at top of jump." });
+            } else if (name.includes("turn") || name.includes("spin") || name.includes("pirouette")) {
+              drills.push({ name: "Releve balance holds", reps: "3 x 30s each", cue: "Full releve, tight core, arms in position. No wobble." });
+              drills.push({ name: "Spot training", reps: "3 x 10 turns", cue: "Quick head snap to spot. Complete rotation without travel." });
+              drills.push({ name: "Passe balance", reps: "3 x 20s each", cue: "Clean passe position, turned out, hips level." });
+            } else {
+              drills.push({ name: "Hollow body hold", reps: "3 x 30s", cue: "Lower back pressed to floor. Arms by ears, legs straight." });
+              drills.push({ name: "Handstand hold", reps: "3 x 20s", cue: "Tight body line, push through shoulders. Stack joints." });
+              drills.push({ name: "Straddle press conditioning", reps: "3 x 8", cue: "Engage core and shoulders. Slow controlled movement." });
+            }
+            return (
+              <div>
+                {drills.map((d, i) => (
+                  <div key={i} style={{ display: "flex", gap: 10, marginBottom: 10, padding: "10px 12px", borderRadius: 10, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                    <div style={{ width: 24, height: 24, borderRadius: 6, background: "rgba(232,150,42,0.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 800, color: "#e8962a", flexShrink: 0 }}>{i + 1}</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "#e2e8f0", marginBottom: 2 }}>{d.name}</div>
+                      <div style={{ fontSize: 11, fontWeight: 700, fontFamily: "'Space Mono', monospace", color: "#e8962a", marginBottom: 4 }}>{d.reps}</div>
+                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", lineHeight: 1.5 }}>{d.cue}</div>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <div style={{ fontSize: 13, color: "#E2E8F0", lineHeight: 1.6 }}>
-                {skill.strength || "Clean execution — no deduction taken."}
-              </div>
-            </div>
-          )}
-
-          {/* ── Coach note (if present) ── */}
-          {skill.coachNote && (
-            <div style={{ marginBottom: 12, padding: "8px 12px", borderRadius: 8,
-              background: "rgba(59,130,246,0.06)",
-              border: "1px solid rgba(59,130,246,0.15)" }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: "#3B82F6",
-                letterSpacing: 1, textTransform: "uppercase", marginBottom: 3 }}>
-                Coach Note
-              </div>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", lineHeight: 1.6 }}>
-                {skill.coachNote}
-              </div>
-            </div>
-          )}
+            );
+          })()}
 
         </div>
       )}
@@ -4976,26 +4996,34 @@ function GradedSkillCard({ skill, onSeek, videoFile }) {
 
 function GradedSkillsView({ result, videoUrl, videoFile }) {
   const videoRef   = useRef(null);
-  const skills     = result.gradedSkills || [];
-  const cleanCount = skills.filter(s => !s.fault || s.gradeDeduction === 0).length;
-  const dedCount   = skills.filter(s => s.fault  && s.gradeDeduction  > 0).length;
+  const [filter, setFilter] = useState("all");
+  const allSkills  = result.gradedSkills || [];
+  const cleanCount = allSkills.filter(s => !s.fault || s.gradeDeduction === 0).length;
+  const dedCount   = allSkills.filter(s => s.fault  && s.gradeDeduction  > 0).length;
 
   // Best grade in the routine
   const RANK = {"A+":12,"A":11,"A-":10,"B+":9,"B":8,"B-":7,"C+":6,"C":5,"C-":4,"D+":3,"D":2,"F":1};
-  const bestGrade = skills.reduce(
+  const bestGrade = allSkills.reduce(
     (best, s) => (RANK[s.grade] || 0) > (RANK[best] || 0) ? s.grade : best, "F"
   );
+
+  // Filter skills
+  const skills = filter === "all" ? allSkills
+    : filter === "acro" ? allSkills.filter(s => (s.type || "").toLowerCase() === "acro")
+    : filter === "dance" ? allSkills.filter(s => (s.type || "").toLowerCase() === "dance")
+    : filter === "clean" ? allSkills.filter(s => !s.fault || s.gradeDeduction === 0)
+    : filter === "faults" ? allSkills.filter(s => s.fault && s.gradeDeduction > 0)
+    : allSkills;
 
   const handleSeek = (sec) => {
     const v = videoRef.current;
     if (!v) return;
     v.currentTime = Math.max(0, sec - 0.3);
     v.play().catch(() => {});
-    // Scroll sticky player into view
     v.scrollIntoView({ behavior: "smooth", block: "nearest" });
   };
 
-  if (skills.length === 0) {
+  if (allSkills.length === 0) {
     return (
       <div style={{ padding: "40px 0", textAlign: "center" }}>
         <div style={{ fontSize: 36, marginBottom: 12 }}>🤸</div>
@@ -5009,15 +5037,23 @@ function GradedSkillsView({ result, videoUrl, videoFile }) {
     );
   }
 
+  const filterPills = [
+    { id: "all", label: "All" },
+    { id: "acro", label: "Acro" },
+    { id: "dance", label: "Dance" },
+    { id: "clean", label: "Clean" },
+    { id: "faults", label: "Faults" },
+  ];
+
   return (
     <div>
       {/* ── Summary row ── */}
       <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
         {[
-          ["Skills", skills.length, "#C4982A", "rgba(255,255,255,0.03)", "rgba(255,255,255,0.06)"],
-          ["Clean",  cleanCount,   "#22C55E", "rgba(34,197,94,0.05)",   "rgba(34,197,94,0.2)"],
-          ["Faults", dedCount,     "#EF4444", "rgba(239,68,68,0.05)",   "rgba(239,68,68,0.2)"],
-          ["Best",   bestGrade,    GRADE_COLOR[bestGrade] || "#C4982A", "rgba(196,152,42,0.05)", "rgba(196,152,42,0.15)"],
+          ["Skills", allSkills.length, "#e8962a", "rgba(255,255,255,0.03)", "rgba(255,255,255,0.07)"],
+          ["Clean",  cleanCount,   "#22c55e", "rgba(34,197,94,0.05)",   "rgba(34,197,94,0.2)"],
+          ["Faults", dedCount,     "#dc2626", "rgba(220,38,38,0.05)",   "rgba(220,38,38,0.2)"],
+          ["Best",   bestGrade,    GRADE_COLOR[bestGrade] || "#e8962a", "rgba(232,150,42,0.05)", "rgba(232,150,42,0.15)"],
         ].map(([label, val, color, bg, border]) => (
           <div key={label} style={{ flex: 1, padding: "12px 6px", background: bg,
             border: `1px solid ${border}`, borderRadius: 12, textAlign: "center" }}>
@@ -5029,13 +5065,30 @@ function GradedSkillsView({ result, videoUrl, videoFile }) {
         ))}
       </div>
 
+      {/* ── Filter pills ── */}
+      <div style={{ display: "flex", gap: 6, marginBottom: 16, overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+        {filterPills.map(pill => (
+          <button key={pill.id} onClick={() => setFilter(pill.id)}
+            style={{
+              padding: "6px 16px", borderRadius: 20, fontSize: 12, fontWeight: 600,
+              fontFamily: "'Outfit', sans-serif", cursor: "pointer", whiteSpace: "nowrap",
+              minHeight: 32, transition: "all 0.2s",
+              background: filter === pill.id ? "#e8962a" : "transparent",
+              color: filter === pill.id ? "#070c16" : "rgba(255,255,255,0.5)",
+              border: filter === pill.id ? "1px solid #e8962a" : "1px solid rgba(255,255,255,0.1)",
+            }}>
+            {pill.label}
+          </button>
+        ))}
+      </div>
+
       {/* ── Biggest fix banner ── */}
       {result.diagnostics?.biggestFix && (
         <div style={{ marginBottom: 16, padding: "12px 14px", borderRadius: 12,
-          background: "rgba(196,152,42,0.06)",
-          border: "1px solid rgba(196,152,42,0.2)",
-          borderLeft: "3px solid #C4982A" }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: "#C4982A",
+          background: "rgba(232,150,42,0.06)",
+          border: "1px solid rgba(232,150,42,0.2)",
+          borderLeft: "3px solid #e8962a" }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: "#e8962a",
             letterSpacing: 1, textTransform: "uppercase", marginBottom: 4 }}>
             #1 Focus Area
           </div>
@@ -5048,7 +5101,7 @@ function GradedSkillsView({ result, videoUrl, videoFile }) {
       {/* ── Compact video player (sticky) ── */}
       {videoUrl && (
         <div style={{ position: "sticky", top: 0, zIndex: 10,
-          borderRadius: 12, overflow: "hidden", background: "#0a0e27",
+          borderRadius: 12, overflow: "hidden", background: "#070c16",
           marginBottom: 16, border: "1px solid rgba(255,255,255,0.08)",
           boxShadow: "0 4px 20px rgba(0,0,0,0.5)" }}>
           <video ref={videoRef} src={videoUrl} controls controlsList="nodownload"
@@ -5060,8 +5113,14 @@ function GradedSkillsView({ result, videoUrl, videoFile }) {
       {/* ── Skill cards ── */}
       <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.3)",
         letterSpacing: 1, textTransform: "uppercase", marginBottom: 12 }}>
-        Skill-by-Skill Breakdown
+        Skill-by-Skill Breakdown {filter !== "all" && <span style={{ color: "rgba(255,255,255,0.2)" }}>({skills.length})</span>}
       </div>
+
+      {skills.length === 0 && (
+        <div style={{ padding: "24px 0", textAlign: "center", fontSize: 13, color: "rgba(255,255,255,0.35)" }}>
+          No {filter} skills found in this routine.
+        </div>
+      )}
 
       {skills.map((skill, idx) => (
         <GradedSkillCard
@@ -5085,13 +5144,13 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFile, onBack, 
   if (!result) return null;
 
   const groupedDeds = result.executionDeductions || [];
-  const scoreColor = result.finalScore >= 9.0 ? "#22c55e" : result.finalScore >= 8.0 ? "#f59e0b" : "#ef4444";
+  const scoreColor = result.finalScore >= 9.0 ? "#22c55e" : result.finalScore >= 8.0 ? "#ffc15a" : "#dc2626";
   const actualNum = parseFloat(actualScore);
   const hasDiff = !isNaN(actualNum) && actualNum > 0;
   const diff = hasDiff ? (result.finalScore - actualNum) : 0;
   const diffAbs = Math.abs(diff).toFixed(3);
   const diffLabel = diff > 0 ? `AI scored ${diffAbs} HIGH` : diff < 0 ? `AI scored ${diffAbs} LOW` : "Exact match!";
-  const diffColor = Math.abs(diff) < 0.15 ? "#22c55e" : Math.abs(diff) < 0.4 ? "#f59e0b" : "#ef4444";
+  const diffColor = Math.abs(diff) < 0.15 ? "#22c55e" : Math.abs(diff) < 0.4 ? "#ffc15a" : "#dc2626";
 
   const hasVideo = !!(result.videoUrl || videoUrl);
   
@@ -5112,7 +5171,7 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFile, onBack, 
   return (
     <div style={{ minHeight: "100vh", padding: "16px 18px 90px", maxWidth: 540, margin: "0 auto" }}>
       <button onClick={onBack} style={{
-        background: "none", border: "none", color: "rgba(196,152,42,0.6)", cursor: "pointer",
+        background: "none", border: "none", color: "rgba(232,150,42,0.6)", cursor: "pointer",
         fontFamily: "'Outfit', sans-serif", fontSize: 13, fontWeight: 600, marginBottom: 14,
         display: "flex", alignItems: "center", gap: 4,
       }}>
@@ -5124,16 +5183,16 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFile, onBack, 
       {result.isDemo && (
         <div style={{
           padding: "12px 16px", borderRadius: 12, marginBottom: 16,
-          background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.2)",
+          background: "rgba(255,193,90,0.08)", border: "1px solid rgba(255,193,90,0.2)",
           animation: "fadeIn 0.4s ease-out",
         }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "#f59e0b", marginBottom: 4 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#ffc15a", marginBottom: 4 }}>
             ⚠ Demo Analysis
           </div>
           <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>
             {result.failureReason ? (
               <>
-                Analysis error: <span style={{ color: "#ef4444", fontFamily: "'Space Mono', monospace", fontSize: 11 }}>{result.failureReason}</span>
+                Analysis error: <span style={{ color: "#dc2626", fontFamily: "'Space Mono', monospace", fontSize: 11 }}>{result.failureReason}</span>
                 <div style={{ marginTop: 6, color: "rgba(255,255,255,0.4)" }}>
                   {result.failureReason.match(/JSON|parse|Unexpected|truncat/i) ? (
                     "The AI returned an incomplete response. This happens occasionally — try uploading again."
@@ -5153,7 +5212,7 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFile, onBack, 
 
       {/* Score Card with celebration */}
       <div style={{
-        background: "linear-gradient(135deg, rgba(196,152,42,0.1), rgba(196,152,42,0.03))",
+        background: "linear-gradient(135deg, rgba(232,150,42,0.1), rgba(232,150,42,0.03))",
         border: `1px solid ${scoreColor}30`, borderRadius: 20, padding: 28,
         textAlign: "center", marginBottom: 24, animation: "scaleIn 0.5s ease-out",
         position: "relative", overflow: "hidden",
@@ -5180,7 +5239,7 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFile, onBack, 
           {/* Score-specific celebration/context message */}
           <div style={{
             fontSize: 12, fontWeight: 600, marginBottom: 12,
-            color: result.finalScore >= 9.2 ? "#22c55e" : result.finalScore >= 8.5 ? "#C4982A" : result.finalScore >= 7.5 ? "#f59e0b" : "#ef4444",
+            color: result.finalScore >= 9.2 ? "#22c55e" : result.finalScore >= 8.5 ? "#e8962a" : result.finalScore >= 7.5 ? "#ffc15a" : "#dc2626",
           }}>
             {result.finalScore >= 9.5 ? "Outstanding — elite-level execution" :
              result.finalScore >= 9.2 ? "Excellent — top of the field" :
@@ -5200,7 +5259,7 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFile, onBack, 
           <span style={{ fontSize: 18, fontWeight: 300, color: "rgba(255,255,255,0.25)", marginTop: 10 }}>-</span>
           <div style={{ textAlign: "center" }}>
             <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", letterSpacing: 0.5 }}>DEDUCTIONS ({safeArray(result.executionDeductions).length})</div>
-            <div style={{ fontSize: 20, fontWeight: 700, fontFamily: "'Space Mono', monospace", color: "#ef4444" }}>
+            <div style={{ fontSize: 20, fontWeight: 700, fontFamily: "'Space Mono', monospace", color: "#dc2626" }}>
               {safeNum(result.totalDeductions, 0).toFixed(3)}
             </div>
           </div>
@@ -5236,8 +5295,8 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFile, onBack, 
           return (
             <div className="card" style={{
               padding: 14, marginBottom: 16,
-              borderColor: same ? "rgba(255,255,255,0.06)" : improved ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.1)",
-              background: same ? "rgba(255,255,255,0.02)" : improved ? "rgba(34,197,94,0.03)" : "rgba(239,68,68,0.02)",
+              borderColor: same ? "rgba(255,255,255,0.06)" : improved ? "rgba(34,197,94,0.15)" : "rgba(220,38,38,0.1)",
+              background: same ? "rgba(255,255,255,0.02)" : improved ? "rgba(34,197,94,0.03)" : "rgba(220,38,38,0.02)",
             }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div>
@@ -5250,7 +5309,7 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFile, onBack, 
                 </div>
                 <div style={{
                   fontSize: 18, fontWeight: 900, fontFamily: "'Space Mono', monospace",
-                  color: same ? "rgba(255,255,255,0.3)" : improved ? "#22c55e" : "#ef4444",
+                  color: same ? "rgba(255,255,255,0.3)" : improved ? "#22c55e" : "#dc2626",
                 }}>
                   {same ? "=" : improved ? "+" : ""}{diff.toFixed(2)}
                 </div>
@@ -5268,8 +5327,8 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFile, onBack, 
         // First analysis for this event
         if (history.length === 0) {
           return (
-            <div className="card" style={{ padding: 14, marginBottom: 16, borderColor: "rgba(196,152,42,0.12)", background: "rgba(196,152,42,0.03)" }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: "#C4982A" }}>
+            <div className="card" style={{ padding: 14, marginBottom: 16, borderColor: "rgba(232,150,42,0.12)", background: "rgba(232,150,42,0.03)" }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: "#e8962a" }}>
                 First analysis recorded for {result.event}
               </div>
               <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 4 }}>
@@ -5320,9 +5379,9 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFile, onBack, 
             {Math.abs(diff) < 0.15 ? (
               <span><strong style={{ color: "#22c55e" }}>Excellent calibration.</strong> The AI score is within 0.15 of the actual score — within normal judge variance.</span>
             ) : Math.abs(diff) < 0.4 ? (
-              <span><strong style={{ color: "#f59e0b" }}>Close.</strong> The AI score is within 0.4 of the actual. {diff > 0 ? "Artistry/composition deductions are hard to see in frames." : "The AI may be stricter than the panel on borderline calls."}</span>
+              <span><strong style={{ color: "#ffc15a" }}>Close.</strong> The AI score is within 0.4 of the actual. {diff > 0 ? "Artistry/composition deductions are hard to see in frames." : "The AI may be stricter than the panel on borderline calls."}</span>
             ) : (
-              <span><strong style={{ color: "#ef4444" }}>Outside normal variance.</strong> {diff > 0 ? "The AI may be missing deductions not visible in frames." : "The AI may be over-deducting. Real judges see full context."}</span>
+              <span><strong style={{ color: "#dc2626" }}>Outside normal variance.</strong> {diff > 0 ? "The AI may be missing deductions not visible in frames." : "The AI may be over-deducting. Real judges see full context."}</span>
             )}
           </div>
           {!scoreSaved && (
@@ -5368,8 +5427,8 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFile, onBack, 
             style={{
               flex: tab.id === "review" ? "none" : 1, padding: "9px 8px", borderRadius: 11, border: "none", cursor: "pointer",
               fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 11,
-              background: activeTab === tab.id ? "linear-gradient(135deg, #C4982A, #E8C35A)" : "transparent",
-              color: activeTab === tab.id ? "#0B1024" : (tab.pro && !isPro) ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.45)",
+              background: activeTab === tab.id ? "linear-gradient(135deg, #e8962a, #ffc15a)" : "transparent",
+              color: activeTab === tab.id ? "#070c16" : (tab.pro && !isPro) ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.45)",
               transition: "all 0.2s", whiteSpace: "nowrap", position: "relative",
             }}
           >
@@ -5431,7 +5490,7 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFile, onBack, 
           {/* Blurred preview of what's behind the gate */}
           <div style={{ filter: "blur(4px)", opacity: 0.4, pointerEvents: "none", userSelect: "none" }}>
             <div className="card" style={{ marginBottom: 10, padding: 16 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "#ef4444", letterSpacing: 1 }}>🎯 PRIORITY DRILL</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#dc2626", letterSpacing: 1 }}>🎯 PRIORITY DRILL</div>
               <div style={{ fontSize: 13, fontWeight: 600, marginTop: 6 }}>Landing control — stick drill 3x per practice</div>
               <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 4 }}>Based on 3 landing deductions in this routine</div>
             </div>
@@ -5458,58 +5517,312 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFile, onBack, 
       )}
       {activeTab === "overview" && (
         <div style={{ animation: "fadeIn 0.4s ease-out" }}>
-          {/* Body fault heatmap */}
-          <BodyHeatmap deductions={result.executionDeductions} />
 
-          {/* Deduction timeline on overview */}
-          <DeductionTimeline deductions={result.executionDeductions} />
-
-          {/* ── Judge's Assessment (Why This Score) ── */}
-          {result.overallAssessment && (
-            <div className="card" style={{ marginBottom: 16 }}>
-              <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 10, color: "#C4982A" }}>
-                ⚖️ Judge's Assessment
-              </h3>
-              <p style={{ fontSize: 14, color: "rgba(255,255,255,0.7)", lineHeight: 1.75 }}>
-                {safeStr(result.overallAssessment)}
-              </p>
-              {result.pathToGoal && (
-                <div style={{ marginTop: 12, padding: "10px 14px", borderRadius: 10,
-                  background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.2)" }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: "#22C55E",
-                    letterSpacing: 1, textTransform: "uppercase", marginBottom: 6 }}>
-                    Path to 9.0+
+          {/* ── 1. HERO SCORE RING ── */}
+          {(() => {
+            const scorePct = Math.min(100, (safeNum(result.finalScore, 0) / 10) * 100);
+            const radius = 54;
+            const circumference = 2 * Math.PI * radius;
+            const strokeDashoffset = circumference - (scorePct / 100) * circumference;
+            const gradeLabel = result.finalScore >= 9.5 ? "Elite" : result.finalScore >= 9.0 ? "Excellent" : result.finalScore >= 8.5 ? "Strong" : result.finalScore >= 8.0 ? "Good" : result.finalScore >= 7.5 ? "Building" : "Developing";
+            const trendArrow = (history || []).filter(h => h.event === result.event && h.score).length > 0 ? (() => {
+              const lastScore = (history || []).filter(h => h.event === result.event && h.score)[0].score;
+              const d = result.finalScore - lastScore;
+              return d > 0.01 ? { dir: "up", val: `+${d.toFixed(2)}`, color: "#22c55e" } : d < -0.01 ? { dir: "down", val: d.toFixed(2), color: "#dc2626" } : { dir: "same", val: "=", color: "rgba(255,255,255,0.3)" };
+            })() : null;
+            return (
+              <div style={{ textAlign: "center", marginBottom: 24, padding: "28px 16px", background: "linear-gradient(135deg, rgba(232,150,42,0.06), rgba(232,150,42,0.02))", borderRadius: 20, border: `1px solid ${scoreColor}25`, position: "relative", overflow: "hidden" }}>
+                <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 200, height: 200, borderRadius: "50%", background: `radial-gradient(circle, ${scoreColor}10 0%, transparent 70%)`, pointerEvents: "none" }} />
+                <div style={{ position: "relative", display: "inline-block", marginBottom: 12 }}>
+                  <svg width="140" height="140" viewBox="0 0 140 140" style={{ transform: "rotate(-90deg)" }}>
+                    <circle cx="70" cy="70" r={radius} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="8" />
+                    <circle cx="70" cy="70" r={radius} fill="none" stroke={scoreColor} strokeWidth="8" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={strokeDashoffset} style={{ transition: "stroke-dashoffset 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)" }} />
+                  </svg>
+                  <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", textAlign: "center" }}>
+                    <div style={{ fontSize: 28, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: scoreColor, lineHeight: 1 }}>
+                      {safeNum(result.finalScore, 0, 0, 10).toFixed(3)}
+                    </div>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: 1, textTransform: "uppercase", marginTop: 2 }}>
+                      {gradeLabel}
+                    </div>
                   </div>
-                  <p style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", lineHeight: 1.65, margin: 0 }}>
-                    {safeStr(result.pathToGoal)}
-                  </p>
                 </div>
-              )}
+                {trendArrow && (
+                  <div style={{ position: "absolute", top: 16, right: 16, display: "flex", alignItems: "center", gap: 4, padding: "4px 10px", borderRadius: 8, background: `${trendArrow.color}12`, border: `1px solid ${trendArrow.color}25` }}>
+                    <span style={{ fontSize: 14, color: trendArrow.color }}>{trendArrow.dir === "up" ? "▲" : trendArrow.dir === "down" ? "▼" : "="}</span>
+                    <span style={{ fontSize: 12, fontWeight: 700, fontFamily: "'Space Mono', monospace", color: trendArrow.color }}>{trendArrow.val}</span>
+                  </div>
+                )}
+                <div style={{ display: "flex", justifyContent: "center", gap: 20, marginTop: 8 }}>
+                  <div style={{ textAlign: "center" }}>
+                    <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", letterSpacing: 0.5, textTransform: "uppercase" }}>D-Score</div>
+                    <div style={{ fontSize: 18, fontWeight: 700, fontFamily: "'Space Mono', monospace", color: "#e2e8f0" }}>{safeNum(result.startValue, 10).toFixed(1)}</div>
+                  </div>
+                  <div style={{ width: 1, background: "rgba(255,255,255,0.07)" }} />
+                  <div style={{ textAlign: "center" }}>
+                    <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", letterSpacing: 0.5, textTransform: "uppercase" }}>E-Score</div>
+                    <div style={{ fontSize: 18, fontWeight: 700, fontFamily: "'Space Mono', monospace", color: "#dc2626" }}>-{safeNum(result.totalDeductions, 0).toFixed(2)}</div>
+                  </div>
+                  <div style={{ width: 1, background: "rgba(255,255,255,0.07)" }} />
+                  <div style={{ textAlign: "center" }}>
+                    <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", letterSpacing: 0.5, textTransform: "uppercase" }}>Neutral</div>
+                    <div style={{ fontSize: 18, fontWeight: 700, fontFamily: "'Space Mono', monospace", color: "rgba(255,255,255,0.4)" }}>0.00</div>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* ── 2. CONTEXT STRIP — 4 horizontal scroll cards ── */}
+          {(() => {
+            const sameEventHistory = (history || []).filter(h => h.event === result.event && h.score);
+            const lastScore = sameEventHistory.length > 0 ? sameEventHistory[0].score : null;
+            const vsLast = lastScore ? (result.finalScore - lastScore) : null;
+            const goalScore = 9.0;
+            const goalPct = Math.min(100, Math.round((safeNum(result.finalScore, 0) / goalScore) * 100));
+            const pointsToGoal = Math.max(0, goalScore - safeNum(result.finalScore, 0));
+            const divisionAvg = result.finalScore >= 9.0 ? 8.65 : result.finalScore >= 8.5 ? 8.45 : 8.25;
+            const vsDivision = result.finalScore - divisionAvg;
+            const cards = [
+              { label: "vs Last Meet", value: vsLast !== null ? (vsLast >= 0 ? "+" : "") + vsLast.toFixed(2) : "N/A", color: vsLast !== null ? (vsLast >= 0 ? "#22c55e" : "#dc2626") : "rgba(255,255,255,0.3)" },
+              { label: "Season Goal", value: `${goalPct}%`, color: "#e8962a" },
+              { label: "vs Division Avg", value: (vsDivision >= 0 ? "+" : "") + vsDivision.toFixed(2), color: vsDivision >= 0 ? "#22c55e" : "#dc2626" },
+              { label: "Points to Goal", value: pointsToGoal.toFixed(2), color: "#ffc15a" },
+            ];
+            return (
+              <div style={{ display: "flex", gap: 8, overflowX: "auto", WebkitOverflowScrolling: "touch", marginBottom: 20, paddingBottom: 4 }}>
+                {cards.map((c, i) => (
+                  <div key={i} style={{ minWidth: 110, flex: "0 0 auto", padding: "12px 14px", background: "#121b2d", borderRadius: 12, border: "1px solid rgba(255,255,255,0.07)" }}>
+                    <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", letterSpacing: 0.5, textTransform: "uppercase", marginBottom: 6 }}>{c.label}</div>
+                    <div style={{ fontSize: 20, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: c.color }}>{c.value}</div>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+
+          {/* ── 3. JUDGE'S PERSPECTIVE ── */}
+          {result.overallAssessment && (
+            <div style={{ marginBottom: 16, padding: "16px 18px", borderRadius: 14, background: "rgba(232,150,42,0.04)", border: "1px solid rgba(232,150,42,0.12)", borderLeft: "3px solid #e8962a" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="#e8962a" strokeWidth="1.2"/><path d="M5 8h6M8 5v6" stroke="#e8962a" strokeWidth="1.2" strokeLinecap="round"/></svg>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#e8962a", letterSpacing: 1, textTransform: "uppercase" }}>Judge's Perspective</div>
+              </div>
+              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", marginBottom: 6, fontStyle: "italic" }}>Brevet-level evaluation</div>
+              <p style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", lineHeight: 1.75, margin: 0, fontStyle: "italic" }}>
+                "{safeStr(result.overallAssessment)}"
+              </p>
+              <div style={{ display: "flex", gap: 12, marginTop: 14 }}>
+                <div style={{ flex: 1, padding: "8px 10px", borderRadius: 8, background: "rgba(255,255,255,0.03)", textAlign: "center" }}>
+                  <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", letterSpacing: 0.5 }}>EXECUTION</div>
+                  <div style={{ fontSize: 15, fontWeight: 700, fontFamily: "'Space Mono', monospace", color: "#dc2626" }}>-{safeNum(result.totalDeductions, 0).toFixed(2)}</div>
+                </div>
+                <div style={{ flex: 1, padding: "8px 10px", borderRadius: 8, background: "rgba(255,255,255,0.03)", textAlign: "center" }}>
+                  <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", letterSpacing: 0.5 }}>ARTISTRY</div>
+                  <div style={{ fontSize: 15, fontWeight: 700, fontFamily: "'Space Mono', monospace", color: "#ffc15a" }}>-{safeNum(result.artistryDeductionsTotal, 0).toFixed(2)}</div>
+                </div>
+                <div style={{ flex: 1, padding: "8px 10px", borderRadius: 8, background: "rgba(255,255,255,0.03)", textAlign: "center" }}>
+                  <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", letterSpacing: 0.5 }}>NEUTRAL</div>
+                  <div style={{ fontSize: 15, fontWeight: 700, fontFamily: "'Space Mono', monospace", color: "rgba(255,255,255,0.4)" }}>0.00</div>
+                </div>
+              </div>
             </div>
           )}
 
+          {/* ── 4. ARTISTRY BREAKDOWN — Purple theme, gauge bars ── */}
+          {result.artistryBreakdown && (
+            <div style={{ marginBottom: 16, padding: "16px 18px", borderRadius: 14, background: "rgba(139,114,212,0.04)", border: "1px solid rgba(139,114,212,0.12)" }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#8b72d4", letterSpacing: 1, textTransform: "uppercase", marginBottom: 14 }}>
+                Artistry Breakdown
+              </div>
+              {(() => {
+                const artFields = {
+                  confidence: "Confidence",
+                  eyeContact: "Eye Contact",
+                  musicality: "Musicality",
+                  spaceUsage: "Use of Space",
+                  fingerLines: "Expression",
+                  footwork: "Footwork",
+                };
+                return Object.entries(artFields).map(([key, label]) => {
+                  const val = result.artistryBreakdown[key];
+                  if (!val || typeof val !== "object") return null;
+                  const ded = safeNum(val.deduction, 0);
+                  const score = Math.max(0, Math.min(10, 10 - ded * 20));
+                  const pct = (score / 10) * 100;
+                  return (
+                    <div key={key} style={{ marginBottom: 10 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                        <span style={{ fontSize: 12, fontWeight: 500, color: "rgba(255,255,255,0.6)" }}>{label}</span>
+                        <span style={{ fontSize: 12, fontWeight: 700, fontFamily: "'Space Mono', monospace", color: "#8b72d4" }}>{score.toFixed(1)}/10</span>
+                      </div>
+                      <div style={{ height: 6, background: "rgba(255,255,255,0.06)", borderRadius: 3, overflow: "hidden" }}>
+                        <div style={{ height: "100%", width: `${pct}%`, background: "linear-gradient(90deg, #8b72d4, #a990e8)", borderRadius: 3, transition: "width 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94)" }} />
+                      </div>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+          )}
+
+          {/* Body fault heatmap */}
+          <BodyHeatmap deductions={result.executionDeductions} />
+
+          {/* Deduction timeline */}
+          <DeductionTimeline deductions={result.executionDeductions} />
+
+          {/* ── 5. AREAS FOR IMPROVEMENT — Red/orange theme, ranked by impact ── */}
+          {groupedDeds.length > 0 && (
+            <div style={{ marginBottom: 16, padding: "16px 18px", borderRadius: 14, background: "rgba(220,38,38,0.03)", border: "1px solid rgba(220,38,38,0.1)" }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#dc2626", letterSpacing: 1, textTransform: "uppercase", marginBottom: 12 }}>
+                Areas for Improvement
+              </div>
+              {[...groupedDeds].sort((a, b) => safeNum(b.deduction, 0) - safeNum(a.deduction, 0)).slice(0, 6).map((d, i) => {
+                const dedAmt = safeNum(d.deduction, 0);
+                const rowColor = dedAmt >= 0.20 ? "#dc2626" : dedAmt >= 0.10 ? "#e06820" : "#ffc15a";
+                return (
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: i < 5 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>
+                    <div style={{ width: 22, height: 22, borderRadius: 6, background: `${rowColor}15`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, color: rowColor, flexShrink: 0 }}>{i + 1}</div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "#e2e8f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{safeStr(d.skill)}</div>
+                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{safeStr(d.fault).substring(0, 60)}</div>
+                    </div>
+                    <div style={{ fontSize: 14, fontWeight: 800, fontFamily: "'Space Mono', monospace", color: rowColor, flexShrink: 0 }}>-{dedAmt.toFixed(2)}</div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* ── 6. PATH TO 9.0+ — Green theme ── */}
+          {groupedDeds.length >= 2 && (() => {
+            const targetScore = 9.0;
+            const current = safeNum(result.finalScore, 0);
+            const needed = Math.max(0, targetScore - current);
+            const top3 = [...groupedDeds].sort((a, b) => safeNum(b.deduction, 0) - safeNum(a.deduction, 0)).slice(0, 3);
+            const potentialGain = top3.reduce((s, d) => s + safeNum(d.deduction, 0), 0);
+            if (current >= 9.0) return null;
+            return (
+              <div style={{ marginBottom: 16, padding: "16px 18px", borderRadius: 14, background: "rgba(34,197,94,0.04)", border: "1px solid rgba(34,197,94,0.12)" }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#22c55e", letterSpacing: 1, textTransform: "uppercase", marginBottom: 12 }}>
+                  Path to 9.0+
+                </div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16, marginBottom: 14 }}>
+                  <div style={{ textAlign: "center" }}>
+                    <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", textTransform: "uppercase" }}>Current</div>
+                    <div style={{ fontSize: 22, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: scoreColor }}>{current.toFixed(2)}</div>
+                  </div>
+                  <svg width="24" height="12" viewBox="0 0 24 12" fill="none"><path d="M2 6h16M18 2l4 4-4 4" stroke="#22c55e" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  <div style={{ textAlign: "center" }}>
+                    <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", textTransform: "uppercase" }}>Target</div>
+                    <div style={{ fontSize: 22, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: "#22c55e" }}>9.000</div>
+                  </div>
+                </div>
+                {top3.map((d, i) => (
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", marginBottom: 6, borderRadius: 8, background: "rgba(34,197,94,0.04)", border: "1px solid rgba(34,197,94,0.08)" }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, fontFamily: "'Space Mono', monospace", color: "#22c55e", flexShrink: 0 }}>+{safeNum(d.deduction, 0).toFixed(2)}</div>
+                    <div style={{ flex: 1, fontSize: 12, color: "rgba(255,255,255,0.6)" }}>Fix {safeStr(d.skill).toLowerCase()}</div>
+                  </div>
+                ))}
+                {result.pathToGoal && (
+                  <div style={{ marginTop: 10, fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.6, fontStyle: "italic" }}>
+                    {safeStr(result.pathToGoal)}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
+          {/* ── 7. IMPROVEMENT POTENTIAL — Stacked math ── */}
+          {groupedDeds.length >= 2 && (() => {
+            const top3 = [...groupedDeds].sort((a, b) => safeNum(b.deduction, 0) - safeNum(a.deduction, 0)).slice(0, 3);
+            const current = safeNum(result.finalScore, 0);
+            let running = current;
+            const steps = top3.map((d, i) => {
+              running = Math.min(10, running + safeNum(d.deduction, 0));
+              return { skill: safeStr(d.skill), gain: safeNum(d.deduction, 0), cumulative: running };
+            });
+            const projectedScore = running;
+            return (
+              <div style={{ marginBottom: 16, padding: "16px 18px", borderRadius: 14, background: "linear-gradient(135deg, rgba(232,150,42,0.04), rgba(34,197,94,0.03))", border: "1px solid rgba(232,150,42,0.12)" }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#e8962a", letterSpacing: 1, textTransform: "uppercase", marginBottom: 14 }}>
+                  Improvement Potential
+                </div>
+                <div style={{ padding: "10px 14px", borderRadius: 10, background: "rgba(255,255,255,0.03)", marginBottom: 6 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>Current Score</span>
+                    <span style={{ fontSize: 16, fontWeight: 800, fontFamily: "'Space Mono', monospace", color: scoreColor }}>{current.toFixed(3)}</span>
+                  </div>
+                </div>
+                {steps.map((s, i) => (
+                  <div key={i} style={{ padding: "8px 14px", borderRadius: 10, background: "rgba(255,255,255,0.02)", marginBottom: 4, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>+ Fix {s.skill.substring(0, 30)}</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, fontFamily: "'Space Mono', monospace", color: "#22c55e" }}>+{s.gain.toFixed(2)}</span>
+                      <span style={{ fontSize: 13, fontWeight: 700, fontFamily: "'Space Mono', monospace", color: "#e2e8f0" }}>{s.cumulative.toFixed(3)}</span>
+                    </div>
+                  </div>
+                ))}
+                <div style={{ padding: "12px 14px", borderRadius: 10, background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.2)", marginTop: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: "#22c55e" }}>Projected Final</span>
+                  <span style={{ fontSize: 20, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: "#22c55e" }}>{projectedScore.toFixed(3)}</span>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* ── 8. SEASON GOAL TRACKER ── */}
+          {(() => {
+            const current = safeNum(result.finalScore, 0);
+            const target = 9.0;
+            const pct = Math.min(100, Math.round((current / target) * 100));
+            const remaining = Math.max(0, target - current);
+            const weeksLeft = 12;
+            return (
+              <div style={{ marginBottom: 16, padding: "16px 18px", borderRadius: 14, background: "rgba(232,150,42,0.03)", border: "1px solid rgba(232,150,42,0.1)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "#e8962a", letterSpacing: 1, textTransform: "uppercase" }}>Season Goal Tracker</div>
+                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", fontFamily: "'Space Mono', monospace" }}>{weeksLeft} weeks left</div>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
+                  <span style={{ fontSize: 14, fontWeight: 700, fontFamily: "'Space Mono', monospace", color: scoreColor }}>{current.toFixed(2)}</span>
+                  <span style={{ fontSize: 14, fontWeight: 700, fontFamily: "'Space Mono', monospace", color: "#e8962a" }}>{target.toFixed(2)}</span>
+                </div>
+                <div style={{ height: 8, background: "rgba(255,255,255,0.06)", borderRadius: 4, overflow: "hidden", marginBottom: 8 }}>
+                  <div style={{ height: "100%", width: `${pct}%`, background: "linear-gradient(90deg, #e8962a, #ffc15a)", borderRadius: 4, transition: "width 1s ease-out" }} />
+                </div>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", textAlign: "center" }}>
+                  {remaining <= 0 ? (
+                    <span style={{ color: "#22c55e", fontWeight: 700 }}>Goal reached!</span>
+                  ) : (
+                    <span>{remaining.toFixed(2)} points remaining — estimated {Math.ceil(remaining / 0.05)} focused practices</span>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
+
           {/* ── Celebrations — what was genuinely good ── */}
           {safeArray(result.celebrations).length > 0 && (
-            <div className="card" style={{ marginBottom: 16,
-              background: "linear-gradient(135deg, rgba(34,197,94,0.04), rgba(34,197,94,0.02))",
-              borderColor: "rgba(34,197,94,0.15)" }}>
-              <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, color: "#22C55E" }}>
-                🌟 What Was Excellent
-              </h3>
+            <div style={{ marginBottom: 16, padding: "16px 18px", borderRadius: 14, background: "linear-gradient(135deg, rgba(34,197,94,0.04), rgba(34,197,94,0.02))", border: "1px solid rgba(34,197,94,0.15)" }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#22c55e", letterSpacing: 1, textTransform: "uppercase", marginBottom: 12 }}>
+                What Was Excellent
+              </div>
               {safeArray(result.celebrations).map((c, i) => (
                 <div key={i} style={{ display: "flex", gap: 12, alignItems: "flex-start",
                   marginBottom: i < result.celebrations.length - 1 ? 12 : 0,
                   paddingBottom: i < result.celebrations.length - 1 ? 12 : 0,
                   borderBottom: i < result.celebrations.length - 1 ? "1px solid rgba(34,197,94,0.1)" : "none" }}>
-                  <div style={{ width: 36, height: 36, borderRadius: "50%", flexShrink: 0,
+                  <div style={{ width: 32, height: 32, borderRadius: "50%", flexShrink: 0,
                     background: "rgba(34,197,94,0.12)", border: "1px solid rgba(34,197,94,0.3)",
                     display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: 10, fontWeight: 700, color: "#22C55E",
+                    fontSize: 10, fontWeight: 700, color: "#22c55e",
                     fontFamily: "'Space Mono', monospace" }}>
                     {safeStr(c.timestamp) || "✓"}
                   </div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: "#22C55E", marginBottom: 3 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#22c55e", marginBottom: 2 }}>
                       {safeStr(c.skill)}
                     </div>
                     <div style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", lineHeight: 1.6 }}>
@@ -5521,54 +5834,12 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFile, onBack, 
             </div>
           )}
 
-          {/* ── Artistry Breakdown ── */}
-          {result.artistryBreakdown && (
-            <div className="card" style={{ marginBottom: 16 }}>
-              <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, color: "#C4982A" }}>
-                🎭 Artistry Breakdown
-              </h3>
-              {Object.entries(result.artistryBreakdown).map(([key, val]) => {
-                if (!val || typeof val !== "object") return null;
-                const ded = safeNum(val.deduction, 0);
-                const label = {
-                  fingerLines: "Finger / Hand Lines",
-                  eyeContact:  "Eye Contact with Judges",
-                  musicality:  "Musicality & Rhythm",
-                  confidence:  "Confidence & Stage Presence",
-                  footwork:    "Footwork & Releve",
-                  spaceUsage:  "Use of Floor Space",
-                }[key] || key;
-                const isClean = ded === 0;
-                return (
-                  <div key={key} style={{ display: "flex", alignItems: "flex-start", gap: 12,
-                    marginBottom: 10, paddingBottom: 10,
-                    borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-                    <div style={{ width: 28, flexShrink: 0, textAlign: "right",
-                      fontFamily: "'Space Mono', monospace", fontSize: 12, fontWeight: 700,
-                      color: isClean ? "#22C55E" : "#F97316", paddingTop: 1 }}>
-                      {isClean ? "✓" : `-${ded.toFixed(2)}`}
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600,
-                        color: isClean ? "#22C55E" : "#E2E8F0", marginBottom: 2 }}>
-                        {label}
-                      </div>
-                      <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: 1.5 }}>
-                        {safeStr(val.note)}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
           {/* Fallback strengths if no celebrations returned */}
           {safeArray(result.celebrations).length === 0 && safeArray(result.strengths).length > 0 && (
-            <div className="card" style={{ marginBottom: 16 }}>
-              <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12 }}>
-                <span style={{ color: "#22c55e" }}>✓</span> Strengths
-              </h3>
+            <div style={{ marginBottom: 16, padding: "16px 18px", borderRadius: 14, background: "rgba(34,197,94,0.03)", border: "1px solid rgba(34,197,94,0.1)" }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#22c55e", letterSpacing: 1, textTransform: "uppercase", marginBottom: 10 }}>
+                Strengths
+              </div>
               {safeArray(result.strengths).map((s, i) => (
                 <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start", marginBottom: 8 }}>
                   <span style={{ color: "#22c55e", fontWeight: 700, fontSize: 12, marginTop: 2 }}>●</span>
@@ -5578,92 +5849,27 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFile, onBack, 
             </div>
           )}
 
-          {/* Improvement Potential — the conversion hook */}
-          {groupedDeds.length >= 2 && (() => {
-            const top3 = [...groupedDeds].sort((a, b) => safeNum(b.deduction, 0) - safeNum(a.deduction, 0)).slice(0, 3);
-            const potentialGain = top3.reduce((s, d) => s + safeNum(d.deduction, 0), 0);
-            const projectedScore = Math.min(10, safeNum(result.finalScore, 0) + potentialGain);
-            return (
-              <div className="card" style={{
-                padding: 16, marginBottom: 16,
-                background: "linear-gradient(135deg, rgba(196,152,42,0.06), rgba(34,197,94,0.03))",
-                borderColor: "rgba(196,152,42,0.15)",
-              }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: "#C4982A", letterSpacing: 1, marginBottom: 10 }}>
-                  IMPROVEMENT POTENTIAL
-                </div>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginBottom: 12 }}>
-                  <div style={{ textAlign: "center" }}>
-                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>NOW</div>
-                    <div style={{ fontSize: 24, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: scoreColor }}>
-                      {safeNum(result.finalScore, 0).toFixed(1)}
-                    </div>
-                  </div>
-                  <div style={{ fontSize: 20, color: "rgba(196,152,42,0.4)" }}>→</div>
-                  <div style={{ textAlign: "center" }}>
-                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>POSSIBLE</div>
-                    <div style={{ fontSize: 24, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: "#22c55e" }}>
-                      {projectedScore.toFixed(1)}
-                    </div>
-                  </div>
-                  <div style={{ textAlign: "center", marginLeft: 8 }}>
-                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>GAIN</div>
-                    <div style={{ fontSize: 18, fontWeight: 800, fontFamily: "'Space Mono', monospace", color: "#C4982A" }}>
-                      +{potentialGain.toFixed(2)}
-                    </div>
-                  </div>
-                </div>
-                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", lineHeight: 1.6 }}>
-                  Fix just 3 skills and your score jumps by <span style={{ color: "#C4982A", fontWeight: 700 }}>+{potentialGain.toFixed(2)}</span>:
-                </div>
-                {top3.map((d, i) => (
-                  <div key={i} style={{
-                    display: "flex", justifyContent: "space-between", alignItems: "center",
-                    padding: "6px 0", borderBottom: i < 2 ? "1px solid rgba(255,255,255,0.04)" : "none",
-                  }}>
-                    <span style={{ fontSize: 12, color: "rgba(255,255,255,0.6)" }}>{i + 1}. {safeStr(d.skill)}</span>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: "#22c55e", fontFamily: "'Space Mono', monospace" }}>+{safeNum(d.deduction, 0).toFixed(2)}</span>
-                  </div>
-                ))}
-              </div>
-            );
-          })()}
-
-          {/* Areas for Improvement */}
-          <div className="card" style={{ marginBottom: 16 }}>
-            <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12 }}>
-              <span style={{ color: "#f59e0b" }}>▲</span> Areas for Improvement
-            </h3>
-            {safeArray(result.areasForImprovement).map((a, i) => (
-              <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start", marginBottom: 8 }}>
-                <span style={{ color: "#f59e0b", fontWeight: 700, fontSize: 12, marginTop: 2 }}>●</span>
-                <span style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", lineHeight: 1.5 }}>{safeStr(a)}</span>
-              </div>
-            ))}
-          </div>
-
           {/* Post-Meet Debrief — parent-friendly summary */}
-          <div className="card" style={{ padding: 16, marginBottom: 16, background: "rgba(196,152,42,0.03)", borderColor: "rgba(196,152,42,0.12)" }}>
-            <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 10, color: "#C4982A" }}>
-              <Icon name="info" size={14} /> What This Score Means (Parent Summary)
-            </h3>
+          <div style={{ padding: "16px 18px", marginBottom: 16, borderRadius: 14, background: "rgba(232,150,42,0.03)", border: "1px solid rgba(232,150,42,0.1)" }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#e8962a", letterSpacing: 1, textTransform: "uppercase", marginBottom: 10 }}>
+              What This Score Means
+            </div>
             <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", lineHeight: 1.8 }}>
               {result.finalScore >= 9.2 ? (
-                <span>This is an <strong style={{ color: "#22c55e" }}>excellent score</strong>. Your child performed a very clean routine with only minor deductions. At {result.level}, scoring above 9.2 means they're executing at a high level. Celebrate this — it takes serious dedication to score this well.</span>
+                <span>This is an <strong style={{ color: "#22c55e" }}>excellent score</strong>. Your child performed a very clean routine with only minor deductions. At {result.level}, scoring above 9.2 means they're executing at a high level.</span>
               ) : result.finalScore >= 8.8 ? (
-                <span>This is a <strong style={{ color: "#C4982A" }}>strong, solid score</strong>. Your child showed good execution with some typical deductions that most gymnasts receive. The {safeNum(result.totalDeductions, 0).toFixed(2)} in deductions came from {safeArray(result.executionDeductions).length} identified faults — most of which are fixable with focused practice. This is a competitive score at {result.level}.</span>
+                <span>This is a <strong style={{ color: "#e8962a" }}>strong, solid score</strong>. Your child showed good execution with some typical deductions that most gymnasts receive. The {safeNum(result.totalDeductions, 0).toFixed(2)} in deductions came from {safeArray(result.executionDeductions).length} identified faults — most of which are fixable with focused practice.</span>
               ) : result.finalScore >= 8.3 ? (
-                <span>This is an <strong style={{ color: "#f59e0b" }}>average score</strong> for {result.level} — not bad at all, but there's clear room for improvement. The deductions add up from multiple small form issues. The good news: most of these are execution details (body position, landings, foot form) that improve naturally with practice and awareness.</span>
+                <span>This is an <strong style={{ color: "#ffc15a" }}>average score</strong> for {result.level} — not bad at all, but there's clear room for improvement. Most deductions come from execution details that improve naturally with awareness.</span>
               ) : (
-                <span>This score suggests there are <strong style={{ color: "#ef4444" }}>several areas that need attention</strong>. Don't be discouraged — this is normal at every level and doesn't reflect your child's effort or potential. Focus on the 2-3 biggest deductions first. Small improvements on a few skills can raise the score significantly. Talk to the coach about what to prioritize.</span>
+                <span>This score suggests there are <strong style={{ color: "#dc2626" }}>several areas that need attention</strong>. Focus on the 2-3 biggest deductions first. Small improvements on a few skills can raise the score significantly.</span>
               )}
             </div>
             <div style={{ marginTop: 10, padding: "8px 12px", borderRadius: 8, background: "rgba(255,255,255,0.03)" }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.4)", marginBottom: 4 }}>QUICK MATH FOR PARENTS</div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.4)", marginBottom: 4, fontFamily: "'Space Mono', monospace" }}>QUICK MATH</div>
               <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.7 }}>
-                Start Value ({safeNum(result.startValue, 10).toFixed(1)}) minus {safeArray(result.executionDeductions).length} deductions totaling {safeNum(result.totalDeductions, 0).toFixed(2)} = Final Score of {safeNum(result.finalScore, 0).toFixed(3)}.
-                {groupedDeds.length > 0 && ` The biggest single deduction was -${Math.max(...groupedDeds.map(d => safeNum(d.deduction, 0))).toFixed(2)} for "${safeStr(groupedDeds.reduce((a, b) => (safeNum(b.deduction, 0) > safeNum(a.deduction, 0) ? b : a))?.skill)}".`}
-                {groupedDeds.length > 2 && ` Fixing just the top 3 deductions could improve the score by approximately +${[...groupedDeds].sort((a, b) => safeNum(b.deduction, 0) - safeNum(a.deduction, 0)).slice(0, 3).reduce((s, d) => s + safeNum(d.deduction, 0), 0).toFixed(2)}.`}
+                {safeNum(result.startValue, 10).toFixed(1)} - {safeNum(result.totalDeductions, 0).toFixed(2)} = <span style={{ fontFamily: "'Space Mono', monospace", fontWeight: 700, color: scoreColor }}>{safeNum(result.finalScore, 0).toFixed(3)}</span>
+                {groupedDeds.length > 2 && <span> · Fix top 3 → <span style={{ color: "#22c55e", fontWeight: 700 }}>+{[...groupedDeds].sort((a, b) => safeNum(b.deduction, 0) - safeNum(a.deduction, 0)).slice(0, 3).reduce((s, d) => s + safeNum(d.deduction, 0), 0).toFixed(2)}</span></span>}
               </div>
             </div>
           </div>
@@ -5683,9 +5889,9 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFile, onBack, 
               </div>
             </div>
             {[...groupedDeds].sort((a, b) => safeNum(b.deduction, 0) - safeNum(a.deduction, 0)).slice(0, 3).map((d, i) => {
-              const c = d.severity === "fall" ? "#dc2626" : d.severity === "large" || d.severity === "veryLarge" ? "#ef4444" : d.severity === "medium" ? "#f59e0b" : "#22c55e";
+              const c = d.severity === "fall" ? "#dc2626" : d.severity === "large" || d.severity === "veryLarge" ? "#dc2626" : d.severity === "medium" ? "#ffc15a" : "#22c55e";
               const fixDifficulty = d.severity === "fall" ? "Hard" : d.severity === "large" || d.severity === "veryLarge" ? "Moderate" : "Quick fix";
-              const fixColor = d.severity === "fall" ? "#ef4444" : d.severity === "large" || d.severity === "veryLarge" ? "#f59e0b" : "#22c55e";
+              const fixColor = d.severity === "fall" ? "#dc2626" : d.severity === "large" || d.severity === "veryLarge" ? "#ffc15a" : "#22c55e";
               return (
                 <div key={i} style={{
                   borderRadius: 14, padding: "14px 16px", marginBottom: 8,
@@ -5763,7 +5969,7 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFile, onBack, 
                     background: "rgba(34,197,94,0.03)", border: "1px solid rgba(34,197,94,0.1)",
                   }}>
                     <div style={{ fontSize: 14, fontWeight: 700 }}>Fix: {safeStr(topDed.skill).toLowerCase()}</div>
-                    <div style={{ fontSize: 13, color: "#C4982A", fontWeight: 700, marginTop: 4 }}>
+                    <div style={{ fontSize: 13, color: "#e8962a", fontWeight: 700, marginTop: 4 }}>
                       Worth +{safeNum(topDed.deduction, 0).toFixed(2)} per routine
                     </div>
                     <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", marginTop: 8, lineHeight: 1.6 }}>
@@ -5859,7 +6065,7 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFile, onBack, 
       <div style={{ textAlign: "center", marginTop: 24, paddingTop: 16, borderTop: "1px solid rgba(255,255,255,0.04)" }}>
         <div style={{
           fontFamily: "'Georgia', serif", fontSize: 14, fontWeight: 500, letterSpacing: 3,
-          background: "linear-gradient(135deg, #C4982A, #E8C35A)", backgroundClip: "text",
+          background: "linear-gradient(135deg, #e8962a, #ffc15a)", backgroundClip: "text",
           WebkitBackgroundClip: "text", color: "transparent",
         }}>STRIVE</div>
         <div style={{ fontSize: 9, color: "rgba(255,255,255,0.15)", marginTop: 4, letterSpacing: 1 }}>
@@ -5904,7 +6110,7 @@ function DrillsScreen({ result, onBack }) {
 
   return (
     <div style={{ minHeight: "100vh", padding: "16px 18px 90px", maxWidth: 540, margin: "0 auto" }}>
-      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(196,152,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 13, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
+      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(232,150,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 13, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.5 2.5l-5 5 5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> Results
       </button>
 
@@ -5933,8 +6139,8 @@ function DrillsScreen({ result, onBack }) {
       {uniquePairs.map((pair, i) => (
         <div key={i} style={{ marginBottom: 20, animation: `fadeIn 0.3s ease-out ${i * 0.08}s both` }}>
           <div style={{
-            background: "rgba(196,152,42,0.06)", borderRadius: "12px 12px 0 0",
-            padding: "10px 16px", borderBottom: "1px solid rgba(196,152,42,0.1)",
+            background: "rgba(232,150,42,0.06)", borderRadius: "12px 12px 0 0",
+            padding: "10px 16px", borderBottom: "1px solid rgba(232,150,42,0.1)",
             display: "flex", justifyContent: "space-between", alignItems: "center",
           }}>
             <div>
@@ -5960,7 +6166,7 @@ function DrillsScreen({ result, onBack }) {
             }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 3, color: "#C4982A" }}>
+                  <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 3, color: "#e8962a" }}>
                     {drill.name}
                   </div>
                   <p style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", lineHeight: 1.6 }}>
@@ -5992,8 +6198,8 @@ function DrillsScreen({ result, onBack }) {
       ))}
 
       {/* General recommendation */}
-      <div className="card" style={{ padding: 20, marginTop: 16, borderColor: "rgba(196,152,42,0.2)" }}>
-        <h3 style={{ fontSize: 14, fontWeight: 700, color: "#C4982A", marginBottom: 10 }}>
+      <div className="card" style={{ padding: 20, marginTop: 16, borderColor: "rgba(232,150,42,0.2)" }}>
+        <h3 style={{ fontSize: 14, fontWeight: 700, color: "#e8962a", marginBottom: 10 }}>
           <Icon name="sparkle" size={14} /> Pro Tips
         </h3>
         <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", lineHeight: 1.8 }}>
@@ -6025,7 +6231,7 @@ function DeductionsScreen({ onBack, profile }) {
 
   return (
     <div style={{ minHeight: "100vh", padding: "16px 18px 90px", maxWidth: 540, margin: "0 auto" }}>
-      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(196,152,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 13, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
+      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(232,150,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 13, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.5 2.5l-5 5 5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> Dashboard
       </button>
 
@@ -6035,8 +6241,8 @@ function DeductionsScreen({ onBack, profile }) {
       </p>
 
       {/* Quick Score Calculator for Parents */}
-      <div className="card" style={{ marginBottom: 16, padding: 16, borderColor: "rgba(196,152,42,0.15)", background: "rgba(196,152,42,0.03)" }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: "#C4982A", letterSpacing: 1, marginBottom: 10 }}>QUICK SCORE CALCULATOR</div>
+      <div className="card" style={{ marginBottom: 16, padding: 16, borderColor: "rgba(232,150,42,0.15)", background: "rgba(232,150,42,0.03)" }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: "#e8962a", letterSpacing: 1, marginBottom: 10 }}>QUICK SCORE CALCULATOR</div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <div style={{ textAlign: "center" }}>
             <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", marginBottom: 4 }}>START</div>
@@ -6066,7 +6272,7 @@ function DeductionsScreen({ onBack, profile }) {
             <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", marginBottom: 4 }}>SCORE</div>
             <div style={{
               fontSize: 22, fontWeight: 900, fontFamily: "'Space Mono', monospace",
-              color: calcResult >= 9.0 ? "#22c55e" : calcResult >= 8.0 ? "#f59e0b" : "#ef4444",
+              color: calcResult >= 9.0 ? "#22c55e" : calcResult >= 8.0 ? "#ffc15a" : "#dc2626",
               padding: "6px 0",
             }}>
               {calcResult.toFixed(2)}
@@ -6099,8 +6305,8 @@ function DeductionsScreen({ onBack, profile }) {
             style={{
               padding: "8px 16px", borderRadius: 8, border: "none", cursor: "pointer",
               fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 12,
-              background: activeCategory === cat ? "#C4982A" : "rgba(255,255,255,0.06)",
-              color: activeCategory === cat ? "#0B1024" : "rgba(255,255,255,0.5)",
+              background: activeCategory === cat ? "#e8962a" : "rgba(255,255,255,0.06)",
+              color: activeCategory === cat ? "#070c16" : "rgba(255,255,255,0.5)",
               whiteSpace: "nowrap", transition: "all 0.2s", textTransform: "capitalize",
             }}
           >
@@ -6117,8 +6323,8 @@ function DeductionsScreen({ onBack, profile }) {
       {/* Deduction List */}
       {DEDUCTION_CATEGORIES[activeCategory]?.map((ded, i) => {
         const severityColor = ded.category === "fall" ? "#dc2626" :
-          ded.category.includes("large") ? "#f97316" :
-          ded.category === "medium" || ded.category === "small-medium" ? "#f59e0b" : "#22c55e";
+          ded.category.includes("large") ? "#e06820" :
+          ded.category === "medium" || ded.category === "small-medium" ? "#ffc15a" : "#22c55e";
 
         return (
           <div key={i} className="card" style={{
@@ -6161,7 +6367,7 @@ function SettingsScreen({ profile, onSave, onBack, onReset }) {
 
   return (
     <div style={{ minHeight: "100vh", padding: "16px 18px 90px", maxWidth: 540, margin: "0 auto" }}>
-      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(196,152,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 13, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
+      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(232,150,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 13, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.5 2.5l-5 5 5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> Dashboard
       </button>
 
@@ -6216,8 +6422,8 @@ function SettingsScreen({ profile, onSave, onBack, onReset }) {
                 style={{
                   padding: "8px 16px", borderRadius: 8, border: "none", cursor: "pointer",
                   fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 13,
-                  background: editProfile.primaryEvents?.includes(e) ? "#C4982A" : "rgba(255,255,255,0.06)",
-                  color: editProfile.primaryEvents?.includes(e) ? "#0B1024" : "rgba(255,255,255,0.5)",
+                  background: editProfile.primaryEvents?.includes(e) ? "#e8962a" : "rgba(255,255,255,0.06)",
+                  color: editProfile.primaryEvents?.includes(e) ? "#070c16" : "rgba(255,255,255,0.5)",
                 }}
               >
                 {e}
@@ -6271,14 +6477,14 @@ function SettingsScreen({ profile, onSave, onBack, onReset }) {
           <div style={{
             display: "flex", alignItems: "center", gap: 8,
             padding: "10px 14px", borderRadius: 10, marginBottom: 12,
-            background: "rgba(245,158,11,0.04)", border: "1px solid rgba(245,158,11,0.1)",
+            background: "rgba(255,193,90,0.04)", border: "1px solid rgba(255,193,90,0.1)",
           }}>
-            <span style={{ color: "#f59e0b", fontSize: 14 }}>!</span>
-            <span style={{ fontSize: 12, color: "rgba(245,158,11,0.8)" }}>No API key — add one below to enable analysis</span>
+            <span style={{ color: "#ffc15a", fontSize: 14 }}>!</span>
+            <span style={{ fontSize: 12, color: "rgba(255,193,90,0.8)" }}>No API key — add one below to enable analysis</span>
           </div>
         )}
         <p style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginBottom: 10, lineHeight: 1.5 }}>
-          Get a free API key at <span style={{ color: "#C4982A", cursor: "pointer" }} onClick={() => window.open("https://aistudio.google.com/apikey", "_blank")}>aistudio.google.com/apikey</span>. Create one, copy it, paste below.
+          Get a free API key at <span style={{ color: "#e8962a", cursor: "pointer" }} onClick={() => window.open("https://aistudio.google.com/apikey", "_blank")}>aistudio.google.com/apikey</span>. Create one, copy it, paste below.
         </p>
         <div style={{ display: "flex", gap: 8 }}>
           <input
@@ -6352,7 +6558,7 @@ function SettingsScreen({ profile, onSave, onBack, onReset }) {
         <div style={{ textAlign: "center", marginBottom: 24 }}>
           <div style={{
             fontFamily: "'Georgia', serif", fontSize: 18, fontWeight: 500, letterSpacing: 4,
-            background: "linear-gradient(135deg, #C4982A, #E8C35A)", backgroundClip: "text",
+            background: "linear-gradient(135deg, #e8962a, #ffc15a)", backgroundClip: "text",
             WebkitBackgroundClip: "text", color: "transparent", marginBottom: 6,
           }}>STRIVE</div>
           <div style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", letterSpacing: 1, marginBottom: 12 }}>
@@ -6368,14 +6574,14 @@ function SettingsScreen({ profile, onSave, onBack, onReset }) {
 
         {!showConfirm ? (
           <button onClick={() => setShowConfirm(true)} style={{
-            width: "100%", padding: 14, borderRadius: 12, border: "1px solid rgba(239,68,68,0.3)",
-            background: "rgba(239,68,68,0.05)", color: "#ef4444", cursor: "pointer",
+            width: "100%", padding: 14, borderRadius: 12, border: "1px solid rgba(220,38,38,0.3)",
+            background: "rgba(220,38,38,0.05)", color: "#dc2626", cursor: "pointer",
             fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 14,
           }}>
             Reset Account & Data
           </button>
         ) : (
-          <div className="card" style={{ borderColor: "rgba(239,68,68,0.3)", padding: 20 }}>
+          <div className="card" style={{ borderColor: "rgba(220,38,38,0.3)", padding: 20 }}>
             <p style={{ fontSize: 14, marginBottom: 16, color: "rgba(255,255,255,0.7)" }}>
               This will delete your profile and all analysis history. Are you sure?
             </p>
@@ -6383,7 +6589,7 @@ function SettingsScreen({ profile, onSave, onBack, onReset }) {
               <button className="btn-outline" onClick={() => setShowConfirm(false)} style={{ flex: 1 }}>Cancel</button>
               <button onClick={onReset} style={{
                 flex: 1, padding: 12, borderRadius: 12, border: "none",
-                background: "#ef4444", color: "white", cursor: "pointer",
+                background: "#dc2626", color: "white", cursor: "pointer",
                 fontFamily: "'Outfit', sans-serif", fontWeight: 700,
               }}>
                 Delete Everything
@@ -6410,7 +6616,7 @@ function WhatIfSimulator({ result }) {
     <div style={{ animation: "fadeIn 0.4s ease-out" }}>
       <div className="card" style={{ padding: 20, marginBottom: 16, textAlign: "center" }}>
         <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: 4 }}>IF YOU FIXED THE SELECTED DEDUCTIONS</div>
-        <div style={{ fontSize: 48, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: projectedScore >= 9.0 ? "#22c55e" : "#f59e0b" }}>
+        <div style={{ fontSize: 48, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: projectedScore >= 9.0 ? "#22c55e" : "#ffc15a" }}>
           {projectedScore.toFixed(3)}
         </div>
         {improvement > 0 && (
@@ -6424,7 +6630,7 @@ function WhatIfSimulator({ result }) {
       </div>
 
       {deds.map((d, i) => {
-        const c = DEDUCTION_SCALE[d.severity]?.color || "#f59e0b";
+        const c = DEDUCTION_SCALE[d.severity]?.color || "#ffc15a";
         const isOff = removed[i];
         return (
           <div key={i} onClick={() => toggle(i)} style={{
@@ -6486,7 +6692,7 @@ function ProgressScreen({ history, profile, onBack }) {
 
   return (
     <div style={{ minHeight: "100vh", padding: "16px 18px 90px", maxWidth: 540, margin: "0 auto" }}>
-      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(196,152,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 13, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
+      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(232,150,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 13, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.5 2.5l-5 5 5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> Dashboard
       </button>
       <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Progress Tracking</h2>
@@ -6510,14 +6716,14 @@ function ProgressScreen({ history, profile, onBack }) {
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
                   <XAxis dataKey="name" tick={{ fill: "rgba(255,255,255,0.3)", fontSize: 10 }} />
                   <YAxis domain={[7, 10]} tick={{ fill: "rgba(255,255,255,0.3)", fontSize: 10 }} />
-                  <Tooltip contentStyle={{ background: "#111631", border: "1px solid rgba(196,152,42,0.2)", borderRadius: 8, color: "#e2e8f0", fontSize: 12 }} />
-                  <Line type="monotone" dataKey="score" stroke="#C4982A" strokeWidth={2} dot={{ fill: "#C4982A", r: 4 }} />
+                  <Tooltip contentStyle={{ background: "#0d1422", border: "1px solid rgba(232,150,42,0.2)", borderRadius: 8, color: "#e2e8f0", fontSize: 12 }} />
+                  <Line type="monotone" dataKey="score" stroke="#e8962a" strokeWidth={2} dot={{ fill: "#e8962a", r: 4 }} />
                 </LineChart>
               </ResponsiveContainer>
             ) : (
               <div style={{ padding: 20, textAlign: "center", color: "rgba(255,255,255,0.3)", fontSize: 13 }}>
                 {chartData.map((d, i) => (
-                  <span key={i} style={{ fontFamily: "'Space Mono', monospace", marginRight: 12 }}>{d.name}: <span style={{ color: "#C4982A" }}>{d.score?.toFixed(3)}</span></span>
+                  <span key={i} style={{ fontFamily: "'Space Mono', monospace", marginRight: 12 }}>{d.name}: <span style={{ color: "#e8962a" }}>{d.score?.toFixed(3)}</span></span>
                 ))}
               </div>
             )}
@@ -6530,10 +6736,10 @@ function ProgressScreen({ history, profile, onBack }) {
               {Object.entries(bests).map(([evt, score]) => (
                 <div key={evt} style={{
                   padding: "12px 14px", borderRadius: 10,
-                  background: "rgba(196,152,42,0.06)", border: "1px solid rgba(196,152,42,0.1)",
+                  background: "rgba(232,150,42,0.06)", border: "1px solid rgba(232,150,42,0.1)",
                 }}>
                   <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>{evt}</div>
-                  <div style={{ fontSize: 22, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: "#C4982A" }}>
+                  <div style={{ fontSize: 22, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: "#e8962a" }}>
                     {score?.toFixed(3)}
                   </div>
                 </div>
@@ -6551,7 +6757,7 @@ function ProgressScreen({ history, profile, onBack }) {
                 <div key={evt} style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
                   <span style={{ fontSize: 13, fontWeight: 600, flex: 1 }}>{evt}</span>
                   <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, color: "rgba(255,255,255,0.5)" }}>{count} analyzed</span>
-                  {count > 0 && <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 14, fontWeight: 700, color: "#C4982A" }}>{avg.toFixed(3)} avg</span>}
+                  {count > 0 && <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 14, fontWeight: 700, color: "#e8962a" }}>{avg.toFixed(3)} avg</span>}
                 </div>
               );
             })}
@@ -6593,7 +6799,7 @@ function MeetsScreen({ history, savedResults, profile, onBack, onViewResult }) {
 
   return (
     <div style={{ minHeight: "100vh", padding: "16px 18px 90px", maxWidth: 540, margin: "0 auto" }}>
-      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(196,152,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 13, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
+      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(232,150,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 13, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.5 2.5l-5 5 5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> Dashboard
       </button>
       <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Competition History</h2>
@@ -6612,7 +6818,7 @@ function MeetsScreen({ history, savedResults, profile, onBack, onViewResult }) {
           </div>
           <div className="card" style={{ textAlign: "center", padding: 14 }}>
             <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", letterSpacing: 0.5 }}>AVERAGE</div>
-            <div style={{ fontSize: 20, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: "#C4982A", marginTop: 4 }}>
+            <div style={{ fontSize: 20, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: "#e8962a", marginTop: 4 }}>
               {avgScore.toFixed(1)}
             </div>
           </div>
@@ -6640,7 +6846,7 @@ function MeetsScreen({ history, savedResults, profile, onBack, onViewResult }) {
           return (
             <div key={mi} className="card" style={{ marginBottom: 12, padding: 0, overflow: "hidden", animation: `fadeIn 0.3s ease-out ${mi * 0.08}s both` }}>
               {/* Meet header */}
-              <div style={{ padding: "14px 16px", background: "rgba(196,152,42,0.04)", borderBottom: "1px solid rgba(196,152,42,0.08)" }}>
+              <div style={{ padding: "14px 16px", background: "rgba(232,150,42,0.04)", borderBottom: "1px solid rgba(232,150,42,0.08)" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div>
                     <div style={{ fontWeight: 700, fontSize: 15 }}>{meet.name || key}</div>
@@ -6651,7 +6857,7 @@ function MeetsScreen({ history, savedResults, profile, onBack, onViewResult }) {
                   {meet.entries.length > 1 && (
                     <div style={{ textAlign: "right" }}>
                       <div style={{ fontSize: 9, color: "rgba(255,255,255,0.25)" }}>ALL-AROUND</div>
-                      <div style={{ fontSize: 16, fontWeight: 800, fontFamily: "'Space Mono', monospace", color: "#C4982A" }}>
+                      <div style={{ fontSize: 16, fontWeight: 800, fontFamily: "'Space Mono', monospace", color: "#e8962a" }}>
                         {aa.toFixed(2)}
                       </div>
                     </div>
@@ -6662,7 +6868,7 @@ function MeetsScreen({ history, savedResults, profile, onBack, onViewResult }) {
               {meet.entries.map((h, i) => {
                 const hasR = savedResults && savedResults[h.id];
                 const sc = h.score || 0;
-                const scColor = sc >= 9.0 ? "#22c55e" : sc >= 8.0 ? "#f59e0b" : sc > 0 ? "#ef4444" : "rgba(255,255,255,0.3)";
+                const scColor = sc >= 9.0 ? "#22c55e" : sc >= 8.0 ? "#ffc15a" : sc > 0 ? "#dc2626" : "rgba(255,255,255,0.3)";
                 return (
                   <div key={i}
                     onClick={() => hasR && onViewResult(savedResults[h.id])}
@@ -6674,7 +6880,7 @@ function MeetsScreen({ history, savedResults, profile, onBack, onViewResult }) {
                     }}>
                     <div>
                       <div style={{ fontSize: 13, fontWeight: 600 }}>{h.event}</div>
-                      {hasR && <div style={{ fontSize: 10, color: "#C4982A" }}>tap to review →</div>}
+                      {hasR && <div style={{ fontSize: 10, color: "#e8962a" }}>tap to review →</div>}
                     </div>
                     <div style={{ textAlign: "right" }}>
                       <div style={{ fontWeight: 800, fontSize: 17, fontFamily: "'Space Mono', monospace", color: scColor }}>
@@ -6706,7 +6912,7 @@ function MentalTrainingScreen({ profile, onBack }) {
 
   return (
     <div style={{ minHeight: "100vh", padding: "16px 18px 90px", maxWidth: 540, margin: "0 auto" }}>
-      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(196,152,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 13, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
+      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(232,150,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 13, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.5 2.5l-5 5 5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> Dashboard
       </button>
       <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}><Icon name="brain" size={24} /> Mental Training</h2>
@@ -6718,16 +6924,16 @@ function MentalTrainingScreen({ profile, onBack }) {
           <button key={s.id} onClick={() => setActiveSection(s.id)} style={{
             flex: 1, padding: "8px 4px", borderRadius: 10, border: "none", cursor: "pointer",
             fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 11, whiteSpace: "nowrap",
-            background: activeSection === s.id ? "linear-gradient(135deg, #C4982A, #E8C35A)" : "transparent",
-            color: activeSection === s.id ? "#0B1024" : "rgba(255,255,255,0.4)",
+            background: activeSection === s.id ? "linear-gradient(135deg, #e8962a, #ffc15a)" : "transparent",
+            color: activeSection === s.id ? "#070c16" : "rgba(255,255,255,0.4)",
           }}>{s.label}</button>
         ))}
       </div>
 
       {activeSection === "overview" && (
         <div style={{ animation: "fadeIn 0.4s ease-out" }}>
-          <div className="card" style={{ padding: 20, marginBottom: 12, borderColor: "rgba(196,152,42,0.15)" }}>
-            <h3 style={{ fontSize: 15, fontWeight: 700, color: "#C4982A", marginBottom: 10 }}>Why Mental Training Matters</h3>
+          <div className="card" style={{ padding: 20, marginBottom: 12, borderColor: "rgba(232,150,42,0.15)" }}>
+            <h3 style={{ fontSize: 15, fontWeight: 700, color: "#e8962a", marginBottom: 10 }}>Why Mental Training Matters</h3>
             <p style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", lineHeight: 1.8 }}>
               The difference between a gymnast who scores 8.5 and one who scores 9.2 is rarely just physical ability. It's mental focus, confidence, and the ability to perform under pressure. Every elite gymnast — from Simone Biles to your child's favorite Level 10 at the gym — uses mental training techniques daily.
             </p>
@@ -6749,9 +6955,9 @@ function MentalTrainingScreen({ profile, onBack }) {
               </div>
             ))}
           </div>
-          <div className="card" style={{ padding: 16, background: "rgba(196,152,42,0.04)", borderColor: "rgba(196,152,42,0.1)" }}>
+          <div className="card" style={{ padding: 16, background: "rgba(232,150,42,0.04)", borderColor: "rgba(232,150,42,0.1)" }}>
             <p style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: 1.7, fontStyle: "italic" }}>
-              <strong style={{ color: "#C4982A" }}>Parent tip:</strong> You can practice these with your child in the car on the way to the gym. Even 5 minutes of visualization before practice makes a measurable difference.
+              <strong style={{ color: "#e8962a" }}>Parent tip:</strong> You can practice these with your child in the car on the way to the gym. Even 5 minutes of visualization before practice makes a measurable difference.
             </p>
           </div>
         </div>
@@ -6791,10 +6997,10 @@ function MentalTrainingScreen({ profile, onBack }) {
                 <h3 style={{ fontSize: 14, fontWeight: 700 }}>👁 {ex.title}</h3>
                 <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700, background: "rgba(255,255,255,0.06)", padding: "3px 8px", borderRadius: 5, color: "rgba(255,255,255,0.4)" }}>{ex.time}</span>
               </div>
-              <div style={{ fontSize: 11, color: "#C4982A", marginBottom: 8 }}>Best time: {ex.when}</div>
+              <div style={{ fontSize: 11, color: "#e8962a", marginBottom: 8 }}>Best time: {ex.when}</div>
               {ex.steps.map((step, j) => (
                 <div key={j} style={{ display: "flex", gap: 8, marginBottom: 6 }}>
-                  <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700, color: "rgba(196,152,42,0.5)", minWidth: 18 }}>{j+1}.</span>
+                  <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700, color: "rgba(232,150,42,0.5)", minWidth: 18 }}>{j+1}.</span>
                   <span style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", lineHeight: 1.6 }}>{step}</span>
                 </div>
               ))}
@@ -6817,7 +7023,7 @@ function MentalTrainingScreen({ profile, onBack }) {
               <div style={{ padding: "10px 12px", borderRadius: 8, background: "rgba(59,130,246,0.06)", border: "1px solid rgba(59,130,246,0.12)", marginBottom: 8 }}>
                 <div style={{ fontSize: 13, color: "rgba(147,197,253,0.9)", lineHeight: 1.7 }}>{ex.steps}</div>
               </div>
-              <div style={{ fontSize: 11, color: "#C4982A" }}>When to use: {ex.when}</div>
+              <div style={{ fontSize: 11, color: "#e8962a" }}>When to use: {ex.when}</div>
             </div>
           ))}
         </div>
@@ -6840,7 +7046,7 @@ function MentalTrainingScreen({ profile, onBack }) {
             ].map((a, i) => (
               <div key={i} style={{
                 padding: "8px 12px", borderRadius: 8, marginBottom: 4,
-                background: "rgba(196,152,42,0.04)", borderLeft: "3px solid rgba(196,152,42,0.2)",
+                background: "rgba(232,150,42,0.04)", borderLeft: "3px solid rgba(232,150,42,0.2)",
                 fontSize: 13, color: "rgba(255,255,255,0.6)", lineHeight: 1.5, fontStyle: "italic",
               }}>"{a}"</div>
             ))}
@@ -6874,11 +7080,11 @@ function MentalTrainingScreen({ profile, onBack }) {
             {[
               { time: "60 min before", title: "Arrival", desc: "Check in, find your team area, use the bathroom, get leotard on. No rushing.", color: "rgba(59,130,246,0.8)" },
               { time: "45 min before", title: "Light Warm-Up", desc: "Jog, stretch, handstands, basic skills only. NO new skills on meet day. Keep it familiar.", color: "rgba(59,130,246,0.6)" },
-              { time: "30 min before", title: "Mental Prep", desc: "This is where visualization and breathing happen. Review your routine in your mind 2-3 times. Power pose.", color: "rgba(196,152,42,0.8)" },
-              { time: "15 min before", title: "March-In", desc: "The team enters together. Wave to family. This is the exciting part! Soak it in.", color: "rgba(196,152,42,0.6)" },
+              { time: "30 min before", title: "Mental Prep", desc: "This is where visualization and breathing happen. Review your routine in your mind 2-3 times. Power pose.", color: "rgba(232,150,42,0.8)" },
+              { time: "15 min before", title: "March-In", desc: "The team enters together. Wave to family. This is the exciting part! Soak it in.", color: "rgba(232,150,42,0.6)" },
               { time: "~10 min", title: "Open Warm-Up", desc: "Brief touch on each event in your rotation order. 1-2 skills max per event. Get a feel, don't exhaust.", color: "rgba(34,197,94,0.8)" },
               { time: "Competition", title: "Rotation 1-4", desc: "Each event takes ~20-30 min per rotation. You'll warm up, compete, then rotate. Stay focused between events.", color: "rgba(34,197,94,0.6)" },
-              { time: "After", title: "Awards", desc: "Individual event awards, All-Around awards, team awards. Celebrate every achievement — even small improvements.", color: "rgba(196,152,42,0.8)" },
+              { time: "After", title: "Awards", desc: "Individual event awards, All-Around awards, team awards. Celebrate every achievement — even small improvements.", color: "rgba(232,150,42,0.8)" },
             ].map((step, i) => (
               <div key={i} style={{ display: "flex", gap: 12, marginBottom: 10 }}>
                 <div style={{ width: 3, flexShrink: 0, background: step.color, borderRadius: 2 }} />
@@ -6890,8 +7096,8 @@ function MentalTrainingScreen({ profile, onBack }) {
               </div>
             ))}
           </div>
-          <div className="card" style={{ padding: 16, background: "rgba(239,68,68,0.04)", borderColor: "rgba(239,68,68,0.1)" }}>
-            <h3 style={{ fontSize: 13, fontWeight: 700, color: "#ef4444", marginBottom: 8 }}>⚠ Common Meet Day Mistakes (Parents)</h3>
+          <div className="card" style={{ padding: 16, background: "rgba(220,38,38,0.04)", borderColor: "rgba(220,38,38,0.1)" }}>
+            <h3 style={{ fontSize: 13, fontWeight: 700, color: "#dc2626", marginBottom: 8 }}>⚠ Common Meet Day Mistakes (Parents)</h3>
             {[
               "Coaching from the stands — your child can hear you and it adds pressure",
               "Comparing scores to other gymnasts out loud",
@@ -6899,7 +7105,7 @@ function MentalTrainingScreen({ profile, onBack }) {
               "Skipping breakfast or eating heavy food before competing",
               "Arriving late and rushing through warm-up",
             ].map((m, i) => (
-              <div key={i} style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.6, marginBottom: 4, paddingLeft: 12, borderLeft: "2px solid rgba(239,68,68,0.2)" }}>{m}</div>
+              <div key={i} style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.6, marginBottom: 4, paddingLeft: 12, borderLeft: "2px solid rgba(220,38,38,0.2)" }}>{m}</div>
             ))}
           </div>
         </div>
@@ -6907,8 +7113,8 @@ function MentalTrainingScreen({ profile, onBack }) {
 
       {activeSection === "parents" && (
         <div style={{ animation: "fadeIn 0.4s ease-out" }}>
-          <div className="card" style={{ padding: 20, marginBottom: 12, borderColor: "rgba(196,152,42,0.15)" }}>
-            <h3 style={{ fontSize: 15, fontWeight: 700, color: "#C4982A", marginBottom: 10 }}>Your Stress Matters Too</h3>
+          <div className="card" style={{ padding: 20, marginBottom: 12, borderColor: "rgba(232,150,42,0.15)" }}>
+            <h3 style={{ fontSize: 15, fontWeight: 700, color: "#e8962a", marginBottom: 10 }}>Your Stress Matters Too</h3>
             <p style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", lineHeight: 1.8 }}>
               Watching your child compete is one of the most stressful experiences in youth sports. Your heart pounds, your palms sweat, and a wobble on beam feels like it's happening to YOU. This is completely normal — and there are proven techniques to manage it so you can be the calm, supportive presence your child needs.
             </p>
@@ -6945,7 +7151,7 @@ function MentalTrainingScreen({ profile, onBack }) {
               { trap: "Making gymnastics their entire identity", why: "They're a kid who does gymnastics, not 'a gymnast who goes to school.' When sport = identity, pressure becomes unbearable." },
             ].map((item, i) => (
               <div key={i} style={{ marginBottom: 10 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#ef4444", marginBottom: 2 }}>{item.trap}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#dc2626", marginBottom: 2 }}>{item.trap}</div>
                 <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>{item.why}</div>
               </div>
             ))}
@@ -6965,9 +7171,9 @@ function MentalTrainingScreen({ profile, onBack }) {
             ))}
           </div>
 
-          <div className="card" style={{ padding: 14, background: "rgba(196,152,42,0.03)", borderColor: "rgba(196,152,42,0.1)" }}>
+          <div className="card" style={{ padding: 14, background: "rgba(232,150,42,0.03)", borderColor: "rgba(232,150,42,0.1)" }}>
             <p style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: 1.7, fontStyle: "italic" }}>
-              <strong style={{ color: "#C4982A" }}>Remember:</strong> The average competitive gymnastics career lasts 4-8 years. The relationship with your child lasts forever. Protect the relationship — the scores will take care of themselves.
+              <strong style={{ color: "#e8962a" }}>Remember:</strong> The average competitive gymnastics career lasts 4-8 years. The relationship with your child lasts forever. Protect the relationship — the scores will take care of themselves.
             </p>
           </div>
         </div>
@@ -7012,7 +7218,7 @@ function SeasonGoalsScreen({ profile, history, onBack }) {
 
   return (
     <div style={{ minHeight: "100vh", padding: "16px 18px 90px", maxWidth: 540, margin: "0 auto" }}>
-      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(196,152,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 13, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
+      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(232,150,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 13, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.5 2.5l-5 5 5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> Dashboard
       </button>
       <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}><Icon name="target" size={24} /> Season Goals</h2>
@@ -7059,12 +7265,12 @@ function SeasonGoalsScreen({ profile, history, onBack }) {
               <div>
                 <div style={{ fontSize: 14, fontWeight: 700 }}>{goal.event}</div>
                 <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>
-                  Current best: <span style={{ color: "#C4982A", fontFamily: "'Space Mono', monospace", fontWeight: 700 }}>{current ? current.toFixed(3) : "—"}</span>
+                  Current best: <span style={{ color: "#e8962a", fontFamily: "'Space Mono', monospace", fontWeight: 700 }}>{current ? current.toFixed(3) : "—"}</span>
                 </div>
               </div>
               <div style={{ textAlign: "right" }}>
                 <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>TARGET</div>
-                <div style={{ fontSize: 22, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: achieved ? "#22c55e" : "#C4982A" }}>
+                <div style={{ fontSize: 22, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: achieved ? "#22c55e" : "#e8962a" }}>
                   {goal.target.toFixed(3)}
                 </div>
               </div>
@@ -7074,7 +7280,7 @@ function SeasonGoalsScreen({ profile, history, onBack }) {
               <div style={{
                 position: "absolute", top: 0, left: 0, bottom: 0, borderRadius: 4,
                 width: `${progress}%`, transition: "width 0.5s ease-out",
-                background: achieved ? "linear-gradient(90deg, #22c55e, #C4982A)" : "linear-gradient(90deg, #C4982A, #E8C35A)",
+                background: achieved ? "linear-gradient(90deg, #22c55e, #e8962a)" : "linear-gradient(90deg, #e8962a, #ffc15a)",
               }} />
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -7090,9 +7296,9 @@ function SeasonGoalsScreen({ profile, history, onBack }) {
       })}
 
       {/* Tip */}
-      <div className="card" style={{ padding: 14, marginTop: 12, background: "rgba(196,152,42,0.03)", borderColor: "rgba(196,152,42,0.1)" }}>
+      <div className="card" style={{ padding: 14, marginTop: 12, background: "rgba(232,150,42,0.03)", borderColor: "rgba(232,150,42,0.1)" }}>
         <p style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: 1.7, fontStyle: "italic" }}>
-          <strong style={{ color: "#C4982A" }}>Setting good goals:</strong> Aim for 0.2-0.4 improvement per season on each event. That might sound small, but in gymnastics scoring, improving 0.3 on every event means a 1.2 improvement in All-Around — that's the difference between 5th place and 1st.
+          <strong style={{ color: "#e8962a" }}>Setting good goals:</strong> Aim for 0.2-0.4 improvement per season on each event. That might sound small, but in gymnastics scoring, improving 0.3 on every event means a 1.2 improvement in All-Around — that's the difference between 5th place and 1st.
         </p>
       </div>
     </div>
@@ -7251,7 +7457,7 @@ function BodyHeatmap({ deductions }) {
           {/* Deduction amounts on hotspots */}
           {activeRegions.map(([key, r]) => {
             const intensity = r.total / maxTotal;
-            const color = intensity > 0.6 ? "#ef4444" : intensity > 0.3 ? "#f59e0b" : "#22c55e";
+            const color = intensity > 0.6 ? "#dc2626" : intensity > 0.3 ? "#ffc15a" : "#22c55e";
             const labelPos = key === "elbows" ? { x: 242, y: 134 }
               : key === "wrists" ? { x: 248, y: 189 }
               : key === "knees" ? { x: 210, y: 252 }
@@ -7276,7 +7482,7 @@ function BodyHeatmap({ deductions }) {
             .sort(([, a], [, b]) => b.total - a.total)
             .map(([key, r]) => {
               const intensity = r.total / maxTotal;
-              const color = intensity > 0.6 ? "#ef4444" : intensity > 0.3 ? "#f59e0b" : "#22c55e";
+              const color = intensity > 0.6 ? "#dc2626" : intensity > 0.3 ? "#ffc15a" : "#22c55e";
               return (
                 <div key={key} style={{ marginBottom: 8 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 2 }}>
@@ -7336,7 +7542,7 @@ function DeductionTimeline({ deductions, duration }) {
       <div style={{ display: "flex", gap: 2, alignItems: "flex-end", height: 40 }}>
         {buckets.map((val, i) => {
           const intensity = val / maxBucket;
-          const barColor = intensity > 0.7 ? "#ef4444" : intensity > 0.4 ? "#f59e0b" : intensity > 0 ? "#22c55e" : "rgba(255,255,255,0.06)";
+          const barColor = intensity > 0.7 ? "#dc2626" : intensity > 0.4 ? "#ffc15a" : intensity > 0 ? "#22c55e" : "rgba(255,255,255,0.06)";
           const barHeight = val > 0 ? Math.max(6, intensity * 36) : 4;
           const startSec = Math.round(i * bucketSize);
           const endSec = Math.round((i + 1) * bucketSize);
@@ -7360,8 +7566,8 @@ function DeductionTimeline({ deductions, duration }) {
       </div>
       <div style={{ display: "flex", gap: 12, marginTop: 6, justifyContent: "center" }}>
         <span style={{ fontSize: 9, color: "rgba(255,255,255,0.3)" }}><span style={{ display: "inline-block", width: 8, height: 8, borderRadius: 2, background: "#22c55e", marginRight: 3, verticalAlign: "middle" }} />Minor</span>
-        <span style={{ fontSize: 9, color: "rgba(255,255,255,0.3)" }}><span style={{ display: "inline-block", width: 8, height: 8, borderRadius: 2, background: "#f59e0b", marginRight: 3, verticalAlign: "middle" }} />Moderate</span>
-        <span style={{ fontSize: 9, color: "rgba(255,255,255,0.3)" }}><span style={{ display: "inline-block", width: 8, height: 8, borderRadius: 2, background: "#ef4444", marginRight: 3, verticalAlign: "middle" }} />Heavy</span>
+        <span style={{ fontSize: 9, color: "rgba(255,255,255,0.3)" }}><span style={{ display: "inline-block", width: 8, height: 8, borderRadius: 2, background: "#ffc15a", marginRight: 3, verticalAlign: "middle" }} />Moderate</span>
+        <span style={{ fontSize: 9, color: "rgba(255,255,255,0.3)" }}><span style={{ display: "inline-block", width: 8, height: 8, borderRadius: 2, background: "#dc2626", marginRight: 3, verticalAlign: "middle" }} />Heavy</span>
       </div>
     </div>
   );
@@ -7414,7 +7620,7 @@ function DeductionsTabContent({ result, frames }) {
 
         {/* Deduction rows */}
         {result.executionDeductions?.map((d, i) => {
-          const c = DEDUCTION_SCALE[d.severity]?.color || "#f59e0b";
+          const c = DEDUCTION_SCALE[d.severity]?.color || "#ffc15a";
           const isExpanded = expandedIdx === i;
           const frame = isExpanded ? getFrameForDeduction(d) : null;
           return (
@@ -7438,12 +7644,12 @@ function DeductionsTabContent({ result, frames }) {
                     {d.confidence != null && (
                       <span style={{
                         fontSize: 8, padding: "1px 5px", borderRadius: 3, fontWeight: 700,
-                        background: d.confidence >= 0.8 ? "rgba(34,197,94,0.12)" : d.confidence >= 0.6 ? "rgba(245,158,11,0.12)" : "rgba(239,68,68,0.12)",
-                        color: d.confidence >= 0.8 ? "#22c55e" : d.confidence >= 0.6 ? "#f59e0b" : "#ef4444",
+                        background: d.confidence >= 0.8 ? "rgba(34,197,94,0.12)" : d.confidence >= 0.6 ? "rgba(255,193,90,0.12)" : "rgba(220,38,38,0.12)",
+                        color: d.confidence >= 0.8 ? "#22c55e" : d.confidence >= 0.6 ? "#ffc15a" : "#dc2626",
                       }}>{Math.round(d.confidence * 100)}% conf</span>
                     )}
                     {d.lowConfidence && (
-                      <span style={{ fontSize: 8, padding: "1px 5px", borderRadius: 3, background: "rgba(239,68,68,0.12)", color: "#ef4444", fontWeight: 600, fontStyle: "italic" }}>LOW CONF</span>
+                      <span style={{ fontSize: 8, padding: "1px 5px", borderRadius: 3, background: "rgba(220,38,38,0.12)", color: "#dc2626", fontWeight: 600, fontStyle: "italic" }}>LOW CONF</span>
                     )}
                   </div>
                 </div>
@@ -7504,8 +7710,8 @@ function DeductionsTabContent({ result, frames }) {
 
       {/* Math breakdown */}
       <div style={{
-        background: "linear-gradient(135deg, rgba(196,152,42,0.06), rgba(196,152,42,0.02))",
-        border: "1px solid rgba(196,152,42,0.15)", borderRadius: 12,
+        background: "linear-gradient(135deg, rgba(232,150,42,0.06), rgba(232,150,42,0.02))",
+        border: "1px solid rgba(232,150,42,0.15)", borderRadius: 12,
         padding: 16, marginTop: 4,
       }}>
         <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: 1, marginBottom: 10 }}>SCORE MATH</div>
@@ -7513,26 +7719,26 @@ function DeductionsTabContent({ result, frames }) {
           {safeNum(result.executionDeductionsTotal, 0) > 0 && (
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span style={{ fontSize: 12, color: "rgba(255,255,255,0.6)" }}>Execution ({result.executionDeductions?.filter(d => d.category !== "artistry").length || 0} deductions)</span>
-              <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 13, fontWeight: 700, color: "#ef4444" }}>-{safeNum(result.executionDeductionsTotal, 0).toFixed(3)}</span>
+              <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 13, fontWeight: 700, color: "#dc2626" }}>-{safeNum(result.executionDeductionsTotal, 0).toFixed(3)}</span>
             </div>
           )}
           {safeNum(result.artistryDeductionsTotal, 0) > 0 && (
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span style={{ fontSize: 12, color: "rgba(255,255,255,0.6)" }}>Artistry ({result.executionDeductions?.filter(d => d.category === "artistry").length || 0} deductions)</span>
-              <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 13, fontWeight: 700, color: "#ef4444" }}>-{safeNum(result.artistryDeductionsTotal, 0).toFixed(3)}</span>
+              <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 13, fontWeight: 700, color: "#dc2626" }}>-{safeNum(result.artistryDeductionsTotal, 0).toFixed(3)}</span>
             </div>
           )}
           <div style={{ height: 1, background: "rgba(255,255,255,0.08)", margin: "4px 0" }} />
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.8)" }}>Total Deductions ({result.executionDeductions?.length || 0} items)</span>
-            <span style={{ fontFamily: "'Space Mono', monospace", fontWeight: 900, fontSize: 16, color: "#ef4444" }}>-{safeNum(result.totalDeductions, 0).toFixed(3)}</span>
+            <span style={{ fontFamily: "'Space Mono', monospace", fontWeight: 900, fontSize: 16, color: "#dc2626" }}>-{safeNum(result.totalDeductions, 0).toFixed(3)}</span>
           </div>
           <div style={{ height: 1, background: "rgba(255,255,255,0.08)", margin: "2px 0" }} />
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.5)" }}>
               {safeNum(result.startValue, 10).toFixed(1)} - {safeNum(result.totalDeductions, 0).toFixed(3)} =
             </span>
-            <span style={{ fontFamily: "'Space Mono', monospace", fontWeight: 900, fontSize: 20, color: result.finalScore >= 9.0 ? "#22c55e" : result.finalScore >= 8.0 ? "#f59e0b" : "#ef4444" }}>
+            <span style={{ fontFamily: "'Space Mono', monospace", fontWeight: 900, fontSize: 20, color: result.finalScore >= 9.0 ? "#22c55e" : result.finalScore >= 8.0 ? "#ffc15a" : "#dc2626" }}>
               {safeNum(result.finalScore, 0).toFixed(3)}
             </span>
           </div>
@@ -7561,10 +7767,10 @@ function WeeklyTrainingPlan({ faults }) {
   ];
 
   return (
-    <div className="card" style={{ padding: 16, marginBottom: 16, borderColor: "rgba(196,152,42,0.12)" }}>
+    <div className="card" style={{ padding: 16, marginBottom: 16, borderColor: "rgba(232,150,42,0.12)" }}>
       <div onClick={() => setExpanded(!expanded)} style={{ cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <h3 style={{ fontSize: 14, fontWeight: 700 }}><Icon name="target" size={14} /> Weekly Training Plan</h3>
-        <span style={{ color: "#C4982A", fontSize: 13, fontWeight: 600 }}>{expanded ? "▲" : "▼"}</span>
+        <span style={{ color: "#e8962a", fontSize: 13, fontWeight: 600 }}>{expanded ? "▲" : "▼"}</span>
       </div>
       {expanded && (
         <div style={{ marginTop: 12 }}>
@@ -7572,11 +7778,11 @@ function WeeklyTrainingPlan({ faults }) {
           {dayPlans.map((day, i) => (
             <div key={i} style={{ marginBottom: 12, paddingBottom: 12, borderBottom: i < dayPlans.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                <span style={{ fontSize: 13, fontWeight: 700, color: "#C4982A" }}>{day.day}</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: "#e8962a" }}>{day.day}</span>
                 <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>{day.focus}</span>
               </div>
               {day.items.map((item, j) => (
-                <div key={j} style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.7, paddingLeft: 12, borderLeft: "2px solid rgba(196,152,42,0.1)" }}>
+                <div key={j} style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.7, paddingLeft: 12, borderLeft: "2px solid rgba(232,150,42,0.1)" }}>
                   {item}
                 </div>
               ))}
@@ -7751,7 +7957,7 @@ function PillarProgress({ history, profile }) {
             <LineChart data={scoreTrend} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
               <XAxis dataKey="label" tick={{ fill: "rgba(255,255,255,0.2)", fontSize: 9 }} />
               <YAxis domain={["auto", "auto"]} tick={{ fill: "rgba(255,255,255,0.2)", fontSize: 9 }} />
-              <Line type="monotone" dataKey="score" stroke="#C4982A" strokeWidth={2} dot={{ r: 3, fill: "#C4982A" }} />
+              <Line type="monotone" dataKey="score" stroke="#e8962a" strokeWidth={2} dot={{ r: 3, fill: "#e8962a" }} />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -7760,19 +7966,19 @@ function PillarProgress({ history, profile }) {
       {/* Improvement indicators */}
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         <div style={{ flex: "1 1 30%", minWidth: 80, padding: 10, borderRadius: 8, background: `rgba(${scoreDelta >= 0 ? "34,197,94" : "239,68,68"},0.04)`, textAlign: "center" }}>
-          <div style={{ fontSize: 16, fontWeight: 900, color: scoreDelta >= 0 ? "#22c55e" : "#ef4444", fontFamily: "'Space Mono', monospace" }}>
+          <div style={{ fontSize: 16, fontWeight: 900, color: scoreDelta >= 0 ? "#22c55e" : "#dc2626", fontFamily: "'Space Mono', monospace" }}>
             {scoreDelta >= 0 ? "+" : ""}{scoreDelta.toFixed(2)}
           </div>
           <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)" }}>Score Change</div>
         </div>
         <div style={{ flex: "1 1 30%", minWidth: 80, padding: 10, borderRadius: 8, background: `rgba(${landingImproved ? "34,197,94" : "245,158,11"},0.04)`, textAlign: "center" }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: landingImproved ? "#22c55e" : "#f59e0b" }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: landingImproved ? "#22c55e" : "#ffc15a" }}>
             {landingImproved ? "Improving" : "Work on it"}
           </div>
           <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)" }}>Landings</div>
         </div>
         <div style={{ flex: "1 1 30%", minWidth: 80, padding: 10, borderRadius: 8, background: `rgba(${fallsImproved ? "34,197,94" : "239,68,68"},0.04)`, textAlign: "center" }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: fallsImproved ? "#22c55e" : avgFallSecond === 0 ? "#22c55e" : "#ef4444" }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: fallsImproved ? "#22c55e" : avgFallSecond === 0 ? "#22c55e" : "#dc2626" }}>
             {avgFallSecond === 0 ? "No Falls!" : fallsImproved ? "Fewer Falls" : "Watch Falls"}
           </div>
           <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)" }}>Fall Trend</div>
@@ -7787,13 +7993,13 @@ function PillarProgress({ history, profile }) {
             <LineChart data={strengthTrend} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
               <XAxis dataKey="label" tick={{ fill: "rgba(255,255,255,0.2)", fontSize: 9 }} />
               <YAxis tick={{ fill: "rgba(255,255,255,0.2)", fontSize: 9 }} />
-              <Line type="monotone" dataKey="landing" name="Landings" stroke="#ef4444" strokeWidth={1.5} dot={{ r: 2 }} />
-              <Line type="monotone" dataKey="knees" name="Knees" stroke="#f97316" strokeWidth={1.5} dot={{ r: 2 }} />
+              <Line type="monotone" dataKey="landing" name="Landings" stroke="#dc2626" strokeWidth={1.5} dot={{ r: 2 }} />
+              <Line type="monotone" dataKey="knees" name="Knees" stroke="#e06820" strokeWidth={1.5} dot={{ r: 2 }} />
               <Line type="monotone" dataKey="toes" name="Toes" stroke="#8b5cf6" strokeWidth={1.5} dot={{ r: 2 }} />
             </LineChart>
           </ResponsiveContainer>
           <div style={{ display: "flex", gap: 12, justifyContent: "center", marginTop: 4 }}>
-            {[{label: "Landings", color: "#ef4444"}, {label: "Knees", color: "#f97316"}, {label: "Toes", color: "#8b5cf6"}].map(l => (
+            {[{label: "Landings", color: "#dc2626"}, {label: "Knees", color: "#e06820"}, {label: "Toes", color: "#8b5cf6"}].map(l => (
               <div key={l.label} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 9, color: "rgba(255,255,255,0.3)" }}>
                 <div style={{ width: 8, height: 3, background: l.color, borderRadius: 2 }} />{l.label}
               </div>
@@ -7862,8 +8068,8 @@ function TrainingProgram({ result, profile, history }) {
   return (
     <div style={{ animation: "fadeIn 0.4s ease-out" }}>
       {/* Header */}
-      <div className="card" style={{ padding: 16, marginBottom: 12, background: "linear-gradient(135deg, rgba(196,152,42,0.06), rgba(196,152,42,0.02))", borderColor: "rgba(196,152,42,0.15)" }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: "#C4982A", letterSpacing: 1, marginBottom: 8 }}>YOUR PERSONALIZED TRAINING PROGRAM</div>
+      <div className="card" style={{ padding: 16, marginBottom: 12, background: "linear-gradient(135deg, rgba(232,150,42,0.06), rgba(232,150,42,0.02))", borderColor: "rgba(232,150,42,0.15)" }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: "#e8962a", letterSpacing: 1, marginBottom: 8 }}>YOUR PERSONALIZED TRAINING PROGRAM</div>
         <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.7 }}>
           Built from {deds.length} deductions, {risks.length} injury risk flag{risks.length !== 1 ? "s" : ""}, biomechanical analysis
           {profile?.goals ? `, and goal of "${profile.goals}"` : ""} at {result.level || profile?.level || "your level"}.
@@ -7877,8 +8083,8 @@ function TrainingProgram({ result, profile, history }) {
         {[{ id: "thisWeek", label: "This Week" }, { id: "season", label: "Season Plan" }].map(m => (
           <button key={m.id} onClick={() => setViewMode(m.id)} style={{
             flex: 1, padding: "10px 0", borderRadius: 8, border: "none", fontSize: 12, fontWeight: 700, cursor: "pointer",
-            background: viewMode === m.id ? "rgba(196,152,42,0.15)" : "transparent",
-            color: viewMode === m.id ? "#C4982A" : "rgba(255,255,255,0.35)",
+            background: viewMode === m.id ? "rgba(232,150,42,0.15)" : "transparent",
+            color: viewMode === m.id ? "#e8962a" : "rgba(255,255,255,0.35)",
             transition: "all 0.2s",
           }}>{m.label}</button>
         ))}
@@ -7889,11 +8095,11 @@ function TrainingProgram({ result, profile, history }) {
 
       {/* Persistent issues alert (season view) */}
       {viewMode === "season" && persistentIssues.length > 0 && (
-        <div className="card" style={{ padding: 16, marginBottom: 12, borderColor: "rgba(249,115,22,0.2)" }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: "#f97316", letterSpacing: 1, marginBottom: 8 }}>🔄 RECURRING PATTERNS</div>
+        <div className="card" style={{ padding: 16, marginBottom: 12, borderColor: "rgba(224,104,32,0.2)" }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#e06820", letterSpacing: 1, marginBottom: 8 }}>🔄 RECURRING PATTERNS</div>
           <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", marginBottom: 10 }}>Issues that keep appearing across multiple analyses — these need focused long-term attention</div>
           {persistentIssues.map((p, i) => (
-            <div key={i} style={{ padding: 10, marginBottom: 6, borderRadius: 8, background: "rgba(249,115,22,0.04)", borderLeft: "3px solid #f97316" }}>
+            <div key={i} style={{ padding: 10, marginBottom: 6, borderRadius: 8, background: "rgba(224,104,32,0.04)", borderLeft: "3px solid #e06820" }}>
               <div style={{ fontSize: 12, fontWeight: 700 }}>{p.area} <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", fontWeight: 400 }}>avg {p.avg} per analysis</span></div>
               <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginTop: 4, lineHeight: 1.5 }}>{p.tip}</div>
             </div>
@@ -7902,14 +8108,14 @@ function TrainingProgram({ result, profile, history }) {
       )}
 
       {/* ── DRILLS ── */}
-      {pillarCard("🎯", viewMode === "thisWeek" ? "PRIORITY DRILLS — Fix This Week" : "DRILL DEVELOPMENT — Season Plan", "#ef4444",
+      {pillarCard("🎯", viewMode === "thisWeek" ? "PRIORITY DRILLS — Fix This Week" : "DRILL DEVELOPMENT — Season Plan", "#dc2626",
         // THIS WEEK: specific drills from this analysis
         <>
           {priorities.filter(p => p.count > 0).map((p, i) => {
             const drill = EVIDENCE_PROGRAMS.drills[p.area];
             if (!drill) return null;
             return (
-              <div key={i} style={{ padding: 10, marginBottom: 8, borderRadius: 8, background: "rgba(255,255,255,0.02)", borderLeft: `3px solid ${i === 0 ? "#ef4444" : i === 1 ? "#f59e0b" : "#22c55e"}` }}>
+              <div key={i} style={{ padding: 10, marginBottom: 8, borderRadius: 8, background: "rgba(255,255,255,0.02)", borderLeft: `3px solid ${i === 0 ? "#dc2626" : i === 1 ? "#ffc15a" : "#22c55e"}` }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
                   <span style={{ fontSize: 13, fontWeight: 700 }}>{p.label}</span>
                   <span style={{ fontSize: 10, fontFamily: "'Space Mono', monospace", color: "rgba(255,255,255,0.3)" }}>{p.count} deduction{p.count !== 1 ? "s" : ""}</span>
@@ -7928,7 +8134,7 @@ function TrainingProgram({ result, profile, history }) {
             <div style={{ marginTop: 8 }}>
               <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.35)", marginBottom: 6 }}>COACH CORRECTIONS THIS WEEK:</div>
               {coach.preemptiveCorrections.slice(0, 3).map((c, i) => (
-                <div key={i} style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", lineHeight: 1.6, marginBottom: 4, paddingLeft: 10, borderLeft: `2px solid ${c?.priority === "high" ? "rgba(239,68,68,0.3)" : "rgba(239,68,68,0.15)"}` }}>
+                <div key={i} style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", lineHeight: 1.6, marginBottom: 4, paddingLeft: 10, borderLeft: `2px solid ${c?.priority === "high" ? "rgba(220,38,38,0.3)" : "rgba(220,38,38,0.15)"}` }}>
                   {typeof c === "string" ? c : <><strong style={{ color: "rgba(255,255,255,0.6)" }}>{safeStr(c.skill)}:</strong> {safeStr(c.correction || c.currentFault)}{c.riskIfUncorrected ? ` — ${safeStr(c.riskIfUncorrected)}` : ""}</>}
                 </div>
               ))}
@@ -8013,11 +8219,11 @@ function TrainingProgram({ result, profile, history }) {
 
       {/* ── INJURY PREVENTION ── */}
       {risks.length > 0 && (
-        <div className="card" style={{ padding: 16, marginBottom: 12, borderColor: risks.some(r => r.risk === "high") ? "rgba(239,68,68,0.2)" : "rgba(245,158,11,0.15)" }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: risks.some(r => r.risk === "high") ? "#ef4444" : "#f59e0b", letterSpacing: 1, marginBottom: 10 }}>⚠️ INJURY PREVENTION</div>
+        <div className="card" style={{ padding: 16, marginBottom: 12, borderColor: risks.some(r => r.risk === "high") ? "rgba(220,38,38,0.2)" : "rgba(255,193,90,0.15)" }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: risks.some(r => r.risk === "high") ? "#dc2626" : "#ffc15a", letterSpacing: 1, marginBottom: 10 }}>⚠️ INJURY PREVENTION</div>
           <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginBottom: 10 }}>Based on biomechanical analysis. Not medical advice — consult a sports medicine professional for concerns.</div>
           {risks.map((r, i) => (
-            <div key={i} style={{ padding: 10, marginBottom: 6, borderRadius: 8, background: `${r.risk === "high" ? "rgba(239,68,68,0.04)" : "rgba(245,158,11,0.04)"}`, borderLeft: `3px solid ${r.risk === "high" ? "#ef4444" : r.risk === "moderate" ? "#f59e0b" : "#22c55e"}` }}>
+            <div key={i} style={{ padding: 10, marginBottom: 6, borderRadius: 8, background: `${r.risk === "high" ? "rgba(220,38,38,0.04)" : "rgba(255,193,90,0.04)"}`, borderLeft: `3px solid ${r.risk === "high" ? "#dc2626" : r.risk === "moderate" ? "#ffc15a" : "#22c55e"}` }}>
               <div style={{ fontSize: 12, fontWeight: 600 }}>{safeStr(r.reason)}</div>
               <div style={{ fontSize: 11, color: "#22c55e", marginTop: 4 }}>Rx: {safeStr(r.recommendation)}</div>
             </div>
@@ -8030,8 +8236,8 @@ function TrainingProgram({ result, profile, history }) {
         // THIS WEEK
         <>
           {hasFall && (
-            <div style={{ padding: 10, marginBottom: 8, borderRadius: 8, background: "rgba(239,68,68,0.04)", borderLeft: "3px solid #ef4444" }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "#ef4444", marginBottom: 4 }}>FALL RECOVERY — Priority This Week</div>
+            <div style={{ padding: 10, marginBottom: 8, borderRadius: 8, background: "rgba(220,38,38,0.04)", borderLeft: "3px solid #dc2626" }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#dc2626", marginBottom: 4 }}>FALL RECOVERY — Priority This Week</div>
               <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", lineHeight: 1.6 }}>{EVIDENCE_PROGRAMS.mental.fallRecovery}</div>
             </div>
           )}
@@ -8141,8 +8347,8 @@ function TrainingProgram({ result, profile, history }) {
 
       {/* ── GOAL-SPECIFIC ── */}
       {(dev?.goalSpecificAdvice || coach?.idealComparison) && (
-        <div className="card" style={{ padding: 16, marginBottom: 12, background: "rgba(196,152,42,0.03)", borderColor: "rgba(196,152,42,0.12)" }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: "#C4982A", letterSpacing: 1, marginBottom: 8 }}>🏆 {profile?.goals ? String(profile.goals || '').toUpperCase() : "DEVELOPMENT ADVICE"}</div>
+        <div className="card" style={{ padding: 16, marginBottom: 12, background: "rgba(232,150,42,0.03)", borderColor: "rgba(232,150,42,0.12)" }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#e8962a", letterSpacing: 1, marginBottom: 8 }}>🏆 {profile?.goals ? String(profile.goals || '').toUpperCase() : "DEVELOPMENT ADVICE"}</div>
           {viewMode === "thisWeek" ? (
             <>
               {dev?.goalSpecificAdvice && <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", lineHeight: 1.7, marginBottom: 8 }}>{safeStr(dev.goalSpecificAdvice)}</div>}
@@ -8194,7 +8400,7 @@ function BiomechanicsDashboard({ result }) {
   const holds = bio?.holdDurations || [];
   const risks = bio?.injuryRiskFlags || [];
 
-  const riskColor = (r) => r === "high" ? "#ef4444" : r === "moderate" ? "#f59e0b" : "#22c55e";
+  const riskColor = (r) => r === "high" ? "#dc2626" : r === "moderate" ? "#ffc15a" : "#22c55e";
 
   // Plain-language helpers
   const explainPower = (rating) => {
@@ -8245,7 +8451,7 @@ function BiomechanicsDashboard({ result }) {
       area: "Landing Mechanics",
       grade: avgKnee >= 140 && totalSteps === 0 ? "A" : avgKnee >= 120 && totalSteps <= 2 ? "B" : avgKnee >= 100 ? "C" : "D",
       tip: avgKnee < 130 ? "Practice landing drills with deeper knee bend to protect joints" : totalSteps > 0 ? `${totalSteps} extra step${totalSteps > 1 ? "s" : ""} — practice sticking landings with arms up` : "Solid landing technique!",
-      color: avgKnee >= 130 && totalSteps <= 1 ? "#22c55e" : avgKnee >= 110 ? "#f59e0b" : "#ef4444",
+      color: avgKnee >= 130 && totalSteps <= 1 ? "#22c55e" : avgKnee >= 110 ? "#ffc15a" : "#dc2626",
     });
   }
   if (holds.length > 0) {
@@ -8255,7 +8461,7 @@ function BiomechanicsDashboard({ result }) {
       area: "Hold Strength",
       grade: metAll ? "A" : metPct >= 0.7 ? "B" : metPct >= 0.4 ? "C" : "D",
       tip: metAll ? "All holds met the required duration — great static strength!" : "Some holds were too short — build isometric strength with plank and hollow body holds",
-      color: metAll ? "#22c55e" : metPct >= 0.5 ? "#f59e0b" : "#ef4444",
+      color: metAll ? "#22c55e" : metPct >= 0.5 ? "#ffc15a" : "#dc2626",
     });
   }
   if (risks.length > 0) {
@@ -8265,7 +8471,7 @@ function BiomechanicsDashboard({ result }) {
       area: "Joint Safety",
       grade: !hasHigh && !hasMod ? "A" : !hasHigh ? "B" : "C",
       tip: hasHigh ? "High stress detected on some joints — consider talking to a coach about technique adjustments" : hasMod ? "Some moderate joint stress — stretching and proper warm-up will help" : "Joints look good — keep up the warm-up and conditioning routine!",
-      color: hasHigh ? "#ef4444" : hasMod ? "#f59e0b" : "#22c55e",
+      color: hasHigh ? "#dc2626" : hasMod ? "#ffc15a" : "#22c55e",
     });
   }
 
@@ -8315,9 +8521,9 @@ function BiomechanicsDashboard({ result }) {
             <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: 1, marginBottom: 4 }}>FLIGHT</div>
             <div style={{ fontSize: 14, fontWeight: 700, color: "#a855f7", textTransform: "capitalize" }}>{bio?.overallFlightHeight || "—"}</div>
           </div>
-          <div style={{ flex: 1, textAlign: "center", padding: 12, borderRadius: 10, background: risks.some(r => r.risk === "high") ? "rgba(239,68,68,0.06)" : "rgba(34,197,94,0.06)" }}>
+          <div style={{ flex: 1, textAlign: "center", padding: 12, borderRadius: 10, background: risks.some(r => r.risk === "high") ? "rgba(220,38,38,0.06)" : "rgba(34,197,94,0.06)" }}>
             <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: 1, marginBottom: 4 }}>INJURY RISK</div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: risks.some(r => r.risk === "high") ? "#ef4444" : risks.some(r => r.risk === "moderate") ? "#f59e0b" : "#22c55e" }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: risks.some(r => r.risk === "high") ? "#dc2626" : risks.some(r => r.risk === "moderate") ? "#ffc15a" : "#22c55e" }}>
               {risks.some(r => r.risk === "high") ? "HIGH" : risks.some(r => r.risk === "moderate") ? "MODERATE" : risks.length > 0 ? "LOW" : "—"}
             </div>
           </div>
@@ -8344,7 +8550,7 @@ function BiomechanicsDashboard({ result }) {
                 labelFormatter={v => `${Math.floor(v / 60)}:${String(v % 60).padStart(2, "0")}`}
                 formatter={(val, name, props) => [`-${val.toFixed(2)} (${props.payload.skill})`, "Deduction"]}
               />
-              <Line type="stepAfter" dataKey="deduction" stroke="#ef4444" strokeWidth={2} dot={{ r: 4, fill: "#ef4444" }} activeDot={{ r: 6 }} />
+              <Line type="stepAfter" dataKey="deduction" stroke="#dc2626" strokeWidth={2} dot={{ r: 4, fill: "#dc2626" }} activeDot={{ r: 6 }} />
             </LineChart>
           </ResponsiveContainer>
           <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginTop: 8, lineHeight: 1.5 }}>
@@ -8367,14 +8573,14 @@ function BiomechanicsDashboard({ result }) {
               <YAxis tick={{ fill: "rgba(255,255,255,0.3)", fontSize: 10 }} domain={[0, 200]} label={{ value: "degrees", angle: -90, position: "insideLeft", fill: "rgba(255,255,255,0.2)", fontSize: 9 }} />
               <Tooltip contentStyle={{ background: "#1a1a2e", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, fontSize: 11 }}
                 labelFormatter={v => `${Math.floor(v / 60)}:${String(v % 60).padStart(2, "0")}`} />
-              <Line type="monotone" dataKey="lKnee" name="L Knee" stroke="#ef4444" strokeWidth={2} dot={{ r: 3 }} connectNulls />
-              <Line type="monotone" dataKey="rKnee" name="R Knee" stroke="#f97316" strokeWidth={2} dot={{ r: 3 }} connectNulls />
+              <Line type="monotone" dataKey="lKnee" name="L Knee" stroke="#dc2626" strokeWidth={2} dot={{ r: 3 }} connectNulls />
+              <Line type="monotone" dataKey="rKnee" name="R Knee" stroke="#e06820" strokeWidth={2} dot={{ r: 3 }} connectNulls />
               <Line type="monotone" dataKey="lHip" name="L Hip" stroke="#3b82f6" strokeWidth={2} dot={{ r: 3 }} connectNulls />
               <Line type="monotone" dataKey="rHip" name="R Hip" stroke="#8b5cf6" strokeWidth={2} dot={{ r: 3 }} connectNulls />
             </LineChart>
           </ResponsiveContainer>
           <div style={{ display: "flex", gap: 12, marginTop: 6, justifyContent: "center" }}>
-            {[{label: "L Knee", color: "#ef4444"}, {label: "R Knee", color: "#f97316"}, {label: "L Hip", color: "#3b82f6"}, {label: "R Hip", color: "#8b5cf6"}].map(l => (
+            {[{label: "L Knee", color: "#dc2626"}, {label: "R Knee", color: "#e06820"}, {label: "L Hip", color: "#3b82f6"}, {label: "R Hip", color: "#8b5cf6"}].map(l => (
               <div key={l.label} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10, color: "rgba(255,255,255,0.4)" }}>
                 <div style={{ width: 8, height: 3, background: l.color, borderRadius: 2 }} />{l.label}
               </div>
@@ -8402,9 +8608,9 @@ function BiomechanicsDashboard({ result }) {
                   <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>Hip</div>
                   <div style={{ fontSize: 14, fontWeight: 700, color: "#3b82f6", fontFamily: "'Space Mono', monospace" }}>{d.hipVel}°/s</div>
                 </div>}
-                {d.kneeVel && <div style={{ textAlign: "center", padding: "4px 8px", borderRadius: 6, background: "rgba(249,115,22,0.08)" }}>
+                {d.kneeVel && <div style={{ textAlign: "center", padding: "4px 8px", borderRadius: 6, background: "rgba(224,104,32,0.08)" }}>
                   <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>Knee</div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: "#f97316", fontFamily: "'Space Mono', monospace" }}>{d.kneeVel}°/s</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "#e06820", fontFamily: "'Space Mono', monospace" }}>{d.kneeVel}°/s</div>
                 </div>}
               </div>
               <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", lineHeight: 1.4 }}>
@@ -8428,15 +8634,15 @@ function BiomechanicsDashboard({ result }) {
               <div style={{ display: "flex", gap: 8, marginBottom: 6 }}>
                 <div style={{ flex: 1, padding: "6px 8px", borderRadius: 6, background: "rgba(255,255,255,0.03)", textAlign: "center" }}>
                   <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)" }}>Knee Bend</div>
-                  <div style={{ fontSize: 14, fontWeight: 700, fontFamily: "'Space Mono', monospace", color: safeNum(l.kneeFlexionAtImpact, 0) < 120 ? "#ef4444" : "#22c55e" }}>{safeNum(l.kneeFlexionAtImpact, 0)}°</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, fontFamily: "'Space Mono', monospace", color: safeNum(l.kneeFlexionAtImpact, 0) < 120 ? "#dc2626" : "#22c55e" }}>{safeNum(l.kneeFlexionAtImpact, 0)}°</div>
                 </div>
                 <div style={{ flex: 1, padding: "6px 8px", borderRadius: 6, background: "rgba(255,255,255,0.03)", textAlign: "center" }}>
                   <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)" }}>Chest</div>
-                  <div style={{ fontSize: 14, fontWeight: 700, fontFamily: "'Space Mono', monospace", color: safeNum(l.chestAngle, 0) < 70 ? "#f59e0b" : "#22c55e" }}>{safeNum(l.chestAngle, 0)}°</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, fontFamily: "'Space Mono', monospace", color: safeNum(l.chestAngle, 0) < 70 ? "#ffc15a" : "#22c55e" }}>{safeNum(l.chestAngle, 0)}°</div>
                 </div>
                 <div style={{ flex: 1, padding: "6px 8px", borderRadius: 6, background: "rgba(255,255,255,0.03)", textAlign: "center" }}>
                   <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)" }}>Steps</div>
-                  <div style={{ fontSize: 14, fontWeight: 700, fontFamily: "'Space Mono', monospace", color: safeNum(l.stepsAfter, 0) > 0 ? "#f59e0b" : "#22c55e" }}>{safeNum(l.stepsAfter, 0)}</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, fontFamily: "'Space Mono', monospace", color: safeNum(l.stepsAfter, 0) > 0 ? "#ffc15a" : "#22c55e" }}>{safeNum(l.stepsAfter, 0)}</div>
                 </div>
                 <div style={{ flex: 1, padding: "6px 8px", borderRadius: 6, background: `${riskColor(l.impactRisk)}08`, textAlign: "center" }}>
                   <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)" }}>Impact</div>
@@ -8465,12 +8671,12 @@ function BiomechanicsDashboard({ result }) {
               <div key={i} style={{ marginBottom: 10, padding: "10px 12px", borderRadius: 8, background: "rgba(255,255,255,0.02)" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
                   <span style={{ fontSize: 13, fontWeight: 600 }}>{safeStr(h.skill)} <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>{safeStr(h.timestamp)}</span></span>
-                  <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, fontWeight: 700, color: h.met ? "#22c55e" : "#ef4444" }}>
+                  <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, fontWeight: 700, color: h.met ? "#22c55e" : "#dc2626" }}>
                     {(durMs / 1000).toFixed(1)}s / {(reqMs / 1000).toFixed(1)}s
                   </span>
                 </div>
                 <div style={{ height: 6, borderRadius: 3, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
-                  <div style={{ height: "100%", width: `${pct}%`, borderRadius: 3, background: h.met ? "#22c55e" : "#ef4444", transition: "width 0.5s" }} />
+                  <div style={{ height: "100%", width: `${pct}%`, borderRadius: 3, background: h.met ? "#22c55e" : "#dc2626", transition: "width 0.5s" }} />
                 </div>
                 <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", marginTop: 4 }}>
                   {h.met ? "Held long enough — no deduction" : `Released ${shortBy}s too early — practice holding longer with core/arm conditioning`}
@@ -8483,7 +8689,7 @@ function BiomechanicsDashboard({ result }) {
 
       {/* Injury Risk Flags — Plain Language */}
       {risks.length > 0 && (
-        <div className="card" style={{ padding: 16, marginBottom: 12, borderColor: risks.some(r => r.risk === "high") ? "rgba(239,68,68,0.2)" : "rgba(245,158,11,0.15)" }}>
+        <div className="card" style={{ padding: 16, marginBottom: 12, borderColor: risks.some(r => r.risk === "high") ? "rgba(220,38,38,0.2)" : "rgba(255,193,90,0.15)" }}>
           {sectionHead(
             risks.some(r => r.risk === "high") ? "Body Safety Alerts" : "Body Safety Check",
             "Areas where the body may be under extra stress. Not medical advice — talk to a coach or sports medicine professional about any concerns."
@@ -8556,7 +8762,7 @@ function DiagnosticsDashboard({ result }) {
           </div>
           {sortedDeds.length >= 3 && (
             <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginTop: 8, lineHeight: 1.6 }}>
-              Fixing the top 3 deductions alone would save <span style={{ color: "#C4982A", fontWeight: 700, fontFamily: "'Space Mono', monospace" }}>+{sortedDeds.slice(0, 3).reduce((s, d) => s + safeNum(d.deduction, 0), 0).toFixed(2)}</span> — that's the difference between {safeNum(result.finalScore, 0).toFixed(1)} and {(safeNum(result.finalScore, 0) + sortedDeds.slice(0, 3).reduce((s, d) => s + safeNum(d.deduction, 0), 0)).toFixed(1)}.
+              Fixing the top 3 deductions alone would save <span style={{ color: "#e8962a", fontWeight: 700, fontFamily: "'Space Mono', monospace" }}>+{sortedDeds.slice(0, 3).reduce((s, d) => s + safeNum(d.deduction, 0), 0).toFixed(2)}</span> — that's the difference between {safeNum(result.finalScore, 0).toFixed(1)} and {(safeNum(result.finalScore, 0) + sortedDeds.slice(0, 3).reduce((s, d) => s + safeNum(d.deduction, 0), 0)).toFixed(1)}.
             </div>
           )}
         </div>
@@ -8565,7 +8771,7 @@ function DiagnosticsDashboard({ result }) {
       {/* Consistency Analysis */}
       {diag.consistencyNote && (
         <div className="card" style={{ padding: 16, marginBottom: 12 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: "#C4982A", letterSpacing: 1, marginBottom: 6 }}>🔍 WHERE DOES FOCUS BREAK?</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#e8962a", letterSpacing: 1, marginBottom: 6 }}>🔍 WHERE DOES FOCUS BREAK?</div>
           <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", lineHeight: 1.7 }}>{diag.consistencyNote}</div>
         </div>
       )}
@@ -8580,10 +8786,10 @@ function DiagnosticsDashboard({ result }) {
             <div key={i} style={{ marginBottom: 10 }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
                 <span style={{ fontSize: 13, fontWeight: 600, textTransform: "capitalize" }}>{cat}</span>
-                <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, fontWeight: 700, color: "#ef4444" }}>-{total.toFixed(2)} <span style={{ color: "rgba(255,255,255,0.3)", fontWeight: 400 }}>({count})</span></span>
+                <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, fontWeight: 700, color: "#dc2626" }}>-{total.toFixed(2)} <span style={{ color: "rgba(255,255,255,0.3)", fontWeight: 400 }}>({count})</span></span>
               </div>
               <div style={{ height: 6, borderRadius: 3, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
-                <div style={{ height: "100%", width: `${pct}%`, borderRadius: 3, background: cat === "execution" ? "#ef4444" : cat === "landing" ? "#f97316" : cat === "artistry" ? "#a855f7" : "#f59e0b", transition: "width 0.5s" }} />
+                <div style={{ height: "100%", width: `${pct}%`, borderRadius: 3, background: cat === "execution" ? "#dc2626" : cat === "landing" ? "#e06820" : cat === "artistry" ? "#a855f7" : "#ffc15a", transition: "width 0.5s" }} />
               </div>
             </div>
           );
@@ -8594,9 +8800,9 @@ function DiagnosticsDashboard({ result }) {
       <div className="card" style={{ padding: 16, marginBottom: 12 }}>
         <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: 1, marginBottom: 12 }}>DETECTION ENGINE REPORT</div>
         {[
-          { name: "Toe Point (TPM)", count: diag.toePointIssues || deds.filter(d => (d.fault || "").toLowerCase().includes("toe") || (d.fault || "").toLowerCase().includes("flex") || (d.fault || "").toLowerCase().includes("foot") || (d.engine || "") === "TPM").length, color: "#ef4444", icon: "🦶" },
-          { name: "Knee Tension (KTM)", count: diag.kneeTensionIssues || deds.filter(d => (d.fault || "").toLowerCase().includes("knee") || (d.fault || "").toLowerCase().includes("soft") || (d.engine || "") === "KTM").length, color: "#f97316", icon: "🦵" },
-          { name: "Landing", count: deds.filter(d => d.category === "landing").length, total: diag.landingDeductions || deds.filter(d => d.category === "landing").reduce((s, d) => s + (d.deduction || 0), 0), color: "#f59e0b", icon: "👟" },
+          { name: "Toe Point (TPM)", count: diag.toePointIssues || deds.filter(d => (d.fault || "").toLowerCase().includes("toe") || (d.fault || "").toLowerCase().includes("flex") || (d.fault || "").toLowerCase().includes("foot") || (d.engine || "") === "TPM").length, color: "#dc2626", icon: "🦶" },
+          { name: "Knee Tension (KTM)", count: diag.kneeTensionIssues || deds.filter(d => (d.fault || "").toLowerCase().includes("knee") || (d.fault || "").toLowerCase().includes("soft") || (d.engine || "") === "KTM").length, color: "#e06820", icon: "🦵" },
+          { name: "Landing", count: deds.filter(d => d.category === "landing").length, total: diag.landingDeductions || deds.filter(d => d.category === "landing").reduce((s, d) => s + (d.deduction || 0), 0), color: "#ffc15a", icon: "👟" },
           { name: "Artistry", count: deds.filter(d => d.category === "artistry").length, total: diag.artistryDeductions || deds.filter(d => d.category === "artistry").reduce((s, d) => s + (d.deduction || 0), 0), color: "#a855f7", icon: "💃" },
         ].map((eng, i) => (
           <div key={i} style={{
@@ -8636,15 +8842,15 @@ function DiagnosticsDashboard({ result }) {
               <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)" }}>Flight</div>
               <div style={{ fontSize: 11, fontWeight: 600, color: "#a855f7", textTransform: "capitalize" }}>{result.biomechanics.overallFlightHeight || "—"}</div>
             </div>
-            <div style={{ flex: 1, padding: "8px 6px", borderRadius: 8, background: (result.biomechanics.injuryRiskFlags || []).some(r => r.risk === "high") ? "rgba(239,68,68,0.06)" : "rgba(34,197,94,0.06)", textAlign: "center" }}>
+            <div style={{ flex: 1, padding: "8px 6px", borderRadius: 8, background: (result.biomechanics.injuryRiskFlags || []).some(r => r.risk === "high") ? "rgba(220,38,38,0.06)" : "rgba(34,197,94,0.06)", textAlign: "center" }}>
               <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)" }}>Risk Flags</div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: (result.biomechanics.injuryRiskFlags || []).length > 0 ? ((result.biomechanics.injuryRiskFlags || []).some(r => r.risk === "high") ? "#ef4444" : "#f59e0b") : "#22c55e", fontFamily: "'Space Mono', monospace" }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: (result.biomechanics.injuryRiskFlags || []).length > 0 ? ((result.biomechanics.injuryRiskFlags || []).some(r => r.risk === "high") ? "#dc2626" : "#ffc15a") : "#22c55e", fontFamily: "'Space Mono', monospace" }}>
                 {(result.biomechanics.injuryRiskFlags || []).length}
               </div>
             </div>
-            <div style={{ flex: 1, padding: "8px 6px", borderRadius: 8, background: "rgba(245,158,11,0.06)", textAlign: "center" }}>
+            <div style={{ flex: 1, padding: "8px 6px", borderRadius: 8, background: "rgba(255,193,90,0.06)", textAlign: "center" }}>
               <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)" }}>Landings</div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: "#f59e0b", fontFamily: "'Space Mono', monospace" }}>{(result.biomechanics.landingAnalysis || []).length}</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "#ffc15a", fontFamily: "'Space Mono', monospace" }}>{(result.biomechanics.landingAnalysis || []).length}</div>
             </div>
           </div>
           <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", textAlign: "center" }}>Full biomechanics analysis in the 🦴 Biomechanics tab</div>
@@ -8657,9 +8863,9 @@ function DiagnosticsDashboard({ result }) {
         <div style={{ display: "flex", gap: 8 }}>
           {[
             { key: "small", label: "Micro/Small", color: "#22c55e" },
-            { key: "medium", label: "Medium", color: "#f59e0b" },
-            { key: "large", label: "Large", color: "#f97316" },
-            { key: "veryLarge", label: "Very Large", color: "#ef4444" },
+            { key: "medium", label: "Medium", color: "#ffc15a" },
+            { key: "large", label: "Large", color: "#e06820" },
+            { key: "veryLarge", label: "Very Large", color: "#dc2626" },
             { key: "fall", label: "Fall", color: "#dc2626" },
           ].map(s => {
             const count = severityCounts[s.key] || 0;
@@ -8677,7 +8883,7 @@ function DiagnosticsDashboard({ result }) {
       <div className="card" style={{ padding: 16, marginBottom: 12 }}>
         <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: 1, marginBottom: 12 }}>TOP SCORE DRAINS</div>
         {sortedDeds.slice(0, 5).map((d, i) => {
-          const c = DEDUCTION_SCALE[d.severity]?.color || "#f59e0b";
+          const c = DEDUCTION_SCALE[d.severity]?.color || "#ffc15a";
           return (
             <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8, padding: "8px 10px", borderRadius: 8, background: "rgba(255,255,255,0.02)" }}>
               <div style={{
@@ -8697,8 +8903,8 @@ function DiagnosticsDashboard({ result }) {
       </div>
 
       {/* Coach Talking Points */}
-      <div className="card" style={{ padding: 16, background: "rgba(196,152,42,0.03)", borderColor: "rgba(196,152,42,0.12)" }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: "#C4982A", letterSpacing: 1, marginBottom: 8 }}>💬 TALKING POINTS FOR COACH</div>
+      <div className="card" style={{ padding: 16, background: "rgba(232,150,42,0.03)", borderColor: "rgba(232,150,42,0.12)" }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: "#e8962a", letterSpacing: 1, marginBottom: 8 }}>💬 TALKING POINTS FOR COACH</div>
         <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.7 }}>
           {sortedDeds.length > 0 && `"The analysis identified ${deds.length} deductions totaling -${safeNum(result.totalDeductions, 0).toFixed(2)}. `}
           {sortedDeds[0] && `The biggest single item was ${safeStr(sortedDeds[0].skill)} (${safeStr(sortedDeds[0].fault)}, -${safeNum(sortedDeds[0].deduction, 0).toFixed(2)}). `}

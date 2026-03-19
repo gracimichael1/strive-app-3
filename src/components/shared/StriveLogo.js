@@ -8,14 +8,14 @@ export default function StriveLogo({ size = 100, showText = true, animate = fals
   return (
     <div style={{ textAlign: 'center', display: 'inline-block' }}>
       <svg viewBox="0 0 120 120" width={s} height={s} style={{
-        filter: 'drop-shadow(0 0 24px rgba(196,152,42,0.25))',
+        filter: 'drop-shadow(0 0 24px rgba(232,150,42,0.25))',
         ...(animate ? { animation: 'scaleIn 1s cubic-bezier(0.16, 1, 0.3, 1)' } : {}),
       }}>
         <defs>
           <linearGradient id="striveGold" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#C4982A" />
-            <stop offset="50%" stopColor="#E8C35A" />
-            <stop offset="100%" stopColor="#C4982A" />
+            <stop offset="0%" stopColor="#e8962a" />
+            <stop offset="50%" stopColor="#ffc15a" />
+            <stop offset="100%" stopColor="#e8962a" />
           </linearGradient>
         </defs>
         {/* Outer ring */}
@@ -29,10 +29,10 @@ export default function StriveLogo({ size = 100, showText = true, animate = fals
             fill="none" stroke="url(#striveGold)" strokeWidth="3.5" strokeLinecap="round" />
           {/* Inner momentum trail */}
           <path d="M-20 16 Q-4 -18, 18 -12" 
-            fill="none" stroke="#E8C35A" strokeWidth="1.5" strokeLinecap="round" opacity="0.45" />
+            fill="none" stroke="#ffc15a" strokeWidth="1.5" strokeLinecap="round" opacity="0.45" />
           {/* Peak spark */}
-          <circle cx="22" cy="-22" r="3" fill="#E8C35A" opacity="0.85" />
-          <circle cx="22" cy="-22" r="6" fill="#E8C35A" opacity="0.12" />
+          <circle cx="22" cy="-22" r="3" fill="#ffc15a" opacity="0.85" />
+          <circle cx="22" cy="-22" r="6" fill="#ffc15a" opacity="0.12" />
         </g>
         
         {/* Subtle 10.0 at bottom */}
@@ -52,7 +52,7 @@ export default function StriveLogo({ size = 100, showText = true, animate = fals
             lineHeight: 1,
           }}>
             <span style={{
-              background: 'linear-gradient(135deg, #C4982A, #E8C35A, #C4982A)',
+              background: 'linear-gradient(135deg, #e8962a, #ffc15a, #e8962a)',
               backgroundClip: 'text',
               WebkitBackgroundClip: 'text',
               color: 'transparent',
@@ -81,15 +81,15 @@ export function StriveLogoCompact({ size = 28 }) {
     <svg viewBox="0 0 120 120" width={size} height={size}>
       <defs>
         <linearGradient id="sgc" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#C4982A" />
-          <stop offset="50%" stopColor="#E8C35A" />
-          <stop offset="100%" stopColor="#C4982A" />
+          <stop offset="0%" stopColor="#e8962a" />
+          <stop offset="50%" stopColor="#ffc15a" />
+          <stop offset="100%" stopColor="#e8962a" />
         </linearGradient>
       </defs>
       <g transform="translate(60,58)">
         <path d="M-35 26 Q-12 -38, 24 -24 Q42 -14, 34 26" 
           fill="none" stroke="url(#sgc)" strokeWidth="6" strokeLinecap="round" />
-        <circle cx="26" cy="-26" r="5" fill="#E8C35A" opacity="0.85" />
+        <circle cx="26" cy="-26" r="5" fill="#ffc15a" opacity="0.85" />
       </g>
     </svg>
   );

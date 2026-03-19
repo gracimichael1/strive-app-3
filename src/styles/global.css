@@ -2,27 +2,27 @@
 
 :root {
   /* ─── STRIVE Brand Colors ─── */
-  --strive-midnight: #0B1024;
-  --strive-navy-800: #111631;
-  --strive-navy-600: #1E2444;
-  --strive-navy-400: #2A3158;
+  --strive-midnight: #070c16;
+  --strive-navy-800: #0d1422;
+  --strive-navy-600: #121b2d;
+  --strive-navy-400: #1a2540;
   --strive-surface: rgba(255, 255, 255, 0.04);
   --strive-surface-hover: rgba(255, 255, 255, 0.06);
-  --strive-border: rgba(255, 255, 255, 0.06);
-  --strive-border-hover: rgba(255, 255, 255, 0.12);
+  --strive-border: rgba(255, 255, 255, 0.07);
+  --strive-border-hover: rgba(255, 255, 255, 0.13);
 
   /* Gold palette */
   --strive-gold-900: #6B5520;
-  --strive-gold-700: #9E7C1F;
-  --strive-gold-500: #C4982A;
-  --strive-gold-300: #E8C35A;
+  --strive-gold-700: #b87d22;
+  --strive-gold-500: #e8962a;
+  --strive-gold-300: #ffc15a;
   --strive-gold-100: #F5E6B8;
   --strive-gold-50: #FFF8E8;
 
   /* Semantic */
-  --strive-success: #22C55E;
-  --strive-warning: #F59E0B;
-  --strive-danger: #EF4444;
+  --strive-success: #22c55e;
+  --strive-warning: #ffc15a;
+  --strive-danger: #dc2626;
   --strive-info: #3B82F6;
   --strive-pro: #8B5CF6;
   --strive-pro-light: #A78BFA;
@@ -108,7 +108,7 @@ body {
 .btn-gold:hover {
   filter: brightness(1.1);
   transform: translateY(-1px);
-  box-shadow: 0 4px 20px rgba(196, 152, 42, 0.3);
+  box-shadow: 0 4px 20px rgba(232, 150, 42, 0.3);
 }
 .btn-gold:active {
   transform: translateY(0);
@@ -123,7 +123,7 @@ body {
 .btn-outline {
   background: transparent;
   color: var(--strive-gold-500);
-  border: 1.5px solid rgba(196, 152, 42, 0.4);
+  border: 1.5px solid rgba(232, 150, 42, 0.4);
   padding: 12px 28px;
   border-radius: var(--radius-md);
   font-family: 'Outfit', sans-serif;
@@ -133,7 +133,7 @@ body {
   transition: all 0.3s;
 }
 .btn-outline:hover {
-  background: rgba(196, 152, 42, 0.1);
+  background: rgba(232, 150, 42, 0.1);
   border-color: var(--strive-gold-500);
 }
 
@@ -163,7 +163,7 @@ body {
 }
 .input-field:focus {
   border-color: var(--strive-gold-500);
-  box-shadow: 0 0 0 3px rgba(196, 152, 42, 0.1);
+  box-shadow: 0 0 0 3px rgba(232, 150, 42, 0.1);
 }
 .input-field::placeholder {
   color: rgba(255, 255, 255, 0.3);

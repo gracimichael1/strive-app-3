@@ -3,12 +3,12 @@ import StriveLogo from '../shared/StriveLogo';
 
 // Inline SVG icon helper for splash (no dependency on LegacyApp Icon)
 const SplashIcon = ({ name, size = 18 }) => {
-  const p = { width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "#C4982A", strokeWidth: "1.8", strokeLinecap: "round", strokeLinejoin: "round", style: { display: "inline-block", verticalAlign: "middle", flexShrink: 0 } };
+  const p = { width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "#e8962a", strokeWidth: "1.8", strokeLinecap: "round", strokeLinejoin: "round", style: { display: "inline-block", verticalAlign: "middle", flexShrink: 0 } };
   switch (name) {
-    case "target": return <svg {...p}><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1" fill="#C4982A"/></svg>;
+    case "target": return <svg {...p}><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1" fill="#e8962a"/></svg>;
     case "progress": return <svg {...p}><path d="M3 20l5-6 4 4 9-12"/></svg>;
     case "mental": return <svg {...p}><path d="M12 2a7 7 0 00-5 12l2 3v3h6v-3l2-3a7 7 0 00-5-12z"/><path d="M9 20h6"/><path d="M10 23h4"/></svg>;
-    default: return <svg {...p}><circle cx="12" cy="12" r="4" fill="#C4982A"/></svg>;
+    default: return <svg {...p}><circle cx="12" cy="12" r="4" fill="#e8962a"/></svg>;
   }
 };
 
@@ -35,8 +35,8 @@ export default function SplashScreen({ onStart }) {
       <div style={{
         position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'none',
         backgroundImage: `
-          linear-gradient(rgba(196,152,42,0.02) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(196,152,42,0.02) 1px, transparent 1px)
+          linear-gradient(rgba(232,150,42,0.02) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(232,150,42,0.02) 1px, transparent 1px)
         `,
         backgroundSize: '60px 60px', opacity: 0.5,
       }} />
@@ -45,7 +45,7 @@ export default function SplashScreen({ onStart }) {
       <div style={{
         position: 'absolute', top: '15%', left: '50%', transform: 'translateX(-50%)',
         width: 600, height: 600, borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(196,152,42,0.08) 0%, rgba(196,152,42,0.02) 40%, transparent 70%)',
+        background: 'radial-gradient(circle, rgba(232,150,42,0.08) 0%, rgba(232,150,42,0.02) 40%, transparent 70%)',
         pointerEvents: 'none', opacity: show(1) ? 1 : 0, transition: 'opacity 2s ease-out',
       }} />
 
@@ -79,7 +79,7 @@ export default function SplashScreen({ onStart }) {
       }}>
         <button className="btn-gold" onClick={onStart} style={{
           fontSize: 16, padding: '16px 56px', letterSpacing: 1, borderRadius: 14,
-          boxShadow: '0 4px 24px rgba(196,152,42,0.3)',
+          boxShadow: '0 4px 24px rgba(232,150,42,0.3)',
         }}>
           Get Started
         </button>
@@ -121,7 +121,7 @@ export default function SplashScreen({ onStart }) {
         {['USAG Levels 1-10', 'Xcel Bronze-Sapphire', 'MAG & WAG'].map((badge, i) => (
           <span key={i} style={{
             fontSize: 9, fontWeight: 600, letterSpacing: 1.5,
-            color: 'rgba(196,152,42,0.3)', textTransform: 'uppercase',
+            color: 'rgba(232,150,42,0.3)', textTransform: 'uppercase',
           }}>
             {badge}
           </span>

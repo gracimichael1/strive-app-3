@@ -1,10 +1,10 @@
 import React from 'react';
 
 const SEVERITY_COLORS = {
-  small:     '#22C55E',
-  medium:    '#F59E0B',
-  large:     '#F97316',
-  veryLarge: '#EF4444',
+  small:     '#22c55e',
+  medium:    '#ffc15a',
+  large:     '#e06820',
+  veryLarge: '#dc2626',
 };
 
 function formatTime(secs) {
@@ -58,7 +58,7 @@ export default function SkillTimeline({ skills = [], duration = 1, selected, onS
       {skills.map((skill, i) => {
         const left  = pct(skill.start);
         const width = pct(skill.duration);
-        const color = SEVERITY_COLORS[severityForSkill(skill)] || '#C4982A';
+        const color = SEVERITY_COLORS[severityForSkill(skill)] || '#e8962a';
         const isSelected = selected === i;
 
         return (
@@ -103,7 +103,7 @@ export default function SkillTimeline({ skills = [], duration = 1, selected, onS
               bottom: 4,
               fontSize: 10,
               fontWeight: 700,
-              color: '#C4982A',
+              color: '#e8962a',
               whiteSpace: 'nowrap',
               fontFamily: "'Space Mono', monospace",
               zIndex: 3,
@@ -122,7 +122,7 @@ export default function SkillTimeline({ skills = [], duration = 1, selected, onS
         top: 0,
         bottom: 0,
         width: 2,
-        background: 'rgba(196,152,42,0.7)',
+        background: 'rgba(232,150,42,0.7)',
         borderRadius: 1,
         pointerEvents: 'none',
         zIndex: 4,
