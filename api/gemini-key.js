@@ -1,11 +1,20 @@
 const ALLOWED_ORIGINS = [
   'https://strive-app-amber.vercel.app',
   'http://localhost:3000',
+  'http://localhost:3001',
 ];
+
+function isAllowedOrigin(origin) {
+  if (!origin) return false;
+  if (ALLOWED_ORIGINS.includes(origin)) return true;
+  // Allow all Vercel preview/deployment URLs for this project
+  if (origin.match(/^https:\/\/strive-app.*\.vercel\.app$/)) return true;
+  return false;
+}
 
 function setCorsHeaders(req, res) {
   const origin = req.headers.origin;
-  if (ALLOWED_ORIGINS.includes(origin)) {
+  if (isAllowedOrigin(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
   }
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
@@ -20,7 +29,7 @@ export default function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   const origin = req.headers.origin;
-  if (!ALLOWED_ORIGINS.includes(origin)) {
+  if (!isAllowedOrigin(origin)) {
     return res.status(403).json({ error: 'Forbidden' });
   }
 

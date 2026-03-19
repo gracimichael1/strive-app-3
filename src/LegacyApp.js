@@ -4353,7 +4353,7 @@ ${benchLine}
 
 CRITICAL SCORING RULES — STRICT BREVET-LEVEL JUDGING:
 
-1. You are a Brevet-level USAG Official at a State Championship. Judge STRICTLY. Do NOT give benefit of the doubt. If you see a fault, deduct it.
+1. You are a Brevet-level USAG Official at a State Championship. Judge STRICTLY. Do NOT give benefit of the doubt. If you see a fault, deduct it. When in doubt between two deduction values, ALWAYS take the higher one. It is better to over-deduct than under-deduct — athletes and coaches need to know every flaw to improve. A lenient score helps nobody.
 
 2. DEDUCTIONS ARE SUBTRACTIVE FROM 10.0. A typical "good" routine at this level has 0.70-0.90 total deductions (final score 9.1-9.3). An average routine has 0.90-1.30 total deductions (final score 8.7-9.0). A rough routine has 1.30-1.80+ total deductions (below 8.5). If you find fewer than 5 deductions on a 90-second floor routine, YOU ARE MISSING FAULTS.
 
@@ -4376,6 +4376,14 @@ CRITICAL SCORING RULES — STRICT BREVET-LEVEL JUDGING:
 7. ONLY DEDUCT WHAT YOU CAN SEE IN THE VIDEO. If a fault is genuinely not visible due to camera angle, do not deduct it. But do not use video quality as an excuse to skip obvious faults.
 
 8. VALIDATION CHECK: After totaling all deductions, your final score should align with what a strict state-championship panel would give. If your score is 0.50+ above what looks right for the routine quality, you are being too lenient — go back and find the faults you missed.
+
+9. CALIBRATION ANCHOR: Youth competitive gymnastics routines at this level typically score between 8.5 and 9.3 at state championships. A score above 9.4 is EXCEPTIONAL and rare — only for routines with near-perfect execution, artistry, and amplitude. If your total deductions are less than 0.70, you are almost certainly being too lenient. Go back and scrutinize EVERY landing, EVERY toe point, EVERY arm placement, ALL artistry elements. A typical competitive routine has 0.90-1.30 in total deductions.
+
+10. FLOOR EXERCISE ARTISTRY MINIMUM: On floor exercise, artistry and composition deductions MUST total at least 0.15. Every single floor routine has artistry deductions — no exceptions. Experienced judges typically find 0.20-0.40 in artistry/composition deductions on youth routines.
+
+11. LANDING REALITY CHECK: Almost no youth gymnast sticks a landing perfectly. Every tumbling pass landing should be scrutinized for: steps (0.05-0.10), hops (0.05-0.10), deep squat (0.20-0.30), chest position (0.10-0.20), foot placement (0.05). If you have zero landing deductions across all passes, you are not watching carefully enough.
+
+12. CUMULATIVE FOOT FORM: Assess toe point and foot form on EVERY skill independently. Flexed feet on a back handspring AND flexed feet on a leap are TWO separate deductions, not one. Count each occurrence.
 
 You must be completely deterministic. Given the same video, produce the EXACT same deductions and score every time.
 
