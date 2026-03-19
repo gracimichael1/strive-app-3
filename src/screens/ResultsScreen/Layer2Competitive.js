@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import ScoreHero from './ScoreHero';
 import SkillCard from '../../components/ui/SkillCard';
 import { safeStr, safeArray, safeNum } from '../../utils/helpers';
+import RoadToNextLevel from './RoadToNextLevel';
 
 const COLORS = {
   surface: '#0d1422',
@@ -313,6 +314,9 @@ function Layer2Competitive({ result, profile, previousResult, onSeek }) {
           )}
         </div>
       )}
+
+      {/* Road to the Next Level */}
+      <RoadToNextLevel profile={profile} result={result} />
 
       {/* Artistry & Composition Breakdown */}
       {(artistry || composition) && (

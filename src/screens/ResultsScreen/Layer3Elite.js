@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import ScoreHero from './ScoreHero';
 import SkillCard from '../../components/ui/SkillCard';
 import { safeStr, safeArray, safeNum } from '../../utils/helpers';
+import RoadToNextLevel from './RoadToNextLevel';
 
 const COLORS = {
   surface: '#0d1422',
@@ -623,6 +624,9 @@ function Layer3Elite({ result, profile, previousResult, history, onSeek }) {
           )}
         </div>
       )}
+
+      {/* Road to the Next Level */}
+      <RoadToNextLevel profile={profile} result={result} />
 
       {/* Advanced Tools header */}
       <div style={{ padding: '20px 20px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
