@@ -2,14 +2,21 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## CRITICAL: Read STRATEGY.md First
+**Before making ANY changes, read `STRATEGY.md` in the project root.** It contains locked decisions on tiers, architecture, phases, and scope fences. All work must align with the current phase. Do not build features from future phases.
+
 ## Project Context
 
 - **PROJECT**: Strive — AI-powered gymnastics analysis platform
-- **MAIN FILE**: `src/LegacyApp.js` (~7,800 lines React)
+- **MAIN FILE**: `src/LegacyApp.js` (~11,000 lines React) — being broken into `src/screens/` and `src/components/`
+- **NEW SCREENS**: `src/screens/ResultsScreen/`, `src/screens/DashboardScreen/`, `src/screens/TrainingScreen/`
+- **NEW COMPONENTS**: `src/components/ui/SkillCard.js`
 - **DEPLOY**: Vercel auto-deploy from strive-app-3 GitHub repo
 - **AI ENGINE**: Gemini 2.5 Flash (full video judging, NOT Claude)
 - **STACK**: React, Vercel serverless, Google Gemini API
 - **OWNER WORKFLOW**: VS Code → GitHub Desktop commit → push → Vercel auto-deploys in 90 seconds
+- **TIERS**: Free / Competitive ($9.99/mo) / Elite ($19.99/mo) / Coach ($49.99/mo) / Gym ($149-299/mo)
+- **3-LAYER RESULTS**: Layer 1 (Free teaser) → Layer 2 (Competitive full analysis) → Layer 3 (Elite expert tools)
 
 ## Absolute Rules — NEVER Violate
 
@@ -23,12 +30,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 8. Never use `sudo` with npm
 9. After every change: verify the app builds without errors before committing
 
-## Current Bugs to Fix (Priority Order)
+## Bugs Fixed (March 19, 2026)
 
-1. Video not displaying inside expanded skill cards
-2. Skeleton overlay is decorative SVG, not real MediaPipe pose detection
-3. Scoring inconsistency — same video produces different scores
-4. UI needs to match design spec (see sessions from March 18, 2026)
+1. ~~Video not displaying inside expanded skill cards~~ — FIXED: preload, webkit-playsinline, fallback
+2. Skeleton overlay is decorative SVG — KNOWN: will be replaced with real MediaPipe in Phase 4
+3. ~~Scoring inconsistency~~ — FIXED: seed:42, prompt constraints, USAG 0.025 rounding, cache fingerprinting
+4. ~~UI design spec alignment~~ — FIXED: design system audit + corrections applied
+
+## Remaining Open Items (Phase 1)
+1. COPPA parental consent flow — BLOCKING launch
+2. Stripe account setup + wiring — owner action required
+3. Business entity formation — owner action required
+4. Legal review of Privacy Policy + ToS — owner action required
+5. Scoring accuracy validation (100 routines vs real judges) — required before public launch
 
 ## Design System (Locked)
 

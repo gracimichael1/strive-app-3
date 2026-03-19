@@ -7,6 +7,14 @@ const SEVERITY_COLORS = {
   veryLarge: '#dc2626',
 };
 
+const SEVERITY_LABELS = {
+  small:     'Minor',
+  medium:    'Medium',
+  large:     'Large',
+  veryLarge: 'Very Large',
+  fall:      'Fall',
+};
+
 function formatTime(secs) {
   const m = Math.floor(secs / 60);
   const s = Math.floor(secs % 60).toString().padStart(2, '0');
@@ -61,11 +69,15 @@ export default function SkillTimeline({ skills = [], duration = 1, selected, onS
         const color = SEVERITY_COLORS[severityForSkill(skill)] || '#e8962a';
         const isSelected = selected === i;
 
+        const severity = severityForSkill(skill);
+        const sevLabel = SEVERITY_LABELS[severity] || 'Unknown';
+
         return (
           <button
             key={skill.id}
             onClick={() => onSelect(i)}
-            title={`${skill.skillName} @ ${formatTime(skill.start)}`}
+            title={`${skill.skillName} @ ${formatTime(skill.start)} — ${sevLabel}`}
+            aria-label={`${skill.skillName}, severity: ${sevLabel}, at ${formatTime(skill.start)}`}
             style={{
               position: 'absolute',
               left,
@@ -83,8 +95,15 @@ export default function SkillTimeline({ skills = [], duration = 1, selected, onS
               transition: 'all 0.2s',
               boxShadow: isSelected ? `0 0 10px ${color}55` : 'none',
               zIndex: isSelected ? 2 : 1,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 9, fontWeight: 700, color: '#fff',
+              overflow: 'hidden',
             }}
-          />
+          >
+            <span aria-hidden="true" style={{ opacity: isSelected ? 0.9 : 0, transition: 'opacity 0.2s' }}>
+              {sevLabel[0]}
+            </span>
+          </button>
         );
       })}
 

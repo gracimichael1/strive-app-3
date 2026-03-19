@@ -2,7 +2,7 @@ import React from 'react';
 
 const SEV_COLOR = {
   small:     '#22c55e',
-  medium:    '#ffc15a',
+  medium:    '#f59e0b',
   large:     '#e06820',
   veryLarge: '#dc2626',
   fall:      '#dc2626',
@@ -20,7 +20,7 @@ function AngleMeter({ label, value, ideal = 160 }) {
   if (value === null || value === undefined) return null;
   const pct   = Math.max(0, Math.min(100, (value / 180) * 100));
   const good  = value >= ideal - 10;
-  const color = good ? '#22c55e' : value >= ideal - 30 ? '#ffc15a' : '#dc2626';
+  const color = good ? '#22c55e' : value >= ideal - 30 ? '#f59e0b' : '#dc2626';
 
   return (
     <div style={{ marginBottom: 10 }}>
@@ -28,12 +28,19 @@ function AngleMeter({ label, value, ideal = 160 }) {
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         marginBottom: 4,
       }}>
-        <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', fontWeight: 500 }}>{label}</span>
+        <span style={{ fontSize: 12, color: '#8890AB', fontWeight: 500 }}>{label}</span>
         <span style={{ fontSize: 13, fontWeight: 700, color, fontFamily: "'Space Mono', monospace" }}>
           {Math.round(value)}°
         </span>
       </div>
-      <div style={{ height: 5, background: 'rgba(255,255,255,0.06)', borderRadius: 3, overflow: 'hidden' }}>
+      <div
+        role="progressbar"
+        aria-valuenow={Math.round(value)}
+        aria-valuemin={0}
+        aria-valuemax={180}
+        aria-label={`${label} angle: ${Math.round(value)} degrees`}
+        style={{ height: 5, background: 'rgba(255,255,255,0.06)', borderRadius: 3, overflow: 'hidden' }}
+      >
         <div style={{
           height: '100%',
           width: `${pct}%`,
@@ -70,10 +77,10 @@ export default function SkillCard({ skill, expanded, onToggle, onSeek }) {
   return (
     <div
       style={{
-        background: 'rgba(255,255,255,0.03)',
+        background: '#0d1422',
         border: expanded
           ? '1px solid rgba(232,150,42,0.3)'
-          : '1px solid rgba(255,255,255,0.06)',
+          : '1px solid rgba(232, 150, 42, 0.12)',
         borderRadius: 14,
         overflow: 'hidden',
         transition: 'all 0.2s',
@@ -83,6 +90,8 @@ export default function SkillCard({ skill, expanded, onToggle, onSeek }) {
       {/* Header */}
       <button
         onClick={onToggle}
+        aria-expanded={expanded}
+        aria-controls={`skill-content-${skill.index}`}
         style={{
           width: '100%', textAlign: 'left', padding: '14px 16px',
           background: 'transparent', border: 'none', cursor: 'pointer',
@@ -101,10 +110,10 @@ export default function SkillCard({ skill, expanded, onToggle, onSeek }) {
         </div>
 
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 14, fontWeight: 600, color: '#E2E8F0', marginBottom: 2 }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: '#E2E8F0', marginBottom: 2, fontFamily: "'Outfit', sans-serif" }}>
             {skill.skillName}
           </div>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', fontFamily: "'Space Mono', monospace" }}>
+          <div style={{ fontSize: 11, color: '#8A90AA', fontFamily: "'Space Mono', monospace" }}>
             {formatTime(skill.start)} → {formatTime(skill.end)} · {skill.duration}s
           </div>
         </div>
@@ -133,7 +142,7 @@ export default function SkillCard({ skill, expanded, onToggle, onSeek }) {
 
       {/* Expanded content */}
       {expanded && (
-        <div style={{ padding: '0 16px 16px' }}>
+        <div id={`skill-content-${skill.index}`} style={{ padding: '0 16px 16px' }}>
           {/* Seek button */}
           <button
             onClick={() => onSeek && onSeek(skill.peakTimestamp)}
@@ -155,7 +164,7 @@ export default function SkillCard({ skill, expanded, onToggle, onSeek }) {
           {/* Biomechanics */}
           {peak && (
             <div style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.35)', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 10 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#8A90AA', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 10 }}>
                 Peak Position Angles
               </div>
               <AngleMeter label="Knee"     value={peak.kneeAngle}     ideal={160} />
@@ -170,7 +179,7 @@ export default function SkillCard({ skill, expanded, onToggle, onSeek }) {
           {/* Deduction hints */}
           {deductionHints.length > 0 ? (
             <div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.35)', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 10 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#8A90AA', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 10 }}>
                 Detected Faults
               </div>
               {deductionHints.map((hint, i) => (
@@ -185,7 +194,7 @@ export default function SkillCard({ skill, expanded, onToggle, onSeek }) {
                     <div style={{ fontSize: 13, fontWeight: 600, color: '#E2E8F0', marginBottom: 2 }}>
                       {hint.fault}
                     </div>
-                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', lineHeight: 1.5 }}>
+                    <div style={{ fontSize: 11, color: '#8890AB', lineHeight: 1.5 }}>
                       {hint.detail}
                     </div>
                   </div>

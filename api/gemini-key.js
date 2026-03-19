@@ -1,15 +1,35 @@
-export default function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET');
-  res.setHeader('Cache-Control', 'no-store');
-  
-  const key = process.env.GEMINI_API_KEY;
-  
-  if (!key) {
-    return res.status(404).json({ error: 'No server key configured' });
+const ALLOWED_ORIGINS = [
+  'https://strive-app-amber.vercel.app',
+  'http://localhost:3000',
+];
+
+function setCorsHeaders(req, res) {
+  const origin = req.headers.origin;
+  if (ALLOWED_ORIGINS.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
   }
-  
-  // Return the key — it's only accessible via the deployed domain
-  // Much safer than hardcoding in client source code
-  res.status(200).json({ key });
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Vary', 'Origin');
+}
+
+export default function handler(req, res) {
+  setCorsHeaders(req, res);
+  res.setHeader('Cache-Control', 'no-store');
+
+  if (req.method === 'OPTIONS') return res.status(200).end();
+
+  const origin = req.headers.origin;
+  if (!ALLOWED_ORIGINS.includes(origin)) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+
+  const key = process.env.GEMINI_API_KEY;
+
+  if (!key) {
+    return res.status(404).json({ available: false });
+  }
+
+  // Do not expose the raw API key to the client
+  res.status(200).json({ available: true });
 }

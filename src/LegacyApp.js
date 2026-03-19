@@ -1,5 +1,10 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo, lazy, Suspense } from "react";
 import { LineChart, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Line, ResponsiveContainer, RadarChart, Radar, PolarGrid, PolarAngleAxis, Cell, ReferenceLine } from "recharts";
+
+// ─── NEW COMPONENT IMPORTS ─────────────────────────────────────────
+const TrainingScreen = lazy(() => import("./screens/TrainingScreen"));
+const NewResultsScreen = lazy(() => import("./screens/ResultsScreen"));
+const NewDashboardScreen = lazy(() => import("./screens/DashboardScreen"));
 
 // ─── STORAGE WRAPPER — works in Claude artifacts AND real browsers ──
 const storage = {
@@ -38,13 +43,17 @@ const log = {
 };
 
 // ─── SAFETY UTILITIES (prevent crashes from unexpected Gemini response shapes) ──
+function escapeHtml(str) {
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
 function safeStr(val, fallback = "") {
   if (val == null) return fallback;
-  if (typeof val === "string") return val;
+  if (typeof val === "string") return escapeHtml(val);
   if (typeof val === "number" || typeof val === "boolean") return String(val);
   if (Array.isArray(val)) return val.map(v => safeStr(v)).join("; ");
   if (typeof val === "object") {
-    return val.text || val.description || val.tip || val.advice || val.name || val.reason || val.skill || val.correction || val.currentFault || JSON.stringify(val);
+    const raw = val.text || val.description || val.tip || val.advice || val.name || val.reason || val.skill || val.correction || val.currentFault || JSON.stringify(val);
+    return typeof raw === "string" ? escapeHtml(raw) : String(raw);
   }
   return String(val);
 }
@@ -1481,6 +1490,17 @@ export default function LegacyApp() {
   const [savedResults, setSavedResults] = useState({}); // Store past results by ID
   const [comparePreselect, setComparePreselect] = useState(null); // Pre-selected analysis ID for comparison
   const [isOffline, setIsOffline] = useState(typeof navigator !== "undefined" ? !navigator.onLine : false);
+  const [userTier, setUserTier] = useState(() => {
+    try { return localStorage.getItem("strive-tier") || "free"; } catch { return "free"; }
+  });
+  // Map legacy "pro" tier to new "competitive" tier name
+  const normalizedTier = userTier === "pro" ? "competitive" : userTier;
+
+  // ── Feature flags for new screen components ──
+  // eslint-disable-next-line no-unused-vars
+  const [useNewResults, setUseNewResults] = useState(true);
+  // eslint-disable-next-line no-unused-vars
+  const [useNewDashboard, setUseNewDashboard] = useState(true);
 
   // ── Agent Epsilon: Offline detection ──
   useEffect(() => {
@@ -1599,63 +1619,14 @@ export default function LegacyApp() {
       <OfflineBanner isOffline={isOffline} />
       <style>{fonts}</style>
       <style>{`
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(232,150,42,0.15); border-radius: 2px; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-        @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
-        @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        @keyframes scaleIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
         @keyframes barGrow { from { width: 0%; } to { width: var(--target-width); } }
         @keyframes glowPulse { 0%, 100% { box-shadow: 0 0 20px rgba(232,150,42,0.12); } 50% { box-shadow: 0 0 40px rgba(232,150,42,0.2); } }
-        @keyframes floatIn { from { opacity: 0; transform: translateY(6px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
-        html { scroll-behavior: smooth; }
-        .btn-gold {
-          background: linear-gradient(135deg, #e8962a, #ffc15a);
-          color: #070c16; border: none; padding: 14px 32px; border-radius: 14px;
-          font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 15px;
-          cursor: pointer; transition: all 0.2s ease; letter-spacing: 0.3px;
-          box-shadow: 0 2px 16px rgba(232,150,42,0.2);
-        }
-        .btn-gold:hover { transform: translateY(-1px); box-shadow: 0 4px 24px rgba(232,150,42,0.3); }
-        .btn-gold:active { transform: translateY(0); box-shadow: 0 2px 12px rgba(232,150,42,0.15); }
-        .btn-gold:disabled { opacity: 0.35; cursor: not-allowed; transform: none; box-shadow: none; }
-        .btn-outline {
-          background: rgba(255,255,255,0.02); color: #e8962a; border: 1px solid rgba(232,150,42,0.2);
-          padding: 12px 28px; border-radius: 12px; font-family: 'Outfit', sans-serif;
-          font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s;
-        }
-        .btn-outline:hover { background: rgba(232,150,42,0.06); border-color: rgba(232,150,42,0.35); }
-        .card {
-          background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.04);
-          border-radius: 18px; padding: 18px; transition: border-color 0.2s;
-        }
-        .card:hover { border-color: rgba(255,255,255,0.07); }
         .card-elevated {
           background: rgba(255,255,255,0.035); border: 1px solid rgba(255,255,255,0.06);
           border-radius: 20px; padding: 20px; box-shadow: 0 4px 24px rgba(0,0,0,0.15);
           transition: all 0.2s;
         }
         .card-elevated:hover { border-color: rgba(255,255,255,0.1); box-shadow: 0 6px 32px rgba(0,0,0,0.2); }
-        .input-field {
-          width: 100%; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07);
-          border-radius: 12px; padding: 14px 16px; color: #e2e8f0; font-family: 'Outfit', sans-serif;
-          font-size: 15px; outline: none; transition: all 0.2s;
-        }
-        .input-field:focus { border-color: rgba(232,150,42,0.5); box-shadow: 0 0 0 3px rgba(232,150,42,0.06); }
-        .input-field::placeholder { color: rgba(255,255,255,0.18); }
-        select.input-field { appearance: none; cursor: pointer;
-          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23C4982A' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
-          background-repeat: no-repeat; background-position: right 16px center;
-        }
-        select.input-field option { background: #0d1422; color: #e2e8f0; }
-        .tag {
-          display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px;
-          font-weight: 600; letter-spacing: 0.5px;
-        }
         .section-label {
           font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
           color: rgba(255,255,255,0.2); margin-bottom: 12px;
@@ -1666,32 +1637,49 @@ export default function LegacyApp() {
       <div style={{
         position: "fixed", top: "-30%", right: "-20%", width: "60vw", height: "60vw",
         background: "radial-gradient(circle, rgba(232,150,42,0.03) 0%, transparent 60%)",
-        pointerEvents: "none", zIndex: 0,
+        pointerEvents: "none", zIndex: 0, willChange: "transform",
       }} />
       <div style={{
         position: "fixed", bottom: "-20%", left: "-15%", width: "50vw", height: "50vw",
         background: "radial-gradient(circle, rgba(139,92,246,0.015) 0%, transparent 60%)",
-        pointerEvents: "none", zIndex: 0,
+        pointerEvents: "none", zIndex: 0, willChange: "transform",
       }} />
 
       {screen === "splash" && <SplashScreen onStart={() => setScreen("onboarding")} />}
       {screen === "onboarding" && <OnboardingScreen onComplete={(p) => { saveProfile(p); setScreen("dashboard"); }} />}
       {screen === "dashboard" && (
         <StriveErrorBoundary name="Dashboard">
-        <DashboardScreen
-          profile={profile}
-          history={history}
-          savedResults={savedResults}
-          onUpload={() => setScreen("upload")}
-          onSettings={() => setScreen("settings")}
-          onViewDeductions={() => setScreen("deductions")}
-          onProgress={() => setScreen("progress")}
-          onMeets={() => setScreen("meets")}
-          onMental={() => setScreen("mental")}
-          onGoals={() => setScreen("goals")}
-          onMeetFocus={() => setScreen("meetfocus")}
-          onViewResult={(r) => { setAnalysisResult(r); setLiveVideoUrl(null); setScreen("results"); }}
-        />
+        {useNewDashboard ? (
+          <Suspense fallback={<div style={{ minHeight: "100vh", background: "#070c16" }} />}>
+          <NewDashboardScreen
+            profile={profile}
+            tier={normalizedTier}
+            recentAnalyses={history.slice(0, 5)}
+            lastResult={history.length > 0 && savedResults[history[0].id] ? savedResults[history[0].id] : null}
+            onAnalyze={() => setScreen("upload")}
+            onViewResult={(r) => { setAnalysisResult(r); setLiveVideoUrl(null); setScreen("results"); }}
+            onNavigate={(target) => {
+              const navMap = { history: "meets", guide: "deductions", mental: "mental", training: "training", goals: "goals", meetfocus: "meetfocus", progress: "progress", settings: "settings" };
+              setScreen(navMap[target] || target);
+            }}
+          />
+          </Suspense>
+        ) : (
+          <DashboardScreen
+            profile={profile}
+            history={history}
+            savedResults={savedResults}
+            onUpload={() => setScreen("upload")}
+            onSettings={() => setScreen("settings")}
+            onViewDeductions={() => setScreen("deductions")}
+            onProgress={() => setScreen("progress")}
+            onMeets={() => setScreen("meets")}
+            onMental={() => setScreen("mental")}
+            onGoals={() => setScreen("goals")}
+            onMeetFocus={() => setScreen("meetfocus")}
+            onViewResult={(r) => { setAnalysisResult(r); setLiveVideoUrl(null); setScreen("results"); }}
+          />
+        )}
         </StriveErrorBoundary>
       )}
       {screen === "upload" && (
@@ -1726,15 +1714,44 @@ export default function LegacyApp() {
       )}
       {screen === "results" && (
         <StriveErrorBoundary name="Results">
-        <ResultsScreen
-          result={analysisResult}
-          profile={profile}
-          history={history}
-          videoUrl={liveVideoUrl}
-          videoFile={videoFileRef.current}
-          onBack={() => setScreen("dashboard")}
-          onDrills={() => setScreen("drills")}
-        />
+        {useNewResults ? (
+          <Suspense fallback={<div style={{ minHeight: "100vh", background: "#070c16" }} />}>
+          <NewResultsScreen
+            result={analysisResult}
+            profile={profile}
+            tier={normalizedTier}
+            previousResult={(() => {
+              if (!analysisResult || !history || history.length < 2) return null;
+              const event = analysisResult.event || uploadData?.event;
+              for (let i = 1; i < history.length; i++) {
+                if (history[i].event === event && savedResults[history[i].id]) {
+                  return savedResults[history[i].id];
+                }
+              }
+              return null;
+            })()}
+            history={Object.values(savedResults)}
+            onUpgrade={() => {
+              try { localStorage.setItem("strive-tier", "competitive"); } catch {}
+              setUserTier("competitive");
+            }}
+            onSeek={() => {}}
+            onBack={() => setScreen("dashboard")}
+            videoUrl={liveVideoUrl}
+            videoFile={videoFileRef.current}
+          />
+          </Suspense>
+        ) : (
+          <ResultsScreen
+            result={analysisResult}
+            profile={profile}
+            history={history}
+            videoUrl={liveVideoUrl}
+            videoFile={videoFileRef.current}
+            onBack={() => setScreen("dashboard")}
+            onDrills={() => setScreen("drills")}
+          />
+        )}
         </StriveErrorBoundary>
       )}
       {screen === "drills" && (
@@ -1779,14 +1796,14 @@ export default function LegacyApp() {
         </StriveErrorBoundary>
       )}
       {screen === "progress" && (
-        (() => {
+        <StriveErrorBoundary name="Progress">
+        {(() => {
           let tier = "free"; try { tier = localStorage.getItem("strive-tier") || "free"; } catch {}
           return tier === "pro" ? (
             <ProgressScreen history={history} profile={profile} savedResults={savedResults} comparePreselect={comparePreselect} onClearPreselect={() => setComparePreselect(null)} onBack={() => setScreen("dashboard")} />
           ) : (
             <div style={{ minHeight: "100vh", padding: "16px 18px 90px", maxWidth: 540, margin: "0 auto" }}>
-              <button onClick={() => setScreen("dashboard")} style={{ background: "none", border: "none", color: "#e8962a", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 600, marginBottom: 20 }}>← Dashboard</button>
-              <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>📈 Progress Tracking</h2>
+              <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8, marginTop: 8 }}>📈 Progress Tracking</h2>
               <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 14, marginBottom: 16 }}>Track your score trends across the season.</p>
               {/* Show basic stats as teaser */}
               {history.length > 0 && (
@@ -1804,7 +1821,8 @@ export default function LegacyApp() {
               </div>
             </div>
           );
-        })()
+        })()}
+        </StriveErrorBoundary>
       )}
       {screen === "meets" && (
         <StriveErrorBoundary name="Meets">
@@ -1816,7 +1834,8 @@ export default function LegacyApp() {
         </StriveErrorBoundary>
       )}
       {screen === "mental" && (
-        (() => {
+        <StriveErrorBoundary name="Mental Training">
+        {(() => {
           let tier = "free"; try { tier = localStorage.getItem("strive-tier") || "free"; } catch {}
           return tier === "pro" ? (
             <MentalTrainingScreen profile={profile} onBack={() => setScreen("dashboard")} />
@@ -1845,10 +1864,12 @@ export default function LegacyApp() {
               </div>
             </div>
           );
-        })()
+        })()}
+        </StriveErrorBoundary>
       )}
       {screen === "goals" && (
-        (() => {
+        <StriveErrorBoundary name="Season Goals">
+        {(() => {
           let tier = "free"; try { tier = localStorage.getItem("strive-tier") || "free"; } catch {}
           return tier === "pro" ? (
             <SeasonGoalsScreen profile={profile} history={history} onBack={() => setScreen("dashboard")} />
@@ -1869,11 +1890,26 @@ export default function LegacyApp() {
               </div>
             </div>
           );
-        })()
+        })()}
+        </StriveErrorBoundary>
       )}
 
       {/* Bottom Navigation */}
-      {["dashboard", "deductions", "meets", "progress", "mental", "goals", "settings", "meetfocus"].includes(screen) && (
+      {/* ── New Training Screen ── */}
+      {screen === "training" && (
+        <StriveErrorBoundary name="Training">
+        <Suspense fallback={<div style={{ minHeight: "100vh", background: "#070c16" }} />}>
+        <TrainingScreen
+          result={analysisResult}
+          profile={profile}
+          tier={normalizedTier}
+          onBack={() => setScreen("dashboard")}
+        />
+        </Suspense>
+        </StriveErrorBoundary>
+      )}
+
+      {["dashboard", "deductions", "meets", "progress", "mental", "goals", "settings", "meetfocus", "training"].includes(screen) && (
         <nav style={{
           position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 100,
           background: "linear-gradient(to top, #070c16 85%, rgba(11,16,36,0.95) 92%, transparent)",
@@ -1883,9 +1919,9 @@ export default function LegacyApp() {
           <div style={{ display: "flex", justifyContent: "space-around", maxWidth: 420, margin: "0 auto", padding: "0 12px" }}>
             {[
               { id: "dashboard", label: "Home", svg: `<path d="M3 10.5L10 4l7 6.5V18a1 1 0 01-1 1h-4v-5h-4v5H4a1 1 0 01-1-1z" stroke-linejoin="round"/>` },
-              { id: "meets", label: "History", svg: `<circle cx="10" cy="10" r="7.5"/><path d="M10 5v5l3 3"/>` },
+              { id: "training", label: "Training", svg: `<path d="M4 14l3-3 3 3 6-6"/><path d="M14 8h4v4"/>` },
               { id: "upload", label: "Analyze", primary: true, svg: `<circle cx="10" cy="10" r="8"/><path d="M10 6v8M6 10h8"/>` },
-              { id: "deductions", label: "Guide", svg: `<path d="M4 4h12v14a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/><path d="M7 8h6M7 11h4"/>` },
+              { id: "progress", label: "Progress", svg: `<circle cx="10" cy="10" r="7.5"/><path d="M10 5v5l3 3"/>` },
               { id: "settings", label: "Profile", svg: `<circle cx="10" cy="7" r="3.5"/><path d="M3.5 18c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"/>` },
             ].map(tab => {
               const isActive = screen === tab.id;
@@ -2294,18 +2330,18 @@ function OnboardingScreen({ onComplete }) {
 }
 
 // ─── DASHBOARD ──────────────────────────────────────────────────────
-function DashboardScreen({ profile, history, savedResults, onUpload, onSettings, onViewDeductions, onViewResult, onProgress, onMeets, onMental, onGoals, onMeetFocus }) {
+const DashboardScreen = React.memo(function DashboardScreen({ profile, history, savedResults, onUpload, onSettings, onViewDeductions, onViewResult, onProgress, onMeets, onMental, onGoals, onMeetFocus }) {
   const events = profile.gender === "female" ? WOMEN_EVENTS : MEN_EVENTS;
-  const avgScore = history.length > 0
+  const avgScore = useMemo(() => history.length > 0
     ? (history.reduce((s, h) => s + (h.score || 0), 0) / history.length).toFixed(3)
-    : "—";
+    : "—", [history]);
 
   // ── Compute score trend for hero card ──
-  const recentScores = history.slice(0, 6).map(h => h.score || 0).reverse();
-  const scoreTrend = recentScores.length >= 2
+  const recentScores = useMemo(() => history.slice(0, 6).map(h => h.score || 0).reverse(), [history]);
+  const scoreTrend = useMemo(() => recentScores.length >= 2
     ? Math.round((recentScores[recentScores.length - 1] - recentScores[0]) * 1000) / 1000
-    : 0;
-  const maxRecent = recentScores.length > 0 ? Math.max(...recentScores) : 0;
+    : 0, [recentScores]);
+  const maxRecent = useMemo(() => recentScores.length > 0 ? Math.max(...recentScores) : 0, [recentScores]);
 
   // ── Daily affirmation (rotates daily, role-aware) ──
   const day = Math.floor(Date.now() / 86400000);
@@ -2858,7 +2894,7 @@ function DashboardScreen({ profile, history, savedResults, onUpload, onSettings,
 
     </div>
   );
-}
+});
 
 // ─── PRE-MEET FOCUS CARD ────────────────────────────────────────────
 const FOCUS_CUES = {
@@ -3102,7 +3138,7 @@ function PreMeetFocusScreen({ profile, history, savedResults, onBack }) {
 }
 
 // ─── UPLOAD SCREEN ──────────────────────────────────────────────────
-function UploadScreen({ profile, onBack, onAnalyze }) {
+const UploadScreen = React.memo(function UploadScreen({ profile, onBack, onAnalyze }) {
   const [video, setVideo] = useState(null);
   const [videoUrl, setVideoUrl] = useState(null);
   const [videoReady, setVideoReady] = useState(false);
@@ -3572,7 +3608,7 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
         background: "rgba(59,130,246,0.04)", border: "1px solid rgba(59,130,246,0.08)",
       }}>
         <span style={{ fontSize: 13 }}>🔒</span>
-        <span style={{ fontSize: 11, color: "rgba(147,197,253,0.7)" }}>Video processed on-device. Only frames sent to AI. Your data stays private.</span>
+        <span style={{ fontSize: 11, color: "rgba(147,197,253,0.7)" }}>Your video is securely sent to our analysis engine for scoring. Videos are deleted after processing. Results are stored on your device.</span>
       </div>
 
       {/* API Key Status */}
@@ -3655,10 +3691,10 @@ function UploadScreen({ profile, onBack, onAnalyze }) {
       </button>
     </div>
   );
-}
+});
 
 // ─── ANALYZING SCREEN ───────────────────────────────────────────────
-function AnalyzingScreen({ uploadData, profile, onComplete, onBack }) {
+const AnalyzingScreen = React.memo(function AnalyzingScreen({ uploadData, profile, onComplete, onBack }) {
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState("Preparing video...");
   const [frames, setFrames] = useState([]);
@@ -4050,6 +4086,7 @@ function AnalyzingScreen({ uploadData, profile, onComplete, onBack }) {
           topP: 1,
           topK: 1,
           maxOutputTokens: 8000,
+          seed: 42,
         },
       }),
     });
@@ -4253,7 +4290,15 @@ Example lines:
 0:53 | Full turn | dance | 0.00 | Clean | Excellent center of gravity — no wobble
 Global | Artistry | artistry | 0.10 | Hollow fingertips; limited eye contact with judges | Good musicality
 
-SCORING CALIBRATION: A real meet score of 8.935 means approximately 1.05 in total execution deductions. If you find fewer than 5 deductions on a 90-second floor routine, you are missing faults. Be a strict Brevet-level judge. Score 0.05-0.15 BELOW what a lenient judge would give.`;
+SCORING CALIBRATION: A real meet score of 8.935 means approximately 1.05 in total execution deductions. If you find fewer than 5 deductions on a 90-second floor routine, you are missing faults. Be a strict Brevet-level judge. Score 0.05-0.15 BELOW what a lenient judge would give.
+
+DETERMINISTIC SCORING — MANDATORY:
+1. Each deduction MUST be exactly one of: 0.00, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.50. No other values.
+2. Report each deduction to exactly two decimal places (e.g., "0.05" not "0.1" or ".05").
+3. For each skill, choose the SINGLE most appropriate deduction value from the scale above. Do not interpolate or average.
+4. When a skill has multiple faults, sum them: e.g., bent knees (0.10) + step on landing (0.05) = 0.15 total for that skill.
+5. Given identical video input, you MUST produce identical deductions. Do not randomize or vary your judgment.
+6. List skills in strict chronological order by timestamp.`;
   }, [profile, uploadData]);
 
   // ── Main analysis orchestrator — single pass ─────────────────────
@@ -4261,23 +4306,32 @@ SCORING CALIBRATION: A real meet score of 8.935 means approximately 1.05 in tota
     setStatus("Preparing analysis...");
     setProgress(35);
 
-    // Get API key: try server proxy first, then user's saved key, then demo fallback
+    // Check if server-side Gemini key is available (key stays server-side, not exposed)
+    let serverKeyAvailable = false;
     let apiKey = null;
     try {
       const resp = await fetch("/api/gemini-key");
-      if (resp.ok) { const d = await resp.json(); apiKey = d.key || null; }
+      if (resp.ok) { const d = await resp.json(); serverKeyAvailable = !!d.available; }
     } catch {}
-    // If no server key, fall back to user's manually-entered key in Settings
-    if (!apiKey) {
+    // If server key available, use server proxy at /api/analyze — no client-side key needed
+    // Otherwise, fall back to user's manually-entered key in Settings for direct Gemini calls
+    if (!serverKeyAvailable) {
       try { const k = await storage.get("strive-gemini-key"); apiKey = k?.value || null; } catch {}
+      if (!apiKey) throw new Error("No API key. Go to Settings and paste your Gemini key from aistudio.google.com/apikey");
     }
-    if (!apiKey) throw new Error("No API key. Go to Settings and paste your Gemini key from aistudio.google.com/apikey");
     if (!uploadData.video) throw new Error("No video file available.");
 
     // ── Score caching — return cached result for duplicate submissions ──
-    const cacheKey = `strive_cache_${btoa(unescape(encodeURIComponent(
-      (uploadData.video.name || "video") + "_" + (uploadData.video.size || 0) + "_" + (profile.level || "L6") + "_" + (uploadData.event || "floor")
-    )))}`;
+    // Fingerprint: file name + size + lastModified + athlete name + level + event
+    const fingerprintParts = [
+      uploadData.video.name || "video",
+      String(uploadData.video.size || 0),
+      String(uploadData.video.lastModified || 0),
+      (profile.name || "unknown").toLowerCase().trim(),
+      profile.level || "L6",
+      uploadData.event || "floor",
+    ].join("_");
+    const cacheKey = `strive_cache_${btoa(unescape(encodeURIComponent(fingerprintParts)))}`;
     try {
       const cached = localStorage.getItem(cacheKey);
       if (cached) {
@@ -4294,34 +4348,62 @@ SCORING CALIBRATION: A real meet score of 8.935 means approximately 1.05 in tota
     } catch (e) { log.warn("cache", `Cache read failed: ${e.message}`); }
 
     try {
-      // Upload video once
-      const fileRef = await uploadVideoToGemini(uploadData.video, apiKey);
+      // Upload video once — requires a client-side API key for direct Gemini uploads
+      if (!apiKey && serverKeyAvailable) {
+        // Server has the key but we can't do client-side video upload without it.
+        // Use server proxy for text-based analysis when video upload isn't possible.
+        log.info("analyze", "Server key available — routing through /api/analyze proxy");
+      }
+      const fileRef = apiKey ? await uploadVideoToGemini(uploadData.video, apiKey) : null;
 
       // ── Single judging pass ──────────────────────────────────────
-      setStatus(`AI judge evaluating ${profile.level} ${uploadData.event} routine...`);
+      setStatus(`Evaluating ${profile.level} ${uploadData.event} routine...`);
       setProgress(68);
 
       const prompt = buildJudgingPrompt();
       log.info("gemini", `Prompt length: ${prompt.length} chars | Level: ${profile.level} | Event: ${uploadData.event}`);
 
       let rawResponse = null;
-      for (let attempt = 1; attempt <= 2; attempt++) {
-        try {
-          rawResponse = await geminiGenerate(fileRef, prompt, apiKey, {
-            label: `judge-${profile.level}-attempt${attempt}`,
-          });
-          if (rawResponse && rawResponse.length > 100 && rawResponse.includes(" | ")) break;
-          log.warn("judge", `Attempt ${attempt} short or missing skills (${rawResponse?.length} chars). Retrying...`);
-          await new Promise(r => setTimeout(r, 2000));
-        } catch (e) {
-          log.warn("judge", `Attempt ${attempt} failed: ${e.message}`);
-          if (attempt === 2) throw e;
-          await new Promise(r => setTimeout(r, 2000));
-        }
-      }
 
-      // Cleanup uploaded file
-      try { fetch(`https://generativelanguage.googleapis.com/v1beta/${fileRef.fileName}?key=${apiKey}`, { method: "DELETE" }); } catch {}
+      if (fileRef && apiKey) {
+        // Direct Gemini API path (user-provided key)
+        for (let attempt = 1; attempt <= 2; attempt++) {
+          try {
+            rawResponse = await geminiGenerate(fileRef, prompt, apiKey, {
+              label: `judge-${profile.level}-attempt${attempt}`,
+            });
+            if (rawResponse && rawResponse.length > 100 && rawResponse.includes(" | ")) break;
+            log.warn("judge", `Attempt ${attempt} short or missing skills (${rawResponse?.length} chars). Retrying...`);
+            await new Promise(r => setTimeout(r, 2000));
+          } catch (e) {
+            log.warn("judge", `Attempt ${attempt} failed: ${e.message}`);
+            if (attempt === 2) throw e;
+            await new Promise(r => setTimeout(r, 2000));
+          }
+        }
+
+        // Cleanup uploaded file
+        try { fetch(`https://generativelanguage.googleapis.com/v1beta/${fileRef.fileName}?key=${apiKey}`, { method: "DELETE" }); } catch {}
+      } else if (serverKeyAvailable) {
+        // Server proxy path — send extracted frame data + prompt to /api/analyze
+        setStatus(`Server-side analysis of ${profile.level} ${uploadData.event}...`);
+        const proxyResp = await fetch("/api/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            athleteProfile: {
+              name: profile.name,
+              gender: profile.gender,
+              level: profile.level,
+            },
+            skillAnalysis: extractedFrames || [],
+            event: uploadData.event || "floor",
+          }),
+        });
+        if (!proxyResp.ok) throw new Error(`Server analysis failed (${proxyResp.status})`);
+        const proxyData = await proxyResp.json();
+        rawResponse = proxyData.rawText || JSON.stringify(proxyData);
+      }
 
       if (!rawResponse) throw new Error("Gemini returned empty response.");
 
@@ -4519,12 +4601,28 @@ SCORING CALIBRATION: A real meet score of 8.935 means approximately 1.05 in tota
       // ── Sum deductions — only place math happens ─────────────────
       const execSkills = processedSkills.filter(s => s.category !== "artistry");
       const artSkills  = processedSkills.filter(s => s.category === "artistry");
-      const execTotal  = Math.round(execSkills.reduce((sum, s) => sum + s.deduction, 0) * 1000) / 1000;
-      const artTotal   = Math.round(artSkills.reduce( (sum, s) => sum + s.deduction, 0) * 1000) / 1000;
-      const totalDed   = Math.round((execTotal + artTotal) * 1000) / 1000;
-      const finalScore = Math.max(0, Math.round((10.0 - totalDed) * 1000) / 1000);
+      const execTotalRaw  = Math.round(execSkills.reduce((sum, s) => sum + s.deduction, 0) * 1000) / 1000;
+      const artTotalRaw   = Math.round(artSkills.reduce( (sum, s) => sum + s.deduction, 0) * 1000) / 1000;
 
-      log.info("score", `FINAL: ${finalScore} | Deductions: ${totalDed} | Exec: ${execTotal} | Artistry: ${artTotal} | Skills: ${processedSkills.length} | Level: ${profile.level}`);
+      // ── USAG 0.025 rounding normalization ──────────────────────
+      // USAG E-scores use 0.025 increments. Round total deductions to nearest 0.025.
+      const roundToUSAG = (val) => Math.round(val / 0.025) * 0.025;
+      const execTotal  = roundToUSAG(execTotalRaw);
+      const artTotal   = roundToUSAG(artTotalRaw);
+      const totalDed   = Math.round((execTotal + artTotal) * 1000) / 1000;
+
+      // ── Validation: ensure final score = start value - total deductions ──
+      const startValue = 10.0;
+      const finalScore = Math.max(0, Math.round((startValue - totalDed) * 1000) / 1000);
+
+      // Sanity check: individual deductions must sum to total (within 0.01 tolerance)
+      const individualSum = Math.round(processedSkills.reduce((sum, s) => sum + s.deduction, 0) * 1000) / 1000;
+      const sumDiff = Math.abs(individualSum - (execTotalRaw + artTotalRaw));
+      if (sumDiff > 0.01) {
+        log.warn("validation", `Deduction sum mismatch: individual=${individualSum}, exec+art=${execTotalRaw + artTotalRaw}, diff=${sumDiff}`);
+      }
+
+      log.info("score", `FINAL: ${finalScore} | Deductions: ${totalDed} (raw: ${(execTotalRaw + artTotalRaw).toFixed(3)}, USAG-rounded) | Exec: ${execTotal} | Artistry: ${artTotal} | Skills: ${processedSkills.length} | Level: ${profile.level}`);
 
       // Top issues and strengths
       const withDeds   = [...processedSkills].filter(s => s.deduction > 0).sort((a,b) => b.deduction - a.deduction);
@@ -4817,7 +4915,7 @@ SCORING CALIBRATION: A real meet score of 8.935 means approximately 1.05 in tota
       )}
     </div>
   );
-}
+});
 
 // ─── VIDEO REVIEW PLAYER ────────────────────────────────────────────
 // ── Client-side deduction grouper ──
@@ -5348,7 +5446,7 @@ function getCorrectForm(skill) {
 
 // ─── GRADED SKILL CARD ───────────────────────────────────────────────────────
 
-function GradedSkillCard({ skill, onSeek, videoFile }) {
+function GradedSkillCard({ skill, onSeek, videoFile, videoUrl }) {
   const [expanded, setExpanded] = useState(false);
   const [cardTab, setCardTab] = useState("overview");
   const [cardVideoUrl, setCardVideoUrl] = useState(null);
@@ -5364,22 +5462,35 @@ function GradedSkillCard({ skill, onSeek, videoFile }) {
   const borderLeftColor = gradeGroup === "A" ? "#22c55e" : gradeGroup === "B" ? "#e8962a" : gradeGroup === "C" ? "#e06820" : "#dc2626";
   const isClean = !skill.fault || skill.gradeDeduction === 0;
 
+  // Track whether we own the blob URL (so we only revoke URLs we created)
+  const ownsBlobRef = useRef(false);
+
   // Create/revoke blob URL when card expands/collapses
   useEffect(() => {
-    if (expanded && videoFile && !cardVideoUrl) {
-      const url = URL.createObjectURL(videoFile);
-      setCardVideoUrl(url);
+    if (expanded && !cardVideoUrl) {
+      if (videoFile) {
+        const url = URL.createObjectURL(videoFile);
+        setCardVideoUrl(url);
+        ownsBlobRef.current = true;
+      } else if (videoUrl) {
+        // Fallback: reuse the parent blob URL (don't revoke it — we don't own it)
+        setCardVideoUrl(videoUrl);
+        ownsBlobRef.current = false;
+      }
     }
     if (!expanded && cardVideoUrl) {
-      URL.revokeObjectURL(cardVideoUrl);
+      if (ownsBlobRef.current) {
+        URL.revokeObjectURL(cardVideoUrl);
+      }
       setCardVideoUrl(null);
+      ownsBlobRef.current = false;
       setShowSkel(false);
       setPlaybackRate(1);
       // Cancel any running skeleton loop
       if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
     }
     // eslint-disable-next-line
-  }, [expanded, videoFile]);
+  }, [expanded, videoFile, videoUrl]);
 
   // Seek video to skill timestamp when expanded and video is ready
   useEffect(() => {
@@ -5662,7 +5773,8 @@ function GradedSkillCard({ skill, onSeek, videoFile }) {
               <div style={{ position: "relative", borderRadius: 10, overflow: "hidden",
                 background: "#000", border: "1px solid rgba(255,255,255,0.08)" }}>
                 <video ref={cardVideoRef} src={cardVideoUrl}
-                  playsInline muted controls controlsList="nodownload"
+                  playsInline webkit-playsinline="" muted controls controlsList="nodownload"
+                  preload="metadata"
                   style={{ width: "100%", display: "block", maxHeight: 220 }} />
                 <canvas ref={cardCanvasRef}
                   style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%",
@@ -5716,6 +5828,18 @@ function GradedSkillCard({ skill, onSeek, videoFile }) {
               <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginTop: 4,
                 fontFamily: "'Space Mono', monospace" }}>
                 Frame at {skill.timestamp}
+              </div>
+            </div>
+          )}
+
+          {/* Fallback when no video or frame is available */}
+          {!cardVideoUrl && !skill.frameDataUrl && (
+            <div style={{ marginBottom: 12, padding: "16px 12px", borderRadius: 10,
+              background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)",
+              textAlign: "center" }}>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)",
+                fontFamily: "'Outfit', sans-serif" }}>
+                Video preview unavailable
               </div>
             </div>
           )}
@@ -6050,6 +6174,7 @@ function GradedSkillsView({ result, videoUrl, videoFile }) {
           skill={skill}
           onSeek={videoUrl ? handleSeek : null}
           videoFile={videoFile}
+          videoUrl={videoUrl}
         />
         </StriveErrorBoundary>
       ))}
@@ -6058,7 +6183,7 @@ function GradedSkillsView({ result, videoUrl, videoFile }) {
 }
 
 // ─── RESULTS SCREEN ─────────────────────────────────────────────────
-function ResultsScreen({ result, profile, history, videoUrl, videoFile, onBack, onDrills }) {
+const ResultsScreen = React.memo(function ResultsScreen({ result, profile, history, videoUrl, videoFile, onBack, onDrills }) {
   const [activeTab, setActiveTab] = useState("overview");
   const [actualScore, setActualScore] = useState("");
   const [scoreSaved, setScoreSaved] = useState(false);
@@ -6087,11 +6212,11 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFile, onBack, 
   }
 
   // ── Agent Delta: Compute intelligence data ──
-  const athleteRecord = getAthleteRecord(profile);
-  const faultIntelligence = computeFaultIntelligence(athleteRecord);
-  const drillPlan = faultIntelligence.totalAnalyses >= 5 ? generateWeeklyDrillPlan(faultIntelligence) : null;
-  const improvementData = computeImprovementCurves(athleteRecord);
-  const goalTracking = computeGoalTracking(athleteRecord);
+  const athleteRecord = useMemo(() => getAthleteRecord(profile), [profile]);
+  const faultIntelligence = useMemo(() => computeFaultIntelligence(athleteRecord), [athleteRecord]);
+  const drillPlan = useMemo(() => faultIntelligence.totalAnalyses >= 5 ? generateWeeklyDrillPlan(faultIntelligence) : null, [faultIntelligence]);
+  const improvementData = useMemo(() => computeImprovementCurves(athleteRecord), [athleteRecord]);
+  const goalTracking = useMemo(() => computeGoalTracking(athleteRecord), [athleteRecord]);
 
   const groupedDeds = result.executionDeductions || [];
   const scoreColor = result.finalScore >= 9.0 ? "#22c55e" : result.finalScore >= 8.0 ? "#ffc15a" : "#dc2626";
@@ -7302,10 +7427,10 @@ function ResultsScreen({ result, profile, history, videoUrl, videoFile, onBack, 
       </div>
     </div>
   );
-}
+});
 
 // ─── DRILLS SCREEN ──────────────────────────────────────────────────
-function DrillsScreen({ result, onBack }) {
+const DrillsScreen = React.memo(function DrillsScreen({ result, onBack }) {
   const deds = result?.executionDeductions || [];
   const identifiedFaults = deds.map(d => d.fault) || [];
 
@@ -7436,7 +7561,7 @@ function DrillsScreen({ result, onBack }) {
       </div>
     </div>
   );
-}
+});
 
 // ─── DEDUCTIONS REFERENCE SCREEN ────────────────────────────────────
 function DeductionsScreen({ onBack, profile }) {
@@ -7577,7 +7702,7 @@ function DeductionsScreen({ onBack, profile }) {
 }
 
 // ─── SETTINGS SCREEN ────────────────────────────────────────────────
-function SettingsScreen({ profile, onSave, onBack, onReset }) {
+const SettingsScreen = React.memo(function SettingsScreen({ profile, onSave, onBack, onReset }) {
   // Load season goals from athlete record into editProfile
   const athleteRecord = getAthleteRecord(profile);
   const sg = athleteRecord ? athleteRecord.seasonGoals || {} : {};
@@ -7609,11 +7734,7 @@ function SettingsScreen({ profile, onSave, onBack, onReset }) {
 
   return (
     <div style={{ minHeight: "100vh", padding: "16px 18px 90px", maxWidth: 540, margin: "0 auto" }}>
-      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(232,150,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 13, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.5 2.5l-5 5 5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> Dashboard
-      </button>
-
-      <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 24 }}>Settings</h2>
+      <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 24, marginTop: 8 }}>Settings</h2>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
         <div>
@@ -7907,7 +8028,7 @@ function SettingsScreen({ profile, onSave, onBack, onReset }) {
       </div>
     </div>
   );
-}
+});
 
 // ─── WHAT-IF SCORING SIMULATOR ──────────────────────────────────────
 function WhatIfSimulator({ result }) {
@@ -7972,11 +8093,11 @@ function WhatIfSimulator({ result }) {
 }
 
 // ─── PROGRESS SCREEN ────────────────────────────────────────────────
-function ProgressScreen({ history, profile, savedResults, comparePreselect, onClearPreselect, onBack }) {
+const ProgressScreen = React.memo(function ProgressScreen({ history, profile, savedResults, comparePreselect, onClearPreselect, onBack }) {
   const events = profile.gender === "female" ? WOMEN_EVENTS : MEN_EVENTS;
 
   // Build list of analyses that have saved results for comparison
-  const comparableAnalyses = history.filter(h => savedResults && savedResults[h.id]);
+  const comparableAnalyses = useMemo(() => history.filter(h => savedResults && savedResults[h.id]), [history, savedResults]);
 
   // Comparison state
   const [idA, setIdA] = useState(() => {
@@ -8001,23 +8122,26 @@ function ProgressScreen({ history, profile, savedResults, comparePreselect, onCl
   });
 
   // Score trend data (chronological order)
-  const chartData = [...history].reverse().map((h, i) => ({
+  const chartData = useMemo(() => [...history].reverse().map((h, i) => ({
     name: h.meetName ? h.meetName.slice(0, 10) : (h.date || `#${i+1}`),
     score: h.score || 0,
     event: h.event,
     deductions: h.deductions || 0,
     date: h.date || "",
-  }));
+  })), [history]);
 
   // Target score from athlete record
   const athleteRecord = getAthleteRecord(profile);
   const targetScore = athleteRecord?.seasonGoals?.targetScore || null;
 
   // Personal bests per event
-  const bests = {};
-  history.forEach(h => {
-    if (!bests[h.event] || h.score > bests[h.event]) bests[h.event] = h.score;
-  });
+  const bests = useMemo(() => {
+    const b = {};
+    history.forEach(h => {
+      if (!b[h.event] || h.score > b[h.event]) b[h.event] = h.score;
+    });
+    return b;
+  }, [history]);
 
   // Get full result data for comparison
   const resultA = idA && savedResults ? savedResults[idA] : null;
@@ -8176,10 +8300,7 @@ function ProgressScreen({ history, profile, savedResults, comparePreselect, onCl
 
   return (
     <div style={{ minHeight: "100vh", padding: "16px 18px 90px", maxWidth: 540, margin: "0 auto" }}>
-      <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(232,150,42,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 13, fontWeight: 600, marginBottom: 14, display: "flex", alignItems: "center", gap: 4 }}>
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.5 2.5l-5 5 5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> Dashboard
-      </button>
-      <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Progress & Comparison</h2>
+      <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4, marginTop: 8 }}>Progress & Comparison</h2>
       <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 14, marginBottom: 24 }}>Track improvement and compare analyses side by side</p>
 
       {history.length < 2 ? (
@@ -8518,23 +8639,26 @@ function ProgressScreen({ history, profile, savedResults, comparePreselect, onCl
       )}
     </div>
   );
-}
+});
 
 // ─── MEETS SCREEN ───────────────────────────────────────────────────
-function MeetsScreen({ history, savedResults, profile, onBack, onViewResult, onCompare }) {
+const MeetsScreen = React.memo(function MeetsScreen({ history, savedResults, profile, onBack, onViewResult, onCompare }) {
   // Group history entries by meet
-  const meets = {};
-  history.forEach(h => {
-    const key = h.meetName || h.date || "Unknown Meet";
-    if (!meets[key]) meets[key] = { name: h.meetName, location: h.meetLocation, date: h.meetDate || h.date, entries: [] };
-    meets[key].entries.push(h);
-  });
+  const meets = useMemo(() => {
+    const m = {};
+    history.forEach(h => {
+      const key = h.meetName || h.date || "Unknown Meet";
+      if (!m[key]) m[key] = { name: h.meetName, location: h.meetLocation, date: h.meetDate || h.date, entries: [] };
+      m[key].entries.push(h);
+    });
+    return m;
+  }, [history]);
 
   // Overall stats
-  const allScores = history.filter(h => h.score > 0).map(h => h.score);
-  const bestScore = allScores.length > 0 ? Math.max(...allScores) : 0;
-  const avgScore = allScores.length > 0 ? allScores.reduce((a, b) => a + b, 0) / allScores.length : 0;
-  const bestEvent = (() => {
+  const allScores = useMemo(() => history.filter(h => h.score > 0).map(h => h.score), [history]);
+  const bestScore = useMemo(() => allScores.length > 0 ? Math.max(...allScores) : 0, [allScores]);
+  const avgScore = useMemo(() => allScores.length > 0 ? allScores.reduce((a, b) => a + b, 0) / allScores.length : 0, [allScores]);
+  const bestEvent = useMemo(() => {
     const byEvent = {};
     history.forEach(h => {
       if (!h.score) return;
@@ -8547,7 +8671,7 @@ function MeetsScreen({ history, savedResults, profile, onBack, onViewResult, onC
       if (avg > bestAvg) { bestAvg = avg; best = evt; }
     });
     return best ? { event: best, avg: bestAvg } : null;
-  })();
+  }, [history]);
 
   return (
     <div style={{ minHeight: "100vh", padding: "16px 18px 90px", maxWidth: 540, margin: "0 auto" }}>
@@ -8661,10 +8785,10 @@ function MeetsScreen({ history, savedResults, profile, onBack, onViewResult, onC
       )}
     </div>
   );
-}
+});
 
 // ─── MENTAL TRAINING SCREEN ─────────────────────────────────────────
-function MentalTrainingScreen({ profile, onBack }) {
+const MentalTrainingScreen = React.memo(function MentalTrainingScreen({ profile, onBack }) {
   const [activeSection, setActiveSection] = useState("overview");
   const sections = [
     { id: "overview", label: "Overview" },
@@ -8945,10 +9069,10 @@ function MentalTrainingScreen({ profile, onBack }) {
       )}
     </div>
   );
-}
+});
 
 // ─── SEASON GOALS SCREEN ────────────────────────────────────────────
-function SeasonGoalsScreen({ profile, history, onBack }) {
+const SeasonGoalsScreen = React.memo(function SeasonGoalsScreen({ profile, history, onBack }) {
   const [goals, setGoals] = useState([]);
   const [newGoalEvent, setNewGoalEvent] = useState("");
   const [newGoalTarget, setNewGoalTarget] = useState("");
@@ -9068,7 +9192,7 @@ function SeasonGoalsScreen({ profile, history, onBack }) {
       </div>
     </div>
   );
-}
+});
 
 // ─── BODY HEATMAP — shows where on the body deductions cluster ──────
 function BodyHeatmap({ deductions }) {

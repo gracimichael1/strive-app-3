@@ -1,0 +1,1699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Strive — Master Strategy Report v2.0 | March 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/* ── Reset & Base ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; font-size: 16px; }
+body {
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #08091a;
+  color: #c8cdd8;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Typography ── */
+h1, h2, h3, h4 { font-family: 'Playfair Display', Georgia, serif; color: #e8c96a; font-weight: 700; line-height: 1.25; }
+h1 { font-size: clamp(2rem, 5vw, 3.2rem); }
+h2 { font-size: clamp(1.5rem, 3.5vw, 2.2rem); margin-bottom: 0.6em; padding-bottom: 0.4em; border-bottom: 1px solid rgba(201,168,76,0.15); }
+h3 { font-size: clamp(1.1rem, 2.5vw, 1.4rem); color: #c9a84c; margin-bottom: 0.5em; }
+h4 { font-size: 1.05rem; color: #d4b86a; margin-bottom: 0.4em; }
+p { margin-bottom: 1em; }
+strong { color: #e0d4b8; }
+.mono { font-family: 'DM Mono', monospace; }
+.gold { color: #e8c96a; }
+.green { color: #34d399; }
+.red { color: #f87171; }
+.orange { color: #fb923c; }
+.muted { color: #6b7280; }
+.small { font-size: 0.875rem; }
+
+/* ── Layout ── */
+.container { max-width: 1100px; margin: 0 auto; padding: 0 clamp(1rem, 4vw, 3rem); }
+section { padding: 4rem 0 3rem; }
+section:not(:last-of-type) { border-bottom: 1px solid rgba(201,168,76,0.08); }
+
+/* ── Sticky Nav ── */
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(8,9,26,0.92); backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(201,168,76,0.15);
+  padding: 0;
+}
+.nav-inner {
+  max-width: 1100px; margin: 0 auto;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 clamp(1rem, 4vw, 3rem);
+  height: 56px; gap: 1rem;
+}
+.nav-brand {
+  font-family: 'Playfair Display', serif; font-weight: 800;
+  color: #e8c96a; font-size: 1.15rem; white-space: nowrap;
+  letter-spacing: 0.04em;
+}
+.nav-links {
+  display: flex; gap: 0; overflow-x: auto; scrollbar-width: none;
+  -ms-overflow-style: none; flex: 1; justify-content: center;
+}
+.nav-links::-webkit-scrollbar { display: none; }
+.nav-links a {
+  color: #7a8299; text-decoration: none; font-size: 0.72rem;
+  font-weight: 500; padding: 0.5rem 0.55rem; white-space: nowrap;
+  transition: color 0.2s; letter-spacing: 0.02em; text-transform: uppercase;
+}
+.nav-links a:hover, .nav-links a.active { color: #e8c96a; }
+.nav-actions { display: flex; gap: 0.5rem; }
+.btn-print {
+  background: transparent; border: 1px solid rgba(201,168,76,0.3);
+  color: #c9a84c; padding: 0.35rem 1rem; border-radius: 4px;
+  font-size: 0.8rem; cursor: pointer; font-family: 'DM Sans', sans-serif;
+  transition: all 0.2s; letter-spacing: 0.03em; text-transform: uppercase;
+}
+.btn-print:hover { background: rgba(201,168,76,0.1); border-color: #c9a84c; }
+
+/* ── Hero ── */
+.hero {
+  padding: 5rem 0 4rem;
+  background: linear-gradient(180deg, rgba(201,168,76,0.06) 0%, transparent 60%);
+  text-align: center;
+}
+.hero-badge {
+  display: inline-block; font-size: 0.75rem; text-transform: uppercase;
+  letter-spacing: 0.15em; color: #c9a84c; border: 1px solid rgba(201,168,76,0.25);
+  padding: 0.3rem 1.2rem; border-radius: 20px; margin-bottom: 1.5rem;
+  font-weight: 500;
+}
+.hero h1 { margin-bottom: 0.5em; }
+.hero-sub {
+  font-size: clamp(1rem, 2vw, 1.25rem); color: #8892a8;
+  max-width: 700px; margin: 0 auto 3rem; font-weight: 300;
+}
+
+/* ── KPI Grid ── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.25rem; margin: 2rem 0;
+}
+.kpi-card {
+  background: linear-gradient(135deg, rgba(201,168,76,0.06) 0%, rgba(8,9,26,0.8) 100%);
+  border: 1px solid rgba(201,168,76,0.12);
+  border-radius: 10px; padding: 1.5rem 1.25rem; text-align: center;
+}
+.kpi-value {
+  font-family: 'DM Mono', monospace; font-size: 1.8rem; font-weight: 500;
+  color: #e8c96a; line-height: 1.2; margin-bottom: 0.3rem;
+}
+.kpi-label { font-size: 0.8rem; color: #7a8299; text-transform: uppercase; letter-spacing: 0.08em; }
+
+/* ── Cards & Lists ── */
+.card {
+  background: rgba(13,18,34,0.6);
+  border: 1px solid rgba(201,168,76,0.08);
+  border-radius: 10px; padding: 1.5rem; margin-bottom: 1.25rem;
+}
+.card-highlight {
+  border-left: 3px solid #c9a84c;
+  background: rgba(201,168,76,0.04);
+}
+.card-green { border-left: 3px solid #34d399; }
+.card-red { border-left: 3px solid #f87171; }
+.card-orange { border-left: 3px solid #fb923c; }
+
+ul, ol { margin-left: 1.5rem; margin-bottom: 1em; }
+li { margin-bottom: 0.4em; }
+li::marker { color: #c9a84c; }
+
+/* ── Tables ── */
+table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.92rem; }
+thead th {
+  text-align: left; padding: 0.8rem 1rem; font-size: 0.75rem;
+  text-transform: uppercase; letter-spacing: 0.1em; color: #c9a84c;
+  border-bottom: 2px solid rgba(201,168,76,0.2); font-weight: 600;
+}
+tbody td {
+  padding: 0.75rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.04);
+  vertical-align: top;
+}
+tbody tr:hover { background: rgba(201,168,76,0.03); }
+
+/* ── Tags / Badges ── */
+.tag {
+  display: inline-block; font-size: 0.7rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.06em;
+  padding: 0.2rem 0.6rem; border-radius: 4px; white-space: nowrap;
+}
+.tag-gold { background: rgba(201,168,76,0.15); color: #e8c96a; }
+.tag-green { background: rgba(52,211,153,0.15); color: #34d399; }
+.tag-red { background: rgba(248,113,113,0.15); color: #f87171; }
+.tag-orange { background: rgba(251,146,60,0.15); color: #fb923c; }
+.tag-blue { background: rgba(96,165,250,0.15); color: #60a5fa; }
+.tag-gray { background: rgba(107,114,128,0.15); color: #9ca3af; }
+.tag-yellow { background: rgba(250,204,21,0.15); color: #facc15; }
+
+/* ── Grid layouts ── */
+.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.25rem; }
+.grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.25rem; }
+.grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.25rem; }
+
+/* ── Phase Timeline ── */
+.phase { position: relative; padding-left: 2rem; margin-bottom: 2rem; }
+.phase::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+  width: 2px; background: rgba(201,168,76,0.15);
+}
+.phase::after {
+  content: ''; position: absolute; left: -5px; top: 6px;
+  width: 12px; height: 12px; border-radius: 50%;
+  background: #c9a84c; border: 2px solid #08091a;
+}
+.phase-header {
+  display: flex; align-items: baseline; gap: 0.75rem; margin-bottom: 0.5rem; flex-wrap: wrap;
+}
+.phase-num {
+  font-family: 'DM Mono', monospace; color: #c9a84c;
+  font-size: 0.8rem; font-weight: 500;
+}
+.phase-title { font-family: 'Playfair Display', serif; color: #e8c96a; font-size: 1.15rem; }
+.phase-time { font-family: 'DM Mono', monospace; color: #6b7280; font-size: 0.8rem; }
+
+/* ── Severity indicators ── */
+.severity { display: inline-flex; align-items: center; gap: 0.4rem; }
+.dot {
+  width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex-shrink: 0;
+}
+.dot-critical { background: #f87171; }
+.dot-high { background: #fb923c; }
+.dot-medium { background: #fbbf24; }
+.dot-low { background: #34d399; }
+
+/* ── Pricing Tiers ── */
+.tier-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.tier-card {
+  background: rgba(13,18,34,0.5); border: 1px solid rgba(201,168,76,0.1);
+  border-radius: 10px; padding: 1.25rem; text-align: center;
+  transition: border-color 0.2s;
+}
+.tier-card:hover { border-color: rgba(201,168,76,0.3); }
+.tier-card.featured { border-color: #c9a84c; background: rgba(201,168,76,0.06); }
+.tier-name { font-family: 'Playfair Display', serif; color: #e8c96a; font-size: 1.05rem; margin-bottom: 0.3rem; }
+.tier-price { font-family: 'DM Mono', monospace; font-size: 1.5rem; color: #fff; margin-bottom: 0.15rem; }
+.tier-period { font-size: 0.75rem; color: #6b7280; margin-bottom: 0.75rem; }
+.tier-features { list-style: none; margin: 0; padding: 0; font-size: 0.82rem; text-align: left; }
+.tier-features li { padding: 0.25rem 0; border-bottom: 1px solid rgba(255,255,255,0.03); }
+.tier-features li::before { content: "\2713\00a0"; color: #c9a84c; }
+
+/* ── Priority labels ── */
+.priority {
+  font-family: 'DM Mono', monospace; font-size: 0.72rem; font-weight: 500;
+  padding: 0.15rem 0.5rem; border-radius: 3px; display: inline-block;
+}
+.p0 { background: rgba(248,113,113,0.2); color: #f87171; }
+.p1 { background: rgba(251,146,60,0.2); color: #fb923c; }
+.p2 { background: rgba(96,165,250,0.2); color: #60a5fa; }
+.p3 { background: rgba(107,114,128,0.2); color: #9ca3af; }
+
+/* ── Footer ── */
+footer {
+  text-align: center; padding: 3rem 0; margin-top: 2rem;
+  border-top: 1px solid rgba(201,168,76,0.1);
+  color: #4b5563; font-size: 0.82rem;
+}
+footer strong { color: #7a8299; }
+
+/* ── Divider ── */
+.divider {
+  height: 1px; background: linear-gradient(90deg, transparent, rgba(201,168,76,0.2), transparent);
+  margin: 2rem 0;
+}
+
+/* ── Bar charts (CSS only) ── */
+.bar-chart { margin: 1rem 0; }
+.bar-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.6rem; }
+.bar-label { width: 120px; font-size: 0.82rem; color: #8892a8; text-align: right; flex-shrink: 0; }
+.bar-track { flex: 1; height: 24px; background: rgba(255,255,255,0.03); border-radius: 4px; overflow: hidden; position: relative; }
+.bar-fill { height: 100%; border-radius: 4px; display: flex; align-items: center; padding-left: 0.5rem; font-family: 'DM Mono', monospace; font-size: 0.72rem; color: #fff; white-space: nowrap; }
+.bar-gold { background: linear-gradient(90deg, #c9a84c, #e8c96a); }
+.bar-green { background: linear-gradient(90deg, #059669, #34d399); }
+.bar-blue { background: linear-gradient(90deg, #2563eb, #60a5fa); }
+
+/* ── Resolved issue styling ── */
+.resolved-item {
+  display: flex; align-items: flex-start; gap: 0.5rem; padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+.resolved-item:last-child { border-bottom: none; }
+.resolved-text { text-decoration: line-through; color: #6b7280; flex: 1; }
+.pending-text { flex: 1; }
+
+/* ── Roadmap steps ── */
+.roadmap-step {
+  position: relative; padding-left: 3rem; margin-bottom: 1.5rem;
+}
+.roadmap-step .step-marker {
+  position: absolute; left: 0; top: 0;
+  width: 2rem; height: 2rem; border-radius: 50%;
+  background: rgba(201,168,76,0.15); border: 2px solid #c9a84c;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'DM Mono', monospace; font-size: 0.7rem; color: #e8c96a;
+}
+
+/* ── Print styles ── */
+@media print {
+  body { background: #fff; color: #1a1a1a; font-size: 11pt; }
+  nav { display: none; }
+  .hero { padding: 2rem 0; }
+  h1, h2, h3, h4, .kpi-value, .gold, .green, .tier-name, .phase-title { color: #1a1a1a !important; }
+  .kpi-card, .card, .tier-card { border-color: #ccc; background: #f9f9f9; }
+  .card-highlight, .card-green, .card-red, .card-orange { border-left-color: #666; }
+  section { padding: 1.5rem 0; page-break-inside: avoid; }
+  .tag { border: 1px solid #999; background: #eee; color: #333; }
+  .bar-fill { background: #666 !important; }
+  .bar-track { background: #eee; }
+  a { color: #1a1a1a; text-decoration: underline; }
+  .phase::before { background: #ccc; }
+  .phase::after { background: #666; }
+  thead th { color: #333; border-bottom-color: #999; }
+  footer { color: #666; border-top-color: #ccc; }
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .nav-links { display: none; }
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .tier-grid { grid-template-columns: 1fr; }
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .bar-label { width: 80px; font-size: 0.75rem; }
+  table { font-size: 0.82rem; }
+  thead th, tbody td { padding: 0.5rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- ─── NAV ─── -->
+<nav>
+  <div class="nav-inner">
+    <div class="nav-brand">STRIVE v2.0</div>
+    <div class="nav-links">
+      <a href="#executive">Summary</a>
+      <a href="#market">Market</a>
+      <a href="#competitive">Competitive</a>
+      <a href="#financial">Financial</a>
+      <a href="#marketing">Marketing</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#product">Product</a>
+      <a href="#ai-roadmap">AI Roadmap</a>
+      <a href="#legal">Legal</a>
+      <a href="#ux">UX</a>
+      <a href="#expansion">Expansion</a>
+      <a href="#risk">Risk</a>
+      <a href="#action">Action Plan</a>
+    </div>
+    <div class="nav-actions">
+      <button class="btn-print" onclick="window.print()">Print / PDF</button>
+    </div>
+  </div>
+</nav>
+
+<!-- ─── HERO ─── -->
+<div class="hero">
+  <div class="container">
+    <div class="hero-badge">Confidential &mdash; Investor Edition v2.0</div>
+    <h1>Strive Master Strategy</h1>
+    <p class="hero-sub">AI-powered gymnastics analysis. First to market. Zero direct competitors. Updated with completed build phase, financial model, and customer acquisition strategy.</p>
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-value">$75-150M</div>
+        <div class="kpi-label">Serviceable Market (SAM)</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value">0</div>
+        <div class="kpi-label">Direct AI Competitors</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value">85%+</div>
+        <div class="kpi-label">Gross Margin</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value">$2.4M</div>
+        <div class="kpi-label">Year 2 ARR Target</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value">15/15</div>
+        <div class="kpi-label">Critical Issues Resolved</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value">$200K</div>
+        <div class="kpi-label">Month 24 MRR Target</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- 1. EXECUTIVE SUMMARY                       -->
+<!-- ═══════════════════════════════════════════ -->
+<section id="executive">
+  <div class="container">
+    <h2>1. Executive Summary</h2>
+
+    <div class="card card-highlight">
+      <h4>The Opportunity</h4>
+      <p>Strive is building the first AI-powered gymnastics analysis platform that automatically identifies skills, detects USAG-calibrated deductions, and produces competition-grade scores from a smartphone video. There are <strong>zero direct competitors</strong> offering this capability at any price point.</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="card card-green">
+        <h4>Current Status &mdash; Build Phase Complete</h4>
+        <ul>
+          <li>Functional MVP with Gemini 2.5 Flash full-video analysis</li>
+          <li><strong>15 critical/high issues resolved</strong> across security, accessibility, and performance</li>
+          <li>8 new component files created, 16+ files modified</li>
+          <li>Code splitting active with 3 lazy-loaded chunks</li>
+          <li>Security hardened across all API endpoints</li>
+          <li>WCAG AA accessibility baseline achieved</li>
+          <li>Privacy Policy and Terms of Service drafted</li>
+          <li>New Training tab in bottom navigation</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>Audits Completed</h4>
+        <ul>
+          <li><span class="tag tag-green">DONE</span> Security audit &amp; hardening</li>
+          <li><span class="tag tag-green">DONE</span> Performance &amp; architecture audit</li>
+          <li><span class="tag tag-green">DONE</span> Accessibility audit (WCAG 2.1)</li>
+          <li><span class="tag tag-green">DONE</span> Market &amp; competitive analysis</li>
+          <li><span class="tag tag-green">DONE</span> Product strategy audit</li>
+          <li><span class="tag tag-green">DONE</span> Legal &amp; compliance audit</li>
+          <li><span class="tag tag-green">DONE</span> UX &amp; design audit</li>
+          <li><span class="tag tag-green">DONE</span> Architecture audit</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card">
+      <h4>Why Now</h4>
+      <p>The gymnastics community is underserved by technology. Parents spend <strong>$4,000&ndash;$10,000+ per year</strong> on competitive gymnastics with almost no analytical tools. The September competition season is the prime conversion window, giving Strive a 5-month runway to launch-ready. AI video analysis capabilities (Gemini 2.5 Flash) have only recently become powerful enough to make this product possible.</p>
+    </div>
+
+    <div class="card card-highlight">
+      <h4>v2 Update Highlights</h4>
+      <ul>
+        <li><strong>Build phase complete:</strong> All CLAUDE.md bugs fixed, 15 critical issues resolved</li>
+        <li><strong>Full financial model:</strong> 24-month revenue projection, unit economics, exit scenarios</li>
+        <li><strong>Customer acquisition strategy:</strong> Hybrid AI-automated + personal outreach with per-channel CAC</li>
+        <li><strong>AI development roadmap:</strong> Path from API dependency to proprietary model with data moat</li>
+        <li><strong>Legal progress:</strong> Privacy Policy and ToS drafted, misleading claims corrected</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- 2. MARKET ANALYSIS                         -->
+<!-- ═══════════════════════════════════════════ -->
+<section id="market">
+  <div class="container">
+    <h2>2. Market Analysis</h2>
+
+    <div class="kpi-grid" style="margin-bottom: 2rem;">
+      <div class="kpi-card">
+        <div class="kpi-value">$960M</div>
+        <div class="kpi-label">US Gymnastics Classes Industry</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value">5M+</div>
+        <div class="kpi-label">Youth Gymnasts (US)</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value">150K</div>
+        <div class="kpi-label">USAG Competitive Athletes</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value">240K</div>
+        <div class="kpi-label">USAG Total Members</div>
+      </div>
+    </div>
+
+    <h3>Market Sizing</h3>
+    <div class="bar-chart">
+      <div class="bar-row">
+        <div class="bar-label">TAM</div>
+        <div class="bar-track"><div class="bar-fill bar-gold" style="width:100%;">$500&ndash;750M</div></div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">SAM</div>
+        <div class="bar-track"><div class="bar-fill bar-gold" style="width:22%;">$75&ndash;150M</div></div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">SOM (Yr 1-3)</div>
+        <div class="bar-track"><div class="bar-fill bar-green" style="width:1.5%;">$1&ndash;5M</div></div>
+      </div>
+    </div>
+    <p class="small muted">Source: IBISWorld 2026. TAM includes all judged sports analytics. SAM = gymnastics parents, coaches, and gyms willing to pay for digital tools.</p>
+
+    <h3>Customer Spending Profile</h3>
+    <div class="card">
+      <p>Competitive gymnastics parents represent an extraordinarily high-spending customer segment. Annual spending includes:</p>
+      <div class="grid-3">
+        <div>
+          <strong class="gold">$4,000&ndash;$10,000+</strong>
+          <p class="small">Annual tuition &amp; competition fees</p>
+        </div>
+        <div>
+          <strong class="gold">$1,500&ndash;$3,000</strong>
+          <p class="small">Travel, hotels, meet fees</p>
+        </div>
+        <div>
+          <strong class="gold">$500&ndash;$2,000</strong>
+          <p class="small">Private lessons, camps, clinics</p>
+        </div>
+      </div>
+      <p>A $9.99/month subscription is <strong>less than 2% of annual spend</strong>, placing Strive firmly in impulse-purchase territory for this demographic.</p>
+    </div>
+
+    <h3>5-Part Defensible Moat</h3>
+    <div class="grid-2">
+      <div class="card">
+        <h4>1. USAG Scoring Depth</h4>
+        <p>Deep integration with USAG code of points, deduction tables, and level-specific requirements. Not replicable without domain expertise.</p>
+      </div>
+      <div class="card">
+        <h4>2. Routine History Lock-in</h4>
+        <p>Every analyzed routine builds a historical score graph that becomes more valuable over time. Switching costs compound monthly.</p>
+      </div>
+      <div class="card">
+        <h4>3. Coach Network Effects</h4>
+        <p>One coach adoption brings 20&ndash;60 athlete subscriptions. Coach ecosystem creates viral growth and retention.</p>
+      </div>
+      <div class="card">
+        <h4>4. First-Mover Brand Trust</h4>
+        <p>In a trust-sensitive market (children, competition scores), being first and earning reputation creates lasting advantage.</p>
+      </div>
+    </div>
+    <div class="card card-highlight">
+      <h4>5. Proprietary Data Moat</h4>
+      <p>Every analysis produces labeled training data. By 100K analyses, Strive will own the most valuable gymnastics scoring dataset in existence &mdash; enabling a proprietary AI model that no competitor can replicate without years of data collection.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- 3. COMPETITIVE LANDSCAPE                   -->
+<!-- ═══════════════════════════════════════════ -->
+<section id="competitive">
+  <div class="container">
+    <h2>3. Competitive Landscape</h2>
+
+    <div class="card card-red" style="margin-bottom: 2rem;">
+      <h4>Primary Threat: MeetCritique</h4>
+      <p>Real human USAG judges providing video review at <strong class="mono">$8&ndash;$12/routine</strong> with 1&ndash;3 day turnaround. High quality but fundamentally unscalable. At 10 routines/month, MeetCritique costs <strong class="mono">$80&ndash;$120/mo</strong> vs. Strive's <strong class="mono">$9.99/mo unlimited</strong>. Their human-judge model is the benchmark Strive must match in accuracy while crushing on price and speed.</p>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Competitor</th>
+          <th>Price</th>
+          <th>AI Scoring</th>
+          <th>Gymnastics-Specific</th>
+          <th>Threat Level</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>MeetCritique</strong></td>
+          <td class="mono">$8&ndash;12/routine</td>
+          <td><span class="red">No (human judges)</span></td>
+          <td><span class="green">Yes</span></td>
+          <td><span class="tag tag-red">PRIMARY</span></td>
+        </tr>
+        <tr>
+          <td><strong>Hudl</strong></td>
+          <td class="mono">$900&ndash;3,300/yr</td>
+          <td><span class="red">No</span></td>
+          <td><span class="red">No (team sports)</span></td>
+          <td><span class="tag tag-orange">MEDIUM</span></td>
+        </tr>
+        <tr>
+          <td><strong>Dartfish</strong></td>
+          <td class="mono">$8&ndash;194/mo</td>
+          <td><span class="red">No (manual)</span></td>
+          <td><span class="red">No</span></td>
+          <td><span class="tag tag-orange">MEDIUM</span></td>
+        </tr>
+        <tr>
+          <td><strong>CoachNow</strong></td>
+          <td class="mono">$60&ndash;499/mo</td>
+          <td><span class="red">No</span></td>
+          <td><span class="red">No (coach tool)</span></td>
+          <td><span class="tag tag-gray">LOW</span></td>
+        </tr>
+        <tr>
+          <td><strong>OnForm</strong></td>
+          <td class="mono">$5&ndash;79/mo</td>
+          <td><span class="orange">Generic AI</span></td>
+          <td><span class="red">No</span></td>
+          <td><span class="tag tag-gray">LOW</span></td>
+        </tr>
+        <tr>
+          <td><strong>Generic AI / ChatGPT</strong></td>
+          <td class="mono">Free&ndash;$20/mo</td>
+          <td><span class="orange">Generic</span></td>
+          <td><span class="red">No</span></td>
+          <td><span class="tag tag-blue">WATCH</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="card card-highlight">
+      <h4>Strive's Unique Position</h4>
+      <p>Strive is the <strong>only platform</strong> that combines all four capabilities: auto-identifies skills from video, detects USAG-calibrated deductions, produces competition-grade scores, <em>and</em> targets parents/athletes directly (not just coaches). No competitor offers even two of these together.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- 4. FINANCIAL MODEL                         -->
+<!-- ═══════════════════════════════════════════ -->
+<section id="financial">
+  <div class="container">
+    <h2>4. Financial Model</h2>
+
+    <div class="kpi-grid" style="margin-bottom: 2rem;">
+      <div class="kpi-card">
+        <div class="kpi-value">$0.018</div>
+        <div class="kpi-label">Cost per Analysis</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value">97.8%</div>
+        <div class="kpi-label">Paid Tier Gross Margin</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value">$140</div>
+        <div class="kpi-label">LTV (Competitive)</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value">$360</div>
+        <div class="kpi-label">LTV (Elite)</div>
+      </div>
+    </div>
+
+    <h3>Unit Economics</h3>
+    <div class="card">
+      <table>
+        <thead>
+          <tr><th>Metric</th><th>Value</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Gemini API cost per analysis</td><td class="mono">$0.018</td><td>Video upload + 2-pass analysis (detect + judge)</td></tr>
+          <tr><td>Avg. analyses per active user/month</td><td class="mono">~12</td><td>Based on competitive gymnast behavior (3 practices/wk)</td></tr>
+          <tr><td>API cost per user/month</td><td class="mono">~$0.22</td><td>Well within margin at $9.99 ARPU</td></tr>
+          <tr><td>Revenue per analysis (Competitive)</td><td class="mono green">$0.83</td><td>$9.99 / 12 analyses</td></tr>
+          <tr><td>Revenue per analysis (Elite)</td><td class="mono green">$1.67</td><td>$19.99 / 12 analyses</td></tr>
+          <tr><td>Gross margin (Competitive tier)</td><td class="mono green">97.8%</td><td>$9.99 revenue &minus; $0.22 API cost</td></tr>
+          <tr><td>Blended gross margin (all tiers)</td><td class="mono green">85%+</td><td>Including free tier API costs &amp; infrastructure</td></tr>
+          <tr><td>Free-to-paid conversion target</td><td class="mono">40%</td><td>Driven by 3-analysis cap friction</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Lifetime Value by Tier</h3>
+    <div class="grid-2">
+      <div class="card card-highlight">
+        <h4>Competitive Tier &mdash; <span class="mono gold">$140 LTV</span></h4>
+        <p><strong class="mono">$9.99/mo &times; 14 months</strong> avg. retention</p>
+        <p class="small muted">Competitive season runs Sep&ndash;May (9 months), with 60% retaining through off-season training. Blended average: 14 months.</p>
+      </div>
+      <div class="card card-highlight">
+        <h4>Elite Tier &mdash; <span class="mono gold">$360 LTV</span></h4>
+        <p><strong class="mono">$19.99/mo &times; 18 months</strong> avg. retention</p>
+        <p class="small muted">Elite users are more invested athletes. Higher engagement, longer retention, more likely to renew annually. Recruiting toolkit creates multi-year lock-in.</p>
+      </div>
+    </div>
+
+    <h3>24-Month Revenue Projection</h3>
+    <div class="card">
+      <table>
+        <thead>
+          <tr><th>Phase</th><th>Months</th><th>Users</th><th>Paid</th><th>MRR</th><th>ARR Run Rate</th></tr>
+        </thead>
+        <tbody>
+          <tr style="opacity: 0.7;">
+            <td><span class="tag tag-blue">SEED</span> Free Beta</td>
+            <td class="mono">M1&ndash;M3</td>
+            <td class="mono">50 &rarr; 140</td>
+            <td class="mono">0</td>
+            <td class="mono">$0</td>
+            <td class="mono">$0</td>
+          </tr>
+          <tr>
+            <td><span class="tag tag-green">LAUNCH</span> Paywall On</td>
+            <td class="mono">M4&ndash;M6</td>
+            <td class="mono">500</td>
+            <td class="mono">200 (40%)</td>
+            <td class="mono">$3K</td>
+            <td class="mono">$36K</td>
+          </tr>
+          <tr>
+            <td><span class="tag tag-gold">GROWTH</span> Coach Channel</td>
+            <td class="mono">M7&ndash;M12</td>
+            <td class="mono">3,000</td>
+            <td class="mono">1,200</td>
+            <td class="mono">$25K</td>
+            <td class="mono">$300K</td>
+          </tr>
+          <tr>
+            <td><span class="tag tag-orange">SCALE</span> Gym B2B</td>
+            <td class="mono">M13&ndash;M18</td>
+            <td class="mono">10,000</td>
+            <td class="mono">4,000</td>
+            <td class="mono">$80K</td>
+            <td class="mono">$960K</td>
+          </tr>
+          <tr style="background: rgba(201,168,76,0.05);">
+            <td><span class="tag tag-gold">EXPAND</span> Multi-Sport</td>
+            <td class="mono">M19&ndash;M24</td>
+            <td class="mono">25,000</td>
+            <td class="mono">10,000</td>
+            <td class="mono gold">$200K</td>
+            <td class="mono gold">$2.4M</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Break-Even Analysis</h3>
+    <div class="card">
+      <div class="grid-2">
+        <div>
+          <h4>Fixed Costs (~$2K/mo)</h4>
+          <table>
+            <tbody>
+              <tr><td>Vercel Pro</td><td class="mono">$20/mo</td></tr>
+              <tr><td>Supabase Pro</td><td class="mono">$25/mo</td></tr>
+              <tr><td>Domain + Email</td><td class="mono">$15/mo</td></tr>
+              <tr><td>Stripe fees (2.9% + $0.30)</td><td class="mono">~$300/mo at $3K MRR</td></tr>
+              <tr><td>Insurance (E&amp;O + Cyber)</td><td class="mono">~$300/mo</td></tr>
+              <tr><td>Misc. tools &amp; services</td><td class="mono">~$200/mo</td></tr>
+              <tr style="border-top: 2px solid rgba(201,168,76,0.2);"><td><strong>Total Fixed</strong></td><td class="mono gold">~$860/mo</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div>
+          <h4>Variable Costs</h4>
+          <table>
+            <tbody>
+              <tr><td>Gemini API (per paid user)</td><td class="mono">$0.22/mo</td></tr>
+              <tr><td>Gemini API (per free user)</td><td class="mono">$0.054/mo</td></tr>
+              <tr><td>At 200 paid + 300 free users</td><td class="mono">$60/mo</td></tr>
+              <tr><td>At 1,200 paid + 1,800 free</td><td class="mono">$361/mo</td></tr>
+              <tr><td>At 10,000 paid + 15,000 free</td><td class="mono">$3,010/mo</td></tr>
+            </tbody>
+          </table>
+          <p class="small muted" style="margin-top: 1rem;"><strong>Break-even:</strong> ~100 paid users ($999/mo revenue vs. ~$900 costs). Achievable in Month 4&ndash;5.</p>
+        </div>
+      </div>
+    </div>
+
+    <h3>LTV:CAC Ratio by Channel</h3>
+    <div class="card">
+      <table>
+        <thead>
+          <tr><th>Channel</th><th>Est. CAC</th><th>LTV (Competitive)</th><th>LTV:CAC</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Viral / Referral</td>
+            <td class="mono">$2&ndash;5</td>
+            <td class="mono">$140</td>
+            <td class="mono green">28&ndash;70x</td>
+            <td>"Share with a gym friend" program</td>
+          </tr>
+          <tr>
+            <td>Social content / SEO</td>
+            <td class="mono">$0&ndash;3</td>
+            <td class="mono">$140</td>
+            <td class="mono green">47x+</td>
+            <td>AI-generated score cards, deduction guides</td>
+          </tr>
+          <tr>
+            <td>Coach referral</td>
+            <td class="mono">$15&ndash;25/coach</td>
+            <td class="mono">$140 &times; 20&ndash;60</td>
+            <td class="mono green">112&ndash;280x</td>
+            <td>Effective $0.50&ndash;1.25 per athlete</td>
+          </tr>
+          <tr>
+            <td>Competition demos</td>
+            <td class="mono">$10&ndash;20</td>
+            <td class="mono">$140</td>
+            <td class="mono green">7&ndash;14x</td>
+            <td>50&ndash;100 signups per meet</td>
+          </tr>
+          <tr>
+            <td>Gym B2B direct</td>
+            <td class="mono">$0 (time)</td>
+            <td class="mono">$1,788/yr</td>
+            <td class="mono green">Infinite</td>
+            <td>$149/mo license deals</td>
+          </tr>
+          <tr>
+            <td>Google Ads</td>
+            <td class="mono">$25&ndash;40</td>
+            <td class="mono">$140</td>
+            <td class="mono">3.5&ndash;5.6x</td>
+            <td>Scalable but lowest efficiency</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Exit Scenarios</h3>
+    <div class="grid-2">
+      <div class="card card-highlight">
+        <h4>Scenario A: Gymnastics Focus</h4>
+        <p class="mono" style="font-size: 1.3rem; margin-bottom: 0.5rem;">$1.2M ARR &times; 5&ndash;8x = <span class="gold">$6&ndash;10M</span></p>
+        <p class="small">Single-sport dominance with gym B2B. Achievable by Month 18. Strategic acquirers: Hudl, USAG technology partners, sports media companies.</p>
+      </div>
+      <div class="card card-highlight">
+        <h4>Scenario B: Multi-Sport Platform</h4>
+        <p class="mono" style="font-size: 1.3rem; margin-bottom: 0.5rem;">$2.4M ARR &times; 8&ndash;12x = <span class="gold">$19&ndash;29M</span></p>
+        <p class="small">Multi-sport expansion with proprietary AI model. Achievable by Month 24. Higher multiples justified by platform moat, data asset, and expansion optionality.</p>
+      </div>
+    </div>
+
+    <h3>Runway Projections</h3>
+    <div class="grid-2">
+      <div class="card card-green">
+        <h4>Bootstrap ($0 External Funding)</h4>
+        <ul>
+          <li>M1&ndash;M3: ~$860/mo out-of-pocket (fixed costs only)</li>
+          <li>M4&ndash;M5: Break-even at ~100 paid users</li>
+          <li>M6+: Self-sustaining, reinvest revenue into growth</li>
+          <li><strong>Total capital needed:</strong> ~$3K&ndash;$5K personal investment</li>
+          <li><strong>Trade-off:</strong> Slower growth, founder does everything</li>
+        </ul>
+      </div>
+      <div class="card card-highlight">
+        <h4>Seed Round ($500K)</h4>
+        <ul>
+          <li>24+ months runway at current burn rate</li>
+          <li>Hire: 1 part-time marketer ($3K/mo), 1 contract developer ($5K/mo)</li>
+          <li>Marketing budget: $2K/mo for competition demos + ads</li>
+          <li>Accelerate to $25K MRR by Month 6 (vs. Month 9&ndash;12 bootstrapped)</li>
+          <li><strong>Use of funds:</strong> 40% engineering, 30% marketing, 20% infrastructure, 10% legal</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- 5. MARKETING & CUSTOMER ACQUISITION        -->
+<!-- ═══════════════════════════════════════════ -->
+<section id="marketing">
+  <div class="container">
+    <h2>5. Marketing &amp; Customer Acquisition</h2>
+
+    <div class="card card-highlight" style="margin-bottom: 2rem;">
+      <h4>Key Principle</h4>
+      <p>This is a <strong>high-automation, low-overhead</strong> business. One person (the founder) plus AI handles marketing, content, and support. No team needed until $50K MRR. The hybrid model below maximizes reach while keeping CAC near zero for the majority of users.</p>
+    </div>
+
+    <h3>AI-Automated Channels (Low Overhead)</h3>
+    <div class="grid-2">
+      <div class="card">
+        <h4>Viral Score Cards</h4>
+        <p>AI generates shareable "What Judges Saw" score breakdown images for social media. Each share is a free ad targeting the exact right audience.</p>
+        <p class="small"><span class="tag tag-green">$0 CAC</span> &bull; High volume &bull; Built-in viral loop</p>
+      </div>
+      <div class="card">
+        <h4>Email Drip Sequences</h4>
+        <p>Automated onboarding, upgrade nudges at 3-analysis cap, re-engagement at 14-day inactivity. Lifecycle emails drive conversion without manual effort.</p>
+        <p class="small"><span class="tag tag-green">$0 CAC</span> &bull; Retention + conversion driver</p>
+      </div>
+      <div class="card">
+        <h4>SEO Content Engine</h4>
+        <p>AI-generated articles: deduction breakdowns, scoring guides, "What is a Level 5 floor routine?" content. Captures organic search traffic from parents researching gymnastics scoring.</p>
+        <p class="small"><span class="tag tag-green">$0 CAC</span> &bull; Compounds over time &bull; High-intent traffic</p>
+      </div>
+      <div class="card">
+        <h4>In-App Referral Program</h4>
+        <p>"Share with a gym friend &mdash; both get a free analysis." Peer referrals carry maximum trust in the gymnastics parent community.</p>
+        <p class="small"><span class="tag tag-green">$2&ndash;5 CAC</span> &bull; High volume &bull; 28&ndash;70x LTV:CAC</p>
+      </div>
+      <div class="card">
+        <h4>Automated Coach Outreach</h4>
+        <p>Templated email campaigns to USAG-registered coaches with personalized video demos. One coach acquisition = 20&ndash;60 athlete subscriptions downstream.</p>
+        <p class="small"><span class="tag tag-gold">$15&ndash;25/coach</span> &bull; Effective $0.50&ndash;1.25/user &bull; 112&ndash;280x LTV:CAC</p>
+      </div>
+    </div>
+
+    <h3>Personal Outreach (Targeted B2B)</h3>
+    <div class="grid-2">
+      <div class="card card-orange">
+        <h4>Competition Presence</h4>
+        <p>Attend 5&ndash;10 regional meets per season. Live demos at the scoring table. Parents see results in real-time while their child competes.</p>
+        <p class="small"><span class="tag tag-orange">$500&ndash;2K/meet</span> &bull; 50&ndash;100 signups/meet &bull; $10&ndash;20 CAC</p>
+      </div>
+      <div class="card card-orange">
+        <h4>Gym Owner Meetings</h4>
+        <p>Personal pitch to 20&ndash;30 top competitive gyms. $149/mo site license deals. Each gym = captive audience of 50&ndash;200 competitive athletes.</p>
+        <p class="small"><span class="tag tag-green">$0 CAC</span> (time only) &bull; $1,788 ARR per deal</p>
+      </div>
+      <div class="card card-orange">
+        <h4>USAG Congress Presentations</h4>
+        <p>Apply to speak at regional USAG congresses. Free attendance, high credibility with coaches and gym owners. Position as thought leader in gymnastics technology.</p>
+        <p class="small"><span class="tag tag-green">Free</span> &bull; High credibility &bull; Coach pipeline</p>
+      </div>
+      <div class="card card-orange">
+        <h4>Gymnastics Influencer Partnerships</h4>
+        <p>Partner with 10 nano-influencers (5K&ndash;100K followers). Free accounts + commission on referrals. Authentic endorsements from athletes and coaches the community trusts.</p>
+        <p class="small"><span class="tag tag-green">$5&ndash;8 CAC</span> &bull; High trust &bull; 17&ndash;28x LTV:CAC</p>
+      </div>
+    </div>
+
+    <h3>Per-Channel Economics Summary</h3>
+    <div class="card">
+      <table>
+        <thead>
+          <tr><th>Channel</th><th>Est. CAC</th><th>Volume</th><th>LTV:CAC</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Viral / referral</td>
+            <td class="mono">$2&ndash;5</td>
+            <td><span class="tag tag-green">HIGH</span></td>
+            <td class="mono green">28&ndash;70x</td>
+          </tr>
+          <tr>
+            <td>Social content / SEO</td>
+            <td class="mono">$0&ndash;3</td>
+            <td><span class="tag tag-green">HIGH</span></td>
+            <td class="mono green">47x&ndash;infinite</td>
+          </tr>
+          <tr>
+            <td>Coach referral</td>
+            <td class="mono">$15&ndash;25/coach</td>
+            <td><span class="tag tag-gold">MEDIUM</span></td>
+            <td class="mono green">112&ndash;280x</td>
+          </tr>
+          <tr>
+            <td>Competition demos</td>
+            <td class="mono">$10&ndash;20</td>
+            <td><span class="tag tag-gold">MEDIUM</span></td>
+            <td class="mono green">7&ndash;14x</td>
+          </tr>
+          <tr>
+            <td>Gym B2B direct</td>
+            <td class="mono">$0 (time only)</td>
+            <td><span class="tag tag-orange">LOW&ndash;MED</span></td>
+            <td class="mono green">$1,788 ARR/deal</td>
+          </tr>
+          <tr>
+            <td>Google Ads</td>
+            <td class="mono">$25&ndash;40</td>
+            <td><span class="tag tag-blue">SCALABLE</span></td>
+            <td class="mono">3.5&ndash;5.6x</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- 6. SUBSCRIPTION MODEL                      -->
+<!-- ═══════════════════════════════════════════ -->
+<section id="pricing">
+  <div class="container">
+    <h2>6. Subscription Model</h2>
+
+    <div class="tier-grid">
+      <div class="tier-card">
+        <div class="tier-name">Free</div>
+        <div class="tier-price">$0</div>
+        <div class="tier-period">forever</div>
+        <ul class="tier-features">
+          <li>3 analyses/month</li>
+          <li>Score + 2-sentence summary</li>
+          <li>Watermarked exports</li>
+          <li>Basic skill identification</li>
+        </ul>
+      </div>
+      <div class="tier-card featured">
+        <div class="tier-name">Competitive</div>
+        <div class="tier-price">$9.99</div>
+        <div class="tier-period">/mo ($99/yr)</div>
+        <ul class="tier-features">
+          <li>Unlimited analyses</li>
+          <li>Full skill breakdown</li>
+          <li>Biomechanics angles</li>
+          <li>Personalized drill plans</li>
+          <li>Progress tracking</li>
+          <li>PDF export reports</li>
+        </ul>
+      </div>
+      <div class="tier-card">
+        <div class="tier-name">Elite</div>
+        <div class="tier-price">$19.99</div>
+        <div class="tier-period">/mo ($199/yr)</div>
+        <ul class="tier-features">
+          <li>Everything in Competitive</li>
+          <li>What-if score simulator</li>
+          <li>Coach sharing &amp; collab</li>
+          <li>Recruiting toolkit</li>
+          <li>Priority AI processing</li>
+        </ul>
+      </div>
+      <div class="tier-card">
+        <div class="tier-name">Coach</div>
+        <div class="tier-price">$49.99</div>
+        <div class="tier-period">/mo ($499/yr)</div>
+        <ul class="tier-features">
+          <li>Manage 25 athletes</li>
+          <li>Team dashboard</li>
+          <li>Bulk video analysis</li>
+          <li>Assignment workflows</li>
+          <li>Parent communication</li>
+        </ul>
+      </div>
+      <div class="tier-card">
+        <div class="tier-name">Gym</div>
+        <div class="tier-price">$149&ndash;299</div>
+        <div class="tier-period">/mo</div>
+        <ul class="tier-features">
+          <li>5 coach accounts</li>
+          <li>Unlimited athletes</li>
+          <li>Gym branding</li>
+          <li>API access</li>
+          <li>Dedicated support</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>Pricing Intelligence</h3>
+    <div class="grid-2">
+      <div class="card card-highlight">
+        <h4>MeetCritique Comparison</h4>
+        <p>At $8&ndash;$12/routine with 1&ndash;3 day wait, a competitive gymnast analyzing 10 routines/month pays <strong class="mono">$80&ndash;$120/mo</strong>. Strive Competitive at <strong class="mono">$9.99/mo unlimited</strong> is a <strong>10x price advantage with instant results</strong>.</p>
+      </div>
+      <div class="card">
+        <h4>Conversion Insights</h4>
+        <ul>
+          <li><strong>Annual plans</strong> show 70% lower churn vs. monthly</li>
+          <li><strong>3-analysis free cap</strong> converts 3&ndash;4x higher than unlimited trials</li>
+          <li><strong>September</strong> is the prime conversion window (season starts)</li>
+          <li><strong>40% projected</strong> free-to-paid conversion rate</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- 7. PRODUCT STATUS & TECHNICAL AUDIT        -->
+<!-- ═══════════════════════════════════════════ -->
+<section id="product">
+  <div class="container">
+    <h2>7. Product Status &amp; Technical Audit</h2>
+
+    <h3>Current Architecture</h3>
+    <div class="card">
+      <div class="grid-3">
+        <div>
+          <strong class="gold">Frontend</strong>
+          <p class="small">React with code splitting (3 lazy-loaded chunks). 8 extracted components from original monolith.</p>
+        </div>
+        <div>
+          <strong class="gold">Deployment</strong>
+          <p class="small">Vercel auto-deploy from GitHub. CSP + HSTS security headers. CORS restricted to production domain.</p>
+        </div>
+        <div>
+          <strong class="gold">AI Engine</strong>
+          <p class="small">Gemini 2.5 Flash (2-pass video analysis) with seed parameter for consistency. Claude Sonnet 4 fallback.</p>
+        </div>
+      </div>
+    </div>
+
+    <h3>Build Phase Completed</h3>
+    <div class="card card-green" style="margin-bottom: 2rem;">
+      <div class="grid-2">
+        <div>
+          <h4>Scope</h4>
+          <ul>
+            <li><strong>8 new component files</strong> created</li>
+            <li><strong>16+ existing files</strong> modified</li>
+            <li><strong>Code splitting</strong> active (3 lazy-loaded chunks)</li>
+            <li><strong>New Training tab</strong> in bottom navigation</li>
+            <li><strong>18 error boundaries</strong> added</li>
+          </ul>
+        </div>
+        <div>
+          <h4>Quality</h4>
+          <ul>
+            <li>Security hardened across all API endpoints</li>
+            <li>WCAG AA accessibility baseline met</li>
+            <li>Shimmer loading states implemented</li>
+            <li>Offline resilience with fallback data</li>
+            <li>All CLAUDE.md bugs addressed</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <h3>Resolved Issues <span class="tag tag-green" style="margin-left: 0.5rem;">15 FIXED</span></h3>
+    <div class="card">
+      <table>
+        <thead>
+          <tr><th>Issue</th><th>Resolution</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>API key exposure (client-side)</td><td>Secured via serverless function; returns only availability boolean</td><td><span class="tag tag-green">RESOLVED</span></td></tr>
+          <tr><td>Misleading "on-device" privacy claim</td><td>Corrected to accurate data flow disclosure</td><td><span class="tag tag-green">RESOLVED</span></td></tr>
+          <tr><td>CORS wildcard (*) on all origins</td><td>Restricted to production domain only</td><td><span class="tag tag-green">RESOLVED</span></td></tr>
+          <tr><td>Missing security headers</td><td>CSP + HSTS headers added to all responses</td><td><span class="tag tag-green">RESOLVED</span></td></tr>
+          <tr><td>Viewport zoom disabled</td><td>Enabled for accessibility compliance</td><td><span class="tag tag-green">RESOLVED</span></td></tr>
+          <tr><td>XSS via innerHTML</td><td>HTML escaping added via safeStr utility</td><td><span class="tag tag-green">RESOLVED</span></td></tr>
+          <tr><td>Scoring inconsistency</td><td>Seed parameter, USAG rounding rules, cache fingerprinting</td><td><span class="tag tag-green">RESOLVED</span></td></tr>
+          <tr><td>Video not displaying in skill cards</td><td>Preload attribute, webkit-playsinline, fallback poster</td><td><span class="tag tag-green">RESOLVED</span></td></tr>
+          <tr><td>Zero prefers-reduced-motion support</td><td>Reduced motion media query added globally</td><td><span class="tag tag-green">RESOLVED</span></td></tr>
+          <tr><td>Color contrast failures</td><td>text-muted color updated to meet WCAG AA</td><td><span class="tag tag-green">RESOLVED</span></td></tr>
+          <tr><td>Focus indicators missing</td><td>Gold :focus-visible outline added globally</td><td><span class="tag tag-green">RESOLVED</span></td></tr>
+          <tr><td>No code splitting</td><td>React.lazy + Suspense for 3 route chunks</td><td><span class="tag tag-green">RESOLVED</span></td></tr>
+          <tr><td>Missing error boundaries (3 screens)</td><td>18 error boundaries added with fallback UI</td><td><span class="tag tag-green">RESOLVED</span></td></tr>
+          <tr><td>Touch targets below 44px</td><td>Fixed on nav, back button, and interactive elements</td><td><span class="tag tag-green">RESOLVED</span></td></tr>
+          <tr><td>"AI" text visible in UI</td><td>All AI/Gemini/Claude references removed from user-facing UI</td><td><span class="tag tag-green">RESOLVED</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Remaining Open Issues <span class="tag tag-yellow" style="margin-left: 0.5rem;">PENDING</span></h3>
+    <div class="card">
+      <table>
+        <thead>
+          <tr><th>Issue</th><th>Priority</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Zero memoization (React.memo, useMemo, useCallback)</td><td><span class="tag tag-red">HIGH</span></td><td><span class="tag tag-yellow">PENDING</span></td></tr>
+          <tr><td>Skeleton overlay is decorative SVG, not real MediaPipe pose detection</td><td><span class="tag tag-orange">MEDIUM</span></td><td><span class="tag tag-yellow">PENDING</span></td></tr>
+          <tr><td>No server-side validation of subscription tier</td><td><span class="tag tag-orange">MEDIUM</span></td><td><span class="tag tag-yellow">PENDING</span></td></tr>
+          <tr><td>localStorage-only persistence (no cloud sync)</td><td><span class="tag tag-orange">MEDIUM</span></td><td><span class="tag tag-yellow">PENDING</span></td></tr>
+          <tr><td>No user authentication system</td><td><span class="tag tag-red">HIGH</span></td><td><span class="tag tag-yellow">PENDING</span></td></tr>
+          <tr><td>No Stripe billing integration</td><td><span class="tag tag-red">HIGH</span></td><td><span class="tag tag-yellow">PENDING</span></td></tr>
+          <tr><td>No automated test coverage (unit or E2E)</td><td><span class="tag tag-orange">MEDIUM</span></td><td><span class="tag tag-yellow">PENDING</span></td></tr>
+          <tr><td>Bundle size optimization (tree shaking, image compression)</td><td><span class="tag tag-gray">LOW</span></td><td><span class="tag tag-yellow">PENDING</span></td></tr>
+          <tr><td>PWA / offline support</td><td><span class="tag tag-gray">LOW</span></td><td><span class="tag tag-yellow">PENDING</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Infrastructure Needed</h3>
+    <div class="grid-3">
+      <div class="card">
+        <h4>Database</h4>
+        <p>Supabase recommended. User profiles, analysis history, progress tracking.</p>
+      </div>
+      <div class="card">
+        <h4>Authentication</h4>
+        <p>User accounts with COPPA-compliant parental consent flow for minors.</p>
+      </div>
+      <div class="card">
+        <h4>Billing</h4>
+        <p>Stripe integration for subscription management, family plans, annual billing.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- 8. AI DEVELOPMENT ROADMAP                  -->
+<!-- ═══════════════════════════════════════════ -->
+<section id="ai-roadmap">
+  <div class="container">
+    <h2>8. AI Development Roadmap</h2>
+
+    <div class="card card-highlight" style="margin-bottom: 2rem;">
+      <h4>The Data Moat</h4>
+      <p>Every analysis Strive performs is a labeled training data point: video in, structured scoring judgments out. By 100K analyses, Strive will own the <strong>most valuable gymnastics scoring dataset in existence</strong>. No competitor can replicate this without years of data collection and the same user base. This is the most defensible asset in the business.</p>
+    </div>
+
+    <div class="phase">
+      <div class="phase-header">
+        <span class="phase-num">NOW</span>
+        <span class="phase-title">API-First (Ship Fast)</span>
+        <span class="phase-time">0&ndash;50K analyses</span>
+      </div>
+      <div class="card">
+        <p><strong>Engine:</strong> Gemini 2.5 Flash &bull; <strong>Cost:</strong> <span class="mono">$0.018/analysis</span></p>
+        <ul>
+          <li>2-pass analysis: Detect skills &rarr; Judge with USAG calibration</li>
+          <li>Seed parameter for scoring consistency (&plusmn;0.10 tolerance)</li>
+          <li>Claude Sonnet 4 fallback for redundancy</li>
+          <li><strong>Focus:</strong> Ship product, acquire users, collect training data</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-header">
+        <span class="phase-num">50K</span>
+        <span class="phase-title">Begin Fine-Tuning</span>
+        <span class="phase-time">~Month 9&ndash;12</span>
+      </div>
+      <div class="card">
+        <p><strong>Investment:</strong> <span class="mono">~$5K training cost</span></p>
+        <ul>
+          <li>Fine-tune open-source vision model on 50K labeled analysis pairs</li>
+          <li>Train on Strive's proprietary scoring data (video &rarr; structured deductions)</li>
+          <li>A/B test fine-tuned model vs. Gemini on accuracy and speed</li>
+          <li><strong>Goal:</strong> Match Gemini accuracy at 1/3 the cost</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-header">
+        <span class="phase-num">100K</span>
+        <span class="phase-title">Hybrid Model</span>
+        <span class="phase-time">~Month 12&ndash;18</span>
+      </div>
+      <div class="card">
+        <p><strong>Cost reduction:</strong> <span class="mono">$0.018 &rarr; ~$0.005/analysis</span></p>
+        <ul>
+          <li>Own model handles 70% of analyses (straightforward routines)</li>
+          <li>Gemini fallback for complex or edge-case routines</li>
+          <li>Confidence scoring: route to Gemini when own model is uncertain</li>
+          <li><strong>Margin impact:</strong> Gross margin increases from 85% to ~93%</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-header">
+        <span class="phase-num">250K+</span>
+        <span class="phase-title">Self-Hosted Dominance</span>
+        <span class="phase-time">Month 18+</span>
+      </div>
+      <div class="card">
+        <p><strong>Cost:</strong> <span class="mono">~$0.002/analysis</span></p>
+        <ul>
+          <li>Mostly self-hosted model, Gemini only for edge cases (&lt;10%)</li>
+          <li>Real-time analysis possible (sub-5 second response)</li>
+          <li>Multi-sport models trained on shared architecture</li>
+          <li><strong>Competitive moat:</strong> Proprietary model + 250K labeled dataset = years of head start over any new entrant</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>Cost Trajectory</h3>
+    <div class="bar-chart">
+      <div class="bar-row">
+        <div class="bar-label">Now (API)</div>
+        <div class="bar-track"><div class="bar-fill" style="width:90%; background: linear-gradient(90deg, #ea580c, #fb923c);">$0.018 / analysis</div></div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">100K (Hybrid)</div>
+        <div class="bar-track"><div class="bar-fill bar-gold" style="width:28%;">$0.005 / analysis</div></div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">250K+ (Own)</div>
+        <div class="bar-track"><div class="bar-fill bar-green" style="width:11%;">$0.002 / analysis</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- 9. LEGAL & COMPLIANCE                      -->
+<!-- ═══════════════════════════════════════════ -->
+<section id="legal">
+  <div class="container">
+    <h2>9. Legal &amp; Compliance</h2>
+
+    <h3>Completed Items</h3>
+    <div class="grid-2" style="margin-bottom: 2rem;">
+      <div class="card card-green">
+        <h4><span class="tag tag-green">DRAFTED</span> Privacy Policy</h4>
+        <p>Comprehensive privacy policy drafted and available in <span class="mono">/legal/</span>. Covers data collection, AI analysis, video processing, third-party sharing (Google/Gemini), deletion rights, and minor protections.</p>
+      </div>
+      <div class="card card-green">
+        <h4><span class="tag tag-green">DRAFTED</span> Terms of Service</h4>
+        <p>Terms of service drafted and available in <span class="mono">/legal/</span>. Covers educational-only disclaimer, limitation of liability, subscription terms, acceptable use, and IP assignment.</p>
+      </div>
+      <div class="card card-green">
+        <h4><span class="tag tag-green">FIXED</span> Misleading Privacy Claim</h4>
+        <p>Previously stated "on-device processing" while sending video to Google servers. Corrected to accurate data flow disclosure. FTC Section 5 risk eliminated.</p>
+      </div>
+    </div>
+
+    <h3>In Progress</h3>
+    <div class="grid-2" style="margin-bottom: 2rem;">
+      <div class="card card-orange">
+        <h4><span class="tag tag-yellow">IN PROGRESS</span> COPPA Parental Consent</h4>
+        <p>Platform targets minors under 13. Full COPPA compliance with verifiable parental consent required before public launch.</p>
+        <p class="small">Requires: age gate, parental consent flow, data minimization, deletion rights, privacy policy updates.</p>
+      </div>
+      <div class="card card-orange">
+        <h4><span class="tag tag-yellow">IN PROGRESS</span> BIPA Biometric Policy</h4>
+        <p>MediaPipe pose detection on minors creates biometric data liability. Illinois BIPA carries <strong>$1,000&ndash;$5,000 per violation</strong> statutory damages.</p>
+        <p class="small">Mitigation: Explicit biometric consent, data retention limits, consider server-side-only processing.</p>
+      </div>
+    </div>
+
+    <h3>Pending</h3>
+    <div class="grid-2">
+      <div class="card">
+        <h4><span class="tag tag-yellow">PENDING</span> Entity Formation</h4>
+        <p>Delaware C-Corp recommended for investor compatibility. Needed for: Stripe merchant account, liability protection, IP assignment, future fundraising.</p>
+      </div>
+      <div class="card">
+        <h4><span class="tag tag-yellow">PENDING</span> Insurance</h4>
+        <p>Tech E&amp;O + Cyber liability insurance: <strong class="mono">~$2&ndash;5K/year</strong>. Required before processing user data at scale.</p>
+      </div>
+      <div class="card">
+        <h4><span class="tag tag-yellow">PENDING</span> Trademark</h4>
+        <p>"Strive" has existing conflicts in the fitness space. Trademark search and potential rebranding should be evaluated before major marketing spend.</p>
+      </div>
+      <div class="card">
+        <h4><span class="tag tag-gray">OPTIONAL</span> SafeSport Compliance</h4>
+        <p>If partnering with USA Gymnastics or USAG-affiliated organizations, SafeSport compliance policies and training may be required.</p>
+      </div>
+    </div>
+
+    <h3>Legal Status Summary</h3>
+    <div class="card">
+      <table>
+        <thead>
+          <tr><th>Item</th><th>Status</th><th>Blocking Launch?</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Privacy Policy</td><td><span class="tag tag-green">DRAFTED</span></td><td>Needs legal review</td></tr>
+          <tr><td>Terms of Service</td><td><span class="tag tag-green">DRAFTED</span></td><td>Needs legal review</td></tr>
+          <tr><td>Misleading privacy claim</td><td><span class="tag tag-green">FIXED</span></td><td>No</td></tr>
+          <tr><td>COPPA parental consent flow</td><td><span class="tag tag-yellow">IN PROGRESS</span></td><td class="red"><strong>Yes</strong></td></tr>
+          <tr><td>BIPA biometric policy</td><td><span class="tag tag-yellow">IN PROGRESS</span></td><td class="red"><strong>Yes (IL users)</strong></td></tr>
+          <tr><td>Entity formation (DE C-Corp)</td><td><span class="tag tag-yellow">PENDING</span></td><td class="red"><strong>Yes (for Stripe)</strong></td></tr>
+          <tr><td>Insurance (E&amp;O + Cyber)</td><td><span class="tag tag-yellow">PENDING</span></td><td>Before scale</td></tr>
+          <tr><td>Trademark search</td><td><span class="tag tag-yellow">PENDING</span></td><td>Before marketing spend</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- 10. UX & PRODUCT STRATEGY                  -->
+<!-- ═══════════════════════════════════════════ -->
+<section id="ux">
+  <div class="container">
+    <h2>10. UX &amp; Product Strategy</h2>
+
+    <h3>Progressive Data Disclosure</h3>
+    <div class="card card-highlight">
+      <p>Three-layer information architecture ensures every user tier gets value while creating natural upgrade motivation:</p>
+      <div class="grid-3" style="margin-top: 1rem;">
+        <div>
+          <strong class="gold">Layer 1: Free Teaser</strong>
+          <p class="small">Overall score, 2-sentence summary, top deduction. Enough to prove value, not enough to satisfy.</p>
+        </div>
+        <div>
+          <strong class="gold">Layer 2: Competitive Full</strong>
+          <p class="small">Complete skill breakdown, all deductions with severity, biomechanics angles, drill recommendations.</p>
+        </div>
+        <div>
+          <strong class="gold">Layer 3: Elite Expert</strong>
+          <p class="small">What-if simulator, D-score analysis, coach sharing, recruiting portfolio, competition prep tools.</p>
+        </div>
+      </div>
+    </div>
+
+    <h3>Persona-Branched Onboarding</h3>
+    <div class="grid-3">
+      <div class="card">
+        <h4>Parent Flow</h4>
+        <p class="mono small">3 steps</p>
+        <p class="small">Name, child's level, first video upload. Minimal friction, immediate value.</p>
+      </div>
+      <div class="card">
+        <h4>Athlete Flow</h4>
+        <p class="mono small">7 steps</p>
+        <p class="small">Profile, level, events, goals, training schedule, first analysis, progress baseline.</p>
+      </div>
+      <div class="card">
+        <h4>Coach Flow</h4>
+        <p class="mono small">Roster setup</p>
+        <p class="small">Gym info, athlete roster import, team creation, bulk analysis walkthrough.</p>
+      </div>
+    </div>
+
+    <h3>Emotional Design</h3>
+    <div class="card">
+      <ul>
+        <li><strong>Score reveal animation:</strong> Dramatic unveil moment that mirrors the anticipation of waiting for scores at a meet</li>
+        <li><strong>Improvement celebration:</strong> Confetti and milestone animations when scores improve over time</li>
+        <li><strong>Graceful bad-score handling:</strong> Encouraging language, focus on growth areas, never punitive framing</li>
+        <li><strong>Daily encouragement:</strong> Dashboard displays motivational insights across all tiers</li>
+      </ul>
+    </div>
+
+    <h3>Retention Architecture</h3>
+    <div class="grid-2">
+      <div class="card">
+        <h4>Score Path Visualization</h4>
+        <p>Historical score graph showing improvement trajectory. Becomes the most valuable asset in the app &mdash; the reason users cannot leave.</p>
+      </div>
+      <div class="card">
+        <h4>Achievement Milestones</h4>
+        <p>Badge system for consistency (streak), improvement (new personal bests), and mastery (skill completion).</p>
+      </div>
+      <div class="card">
+        <h4>Weekly Digest</h4>
+        <p>Email/push summary of week's analyses, progress vs. previous week, upcoming meet reminders.</p>
+      </div>
+      <div class="card">
+        <h4>Training Tab</h4>
+        <p>Dedicated tab with personalized drills, nutrition tips, mental preparation, and strength training &mdash; keeps app open between analyses.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- 11. MULTI-SPORT EXPANSION                  -->
+<!-- ═══════════════════════════════════════════ -->
+<section id="expansion">
+  <div class="container">
+    <h2>11. Multi-Sport Expansion</h2>
+
+    <h3>Tier 1: High Feasibility</h3>
+    <table>
+      <thead>
+        <tr><th>Sport</th><th>Market Size</th><th>Scoring Similarity</th><th>Timeline</th><th>Revenue Potential</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Cheerleading</strong></td>
+          <td class="mono">3.5M participants</td>
+          <td><span class="tag tag-green">HIGH</span></td>
+          <td>Year 2</td>
+          <td>Largest expansion opportunity by participant volume</td>
+        </tr>
+        <tr>
+          <td><strong>Figure Skating</strong></td>
+          <td class="mono">250K (176K+ USFS)</td>
+          <td><span class="tag tag-green">HIGH</span></td>
+          <td>Year 2&ndash;3</td>
+          <td>Similar judging structure, high parent spending</td>
+        </tr>
+        <tr>
+          <td><strong>Diving</strong></td>
+          <td class="mono">30K competitive</td>
+          <td><span class="tag tag-green">VERY HIGH</span></td>
+          <td>Year 3</td>
+          <td>Nearly identical scoring model to gymnastics</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Tier 2: Moderate Feasibility</h3>
+    <table>
+      <thead>
+        <tr><th>Sport</th><th>Market Size</th><th>Scoring Similarity</th><th>Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Dance</strong></td>
+          <td class="mono">5M participants</td>
+          <td><span class="tag tag-orange">MODERATE</span></td>
+          <td>Subjective scoring, but huge market with competition circuits</td>
+        </tr>
+        <tr>
+          <td><strong>Martial Arts (Kata)</strong></td>
+          <td class="mono">6M participants</td>
+          <td><span class="tag tag-orange">MODERATE</span></td>
+          <td>Form-based judging in kata/forms competition</td>
+        </tr>
+        <tr>
+          <td><strong>Trampoline &amp; Tumbling</strong></td>
+          <td class="mono">50K competitive</td>
+          <td><span class="tag tag-green">HIGH</span></td>
+          <td>Direct USAG overlap, smallest lift from gymnastics engine</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Data-as-Business Opportunity</h3>
+    <div class="card card-highlight">
+      <p>As the platform scales, anonymized aggregate data becomes a standalone revenue stream:</p>
+      <div class="grid-2" style="margin-top: 1rem;">
+        <div>
+          <strong class="gold">College Recruiting Analytics</strong>
+          <p class="small">$23B college sports market. Verified score history and improvement trajectories for recruiting evaluation.</p>
+        </div>
+        <div>
+          <strong class="gold">Coaching Benchmarks</strong>
+          <p class="small">Anonymous performance data by region, level, and age group for coaching strategy optimization.</p>
+        </div>
+        <div>
+          <strong class="gold">Injury Prevention Patterns</strong>
+          <p class="small">Biomechanics data correlated with common injury patterns. Partnership opportunities with sports medicine.</p>
+        </div>
+        <div>
+          <strong class="gold">National Performance Reports</strong>
+          <p class="small">Aggregated scoring trends sold to federations, equipment manufacturers, and sports media.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- 12. RISK MATRIX                            -->
+<!-- ═══════════════════════════════════════════ -->
+<section id="risk">
+  <div class="container">
+    <h2>12. Risk Matrix</h2>
+
+    <table>
+      <thead>
+        <tr><th>Risk</th><th>Severity</th><th>Likelihood</th><th>Mitigation Strategy</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Scoring accuracy insufficient</strong></td>
+          <td><span class="tag tag-red">HIGH</span></td>
+          <td><span class="tag tag-red">HIGH</span></td>
+          <td>Multi-pass analysis, seed parameter for consistency, human judge validation loop, &plusmn;0.10 tolerance target. <span class="tag tag-green">MITIGATED</span></td>
+        </tr>
+        <tr>
+          <td><strong>Established player entry</strong> (Hudl, CoachNow add AI scoring)</td>
+          <td><span class="tag tag-red">HIGH</span></td>
+          <td><span class="tag tag-orange">MEDIUM</span></td>
+          <td>First-mover advantage, USAG depth moat, data moat from proprietary training data. 12&ndash;18 month window.</td>
+        </tr>
+        <tr>
+          <td><strong>Liability / legal action</strong> (injury blame, defamation)</td>
+          <td><span class="tag tag-red">HIGH</span></td>
+          <td><span class="tag tag-orange">LOW&ndash;MED</span></td>
+          <td>Comprehensive disclaimers, E&amp;O insurance, clear "educational not medical" positioning</td>
+        </tr>
+        <tr>
+          <td><strong>COPPA regulatory enforcement</strong></td>
+          <td><span class="tag tag-orange">MEDIUM</span></td>
+          <td><span class="tag tag-orange">MEDIUM</span></td>
+          <td>Full compliance before launch. Age gate, parental consent, data minimization, deletion rights.</td>
+        </tr>
+        <tr>
+          <td><strong>Parent adoption friction</strong></td>
+          <td><span class="tag tag-orange">MEDIUM</span></td>
+          <td><span class="tag tag-orange">MEDIUM</span></td>
+          <td>3-step onboarding, immediate value demo, coach endorsement as trust signal</td>
+        </tr>
+        <tr>
+          <td><strong>Coach resistance</strong> (feel threatened by AI)</td>
+          <td><span class="tag tag-orange">MEDIUM</span></td>
+          <td><span class="tag tag-orange">MEDIUM</span></td>
+          <td>Position as coach empowerment tool. Free Coach Pro tier. "Your expertise + our data" messaging.</td>
+        </tr>
+        <tr>
+          <td><strong>Gemini API cost scaling</strong></td>
+          <td><span class="tag tag-orange">MEDIUM</span></td>
+          <td><span class="tag tag-red">HIGH</span></td>
+          <td>At $0.018/analysis, margins excellent. Fine-tuned model at 100K analyses drops to $0.005. Self-hosted at 250K drops to $0.002.</td>
+        </tr>
+        <tr>
+          <td><strong>Platform dependency</strong> (Google/Gemini)</td>
+          <td><span class="tag tag-orange">MEDIUM</span></td>
+          <td><span class="tag tag-orange">MEDIUM</span></td>
+          <td>Claude Sonnet fallback implemented. Proprietary model roadmap eliminates dependency by Month 18.</td>
+        </tr>
+        <tr>
+          <td><strong>Seasonality</strong> (summer dropoff)</td>
+          <td><span class="tag tag-green">LOW</span></td>
+          <td><span class="tag tag-red">HIGH</span></td>
+          <td>Summer camp content, conditioning tracking, pre-season prep tools, annual billing locks in revenue.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- 13. IMMEDIATE ACTION PLAN                  -->
+<!-- ═══════════════════════════════════════════ -->
+<section id="action">
+  <div class="container">
+    <h2>13. Immediate Action Plan</h2>
+
+    <div class="card card-green">
+      <h3 style="border: none; padding: 0; margin-bottom: 0.75rem;"><span class="tag tag-green">COMPLETE</span> Phase 1 &mdash; Build &amp; Harden</h3>
+      <table>
+        <tbody>
+          <tr>
+            <td><strong>Fix scoring consistency bug</strong></td>
+            <td>Seed parameter, USAG rounding, cache fingerprinting.</td>
+            <td><span class="tag tag-green">DONE</span></td>
+          </tr>
+          <tr>
+            <td><strong>Complete security hardening</strong></td>
+            <td>API key protection, CSP, HSTS, CORS, XSS prevention.</td>
+            <td><span class="tag tag-green">DONE</span></td>
+          </tr>
+          <tr>
+            <td><strong>Fix misleading privacy claim</strong></td>
+            <td>Accurate data flow disclosure.</td>
+            <td><span class="tag tag-green">DONE</span></td>
+          </tr>
+          <tr>
+            <td><strong>Accessibility baseline (WCAG AA)</strong></td>
+            <td>Contrast, focus indicators, touch targets, reduced motion.</td>
+            <td><span class="tag tag-green">DONE</span></td>
+          </tr>
+          <tr>
+            <td><strong>Code splitting &amp; error boundaries</strong></td>
+            <td>React.lazy + Suspense, 18 error boundaries, shimmer loading.</td>
+            <td><span class="tag tag-green">DONE</span></td>
+          </tr>
+          <tr>
+            <td><strong>Video display in skill cards</strong></td>
+            <td>Preload, webkit-playsinline, fallback poster.</td>
+            <td><span class="tag tag-green">DONE</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card card-red">
+      <h3 style="border: none; padding: 0; margin-bottom: 0.75rem;"><span class="priority p0">P0</span> Now &mdash; Launch Blockers</h3>
+      <table>
+        <tbody>
+          <tr>
+            <td><strong>Delaware C-Corp formation</strong></td>
+            <td>Required for Stripe, investors, IP protection. 1&ndash;2 week process.</td>
+            <td><span class="tag tag-red">BLOCKING</span></td>
+          </tr>
+          <tr>
+            <td><strong>COPPA parental consent flow</strong></td>
+            <td>Age gate, verifiable consent, data minimization.</td>
+            <td><span class="tag tag-red">BLOCKING</span></td>
+          </tr>
+          <tr>
+            <td><strong>Legal review of Privacy Policy + ToS</strong></td>
+            <td>Drafts complete; need attorney review before publish.</td>
+            <td><span class="tag tag-red">BLOCKING</span></td>
+          </tr>
+          <tr>
+            <td><strong>User authentication (Supabase Auth)</strong></td>
+            <td>Required for subscriptions, cloud sync, and COPPA compliance.</td>
+            <td><span class="tag tag-red">BLOCKING</span></td>
+          </tr>
+          <tr>
+            <td><strong>Stripe billing integration</strong></td>
+            <td>Subscription management, annual plans, payment processing.</td>
+            <td><span class="tag tag-red">BLOCKING</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card card-orange">
+      <h3 style="border: none; padding: 0; margin-bottom: 0.75rem;"><span class="priority p1">P1</span> Month 1&ndash;2 &mdash; Launch &amp; Growth</h3>
+      <table>
+        <tbody>
+          <tr><td><strong>Beta launch (free tier)</strong></td><td>50&ndash;140 users, NPS validation, testimonial collection.</td></tr>
+          <tr><td><strong>Email drip sequences</strong></td><td>Onboarding, upgrade nudges at 3-analysis cap, re-engagement.</td></tr>
+          <tr><td><strong>In-app referral program</strong></td><td>"Share with a gym friend, both get a free analysis."</td></tr>
+          <tr><td><strong>Coach outreach campaign</strong></td><td>500 USAG-certified coaches, personalized templates.</td></tr>
+          <tr><td><strong>SEO content engine</strong></td><td>Deduction guides, scoring explainers, level-specific content.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3 style="border: none; padding: 0; margin-bottom: 0.75rem;"><span class="priority p2">P2</span> Month 2&ndash;4 &mdash; Growth Features</h3>
+      <table>
+        <tbody>
+          <tr><td><strong>Coach portal &amp; sharing</strong></td><td>Multi-athlete management, assignment workflows, parent sharing.</td></tr>
+          <tr><td><strong>Push notifications</strong></td><td>Weekly digest, improvement alerts, meet reminders for retention.</td></tr>
+          <tr><td><strong>Real MediaPipe pose detection</strong></td><td>Replace decorative SVG overlay with actual biomechanics analysis.</td></tr>
+          <tr><td><strong>Competition presence</strong></td><td>5&ndash;10 regional meets with live demos.</td></tr>
+          <tr><td><strong>React memoization pass</strong></td><td>React.memo, useMemo, useCallback across component tree.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card" style="opacity: 0.85;">
+      <h3 style="border: none; padding: 0; margin-bottom: 0.75rem;"><span class="priority p3">P3</span> Month 4+ &mdash; Scale &amp; Expand</h3>
+      <table>
+        <tbody>
+          <tr><td><strong>Gym B2B sales</strong></td><td>20&ndash;30 gym owner meetings, $149/mo site license deals.</td></tr>
+          <tr><td><strong>Multi-athlete family accounts</strong></td><td>Siblings under one subscription with individual profiles.</td></tr>
+          <tr><td><strong>D-score analysis</strong></td><td>Start value calculation and difficulty optimization suggestions.</td></tr>
+          <tr><td><strong>Recruiting toolkit</strong></td><td>Verified score portfolios for college program outreach.</td></tr>
+          <tr><td><strong>Fine-tune AI model</strong></td><td>Begin training on proprietary data at 50K analyses.</td></tr>
+          <tr><td><strong>Cheerleading expansion</strong></td><td>First multi-sport launch: 3.5M participant market.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ─── FOOTER ─── -->
+<footer>
+  <div class="container">
+    <p style="margin-bottom: 0.5rem;"><strong>Strive Master Strategy v2.0</strong></p>
+    <p style="margin-bottom: 0.5rem;">March 2026 &bull; Confidential</p>
+    <p class="small" style="color: #374151;">Updated with completed build phase, financial model, customer acquisition strategy, and AI development roadmap. Synthesized from 8 professional audits.</p>
+  </div>
+</footer>
+
+<!-- ─── Active Nav Highlight ─── -->
+<script>
+(function() {
+  const sections = document.querySelectorAll('section[id]');
+  const navLinks = document.querySelectorAll('.nav-links a');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        navLinks.forEach(link => link.classList.remove('active'));
+        const active = document.querySelector(`.nav-links a[href="#${entry.target.id}"]`);
+        if (active) active.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -75% 0px' });
+  sections.forEach(section => observer.observe(section));
+})();
+</script>
+
+</body>
+</html>

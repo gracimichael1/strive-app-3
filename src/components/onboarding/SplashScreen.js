@@ -12,15 +12,29 @@ const SplashIcon = ({ name, size = 18 }) => {
   }
 };
 
-export default function SplashScreen({ onStart }) {
-  const [phase, setPhase] = useState(0);
+function useReducedMotion() {
+  const [reduced, setReduced] = useState(false);
   useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setReduced(mq.matches);
+    const handler = (e) => setReduced(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+  return reduced;
+}
+
+export default function SplashScreen({ onStart }) {
+  const reducedMotion = useReducedMotion();
+  const [phase, setPhase] = useState(reducedMotion ? 4 : 0);
+  useEffect(() => {
+    if (reducedMotion) { setPhase(4); return; }
     const t1 = setTimeout(() => setPhase(1), 100);
     const t2 = setTimeout(() => setPhase(2), 700);
     const t3 = setTimeout(() => setPhase(3), 1200);
     const t4 = setTimeout(() => setPhase(4), 1700);
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
-  }, []);
+  }, [reducedMotion]);
 
   const show = (n) => phase >= n;
 

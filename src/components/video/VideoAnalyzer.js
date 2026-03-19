@@ -17,12 +17,23 @@ function UploadZone({ onFile, disabled }) {
     if (file && file.type.startsWith('video/')) onFile(file);
   };
 
+  const handleKeyDown = (e) => {
+    if (!disabled && (e.key === 'Enter' || e.key === ' ')) {
+      e.preventDefault();
+      inputRef.current?.click();
+    }
+  };
+
   return (
     <div
+      role="button"
+      tabIndex={0}
+      onKeyDown={handleKeyDown}
       onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
       onDragLeave={() => setDragging(false)}
       onDrop={handleDrop}
       onClick={() => !disabled && inputRef.current?.click()}
+      aria-label="Upload a gymnastics video. Drop a file or click to browse."
       style={{
         border: `2px dashed ${dragging ? 'rgba(232,150,42,0.6)' : 'rgba(255,255,255,0.1)'}`,
         borderRadius: 16,
@@ -54,7 +65,7 @@ function UploadZone({ onFile, disabled }) {
       <div style={{ fontSize: 16, fontWeight: 600, color: '#E2E8F0', marginBottom: 8 }}>
         Drop a gymnastics video here
       </div>
-      <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)', marginBottom: 20 }}>
+      <div style={{ fontSize: 13, color: '#8A90AA', marginBottom: 20 }}>
         MP4, MOV, WebM · Filmed from the side for best results
       </div>
       <button
@@ -77,13 +88,19 @@ function ProgressBar({ pct, label }) {
       <div style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10,
       }}>
-        <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', fontWeight: 500 }}>{label}</span>
+        <span style={{ fontSize: 13, color: '#8890AB', fontWeight: 500 }}>{label}</span>
         <span style={{
           fontSize: 12, fontFamily: "'Space Mono', monospace",
           color: '#e8962a', fontWeight: 700,
         }}>{pct}%</span>
       </div>
-      <div style={{
+      <div
+        role="progressbar"
+        aria-valuenow={pct}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label={`Analysis progress: ${pct}%`}
+        style={{
         height: 6, background: 'rgba(255,255,255,0.06)', borderRadius: 3, overflow: 'hidden',
       }}>
         <div style={{
@@ -227,6 +244,8 @@ export default function VideoAnalyzer({ onBack }) {
       background: 'var(--strive-midnight)',
       paddingBottom: 100,
       fontFamily: "'Outfit', sans-serif",
+      maxWidth: 540,
+      margin: '0 auto',
     }}>
       {/* Header */}
       <div style={{
@@ -237,8 +256,8 @@ export default function VideoAnalyzer({ onBack }) {
           <button
             onClick={onBack}
             style={{
-              background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)',
-              borderRadius: 10, width: 36, height: 36,
+              background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(232,150,42,0.12)',
+              borderRadius: 10, width: 44, height: 44, minWidth: 44, minHeight: 44,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               cursor: 'pointer',
             }}
@@ -253,7 +272,7 @@ export default function VideoAnalyzer({ onBack }) {
             Motion Analysis
           </h1>
           <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', margin: 0 }}>
-            AI-powered pose detection & biomechanics
+            Advanced pose detection & biomechanics
           </p>
         </div>
       </div>
@@ -281,6 +300,7 @@ export default function VideoAnalyzer({ onBack }) {
                 controls={!analyzing}
                 playsInline
                 onTimeUpdate={handleTimeUpdate}
+                aria-label="Uploaded gymnastics video for analysis"
                 style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
               />
               {/* Skeleton overlay */}
@@ -413,8 +433,9 @@ function ToggleChip({ label, active, onClick }) {
   return (
     <button
       onClick={onClick}
+      aria-pressed={active}
       style={{
-        padding: '5px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600,
+        padding: '5px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600, minHeight: 44,
         border: `1px solid ${active ? 'rgba(232,150,42,0.4)' : 'rgba(255,255,255,0.08)'}`,
         background: active ? 'rgba(232,150,42,0.1)' : 'transparent',
         color: active ? '#e8962a' : 'rgba(255,255,255,0.35)',

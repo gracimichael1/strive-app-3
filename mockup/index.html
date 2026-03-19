@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>STRIVE — New Design Mockup</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #070c16;
+    --surface: #0d1422;
+    --surface-2: #121b2d;
+    --surface-3: #1a2540;
+    --gold: #e8962a;
+    --gold-light: #ffc15a;
+    --green: #22c55e;
+    --orange: #e06820;
+    --red: #dc2626;
+    --text: #ffffff;
+    --text-secondary: #8890AB;
+    --text-muted: #6B7094;
+    --border: rgba(232, 150, 42, 0.12);
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Outfit', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .phone-frame {
+    max-width: 390px;
+    margin: 20px auto;
+    position: relative;
+    min-height: 100vh;
+    padding-bottom: 100px;
+  }
+
+  /* Screen selector tabs */
+  .screen-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background: #0a0f1a;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    padding: 12px 16px;
+  }
+  .screen-nav button {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .screen-nav button.active {
+    background: linear-gradient(135deg, var(--gold), var(--gold-light));
+    color: #000;
+    border-color: var(--gold);
+    font-weight: 700;
+  }
+
+  .screen { display: none; padding-top: 56px; }
+  .screen.active { display: block; }
+
+  /* ========== LAYER 1: THE SCORE (FREE) ========== */
+  .score-hero {
+    text-align: center;
+    padding: 32px 20px 24px;
+    position: relative;
+  }
+  .score-hero::before {
+    content: '';
+    position: absolute;
+    top: -40px; left: 50%; transform: translateX(-50%);
+    width: 300px; height: 300px;
+    background: radial-gradient(circle, rgba(232,150,42,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .event-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+    font-weight: 500;
+  }
+  .event-badge .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); }
+
+  .score-number {
+    font-family: 'Space Mono', monospace;
+    font-size: 72px;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--gold-light), var(--gold));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    line-height: 1;
+    margin-bottom: 8px;
+    animation: countUp 1.5s ease-out forwards;
+  }
+  @keyframes countUp {
+    0% { opacity: 0; transform: scale(0.8); }
+    60% { opacity: 1; transform: scale(1.02); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+  .score-context {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+  }
+  .score-delta {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: 'Space Mono', monospace;
+    font-size: 14px;
+    color: var(--green);
+    font-weight: 700;
+    background: rgba(34,197,94,0.1);
+    padding: 4px 12px;
+    border-radius: 12px;
+    margin-top: 8px;
+  }
+
+  /* Summary cards */
+  .summary-section {
+    padding: 0 20px;
+    margin-top: 20px;
+  }
+  .summary-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 12px;
+  }
+  .summary-card.positive {
+    border-left: 3px solid var(--green);
+  }
+  .summary-card.negative {
+    border-left: 3px solid var(--orange);
+  }
+  .summary-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+  .summary-label.green { color: var(--green); }
+  .summary-label.orange { color: var(--orange); }
+
+  .summary-text {
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--text);
+    font-weight: 400;
+  }
+
+  /* Upgrade CTA */
+  .upgrade-cta {
+    margin: 24px 20px;
+    background: linear-gradient(135deg, rgba(232,150,42,0.1), rgba(232,150,42,0.05));
+    border: 1px solid rgba(232,150,42,0.3);
+    border-radius: 16px;
+    padding: 24px 20px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .upgrade-cta::before {
+    content: '';
+    position: absolute;
+    top: -50%; left: -50%;
+    width: 200%; height: 200%;
+    background: conic-gradient(from 0deg, transparent, rgba(232,150,42,0.05), transparent);
+    animation: shimmer 3s linear infinite;
+  }
+  @keyframes shimmer { to { transform: rotate(360deg); } }
+
+  .upgrade-cta h3 {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    position: relative;
+  }
+  .upgrade-cta .deduction-count {
+    font-family: 'Space Mono', monospace;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--gold);
+    margin: 8px 0;
+    position: relative;
+  }
+  .upgrade-cta p {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+    position: relative;
+  }
+  .upgrade-btn {
+    background: linear-gradient(135deg, var(--gold), var(--gold-light));
+    color: #000;
+    border: none;
+    padding: 14px 32px;
+    border-radius: 12px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    position: relative;
+    min-height: 48px;
+  }
+  .upgrade-btn:hover { transform: scale(1.02); }
+
+  /* Blurred preview */
+  .blurred-preview {
+    margin: 0 20px 20px;
+    position: relative;
+    border-radius: 16px;
+    overflow: hidden;
+  }
+  .blurred-content {
+    filter: blur(6px);
+    opacity: 0.4;
+    pointer-events: none;
+    padding: 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+  }
+  .blurred-content .fake-card {
+    background: var(--surface-2);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .blurred-content .fake-title {
+    font-size: 14px; font-weight: 600;
+    background: var(--surface-3); width: 140px; height: 16px; border-radius: 4px;
+  }
+  .blurred-content .fake-grade {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: linear-gradient(135deg, var(--green), #16a34a);
+  }
+  .blur-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(7,12,22,0.3);
+  }
+  .blur-overlay span {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    padding: 10px 20px;
+    border-radius: 24px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gold);
+  }
+
+  /* ========== LAYER 2: THE BREAKDOWN (PRO) ========== */
+  .section-header {
+    padding: 20px 20px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .section-header h2 {
+    font-size: 18px;
+    font-weight: 700;
+  }
+  .section-header .count {
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    color: var(--text-muted);
+    background: var(--surface-2);
+    padding: 4px 10px;
+    border-radius: 10px;
+  }
+
+  .skill-card {
+    margin: 0 20px 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    transition: all 0.2s;
+  }
+  .skill-card-header {
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+  }
+  .skill-grade {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Space Mono', monospace;
+    font-size: 16px;
+    font-weight: 700;
+    color: #000;
+    flex-shrink: 0;
+  }
+  .grade-a { background: linear-gradient(135deg, var(--green), #16a34a); }
+  .grade-b { background: linear-gradient(135deg, #4ade80, var(--green)); }
+  .grade-c { background: linear-gradient(135deg, var(--gold-light), var(--gold)); }
+  .grade-d { background: linear-gradient(135deg, var(--orange), #c05a1c); }
+
+  .skill-info { flex: 1; }
+  .skill-name { font-size: 15px; font-weight: 600; margin-bottom: 2px; }
+  .skill-meta { font-size: 12px; color: var(--text-secondary); }
+
+  .skill-deduction {
+    font-family: 'Space Mono', monospace;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--orange);
+  }
+
+  .skill-detail {
+    padding: 0 16px 16px;
+    border-top: 1px solid rgba(255,255,255,0.05);
+  }
+  .fault-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+  }
+  .fault-item:last-child { border-bottom: none; }
+  .fault-severity {
+    width: 4px;
+    height: 32px;
+    border-radius: 2px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .fault-severity.small { background: var(--green); }
+  .fault-severity.medium { background: var(--gold); }
+  .fault-severity.large { background: var(--orange); }
+
+  .fault-text { flex: 1; }
+  .fault-name { font-size: 13px; font-weight: 500; }
+  .fault-fix { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+  .fault-points {
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    color: var(--orange);
+    font-weight: 700;
+  }
+
+  /* Drill Plan */
+  .drill-section {
+    margin: 20px 20px 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+  }
+  .drill-section h3 {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .drill-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+  }
+  .drill-item:last-child { border-bottom: none; }
+  .drill-number {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    background: var(--surface-3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--gold);
+  }
+  .drill-text { font-size: 13px; color: var(--text-secondary); }
+
+  /* Score Path */
+  .score-path {
+    margin: 20px;
+    background: linear-gradient(135deg, rgba(34,197,94,0.08), rgba(34,197,94,0.03));
+    border: 1px solid rgba(34,197,94,0.2);
+    border-radius: 16px;
+    padding: 20px;
+    text-align: center;
+  }
+  .score-path h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--green);
+    margin-bottom: 12px;
+  }
+  .path-visual {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin: 16px 0;
+  }
+  .path-score {
+    font-family: 'Space Mono', monospace;
+    font-size: 24px;
+    font-weight: 700;
+  }
+  .path-score.current { color: var(--gold); }
+  .path-score.target { color: var(--green); }
+  .path-arrow {
+    color: var(--text-muted);
+    font-size: 20px;
+  }
+  .path-detail {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+
+  /* ========== LAYER 3: THE LAB (ELITE) ========== */
+  .lab-tool {
+    margin: 0 20px 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+  }
+  .lab-tool h3 {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .lab-tool p {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+  }
+  .whatif-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+  }
+  .whatif-row:last-child { border-bottom: none; }
+  .whatif-label { font-size: 13px; }
+  .whatif-toggle {
+    width: 40px; height: 22px;
+    background: var(--surface-3);
+    border-radius: 11px;
+    position: relative;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .whatif-toggle.on { background: var(--green); }
+  .whatif-toggle::after {
+    content: '';
+    position: absolute;
+    top: 3px; left: 3px;
+    width: 16px; height: 16px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.2s;
+  }
+  .whatif-toggle.on::after { transform: translateX(18px); }
+  .whatif-projected {
+    text-align: center;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255,255,255,0.05);
+  }
+  .whatif-projected .label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+  .whatif-projected .score {
+    font-family: 'Space Mono', monospace;
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--green);
+  }
+
+  /* Diagnostics */
+  .diag-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .diag-cell {
+    background: var(--surface-2);
+    border-radius: 10px;
+    padding: 12px;
+    text-align: center;
+  }
+  .diag-cell .value {
+    font-family: 'Space Mono', monospace;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--gold);
+  }
+  .diag-cell .label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+  }
+
+  /* Bottom nav */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 390px;
+    background: rgba(13,20,34,0.95);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-around;
+    padding: 8px 0 24px;
+    z-index: 50;
+  }
+  .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-family: 'Outfit', sans-serif;
+    font-size: 10px;
+    cursor: pointer;
+    padding: 4px 12px;
+    min-width: 56px;
+    min-height: 44px;
+  }
+  .nav-item.active { color: var(--gold); }
+  .nav-icon { font-size: 20px; }
+  .nav-item.primary {
+    position: relative;
+    top: -16px;
+  }
+  .nav-item.primary .nav-icon {
+    background: linear-gradient(135deg, var(--gold), var(--gold-light));
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #000;
+    font-size: 24px;
+    box-shadow: 0 4px 20px rgba(232,150,42,0.3);
+  }
+
+  /* Tier badges */
+  .tier-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .tier-free { background: rgba(255,255,255,0.08); color: var(--text-secondary); }
+  .tier-pro { background: rgba(232,150,42,0.15); color: var(--gold); }
+  .tier-elite { background: rgba(168,85,247,0.15); color: #a855f7; }
+</style>
+</head>
+<body>
+
+<!-- Screen Navigation -->
+<div class="screen-nav">
+  <button class="active" onclick="showScreen('layer1')">Layer 1 — Free</button>
+  <button onclick="showScreen('layer2')">Layer 2 — Pro</button>
+  <button onclick="showScreen('layer3')">Layer 3 — Elite</button>
+</div>
+
+<!-- ==================== LAYER 1: THE SCORE (FREE) ==================== -->
+<div class="phone-frame">
+<div class="screen active" id="layer1">
+
+  <div class="score-hero">
+    <div class="event-badge"><span class="dot"></span> Women's Level 7 — Floor Exercise</div>
+    <div class="score-number">8.925</div>
+    <div class="score-context">Start Value 10.0 — Deductions 1.075</div>
+    <div class="score-delta">&#9650; +0.15 from last analysis</div>
+  </div>
+
+  <!-- What went right -->
+  <div class="summary-section">
+    <div class="summary-card positive">
+      <div class="summary-label green">What went right</div>
+      <div class="summary-text">Strong tumbling passes with good power and height. Your dance elements showed improved artistry with pointed toes and extended lines.</div>
+    </div>
+
+    <!-- What to work on -->
+    <div class="summary-card negative">
+      <div class="summary-label orange">What to work on</div>
+      <div class="summary-text">Landing control cost the most points — two steps on tumbling dismounts. Some bent-arm positions during choreography transitions were flagged.</div>
+    </div>
+  </div>
+
+  <!-- Upgrade CTA -->
+  <div class="upgrade-cta">
+    <h3>We found more for your gymnast</h3>
+    <div class="deduction-count">7 skills analyzed</div>
+    <p>See the grade and detailed corrections for every skill, plus a personalized drill plan to gain back those points.</p>
+    <button class="upgrade-btn">Unlock Full Analysis — $9.99/mo</button>
+  </div>
+
+  <!-- Blurred preview tease -->
+  <div class="blurred-preview">
+    <div class="blurred-content">
+      <div class="fake-card">
+        <div class="fake-title"></div>
+        <div class="fake-grade"></div>
+      </div>
+      <div class="fake-card">
+        <div class="fake-title"></div>
+        <div class="fake-grade" style="background: linear-gradient(135deg, #ffc15a, #e8962a);"></div>
+      </div>
+      <div class="fake-card">
+        <div class="fake-title"></div>
+        <div class="fake-grade" style="background: linear-gradient(135deg, #4ade80, #22c55e);"></div>
+      </div>
+    </div>
+    <div class="blur-overlay">
+      <span>PRO — Skill-by-skill breakdown</span>
+    </div>
+  </div>
+
+</div>
+
+<!-- ==================== LAYER 2: THE BREAKDOWN (PRO) ==================== -->
+<div class="screen" id="layer2">
+
+  <div class="score-hero">
+    <div class="event-badge"><span class="dot"></span> Women's Level 7 — Floor Exercise <span class="tier-badge tier-pro">PRO</span></div>
+    <div class="score-number">8.925</div>
+    <div class="score-context">Start Value 10.0 — Deductions 1.075</div>
+    <div class="score-delta">&#9650; +0.15 from last analysis</div>
+  </div>
+
+  <!-- Score Path -->
+  <div class="score-path">
+    <h3>Your path to 9.2</h3>
+    <div class="path-visual">
+      <div class="path-score current">8.925</div>
+      <div class="path-arrow">&#10230;</div>
+      <div class="path-score target">9.225</div>
+    </div>
+    <div class="path-detail">Fix landing steps (+0.20) and toe point (+0.10) to gain 0.30.<br>That's 3 focused drills away.</div>
+  </div>
+
+  <!-- Skills -->
+  <div class="section-header">
+    <h2>Skills Performed</h2>
+    <span class="count">7 skills</span>
+  </div>
+
+  <div class="skill-card">
+    <div class="skill-card-header">
+      <div class="skill-grade grade-a">A</div>
+      <div class="skill-info">
+        <div class="skill-name">Round-off Back Handspring Back Tuck</div>
+        <div class="skill-meta">Tumbling Pass 1 • 0:08-0:12</div>
+      </div>
+      <div class="skill-deduction">-0.10</div>
+    </div>
+    <div class="skill-detail">
+      <div class="fault-item">
+        <div class="fault-severity small"></div>
+        <div class="fault-text">
+          <div class="fault-name">Small step on landing</div>
+          <div class="fault-fix">Drill: Stick-it challenge — 10 reps from low beam</div>
+        </div>
+        <div class="fault-points">-0.10</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="skill-card">
+    <div class="skill-card-header">
+      <div class="skill-grade grade-b">B+</div>
+      <div class="skill-info">
+        <div class="skill-name">Front Walkover</div>
+        <div class="skill-meta">Dance Element • 0:18-0:22</div>
+      </div>
+      <div class="skill-deduction">-0.15</div>
+    </div>
+    <div class="skill-detail">
+      <div class="fault-item">
+        <div class="fault-severity small"></div>
+        <div class="fault-text">
+          <div class="fault-name">Slight leg separation at vertical</div>
+          <div class="fault-fix">Drill: Wall handstands with squeeze focus — 3x30sec</div>
+        </div>
+        <div class="fault-points">-0.05</div>
+      </div>
+      <div class="fault-item">
+        <div class="fault-severity medium"></div>
+        <div class="fault-text">
+          <div class="fault-name">Insufficient split in lunge exit</div>
+          <div class="fault-fix">Drill: Over-splits stretching — 2 min each side daily</div>
+        </div>
+        <div class="fault-points">-0.10</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="skill-card">
+    <div class="skill-card-header">
+      <div class="skill-grade grade-c">C+</div>
+      <div class="skill-info">
+        <div class="skill-name">Full Turn (360°)</div>
+        <div class="skill-meta">Dance Requirement • 0:35-0:38</div>
+      </div>
+      <div class="skill-deduction">-0.25</div>
+    </div>
+    <div class="skill-detail">
+      <div class="fault-item">
+        <div class="fault-severity medium"></div>
+        <div class="fault-text">
+          <div class="fault-name">Heel drop mid-rotation</div>
+          <div class="fault-fix">Drill: Relevé balance holds on beam — 4x15sec</div>
+        </div>
+        <div class="fault-points">-0.10</div>
+      </div>
+      <div class="fault-item">
+        <div class="fault-severity large"></div>
+        <div class="fault-text">
+          <div class="fault-name">Loss of balance, extra step</div>
+          <div class="fault-fix">Drill: Spot turns on floor line — 20 reps slow, focus on spot</div>
+        </div>
+        <div class="fault-points">-0.15</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="skill-card">
+    <div class="skill-card-header">
+      <div class="skill-grade grade-d">D+</div>
+      <div class="skill-info">
+        <div class="skill-name">Back Tuck Dismount</div>
+        <div class="skill-meta">Final Tumbling • 1:02-1:05</div>
+      </div>
+      <div class="skill-deduction">-0.35</div>
+    </div>
+    <div class="skill-detail">
+      <div class="fault-item">
+        <div class="fault-severity large"></div>
+        <div class="fault-text">
+          <div class="fault-name">Deep squat on landing</div>
+          <div class="fault-fix">Drill: Drop landings from 24" box — focus on chest up, absorb</div>
+        </div>
+        <div class="fault-points">-0.20</div>
+      </div>
+      <div class="fault-item">
+        <div class="fault-severity medium"></div>
+        <div class="fault-text">
+          <div class="fault-name">Insufficient height</div>
+          <div class="fault-fix">Drill: Standing back tucks on trampoline — focus on set</div>
+        </div>
+        <div class="fault-points">-0.10</div>
+      </div>
+      <div class="fault-item">
+        <div class="fault-severity small"></div>
+        <div class="fault-text">
+          <div class="fault-name">Knees apart in tuck</div>
+          <div class="fault-fix">Drill: Tuck jumps with band above knees — 3x10</div>
+        </div>
+        <div class="fault-points">-0.05</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Drill Plan -->
+  <div class="drill-section">
+    <h3>This Week's Focus Drills</h3>
+    <div class="drill-item">
+      <div class="drill-number">1</div>
+      <div class="drill-text">Stick-it challenge — 10 reps, mark landings with no steps</div>
+    </div>
+    <div class="drill-item">
+      <div class="drill-number">2</div>
+      <div class="drill-text">Relevé balance holds on beam — 4x15 seconds each foot</div>
+    </div>
+    <div class="drill-item">
+      <div class="drill-number">3</div>
+      <div class="drill-text">Drop landings from 24" box — 3x8 reps, chest up</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ==================== LAYER 3: THE LAB (ELITE) ==================== -->
+<div class="screen" id="layer3">
+
+  <div class="score-hero">
+    <div class="event-badge"><span class="dot"></span> Women's Level 7 — Floor <span class="tier-badge tier-elite">ELITE</span></div>
+    <div class="score-number">8.925</div>
+    <div class="score-context">Start Value 10.0 — Deductions 1.075</div>
+    <div class="score-delta">&#9650; +0.15 from last analysis</div>
+  </div>
+
+  <div class="section-header">
+    <h2>Advanced Tools</h2>
+  </div>
+
+  <!-- What-If Simulator -->
+  <div class="lab-tool">
+    <h3>What-If Simulator</h3>
+    <p>Toggle deductions on/off to project your potential score</p>
+    <div class="whatif-row">
+      <span class="whatif-label">Landing step on pass 1</span>
+      <div class="whatif-toggle on" onclick="this.classList.toggle('on')"></div>
+    </div>
+    <div class="whatif-row">
+      <span class="whatif-label">Deep squat on dismount</span>
+      <div class="whatif-toggle on" onclick="this.classList.toggle('on')"></div>
+    </div>
+    <div class="whatif-row">
+      <span class="whatif-label">Balance loss on turn</span>
+      <div class="whatif-toggle" onclick="this.classList.toggle('on')"></div>
+    </div>
+    <div class="whatif-row">
+      <span class="whatif-label">Leg separation on walkover</span>
+      <div class="whatif-toggle" onclick="this.classList.toggle('on')"></div>
+    </div>
+    <div class="whatif-projected">
+      <div class="label">Projected Score</div>
+      <div class="score">9.225</div>
+    </div>
+  </div>
+
+  <!-- Diagnostics -->
+  <div class="lab-tool">
+    <h3>Session Diagnostics</h3>
+    <p>Scoring engine confidence and pattern analysis</p>
+    <div class="diag-grid">
+      <div class="diag-cell">
+        <div class="value">92%</div>
+        <div class="label">AI Confidence</div>
+      </div>
+      <div class="diag-cell">
+        <div class="value">7</div>
+        <div class="label">Skills Detected</div>
+      </div>
+      <div class="diag-cell">
+        <div class="value">11</div>
+        <div class="label">Total Faults</div>
+      </div>
+      <div class="diag-cell">
+        <div class="value">3</div>
+        <div class="label">Recurring Faults</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Coach Report -->
+  <div class="lab-tool">
+    <h3>Coach Report</h3>
+    <p>Share a detailed analysis with your coaching team</p>
+    <div style="display:flex; gap:8px; margin-top:8px;">
+      <button style="flex:1; background:var(--surface-2); border:1px solid var(--border); color:var(--text); padding:12px; border-radius:10px; font-family:'Outfit',sans-serif; font-size:13px; font-weight:600; cursor:pointer; min-height:44px;">Export PDF</button>
+      <button style="flex:1; background:linear-gradient(135deg,var(--gold),var(--gold-light)); border:none; color:#000; padding:12px; border-radius:10px; font-family:'Outfit',sans-serif; font-size:13px; font-weight:700; cursor:pointer; min-height:44px;">Share with Coach</button>
+    </div>
+  </div>
+
+  <!-- Fault Trends -->
+  <div class="lab-tool">
+    <h3>Fault Trend Analysis</h3>
+    <p>Patterns across your last 5 analyses</p>
+    <div style="margin-top:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.03);">
+        <span style="font-size:13px;">Landing control</span>
+        <span style="font-family:'Space Mono',monospace;font-size:12px;color:var(--orange);">5 of 5 sessions</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.03);">
+        <span style="font-size:13px;">Toe point</span>
+        <span style="font-family:'Space Mono',monospace;font-size:12px;color:var(--green);">Improving — 2 of last 5</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;">
+        <span style="font-size:13px;">Arm positions</span>
+        <span style="font-family:'Space Mono',monospace;font-size:12px;color:var(--gold);">3 of 5 sessions</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- Bottom Nav -->
+<div class="bottom-nav">
+  <button class="nav-item active">
+    <span class="nav-icon">&#8962;</span>
+    <span>Home</span>
+  </button>
+  <button class="nav-item">
+    <span class="nav-icon">&#9776;</span>
+    <span>History</span>
+  </button>
+  <button class="nav-item primary">
+    <span class="nav-icon">&#9654;</span>
+    <span style="margin-top:4px;">Analyze</span>
+  </button>
+  <button class="nav-item">
+    <span class="nav-icon">&#9733;</span>
+    <span>Progress</span>
+  </button>
+  <button class="nav-item">
+    <span class="nav-icon">&#9881;</span>
+    <span>Profile</span>
+  </button>
+</div>
+
+<script>
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.screen-nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+  window.scrollTo(0, 0);
+}
+</script>
+
+</body>
+</html>

@@ -7,10 +7,11 @@ export default function StriveLogo({ size = 100, showText = true, animate = fals
   
   return (
     <div style={{ textAlign: 'center', display: 'inline-block' }}>
-      <svg viewBox="0 0 120 120" width={s} height={s} style={{
+      <svg viewBox="0 0 120 120" width={s} height={s} role="img" aria-label="STRIVE logo" style={{
         filter: 'drop-shadow(0 0 24px rgba(232,150,42,0.25))',
         ...(animate ? { animation: 'scaleIn 1s cubic-bezier(0.16, 1, 0.3, 1)' } : {}),
       }}>
+        <title>STRIVE logo</title>
         <defs>
           <linearGradient id="striveGold" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#e8962a" />

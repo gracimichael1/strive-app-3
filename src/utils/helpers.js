@@ -11,14 +11,26 @@ export const log = {
   error(stage, msg, data) { log._fmt("ERROR", stage, msg, data); },
 };
 
+// ─── HTML ESCAPING (prevent XSS from AI-generated content) ──────────────────
+export function escapeHtml(str) {
+  if (typeof str !== "string") return str;
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 // ─── SAFETY UTILITIES (prevent crashes from unexpected AI response shapes) ──
 export function safeStr(val, fallback = "") {
   if (val == null) return fallback;
-  if (typeof val === "string") return val;
+  if (typeof val === "string") return escapeHtml(val);
   if (typeof val === "number" || typeof val === "boolean") return String(val);
   if (Array.isArray(val)) return val.map(v => safeStr(v)).join("; ");
   if (typeof val === "object") {
-    return val.text || val.description || val.tip || val.advice || val.name || val.reason || val.skill || val.correction || val.currentFault || JSON.stringify(val);
+    const raw = val.text || val.description || val.tip || val.advice || val.name || val.reason || val.skill || val.correction || val.currentFault || JSON.stringify(val);
+    return escapeHtml(typeof raw === "string" ? raw : String(raw));
   }
   return String(val);
 }
