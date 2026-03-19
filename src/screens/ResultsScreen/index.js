@@ -15,7 +15,7 @@ import Layer3Elite from './Layer3Elite';
  * @param {function} props.onUpgrade     - Called when user taps upgrade CTA
  * @param {function} props.onSeek        - Called when user taps a video timestamp
  */
-function ResultsScreen({ result, profile, tier, previousResult, history, onUpgrade, onSeek, onBack }) {
+function ResultsScreen({ result, profile, tier, previousResult, history, onUpgrade, onSeek, onBack, videoUrl, videoFile }) {
   if (!result) {
     return (
       <div
@@ -97,6 +97,7 @@ function ResultsScreen({ result, profile, tier, previousResult, history, onUpgra
           previousResult={previousResult}
           history={history}
           onSeek={onSeek}
+          videoUrl={videoUrl}
         />
       </>
     );
@@ -111,6 +112,7 @@ function ResultsScreen({ result, profile, tier, previousResult, history, onUpgra
           profile={profile}
           previousResult={previousResult}
           onSeek={onSeek}
+          videoUrl={videoUrl}
         />
       </>
     );

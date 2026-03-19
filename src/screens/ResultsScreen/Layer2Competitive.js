@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import ScoreHero from './ScoreHero';
 import SkillCard from '../../components/ui/SkillCard';
+import VideoReviewPlayer from '../../components/video/VideoReviewPlayer';
 import { safeStr, safeArray, safeNum } from '../../utils/helpers';
 import RoadToNextLevel from './RoadToNextLevel';
 
@@ -19,7 +20,7 @@ const COLORS = {
   border: 'rgba(232, 150, 42, 0.12)',
 };
 
-function Layer2Competitive({ result, profile, previousResult, onSeek }) {
+function Layer2Competitive({ result, profile, previousResult, onSeek, videoUrl }) {
   const gradedSkills = safeArray(result?.gradedSkills);
   const deductions = safeArray(result?.executionDeductions);
   const finalScore = safeNum(result?.finalScore, 0);
@@ -72,6 +73,9 @@ function Layer2Competitive({ result, profile, previousResult, onSeek }) {
         previousResult={previousResult}
         tier="competitive"
       />
+
+      {/* Video Review Player — slow-mo, seek-to-skill, skeleton overlay */}
+      <VideoReviewPlayer videoUrl={videoUrl} result={result} />
 
       {/* Score Path */}
       {topFixes.length > 0 && finalScore < 9.8 && (

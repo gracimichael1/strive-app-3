@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import ScoreHero from './ScoreHero';
 import SkillCard from '../../components/ui/SkillCard';
+import VideoReviewPlayer from '../../components/video/VideoReviewPlayer';
 import { safeStr, safeArray, safeNum } from '../../utils/helpers';
 import RoadToNextLevel from './RoadToNextLevel';
 
@@ -450,7 +451,7 @@ function BodyMechanicsSummary({ gradedSkills }) {
   );
 }
 
-function Layer3Elite({ result, profile, previousResult, history, onSeek }) {
+function Layer3Elite({ result, profile, previousResult, history, onSeek, videoUrl }) {
   const gradedSkills = safeArray(result?.gradedSkills);
   const deductions = safeArray(result?.executionDeductions);
   const finalScore = safeNum(result?.finalScore, 0);
@@ -501,6 +502,9 @@ function Layer3Elite({ result, profile, previousResult, history, onSeek }) {
         previousResult={previousResult}
         tier="elite"
       />
+
+      {/* Video Review Player — slow-mo, seek-to-skill, skeleton overlay */}
+      <VideoReviewPlayer videoUrl={videoUrl} result={result} />
 
       {/* Score Path */}
       {topFixes.length > 0 && finalScore < 9.8 && (
