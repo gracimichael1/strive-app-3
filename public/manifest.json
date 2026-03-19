@@ -1,7 +1,7 @@
 {
   "short_name": "STRIVE",
-  "name": "STRIVE — AI Gymnastics Scoring",
-  "description": "See your score. Own your growth. AI-powered gymnastics judging, deduction breakdowns, and personalized training programs.",
+  "name": "STRIVE — Gymnastics Video Scoring",
+  "description": "See your score. Own your growth. Advanced gymnastics judging, deduction breakdowns, and personalized training programs.",
   "start_url": ".",
   "display": "standalone",
   "orientation": "portrait",

@@ -64,7 +64,7 @@ export default async function handler(req, res) {
 
     if (!geminiRes.ok) {
       console.error('Gemini error', data);
-      return res.status(502).json({ error: 'AI service error', detail: data });
+      return res.status(502).json({ error: 'Analysis service error', detail: data });
     }
 
     const raw  = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
@@ -74,7 +74,7 @@ export default async function handler(req, res) {
     try {
       parsed = JSON.parse(clean);
     } catch {
-      return res.status(500).json({ error: 'Could not parse AI response', raw });
+      return res.status(500).json({ error: 'Could not parse analysis response', raw });
     }
 
     return res.status(200).json(parsed);

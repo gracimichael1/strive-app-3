@@ -5,7 +5,8 @@ const TierContext = createContext();
 
 export const TIERS = {
   FREE: 'free',
-  PRO: 'pro',
+  COMPETITIVE: 'competitive',
+  ELITE: 'elite',
 };
 
 // Define what each tier can access
@@ -18,14 +19,29 @@ export const TIER_FEATURES = {
     showMentalTraining: false,
     showCoachReport: false,
     showWhatIf: false,
-    showDailyAffirmations: false,
+    showDailyAffirmations: true,     // All tiers get daily encouragement
     showSeasonGoals: false,
     showVideoReview: true,           // Basic video review
     showSkeletonOverlay: false,
     maxDrillsShown: 1,               // Only #1 fix
     showProgressTracking: false,
   },
-  [TIERS.PRO]: {
+  [TIERS.COMPETITIVE]: {
+    maxAnalysesPerMonth: Infinity,
+    showFullDeductions: true,
+    showBiomechanics: true,
+    showTrainingProgram: true,
+    showMentalTraining: true,
+    showCoachReport: false,          // Elite only
+    showWhatIf: true,
+    showDailyAffirmations: true,
+    showSeasonGoals: true,
+    showVideoReview: true,
+    showSkeletonOverlay: true,
+    maxDrillsShown: Infinity,
+    showProgressTracking: true,
+  },
+  [TIERS.ELITE]: {
     maxAnalysesPerMonth: Infinity,
     showFullDeductions: true,
     showBiomechanics: true,
@@ -51,7 +67,11 @@ export function TierProvider({ children }) {
     (async () => {
       try {
         const stored = await storage.get('strive-tier');
-        if (stored) setTier(stored.value);
+        if (stored) {
+          // Normalize legacy "pro" tier to "competitive"
+          const val = stored.value === 'pro' ? TIERS.COMPETITIVE : stored.value;
+          setTier(val);
+        }
         const count = await storage.get('strive-analyses-month');
         if (count) {
           const data = JSON.parse(count.value);
@@ -66,9 +86,14 @@ export function TierProvider({ children }) {
     })();
   }, []);
 
-  const upgradeToPro = async () => {
-    setTier(TIERS.PRO);
-    await storage.set('strive-tier', TIERS.PRO);
+  const upgradeToCompetitive = async () => {
+    setTier(TIERS.COMPETITIVE);
+    await storage.set('strive-tier', TIERS.COMPETITIVE);
+  };
+
+  const upgradeToElite = async () => {
+    setTier(TIERS.ELITE);
+    await storage.set('strive-tier', TIERS.ELITE);
   };
 
   const incrementAnalyses = async () => {
@@ -82,9 +107,10 @@ export function TierProvider({ children }) {
     }));
   };
 
-  const features = TIER_FEATURES[tier];
-  const canAnalyze = tier === TIERS.PRO || analysesThisMonth < features.maxAnalysesPerMonth;
-  const analysesRemaining = tier === TIERS.PRO ? Infinity : Math.max(0, features.maxAnalysesPerMonth - analysesThisMonth);
+  const features = TIER_FEATURES[tier] || TIER_FEATURES[TIERS.FREE];
+  const isPaid = tier === TIERS.COMPETITIVE || tier === TIERS.ELITE;
+  const canAnalyze = isPaid || analysesThisMonth < features.maxAnalysesPerMonth;
+  const analysesRemaining = isPaid ? Infinity : Math.max(0, features.maxAnalysesPerMonth - analysesThisMonth);
 
   return (
     <TierContext.Provider value={{
@@ -93,9 +119,15 @@ export function TierProvider({ children }) {
       canAnalyze,
       analysesRemaining,
       analysesThisMonth,
-      upgradeToPro,
+      upgradeToCompetitive,
+      upgradeToElite,
       incrementAnalyses,
-      isPro: tier === TIERS.PRO,
+      isPaid,
+      isCompetitive: tier === TIERS.COMPETITIVE || tier === TIERS.ELITE,
+      isElite: tier === TIERS.ELITE,
+      // Legacy compatibility — maps to isPaid
+      isPro: isPaid,
+      upgradeToPro: upgradeToCompetitive,
       loading,
     }}>
       {children}
@@ -109,24 +141,27 @@ export function useTier() {
   return ctx;
 }
 
-// Pro gate component — wraps content that requires Pro tier
-export function ProGate({ children, feature, fallback }) {
-  const { features, isPro } = useTier();
-  
-  if (isPro || (feature && features[feature])) {
+// Tier gate component — wraps content that requires Competitive or Elite tier
+export function TierGate({ children, feature, fallback }) {
+  const { features, isPaid } = useTier();
+
+  if (isPaid || (feature && features[feature])) {
     return children;
   }
-  
-  return fallback || <ProUpgradePrompt />;
+
+  return fallback || <UpgradePrompt />;
 }
 
-export function ProUpgradePrompt({ compact = false }) {
-  const { upgradeToPro } = useTier();
-  
+// Legacy alias
+export const ProGate = TierGate;
+
+export function UpgradePrompt({ compact = false }) {
+  const { upgradeToCompetitive } = useTier();
+
   if (compact) {
     return (
       <button
-        onClick={upgradeToPro}
+        onClick={upgradeToCompetitive}
         style={{
           display: 'inline-flex', alignItems: 'center', gap: 6,
           background: 'linear-gradient(135deg, rgba(139,92,246,0.15), rgba(139,92,246,0.05))',
@@ -136,7 +171,7 @@ export function ProUpgradePrompt({ compact = false }) {
           fontFamily: 'inherit',
         }}
       >
-        <span style={{ fontSize: 10 }}>🔒</span> Unlock with Pro
+        <span style={{ fontSize: 10 }}>🔒</span> Unlock with Competitive
       </button>
     );
   }
@@ -160,7 +195,7 @@ export function ProUpgradePrompt({ compact = false }) {
           Skill-by-skill breakdown, biomechanics dashboard, personalized training program, video review with skeleton overlay, and more.
         </div>
         <button
-          onClick={upgradeToPro}
+          onClick={upgradeToCompetitive}
           style={{
             background: 'linear-gradient(135deg, #8B5CF6, #A78BFA)',
             color: '#FFF', border: 'none', padding: '12px 32px',
@@ -168,11 +203,14 @@ export function ProUpgradePrompt({ compact = false }) {
             cursor: 'pointer', fontFamily: 'inherit', letterSpacing: 0.3,
           }}
         >
-          Upgrade to STRIVE Pro
+          Upgrade to STRIVE Competitive
         </button>
       </div>
     </div>
   );
 }
+
+// Legacy alias
+export const ProUpgradePrompt = UpgradePrompt;
 
 export default TierContext;

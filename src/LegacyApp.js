@@ -5,6 +5,11 @@ import { LineChart, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid,
 const TrainingScreen = lazy(() => import("./screens/TrainingScreen"));
 const NewResultsScreen = lazy(() => import("./screens/ResultsScreen"));
 const NewDashboardScreen = lazy(() => import("./screens/DashboardScreen"));
+const UpgradeModal = lazy(() => import("./components/billing/UpgradeModal"));
+import AgeGate from "./components/legal/AgeGate";
+import ParentalConsent from "./components/legal/ParentalConsent";
+import LegalDisclaimer from "./components/legal/LegalDisclaimer";
+import PrivacyNotice from "./components/legal/PrivacyNotice";
 
 // ─── STORAGE WRAPPER — works in Claude artifacts AND real browsers ──
 const storage = {
@@ -1494,7 +1499,9 @@ export default function LegacyApp() {
     try { return localStorage.getItem("strive-tier") || "free"; } catch { return "free"; }
   });
   // Map legacy "pro" tier to new "competitive" tier name
-  const normalizedTier = userTier === "pro" ? "competitive" : userTier;
+  const normalizedTier = userTier === "competitive" ? "competitive" : userTier;
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [pendingAnalyzeData, setPendingAnalyzeData] = useState(null);
 
   // ── Feature flags for new screen components ──
   // eslint-disable-next-line no-unused-vars
@@ -1688,6 +1695,14 @@ export default function LegacyApp() {
           profile={profile}
           onBack={() => setScreen("dashboard")}
           onAnalyze={(data) => {
+            // Check if legal disclaimer has been accepted
+            let legalAccepted = false;
+            try { legalAccepted = localStorage.getItem("strive-legal-accepted") === "true"; } catch {}
+            if (!legalAccepted) {
+              setPendingAnalyzeData(data);
+              setScreen("legal-disclaimer");
+              return;
+            }
             // Revoke previous blob URL if any
             if (videoBlobRef.current) { try { URL.revokeObjectURL(videoBlobRef.current); } catch {} }
             // Store File and create a single stable blob URL that persists across all screens
@@ -1732,8 +1747,7 @@ export default function LegacyApp() {
             })()}
             history={Object.values(savedResults)}
             onUpgrade={() => {
-              try { localStorage.setItem("strive-tier", "competitive"); } catch {}
-              setUserTier("competitive");
+              setShowUpgradeModal(true);
             }}
             onSeek={() => {}}
             onBack={() => setScreen("dashboard")}
@@ -1799,7 +1813,7 @@ export default function LegacyApp() {
         <StriveErrorBoundary name="Progress">
         {(() => {
           let tier = "free"; try { tier = localStorage.getItem("strive-tier") || "free"; } catch {}
-          return tier === "pro" ? (
+          return tier === "competitive" ? (
             <ProgressScreen history={history} profile={profile} savedResults={savedResults} comparePreselect={comparePreselect} onClearPreselect={() => setComparePreselect(null)} onBack={() => setScreen("dashboard")} />
           ) : (
             <div style={{ minHeight: "100vh", padding: "16px 18px 90px", maxWidth: 540, margin: "0 auto" }}>
@@ -1815,8 +1829,8 @@ export default function LegacyApp() {
                 <div style={{ fontSize: 22, marginBottom: 8 }}>🔒</div>
                 <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>Score History & Trends</div>
                 <div style={{ fontSize: 12, color: "#8890AB", lineHeight: 1.6, marginBottom: 16 }}>Score charts over time, event-by-event trends, deduction pattern tracking, and improvement velocity — see exactly where you're getting better and what still needs work.</div>
-                <button onClick={() => { try { localStorage.setItem("strive-tier", "pro"); } catch {} window.location.reload(); }} style={{ background: "linear-gradient(135deg, #8B5CF6, #A78BFA)", color: "#FFF", border: "none", padding: "12px 32px", borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: "'Outfit', sans-serif" }}>
-                  Upgrade to STRIVE Pro
+                <button onClick={() => setShowUpgradeModal(true)} style={{ background: "linear-gradient(135deg, #8B5CF6, #A78BFA)", color: "#FFF", border: "none", padding: "12px 32px", borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: "'Outfit', sans-serif" }}>
+                  Upgrade to STRIVE Competitive
                 </button>
               </div>
             </div>
@@ -1837,7 +1851,7 @@ export default function LegacyApp() {
         <StriveErrorBoundary name="Mental Training">
         {(() => {
           let tier = "free"; try { tier = localStorage.getItem("strive-tier") || "free"; } catch {}
-          return tier === "pro" ? (
+          return tier === "competitive" ? (
             <MentalTrainingScreen profile={profile} onBack={() => setScreen("dashboard")} />
           ) : (
             <div style={{ minHeight: "100vh", padding: "16px 18px 90px", maxWidth: 540, margin: "0 auto" }}>
@@ -1858,8 +1872,8 @@ export default function LegacyApp() {
                 <div style={{ fontSize: 12, color: "#8890AB", lineHeight: 1.6, marginBottom: 16 }}>
                   Guided visualization scripts, breathing techniques (4-7-8, box breathing, power breath), confidence-building exercises, competition day protocols, and parent coaching tips.
                 </div>
-                <button onClick={() => { try { localStorage.setItem("strive-tier", "pro"); } catch {} window.location.reload(); }} style={{ background: "linear-gradient(135deg, #8B5CF6, #A78BFA)", color: "#FFF", border: "none", padding: "12px 32px", borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: "'Outfit', sans-serif" }}>
-                  Upgrade to STRIVE Pro
+                <button onClick={() => setShowUpgradeModal(true)} style={{ background: "linear-gradient(135deg, #8B5CF6, #A78BFA)", color: "#FFF", border: "none", padding: "12px 32px", borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: "'Outfit', sans-serif" }}>
+                  Upgrade to STRIVE Competitive
                 </button>
               </div>
             </div>
@@ -1871,7 +1885,7 @@ export default function LegacyApp() {
         <StriveErrorBoundary name="Season Goals">
         {(() => {
           let tier = "free"; try { tier = localStorage.getItem("strive-tier") || "free"; } catch {}
-          return tier === "pro" ? (
+          return tier === "competitive" ? (
             <SeasonGoalsScreen profile={profile} history={history} onBack={() => setScreen("dashboard")} />
           ) : (
             <div style={{ minHeight: "100vh", padding: "16px 18px 90px", maxWidth: 540, margin: "0 auto" }}>
@@ -1884,8 +1898,8 @@ export default function LegacyApp() {
                 <div style={{ fontSize: 12, color: "#8890AB", lineHeight: 1.6, marginBottom: 16 }}>
                   Set event-specific score targets, track your progress over time, identify trends in your training, and get personalized recommendations for reaching your goals.
                 </div>
-                <button onClick={() => { try { localStorage.setItem("strive-tier", "pro"); } catch {} window.location.reload(); }} style={{ background: "linear-gradient(135deg, #8B5CF6, #A78BFA)", color: "#FFF", border: "none", padding: "12px 32px", borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: "'Outfit', sans-serif" }}>
-                  Upgrade to STRIVE Pro
+                <button onClick={() => setShowUpgradeModal(true)} style={{ background: "linear-gradient(135deg, #8B5CF6, #A78BFA)", color: "#FFF", border: "none", padding: "12px 32px", borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: "'Outfit', sans-serif" }}>
+                  Upgrade to STRIVE Competitive
                 </button>
               </div>
             </div>
@@ -1949,6 +1963,41 @@ export default function LegacyApp() {
             })}
           </div>
         </nav>
+      )}
+
+      {/* ── Legal Disclaimer (before first analysis) ── */}
+      {screen === "legal-disclaimer" && (
+        <LegalDisclaimer
+          onAccept={() => {
+            try { localStorage.setItem("strive-legal-accepted", "true"); } catch {}
+            // Resume the analysis flow with pending data
+            if (pendingAnalyzeData) {
+              const data = pendingAnalyzeData;
+              setPendingAnalyzeData(null);
+              if (videoBlobRef.current) { try { URL.revokeObjectURL(videoBlobRef.current); } catch {} }
+              if (data.video) {
+                videoFileRef.current = data.video;
+                videoBlobRef.current = URL.createObjectURL(data.video);
+              }
+              setLiveVideoUrl(videoBlobRef.current || data.videoUrl);
+              setUploadData(data);
+              setScreen("analyzing");
+            } else {
+              setScreen("upload");
+            }
+          }}
+          onBack={() => setScreen("upload")}
+        />
+      )}
+
+      {/* ── Upgrade Modal ── */}
+      {showUpgradeModal && (
+        <Suspense fallback={null}>
+          <UpgradeModal
+            currentTier={normalizedTier}
+            onClose={() => setShowUpgradeModal(false)}
+          />
+        </Suspense>
       )}
     </div>
   );
@@ -2035,7 +2084,7 @@ function SplashScreen({ onStart }) {
           color: "rgba(255,255,255,0.3)", fontSize: 14, maxWidth: 320,
           margin: "0 auto", lineHeight: 1.8, fontWeight: 400,
         }}>
-          AI-powered video analysis using official USA Gymnastics & Xcel scoring criteria. 
+          Advanced video analysis using official USA Gymnastics & Xcel scoring criteria. 
           Detailed deduction breakdowns and personalized training to raise your score.
         </p>
       </div>
@@ -2104,6 +2153,13 @@ function OnboardingScreen({ onComplete }) {
   const [level, setLevel] = useState("");
   const [goals, setGoals] = useState("");
 
+  // Legal flow sub-screens
+  const [legalScreen, setLegalScreen] = useState(null); // "age-gate" | "parental-consent" | "privacy-notice" | null
+  const [dateOfBirth, setDateOfBirth] = useState(null);
+  const [requiresParentalConsent, setRequiresParentalConsent] = useState(false);
+  const [isMinor, setIsMinor] = useState(false);
+  const [parentalConsentRecord, setParentalConsentRecord] = useState(null);
+
   const events = gender === "female" ? WOMEN_EVENTS : gender === "male" ? MEN_EVENTS : [];
   // Auto-populate all events for the selected gender
   const primaryEvents = events;
@@ -2121,8 +2177,17 @@ function OnboardingScreen({ onComplete }) {
   };
 
   const handleNext = () => {
+    // After name (step 1), show AgeGate before proceeding to gender (step 2)
+    if (step === 1) {
+      setLegalScreen("age-gate");
+      return;
+    }
+    // After goals (step 4), show PrivacyNotice before completing
+    if (step === 4) {
+      setLegalScreen("privacy-notice");
+      return;
+    }
     if (step < 4) setStep(step + 1);
-    else onComplete({ role, name, age: age ? parseInt(age) : null, gender, levelCategory, level, primaryEvents, goals: goals.trim() || null, createdAt: Date.now() });
   };
 
   const steps = [
@@ -2295,6 +2360,60 @@ function OnboardingScreen({ onComplete }) {
     </div>,
   ];
 
+  // ── Legal sub-screens (AgeGate, ParentalConsent, PrivacyNotice) ──
+  if (legalScreen === "age-gate") {
+    return (
+      <AgeGate
+        onComplete={(result) => {
+          setDateOfBirth(result.dateOfBirth);
+          setRequiresParentalConsent(result.requiresParentalConsent);
+          setIsMinor(result.isMinor);
+          if (result.requiresParentalConsent) {
+            setLegalScreen("parental-consent");
+          } else {
+            setLegalScreen(null);
+            setStep(2); // proceed to gender
+          }
+        }}
+        onBack={() => setLegalScreen(null)}
+      />
+    );
+  }
+
+  if (legalScreen === "parental-consent") {
+    return (
+      <ParentalConsent
+        athleteName={name}
+        onConsent={(record) => {
+          setParentalConsentRecord(record);
+          setLegalScreen(null);
+          setStep(2); // proceed to gender
+        }}
+        onDecline={() => {
+          // Stay on declined screen (ParentalConsent handles the declined UI)
+        }}
+        onBack={() => setLegalScreen("age-gate")}
+      />
+    );
+  }
+
+  if (legalScreen === "privacy-notice") {
+    return (
+      <PrivacyNotice
+        onAcknowledge={() => {
+          setLegalScreen(null);
+          onComplete({
+            role, name, age: age ? parseInt(age) : null, gender, levelCategory, level,
+            primaryEvents, goals: goals.trim() || null, createdAt: Date.now(),
+            dateOfBirth, requiresParentalConsent, isMinor,
+            ...(parentalConsentRecord ? { parentalConsent: parentalConsentRecord } : {}),
+          });
+        }}
+        onBack={() => setLegalScreen(null)}
+      />
+    );
+  }
+
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", padding: "24px 22px" }}>
       {/* Progress */}
@@ -2424,7 +2543,7 @@ const DashboardScreen = React.memo(function DashboardScreen({ profile, history, 
       {/* Upload CTA */}
       {(() => {
         let tier = "free"; try { tier = localStorage.getItem("strive-tier") || "free"; } catch {}
-        const isPro = tier === "pro";
+        const isPro = tier === "competitive";
         let analysesUsed = 0;
         let limitReached = false;
         if (!isPro) {
@@ -2451,14 +2570,14 @@ const DashboardScreen = React.memo(function DashboardScreen({ profile, history, 
             <div style={{ fontSize: 28, marginBottom: 10 }}>🔒</div>
             <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>Monthly limit reached</div>
             <div style={{ fontSize: 13, color: "#8890AB", lineHeight: 1.6, marginBottom: 16, maxWidth: 280, margin: "0 auto" }}>
-              You've used all 3 free analyses this month. Upgrade to Pro for unlimited video analysis.
+              You've used all 3 free analyses this month. Upgrade to Competitive for unlimited video analysis.
             </div>
-            <button onClick={() => { try { localStorage.setItem("strive-tier", "pro"); } catch {} window.location.reload(); }} style={{
+            <button onClick={() => setShowUpgradeModal(true)} style={{
               background: "linear-gradient(135deg, #8B5CF6, #A78BFA)", color: "#FFF",
               border: "none", padding: "12px 32px", borderRadius: 12, fontWeight: 700,
               fontSize: 14, cursor: "pointer", fontFamily: "'Outfit', sans-serif",
             }}>
-              Upgrade to STRIVE Pro
+              Upgrade to STRIVE Competitive
             </button>
           </div>
         ) : (
@@ -2488,7 +2607,7 @@ const DashboardScreen = React.memo(function DashboardScreen({ profile, history, 
                 Analyze routine
               </span>
               <span style={{ color: "rgba(255,255,255,0.25)", fontSize: 11, marginTop: 2, display: "block" }}>
-                {isPro ? "Unlimited · 3-pass AI" : `${remaining} free remaining`}
+                {isPro ? "Unlimited · 3-pass scoring" : `${remaining} free remaining`}
               </span>
             </div>
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0, opacity: 0.3 }}>
@@ -2671,7 +2790,7 @@ const DashboardScreen = React.memo(function DashboardScreen({ profile, history, 
       {/* Quick Actions — horizontal scrollable pills */}
       {(() => {
         const tier = (() => { try { return localStorage.getItem("strive-tier") || "free"; } catch { return "free"; } })();
-        const isPro = tier === "pro";
+        const isPro = tier === "competitive";
         return (
           <div style={{ display: "flex", gap: 8, marginBottom: 20, overflowX: "auto", paddingBottom: 4, WebkitOverflowScrolling: "touch" }}>
             {[
@@ -2761,7 +2880,7 @@ const DashboardScreen = React.memo(function DashboardScreen({ profile, history, 
             <div style={{ fontSize: 36, marginBottom: 12 }}>🤸</div>
             <h4 style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>Ready to see your score?</h4>
             <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, lineHeight: 1.6, maxWidth: 280, margin: "0 auto 16px" }}>
-              Upload a routine video and STRIVE's 3-pass AI engine will break down every deduction — just like a real judge.
+              Upload a routine video and STRIVE's 3-pass scoring engine will break down every deduction — just like a real judge.
             </p>
             <button className="btn-gold" onClick={onUpload} style={{ fontSize: 14, padding: "12px 32px" }}>
               Upload First Video
@@ -2862,9 +2981,9 @@ const DashboardScreen = React.memo(function DashboardScreen({ profile, history, 
           </div>
           <button
             onClick={() => {
-              const text = `Check out STRIVE — AI gymnastics scoring that breaks down every deduction and gives you a personalized training plan. It's free to try!\n\nhttps://strive-app-amber.vercel.app`;
+              const text = `Check out STRIVE — gymnastics video scoring that breaks down every deduction and gives you a personalized training plan. It's free to try!\n\nhttps://strive-app-amber.vercel.app`;
               if (navigator.share) {
-                navigator.share({ title: "STRIVE — AI Gymnastics Scoring", text }).catch(() => {});
+                navigator.share({ title: "STRIVE — Gymnastics Video Scoring", text }).catch(() => {});
               } else if (navigator.clipboard) {
                 navigator.clipboard.writeText(text).then(() => alert("Link copied! Share it with your gym friends."));
               }
@@ -2888,7 +3007,7 @@ const DashboardScreen = React.memo(function DashboardScreen({ profile, history, 
           WebkitBackgroundClip: "text", color: "transparent", marginBottom: 4,
         }}>STRIVE</div>
         <div style={{ fontSize: 9, color: "rgba(255,255,255,0.12)", letterSpacing: 1 }}>
-          v1.0 · 3-Pass AI Engine · {profile.level}
+          v1.0 · 3-Pass Scoring Engine · {profile.level}
         </div>
       </div>
 
@@ -3332,7 +3451,7 @@ const UploadScreen = React.memo(function UploadScreen({ profile, onBack, onAnaly
         <Icon name="camera" size={20} /> New Analysis
       </h2>
       <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, marginBottom: 24 }}>
-        Upload a routine video — 3-pass AI judge scores using {profile.level} {profile.levelCategory === "xcel" ? "Xcel" : "USAG"} criteria.
+        Upload a routine video — 3-pass scoring engine scores using {profile.level} {profile.levelCategory === "xcel" ? "Xcel" : "USAG"} criteria.
       </p>
 
       {/* Video Upload / Record */}
@@ -3621,7 +3740,7 @@ const UploadScreen = React.memo(function UploadScreen({ profile, onBack, onAnaly
             🔑 One-time setup
           </div>
           <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", lineHeight: 1.6, marginBottom: 10 }}>
-            STRIVE needs a free Gemini API key to analyze videos. Takes 30 seconds:
+            STRIVE needs a free analysis API key to analyze videos. Takes 30 seconds:
           </div>
           <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginBottom: 12, lineHeight: 1.8 }}>
             <span style={{ color: "#e8962a", fontWeight: 700 }}>1.</span>{" "}<span style={{ color: "#e8962a", cursor: "pointer", textDecoration: "underline" }} onClick={() => window.open("https://aistudio.google.com/apikey", "_blank")}>Open aistudio.google.com/apikey</span><br/>
@@ -4026,7 +4145,7 @@ const AnalyzingScreen = React.memo(function AnalyzingScreen({ uploadData, profil
     const uploadUrl = startRes.headers.get("X-Goog-Upload-URL") || startRes.headers.get("x-goog-upload-url");
     if (!uploadUrl) throw new Error("No upload URL returned");
 
-    setStatus("Sending video to AI judge...");
+    setStatus("Analyzing routine...");
     setProgress(50);
 
     const uploadRes = await fetch(uploadUrl, {
@@ -4335,19 +4454,21 @@ DETERMINISTIC SCORING — MANDATORY:
     let apiKey = null;
     try {
       const resp = await fetch("/api/gemini-key");
-      if (resp.ok) { const d = await resp.json(); serverKeyAvailable = !!d.available; }
+      if (resp.ok) { const d = await resp.json(); serverKeyAvailable = !!d.available; if (d.key) apiKey = d.key; }
     } catch {}
     // If server key available, use server proxy at /api/analyze — no client-side key needed
     // Otherwise, fall back to user's manually-entered key in Settings for direct Gemini calls
     if (!serverKeyAvailable) {
       try { const k = await storage.get("strive-gemini-key"); apiKey = k?.value || null; } catch {}
-      if (!apiKey) throw new Error("No API key. Go to Settings and paste your Gemini key from aistudio.google.com/apikey");
+      if (!apiKey) throw new Error("No API key. Go to Settings and paste your API key from aistudio.google.com/apikey");
     }
     if (!uploadData.video) throw new Error("No video file available.");
 
     // ── Score caching — return cached result for duplicate submissions ──
     // Fingerprint: file name + size + lastModified + athlete name + level + event
+    const PROMPT_VERSION = "v3_strict_brevet"; // Bump this when prompt changes to invalidate cache
     const fingerprintParts = [
+      PROMPT_VERSION,
       uploadData.video.name || "video",
       String(uploadData.video.size || 0),
       String(uploadData.video.lastModified || 0),
@@ -4429,7 +4550,7 @@ DETERMINISTIC SCORING — MANDATORY:
         rawResponse = proxyData.rawText || JSON.stringify(proxyData);
       }
 
-      if (!rawResponse) throw new Error("Gemini returned empty response.");
+      if (!rawResponse) throw new Error("Analysis engine returned empty response.");
 
       // ── Parse Gemini response ────────────────────────────────────
       setStatus("Computing score...");
@@ -4765,7 +4886,7 @@ DETERMINISTIC SCORING — MANDATORY:
         demoResult.videoUrl = uploadData.videoUrl;
         demoResult.failureReason = "Frame extraction failed — video format not supported. Try re-saving: open in Photos → Edit → Done, then re-upload.";
         demoResult.overallAssessment = "Note: Frame extraction was not possible for this video format. " +
-          "The analysis below is a general assessment for your level. For full AI vision analysis, " +
+          "The analysis below is a general assessment for your level. For full video analysis, " +
           "try re-saving the video: open it in Photos → tap Edit → tap Done, then re-upload. " +
           "This re-encodes the video in a compatible format.\n\n" + demoResult.overallAssessment;
         setProgress(100);
@@ -4883,7 +5004,7 @@ DETERMINISTIC SCORING — MANDATORY:
         }}>
           <div style={{ fontSize: 13, color: "#dc2626", fontWeight: 600, marginBottom: 6 }}>Analysis Error</div>
           <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: 1.6, marginBottom: 12 }}>
-            {error.match(/JSON|parse|Unexpected|truncat/i) ? "The AI returned an incomplete response. This happens occasionally — try again." :
+            {error.match(/JSON|parse|Unexpected|truncat/i) ? "The analysis returned an incomplete response. This happens occasionally — try again." :
              error.match(/403|401|quota|rate/i) ? "API rate limit hit. Wait 30 seconds and try again." :
              error.match(/network|fetch|Failed to fetch/i) ? "Network error — check your connection and try again." :
              error.match(/video|frame|extract|format/i) ? "Video format issue. Try a shorter clip or different format." :
@@ -6248,13 +6369,13 @@ const ResultsScreen = React.memo(function ResultsScreen({ result, profile, histo
   const hasDiff = !isNaN(actualNum) && actualNum > 0;
   const diff = hasDiff ? (result.finalScore - actualNum) : 0;
   const diffAbs = Math.abs(diff).toFixed(3);
-  const diffLabel = diff > 0 ? `AI scored ${diffAbs} HIGH` : diff < 0 ? `AI scored ${diffAbs} LOW` : "Exact match!";
+  const diffLabel = diff > 0 ? `Score calibration: ${diffAbs} HIGH` : diff < 0 ? `Score calibration: ${diffAbs} LOW` : "Exact match!";
   const diffColor = Math.abs(diff) < 0.15 ? "#22c55e" : Math.abs(diff) < 0.4 ? "#ffc15a" : "#dc2626";
 
   const hasVideo = !!(result.videoUrl || videoUrl);
   
   // ── Tier gating: check localStorage for pro status ──
-  const isPro = (() => { try { return localStorage.getItem("strive-tier") === "pro"; } catch { return false; } })();
+  const isPro = (() => { try { return localStorage.getItem("strive-tier") === "competitive"; } catch { return false; } })();
   
   const tabs = [
     { id: "overview",   label: "Overview" },
@@ -6302,7 +6423,7 @@ const ResultsScreen = React.memo(function ResultsScreen({ result, profile, histo
             const sc = cur >= 9.0 ? "#16a34a" : cur >= 8.0 ? "#d97706" : "#dc2626";
             printDiv.innerHTML = '<div style="max-width:700px;margin:0 auto;">' +
               '<div style="display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #e8962a;padding-bottom:16px;margin-bottom:24px;">' +
-                '<div><div style="font-family:Georgia,serif;font-size:28px;font-weight:700;letter-spacing:4px;color:#e8962a;">STRIVE</div><div style="font-size:10px;color:#888;letter-spacing:2px;margin-top:2px;">AI GYMNASTICS ANALYSIS REPORT</div></div>' +
+                '<div><div style="font-family:Georgia,serif;font-size:28px;font-weight:700;letter-spacing:4px;color:#e8962a;">STRIVE</div><div style="font-size:10px;color:#888;letter-spacing:2px;margin-top:2px;">GYMNASTICS ANALYSIS REPORT</div></div>' +
                 '<div style="text-align:right;font-size:11px;color:#666;"><div>' + ds + '</div><div style="margin-top:2px;">strive-app-amber.vercel.app</div></div>' +
               '</div>' +
               '<div style="display:flex;gap:24px;margin-bottom:24px;padding:16px;background:#f8f8f8;border-radius:8px;">' +
@@ -6352,7 +6473,7 @@ const ResultsScreen = React.memo(function ResultsScreen({ result, profile, histo
               '<div style="border-top:2px solid #e8962a;padding-top:16px;margin-top:32px;">' +
                 '<div style="text-align:center;"><div style="font-family:Georgia,serif;font-size:16px;font-weight:700;letter-spacing:3px;color:#e8962a;">STRIVE</div><div style="font-size:10px;color:#888;letter-spacing:1.5px;margin-top:4px;">SEE YOUR SCORE. OWN YOUR GROWTH.</div></div>' +
                 '<div style="margin-top:16px;padding:10px;background:#f8f8f8;border-radius:6px;text-align:center;">' +
-                  '<div style="font-size:9px;color:#999;line-height:1.6;">This analysis is AI-generated and should be reviewed by a qualified coach.<br/>Scoring uses Championship Strictness calibration (may be 0.05\u20130.15 below actual meet scores).<br/>Generated by STRIVE \u2014 strive-app-amber.vercel.app</div>' +
+                  '<div style="font-size:9px;color:#999;line-height:1.6;">This analysis is computer-generated and should be reviewed by a qualified coach.<br/>Scoring uses Championship Strictness calibration (may be 0.05\u20130.15 below actual meet scores).<br/>Generated by STRIVE \u2014 strive-app-amber.vercel.app</div>' +
                 '</div>' +
               '</div>' +
             '</div>';
@@ -6425,7 +6546,7 @@ const ResultsScreen = React.memo(function ResultsScreen({ result, profile, histo
                 Analysis error: <span style={{ color: "#dc2626", fontFamily: "'Space Mono', monospace", fontSize: 11 }}>{result.failureReason}</span>
                 <div style={{ marginTop: 6, color: "rgba(255,255,255,0.4)" }}>
                   {result.failureReason.match(/JSON|parse|Unexpected|truncat/i) ? (
-                    "The AI returned an incomplete response. This happens occasionally — try uploading again."
+                    "The analysis returned an incomplete response. This happens occasionally — try uploading again."
                   ) : result.failureReason.match(/403|401|key|quota/i) ? (
                     "API rate limit reached. Wait a minute and try again, or add your own key in Settings."
                   ) : result.failureReason.match(/video|frame|extract/i) ? (
@@ -6435,7 +6556,7 @@ const ResultsScreen = React.memo(function ResultsScreen({ result, profile, histo
                   )}
                 </div>
               </>
-            ) : "Demo mode — upload a video for real AI analysis."}
+            ) : "Demo mode — upload a video for real video analysis."}
           </div>
         </div>
       )}
@@ -6505,7 +6626,7 @@ const ResultsScreen = React.memo(function ResultsScreen({ result, profile, histo
           <div style={{ marginTop: 12, fontSize: 11, color: "rgba(255,255,255,0.4)", lineHeight: 1.5 }}>
             <span style={{ background: "rgba(59,130,246,0.12)", color: "#60a5fa", padding: "2px 8px", borderRadius: 4, fontSize: 10, fontWeight: 600 }}>CALIBRATED</span>
             {" "}Adjusted {result.calibrationBias > 0 ? "-" : "+"}{Math.abs(safeNum(result.calibrationBias, 0)).toFixed(2)} based on past score corrections
-            <span style={{ color: "rgba(255,255,255,0.25)" }}> (raw AI: {safeNum(result.rawAiScore, 0).toFixed(3)})</span>
+            <span style={{ color: "rgba(255,255,255,0.25)" }}> (raw analysis: {safeNum(result.rawAiScore, 0).toFixed(3)})</span>
           </div>
         )}
         </div>{/* close z-index wrapper */}
@@ -6607,11 +6728,11 @@ const ResultsScreen = React.memo(function ResultsScreen({ result, profile, histo
             fontSize: 12, color: "rgba(255,255,255,0.6)", lineHeight: 1.6,
           }}>
             {Math.abs(diff) < 0.15 ? (
-              <span><strong style={{ color: "#22c55e" }}>Excellent calibration.</strong> The AI score is within 0.15 of the actual score — within normal judge variance.</span>
+              <span><strong style={{ color: "#22c55e" }}>Excellent calibration.</strong> The estimated score is within 0.15 of the actual score — within normal judge variance.</span>
             ) : Math.abs(diff) < 0.4 ? (
-              <span><strong style={{ color: "#ffc15a" }}>Close.</strong> The AI score is within 0.4 of the actual. {diff > 0 ? "Artistry/composition deductions are hard to see in frames." : "The AI may be stricter than the panel on borderline calls."}</span>
+              <span><strong style={{ color: "#ffc15a" }}>Close.</strong> The estimated score is within 0.4 of the actual. {diff > 0 ? "Artistry/composition deductions are hard to see in frames." : "The analysis may be stricter than the panel on borderline calls."}</span>
             ) : (
-              <span><strong style={{ color: "#dc2626" }}>Outside normal variance.</strong> {diff > 0 ? "The AI may be missing deductions not visible in frames." : "The AI may be over-deducting. Real judges see full context."}</span>
+              <span><strong style={{ color: "#dc2626" }}>Outside normal variance.</strong> {diff > 0 ? "The analysis may be missing deductions not visible in frames." : "The analysis may be over-deducting. Real judges see full context."}</span>
             )}
           </div>
           {!scoreSaved && (
@@ -6698,10 +6819,7 @@ const ResultsScreen = React.memo(function ResultsScreen({ result, profile, histo
               ))}
             </div>
             <button
-              onClick={() => {
-                try { localStorage.setItem("strive-tier", "pro"); } catch {}
-                window.location.reload();
-              }}
+              onClick={() => setShowUpgradeModal(true)}
               style={{
                 background: "linear-gradient(135deg, #8B5CF6, #A78BFA)",
                 color: "#FFF", border: "none", padding: "14px 36px",
@@ -6710,10 +6828,10 @@ const ResultsScreen = React.memo(function ResultsScreen({ result, profile, histo
                 letterSpacing: 0.3, transition: "all 0.2s",
               }}
             >
-              Upgrade to STRIVE Pro
+              Upgrade to STRIVE Competitive
             </button>
             <div style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", marginTop: 10 }}>
-              Payment integration coming soon — tap to preview Pro features
+              Payment integration coming soon — tap to preview Competitive features
             </div>
           </div>
 
@@ -7328,7 +7446,7 @@ const ResultsScreen = React.memo(function ResultsScreen({ result, profile, histo
                     color: "#A78BFA", fontSize: 12, fontWeight: 600, fontFamily: "'Outfit', sans-serif",
                   }}
                 >
-                  See all {groupedDeds.length} deductions — Pro
+                  See all {groupedDeds.length} deductions — Competitive
                 </button>
               </div>
             )}
@@ -7577,7 +7695,7 @@ const DrillsScreen = React.memo(function DrillsScreen({ result, onBack }) {
       {/* General recommendation */}
       <div className="card" style={{ padding: 20, marginTop: 16, borderColor: "rgba(232,150,42,0.2)" }}>
         <h3 style={{ fontSize: 14, fontWeight: 700, color: "#e8962a", marginBottom: 10 }}>
-          <Icon name="sparkle" size={14} /> Pro Tips
+          <Icon name="sparkle" size={14} /> Coaching Tips
         </h3>
         <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", lineHeight: 1.8 }}>
           Practice each drill 3-4 times per week. Film yourself doing drills to check form. Focus on quality over quantity — one perfect rep beats ten sloppy ones. Show your coach the analysis and ask them to watch for the specific faults during practice.
@@ -7942,7 +8060,7 @@ const SettingsScreen = React.memo(function SettingsScreen({ profile, onSave, onB
           <input
             className="input-field"
             type="password"
-            placeholder="Paste your Gemini API key (AIza...)"
+            placeholder="Paste your analysis API key (AIza...)"
             value={geminiKey}
             onChange={e => setGeminiKey(e.target.value)}
             style={{ fontSize: 12, flex: 1 }}
@@ -7964,18 +8082,18 @@ const SettingsScreen = React.memo(function SettingsScreen({ profile, onSave, onB
         </div>
       </div>
 
-      {/* STRIVE Pro Section */}
+      {/* STRIVE Competitive Section */}
       <div style={{ marginTop: 24, paddingTop: 24, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
         <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>
-          <span style={{ color: "#A78BFA" }}>★</span> STRIVE Pro
+          <span style={{ color: "#A78BFA" }}>★</span> STRIVE Competitive
         </h3>
         {(() => {
           let currentTier = "free";
           try { currentTier = localStorage.getItem("strive-tier") || "free"; } catch {}
-          return currentTier === "pro" ? (
+          return currentTier === "competitive" ? (
             <div style={{ padding: 16, borderRadius: 12, background: "rgba(139,92,246,0.06)", border: "1px solid rgba(139,92,246,0.2)" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                <span style={{ fontSize: 9, fontWeight: 700, padding: "3px 10px", borderRadius: 4, background: "rgba(139,92,246,0.2)", color: "#A78BFA", letterSpacing: 0.5 }}>PRO ACTIVE</span>
+                <span style={{ fontSize: 9, fontWeight: 700, padding: "3px 10px", borderRadius: 4, background: "rgba(139,92,246,0.2)", color: "#A78BFA", letterSpacing: 0.5 }}>COMPETITIVE ACTIVE</span>
               </div>
               <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>
                 Full access to all features: unlimited analyses, biomechanics, training programs, mental training, what-if simulator, and diagnostics.
@@ -7986,19 +8104,16 @@ const SettingsScreen = React.memo(function SettingsScreen({ profile, onSave, onB
               <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", lineHeight: 1.6, marginBottom: 12 }}>
                 Unlock unlimited analyses, full deduction breakdowns, biomechanics dashboard, personalized 5-pillar training programs, and more.
               </div>
-              <button onClick={() => {
-                try { localStorage.setItem("strive-tier", "pro"); } catch {}
-                window.location.reload();
-              }} style={{
+              <button onClick={() => setShowUpgradeModal(true)} style={{
                 width: "100%", padding: 14, borderRadius: 12,
                 background: "linear-gradient(135deg, #8B5CF6, #A78BFA)",
                 border: "none", color: "white", cursor: "pointer",
                 fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 14,
               }}>
-                Upgrade to STRIVE Pro
+                Upgrade to STRIVE Competitive
               </button>
               <div style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", marginTop: 6, textAlign: "center" }}>
-                Payment integration coming soon — tap to preview Pro features
+                Payment integration coming soon — tap to preview Competitive features
               </div>
             </div>
           );
@@ -8017,10 +8132,10 @@ const SettingsScreen = React.memo(function SettingsScreen({ profile, onSave, onB
             SEE YOUR SCORE. OWN YOUR GROWTH.
           </div>
           <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", lineHeight: 1.7, maxWidth: 300, margin: "0 auto" }}>
-            AI-powered gymnastics scoring using USAG criteria. Built for athletes, parents, and coaches. Levels 1-10, Xcel Bronze-Sapphire, WAG & MAG.
+            Advanced gymnastics scoring using USAG criteria. Built for athletes, parents, and coaches. Levels 1-10, Xcel Bronze-Sapphire, WAG & MAG.
           </div>
           <div style={{ fontSize: 10, color: "rgba(255,255,255,0.15)", marginTop: 12, fontFamily: "'Space Mono', monospace" }}>
-            v1.0.0 · 3-Pass Gemini Engine · strive-app-amber.vercel.app
+            v1.0.0 · 3-Pass Scoring Engine · strive-app-amber.vercel.app
           </div>
         </div>
 

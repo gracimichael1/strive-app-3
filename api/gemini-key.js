@@ -30,6 +30,6 @@ export default function handler(req, res) {
     return res.status(404).json({ available: false });
   }
 
-  // Do not expose the raw API key to the client
-  res.status(200).json({ available: true });
+  // Return key only to allowed origins (CORS-restricted above)
+  res.status(200).json({ available: true, key });
 }

@@ -81,7 +81,7 @@ export default function SplashScreen({ onStart }) {
           color: 'rgba(255,255,255,0.35)', fontSize: 15, maxWidth: 340,
           margin: '0 auto', lineHeight: 1.8, fontWeight: 400,
         }}>
-          AI-powered video analysis using official USA Gymnastics and Xcel scoring criteria.
+          Advanced video analysis using official USA Gymnastics and Xcel scoring criteria.
           Detailed deduction breakdowns and a clear path to your best score.
         </p>
       </div>
