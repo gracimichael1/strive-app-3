@@ -454,11 +454,11 @@ function Layer3Elite({ result, profile, previousResult, history, onSeek }) {
   const deductions = safeArray(result?.executionDeductions);
   const finalScore = safeNum(result?.finalScore, 0);
 
-  // New summary data
+  // New summary data — check both result.summary (JSON direct) and top-level fields (parsed)
   const summary = result?.summary || null;
-  const whyThisScore = safeStr(summary?.whyThisScore, '');
-  const celebrations = safeArray(summary?.celebrations);
-  const topImprovements = safeArray(summary?.topImprovements);
+  const whyThisScore = safeStr(summary?.whyThisScore || result?.whyThisScore, '');
+  const celebrations = safeArray(summary?.celebrations || result?.celebrations);
+  const topImprovements = safeArray(summary?.topImprovements || result?.topImprovements);
 
   // Artistry & Composition
   const artistry = result?.artistry || null;
