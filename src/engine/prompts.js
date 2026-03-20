@@ -308,7 +308,7 @@ export function buildPass1Prompt(profile, event) {
   const eventName = event === "Auto-detect" ? "the event shown" : event;
   const levelDisplay = profile.level || levelKey.replace(/_/g, " ");
 
-  const user = `Evaluate and score this ${levelDisplay} ${eventName !== "the event shown" ? eventName : ""} routine. Athlete: ${athleteName}, ${gender}.
+  const user = `Analyze this ${levelDisplay}${eventName !== "the event shown" ? " " + eventName : ""} routine. Athlete: ${athleteName}, ${gender}. You are strictly forbidden from giving "benefit of the doubt." Focus on micro-deductions: toe point, knee tension, chest placement on landings, and artistry. If the form is not "picture perfect," the deduction must be taken. For every skill, name it, timestamp it, and grade it. We need to celebrate the good and perfect skills as well. Provide a coaching summary with the top 3 fixes.
 ${event === "Auto-detect" ? "Auto-detect which apparatus/event this is from the video." : ""}`;
 
   return { system, user };
