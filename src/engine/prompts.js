@@ -1,402 +1,548 @@
 /**
- * prompts.js — 2-Pass Gemini prompt system for Strive scoring engine.
+ * prompts.js — Gemini judging prompt system for Strive.
  *
- * Pass 1 (VISION): Watches video, identifies skills + deductions.
- * Pass 2 (ANALYSIS): Takes Pass 1 output, adds biomechanics + coaching.
+ * Pass 1 (JUDGING): Brevet-level USAG official watches video,
+ *   identifies every skill, grades each one, logs all deductions,
+ *   celebrates clean execution, provides coaching summary.
  *
- * These prompts replace the single-pass buildJudgingPrompt() in LegacyApp.js.
- * The old prompt tried to do everything in one call, producing shallow results.
- * Splitting vision from analysis lets each pass focus and go deeper.
+ * Pass 2 (BIOMECHANICS): Takes Pass 1 skill list, enriches each
+ *   with joint angles, injury awareness, targeted drills, correct form.
+ *
+ * DESIGN PRINCIPLE: Keep prompts natural and focused.
+ * The Gemini web UI produces excellent results with a clear, human-readable
+ * prompt. This module replicates that quality — NOT over-engineer it.
  *
  * ═══════════════════════════════════════════════════════════════════════════════
  * LOCKED: Do not modify without owner approval per STRATEGY.md rule #10.
- * PROMPT VERSION: v8_2pass
  * ═══════════════════════════════════════════════════════════════════════════════
  */
 
-import { EVENT_JUDGING_RULES, SCORE_BENCHMARKS, LEVEL_SKILLS } from "../data/constants";
-import { getEventDeductions, getEventStrictnessGuidance } from "../data/eventDeductions";
-import { buildDeductionPromptBlock } from "../data/codeOfPoints";
+export const PROMPT_VERSION = "v10_simple";
 
-export const PROMPT_VERSION = "v9_natural";
+// ─── Core Judge Instruction ─────────────────────────────────────────────────
+// This is the "brain" — a strict, pessimistic Brevet judge persona.
+// Derived from the exact prompt that scored within 0.075 of real judges.
 
-// ─── Pass 1: Vision Pass ────────────────────────────────────────────────────
+const CORE_JUDGE_INSTRUCTION = `
+## ROLE
+You are an Elite FIG/USAG Certified Judge with Brevet-level certification.
+Your goal is a "Cold, Hard Truth" analysis. You are highly skeptical,
+detail-oriented, and hunt for deductions. ZERO benefit of the doubt.
+
+## JUDGING PHILOSOPHY (THE PESSIMISTIC MODEL)
+1. START VALUE (SV): Always begin at 10.0 unless Special Requirements are unmet.
+2. DEDUCTION BIAS: If an angle or position is ambiguous, assume the MAXIMUM deduction.
+3. COMPOUNDING: If a skill is technically poor (e.g., low cast), apply a secondary
+   "Rhythm/Flow" deduction to the FOLLOWING skill automatically.
+4. FORM DEDUCTIONS are CUMULATIVE. Every 0.05 matters.
+5. ARTISTRY: Treat "In-Between" moments (transitions, walks, arm paths) with the same
+   scrutiny as skills. Judges form opinions between skills.
+6. CELEBRATE EXCELLENCE: Also flag any skill executed at 9.80+ quality for recognition.
+
+## CRITICAL DEDUCTION RULES
+- Flexed/Soft feet: -0.05 to -0.10 per occurrence
+- Bent/soft knees in flight: -0.10 per occurrence
+- Leg separation: -0.10 per occurrence
+- Chest down on landing: -0.10 to -0.20
+- Extra step on landing: -0.10 per step
+- Fall from apparatus: -0.50
+- Pause/hesitation (>0.5 sec) between skills: -0.10
+- Lack of expression / artistry: -0.05 to -0.10
+
+## SCORING MODEL
+Use a subtractive system. Start at 10.0, subtract deductions for execution,
+composition, and artistry. Do NOT "grade" individual skills on a 1-10 scale.
+Instead, note deductions per skill and report the quality_grade (10.0 minus
+deductions for that skill).
+
+## OUTPUT
+Respond ONLY in the JSON schema provided. No conversational text outside JSON.
+`;
+
+// ─── Level-Specific Rules ───────────────────────────────────────────────────
+// Each level has specific special requirements, amplitude standards,
+// and judging expectations. These are injected into the system instruction.
+
+const LEVEL_RULES = {
+  // ── XCEL Program ──
+  XCEL_BRONZE: `
+## LEVEL: XCEL BRONZE (WAG)
+Start Value: 10.0
+Special Requirements:
+  FLOOR: One acro element, one dance element (split 60°+), full turn.
+  BARS:  One kip, one circling element, dismount from a bar.
+  BEAM:  One acro element, one dance element (split 60°+), dismount.
+  VAULT: FIG A-level vault.
+Amplitude:
+  FLOOR: Split leap minimum 60°. Below 60°: -0.20.
+  BARS:  Cast to below horizontal acceptable at Bronze, but knee/feet form still judged.
+`,
+  XCEL_SILVER: `
+## LEVEL: XCEL SILVER (WAG)
+Start Value: 10.0
+Special Requirements:
+  FLOOR: Two acro elements (one with flight), dance passage (split 90°+), full turn.
+  BARS:  Kip + cast + circling + bar change + dismount.
+  BEAM:  Two acro elements, dance passage, full turn, dismount.
+Amplitude:
+  FLOOR: Split leap minimum 90°. Below 90°: -0.10.
+  BARS:  Cast should approach horizontal. Below 45°: -0.10.
+`,
+  XCEL_GOLD: `
+## LEVEL: XCEL GOLD (WAG)
+Start Value: 10.0
+Special Requirements:
+  FLOOR: Two acro passes (one with two flight elements), dance passage (split 120°+), full turn.
+  BARS:  Two kips, two 360° circling elements, bar change, dismount from high bar.
+  BEAM:  Two acro elements (one series), dance passage (split 120°+), full turn, dismount.
+  VAULT: A-level vault.
+Amplitude:
+  FLOOR: Split leap minimum 120°. At 100°-119°: -0.10. Below 100°: -0.20.
+  BARS:  Cast must reach HORIZONTAL (180°).
+         178°-179°: -0.10. 170°-177°: -0.20. Below 170°: -0.30 + SR not awarded.
+  BEAM:  Leaps/jumps must reach 120°. Same floor deductions apply.
+State Championship additional scrutiny:
+  - Rhythm deductions applied aggressively (any hesitation >0.5s).
+  - All knee/toe form errors deducted without leniency.
+  - Artistry deductions up to -0.30 total for flat performance.
+`,
+  XCEL_PLATINUM: `
+## LEVEL: XCEL PLATINUM (WAG)
+Start Value: 10.0
+Special Requirements:
+  FLOOR: Two acro passes (one with salto), dance passage (split 120°+), full turn.
+  BARS:  Two kips, one B-value element, two 360° circles, bar change, dismount from HB.
+  BEAM:  Two acro elements (one series with flight), dance passage, full turn, dismount.
+Amplitude:
+  FLOOR: Split leap minimum 120°.
+  BARS:  Cast must be ABOVE HORIZONTAL (>180°/above the bar).
+         At horizontal: -0.10. Below horizontal: -0.30 + SR not awarded.
+B-Value Requirement (BARS): Must identify at least 1 B-skill. If absent: -0.50 SV reduction.
+`,
+  XCEL_DIAMOND: `
+## LEVEL: XCEL DIAMOND (WAG)
+Start Value: 10.0
+Special Requirements:
+  FLOOR: Two acro passes (one with double or D+), dance passage (split 120°+), full turn.
+  BARS:  Two kips, two B-value elements, two 360° circles, bar change, dismount.
+  BEAM:  Acro series (two flight elements connected), dance passage, full turn, dismount.
+Amplitude:
+  BARS: Cast must be clearly ABOVE horizontal. Full handstand preferred.
+        At horizontal: -0.30. Below: SR denied.
+Artistry is heavily weighted at Diamond. Deduct maximum for any flat performance.
+`,
+
+  // ── JO Compulsory ──
+  JO_LEVEL_3: `
+## LEVEL: JO LEVEL 3 (Compulsory WAG)
+Compulsory: Every skill is pre-defined. No variation.
+Start Value: 10.0
+Deduct for ANY deviation from the compulsory choreography pattern.
+`,
+  JO_LEVEL_4: `
+## LEVEL: JO LEVEL 4 (Compulsory WAG)
+Compulsory: Every skill is pre-defined.
+Start Value: 10.0
+Same structure as Level 3. Amplitude requirements begin (60°+ leaps).
+`,
+  JO_LEVEL_5: `
+## LEVEL: JO LEVEL 5 (Optional WAG)
+Start Value: 10.0
+BARS: Cast to horizontal required. Below: -0.10 to -0.50.
+FLOOR: Split 120°+ required. Salto required in acro passes.
+`,
+
+  // ── JO Optional ──
+  JO_LEVEL_6: `
+## LEVEL: JO LEVEL 6 (Optional WAG)
+Start Value: 10.0
+BARS: Cast to horizontal. B-value element required.
+FLOOR: Two different acro passes, salto required in both.
+`,
+  JO_LEVEL_7: `
+## LEVEL: JO LEVEL 7 (Optional WAG)
+Start Value: 10.0
+BARS: Cast ABOVE horizontal. B-value element minimum.
+FLOOR: One pass must include a salto with a full twist or higher.
+`,
+  JO_LEVEL_8: `
+## LEVEL: JO LEVEL 8 (Optional WAG)
+Start Value: 10.0
+BARS: Casts to handstand expected. Amplitude deductions aggressive.
+FLOOR: Salto difficulty (C-level minimum) expected.
+`,
+  JO_LEVEL_9: `
+## LEVEL: JO LEVEL 9 (Optional WAG)
+D-score + E-score system. Start Value is SUM of difficulty + connection bonuses.
+BARS: Casts to handstand required. Release moves or pirouettes expected.
+FLOOR: C/D-level saltos expected. Artistry heavily weighted.
+`,
+  JO_LEVEL_10: `
+## LEVEL: JO LEVEL 10 / Pre-Elite (Optional WAG)
+Full FIG Code of Points logic.
+D-score: Sum of 8 highest difficulty elements + connection bonuses.
+E-score: 10.0 - execution deductions.
+BARS: Full pirouettes, release moves (C+) expected.
+FLOOR: D-level saltos, complex dance, full choreographic expression required.
+`,
+  ELITE: `
+## LEVEL: ELITE / FIG International (WAG/MAG)
+Full FIG Code of Points. D-score + E-score + Neutral Deductions.
+D-score: 8 highest difficulty values + connection bonus + composition requirements.
+E-score: 10.0 - execution deductions (applied by two judge panels, averaged).
+Zero leniency. Artistry judged at highest professional standard.
+`,
+};
+
+// ─── Event-Specific Addenda ─────────────────────────────────────────────────
+
+const EVENT_RULES = {
+  FLOOR: `
+## EVENT SPECIFICS: FLOOR EXERCISE
+- Monitor "Inter-Knee Distance" during all tumbling. Gap > 3 inches: -0.10.
+- Monitor heel-drop timing during full turns. Early drop before 360°: -0.10 completion.
+- Out-of-bounds: -0.10 per foot touching line/out.
+- Landing zone: deep squat = -0.10 to -0.20; chest-to-knees = -0.20.
+- Artistry: chin down >40% of non-tumbling time = -0.10.
+- Music: if vocals present, choreography must reflect mood. Mismatch: -0.05 musicality.
+`,
+  BARS: `
+## EVENT SPECIFICS: UNEVEN BARS
+- Cast angle measured hip-to-bar vs. horizontal.
+- Extra swing / "pump" before skill: -0.30.
+- Grip adjustment / re-grip without skill: -0.10 rhythm.
+- Jump from LB to HB: Piked hips or bent knees = -0.10 to -0.20.
+- Long hang kip: hesitation at top before cast = -0.10.
+- Flyaway: knees apart in tuck = -0.10; chest down on landing = -0.10 to -0.20.
+- Compounding rule: low cast → automatic -0.10 rhythm on subsequent circle.
+`,
+  BEAM: `
+## EVENT SPECIFICS: BALANCE BEAM
+- Balance check (arms move from body): -0.10.
+- Balance check (large arm swing): -0.20.
+- Grasp beam to avoid fall: -0.50.
+- Fall from beam: -0.50.
+- Extra step / hop on landing: -0.10 per step.
+- Pause/freeze (not choreographic): -0.10.
+`,
+  VAULT: `
+## EVENT SPECIFICS: VAULT
+- Pre-flight: tight hollow or arch depending on vault type.
+- Block: hands must leave table before hips pass vertical.
+- Post-flight height: low salto = -0.10 to -0.20.
+- Landing: step = -0.10; hop = -0.10; fall = -0.50.
+`,
+  HIGH_BAR: `
+## EVENT SPECIFICS: HIGH BAR (MAG)
+- Giant swings must reach vertical. Short: -0.10 per swing.
+- Release and regrasp: form in flight strictly judged.
+- Pirouettes must reach handstand. Short: -0.10 to -0.20.
+`,
+  PARALLEL_BARS: `
+## EVENT SPECIFICS: PARALLEL BARS (MAG)
+- Swings: body must be straight and tight. Any pike: -0.10.
+- Press to handstand must reach full vertical. Short: -0.10 to -0.30.
+`,
+  RINGS: `
+## EVENT SPECIFICS: RINGS (MAG)
+- Rings must be still before strength elements.
+- Iron cross: arms at 90° horizontal. Deviation: -0.10.
+- Swinging rings: -0.10 per swing.
+`,
+  POMMEL: `
+## EVENT SPECIFICS: POMMEL HORSE (MAG)
+- Leg separation (scissors): -0.10 per occurrence.
+- Flairs must be circular and wide. Collapsed circle: -0.10.
+- Fall: -0.50.
+`,
+};
+
+// ─── Level Key Mapping ──────────────────────────────────────────────────────
+// Maps the profile.level string to LEVEL_RULES keys
+
+function getLevelKey(level, levelCategory) {
+  if (!level) return "XCEL_GOLD";
+
+  const normalized = level.toUpperCase().replace(/\s+/g, "_");
+
+  // Direct match
+  if (LEVEL_RULES[normalized]) return normalized;
+
+  // Xcel variants
+  if (/XCEL.*BRONZE/i.test(level) || /BRONZE/i.test(level)) return "XCEL_BRONZE";
+  if (/XCEL.*SILVER/i.test(level) || /SILVER/i.test(level)) return "XCEL_SILVER";
+  if (/XCEL.*GOLD/i.test(level) || (levelCategory === "xcel" && /GOLD/i.test(level))) return "XCEL_GOLD";
+  if (/XCEL.*PLAT/i.test(level) || /PLATINUM/i.test(level)) return "XCEL_PLATINUM";
+  if (/XCEL.*DIAMOND/i.test(level) || /DIAMOND/i.test(level)) return "XCEL_DIAMOND";
+
+  // JO Levels
+  const levelNum = parseInt(level.replace(/\D/g, ""), 10);
+  if (levelNum >= 3 && levelNum <= 10) return `JO_LEVEL_${levelNum}`;
+
+  // Elite
+  if (/ELITE/i.test(level)) return "ELITE";
+
+  return "XCEL_GOLD"; // safe default
+}
+
+// ─── Event Key Mapping ──────────────────────────────────────────────────────
+
+function getEventKey(event) {
+  if (!event || event === "Auto-detect") return null;
+  const e = event.toUpperCase();
+  if (/FLOOR/i.test(e)) return "FLOOR";
+  if (/BAR/i.test(e) && !/PARALLEL/i.test(e) && !/HIGH/i.test(e)) return "BARS";
+  if (/BEAM/i.test(e)) return "BEAM";
+  if (/VAULT/i.test(e)) return "VAULT";
+  if (/HIGH.*BAR/i.test(e)) return "HIGH_BAR";
+  if (/PARALLEL/i.test(e) || /P.?BAR/i.test(e)) return "PARALLEL_BARS";
+  if (/RING/i.test(e)) return "RINGS";
+  if (/POMMEL/i.test(e) || /HORSE/i.test(e)) return "POMMEL";
+  return null;
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PASS 1: JUDGING — Skill identification, deductions, grades, celebrations
+// ═══════════════════════════════════════════════════════════════════════════════
 
 /**
- * Build the Pass 1 prompt — skill detection and deduction identification.
- * This pass receives the video. Gemini WATCHES and REPORTS. No score math.
+ * Build the Pass 1 prompt — the Brevet judge watches the video.
+ * This is the critical prompt. It must match the quality of
+ * typing directly into Gemini's web UI.
  *
  * @param {Object} profile - { name, gender, level, levelCategory }
- * @param {string} event - Event name (e.g. "Floor Exercise") or "Auto-detect"
+ * @param {string} event - Event name or "Auto-detect"
  * @returns {{ system: string, user: string }}
  */
-export function buildPass1Prompt(profile, event, uploadData = null) {
-  const level = profile.level || "Level 6";
-  const gender = profile.gender === "female" ? "Women's" : "Men's";
-  const isAutoDetect = event === "Auto-detect";
+export function buildPass1Prompt(profile, event) {
+  const levelKey = getLevelKey(profile.level, profile.levelCategory);
+  const eventKey = getEventKey(event);
+  const gender = (profile.gender || "female").toLowerCase() === "male" ? "MAG" : "WAG";
+  const genderFull = gender === "MAG"
+    ? "Men's Artistic Gymnastics"
+    : "Women's Artistic Gymnastics";
+
+  // Build system instruction
+  const parts = [CORE_JUDGE_INSTRUCTION];
+
+  parts.push(`\n## GENDER: ${gender} (${genderFull}). Apply ${gender} Code of Points.\n`);
+
+  const levelRules = LEVEL_RULES[levelKey];
+  if (levelRules) parts.push(levelRules);
+
+  if (eventKey && EVENT_RULES[eventKey]) {
+    parts.push(EVENT_RULES[eventKey]);
+  }
+
+  const system = parts.join("\n");
+
+  // Build user prompt — natural language, like what works in the web UI
   const athleteName = profile.name || "the gymnast";
-  const cat = profile.levelCategory || "optional";
-  const isXcel = cat === "xcel";
-  const isComp = cat === "compulsory";
-  const isElite = level === "Elite";
+  const eventName = event === "Auto-detect" ? "the event shown" : event;
+  const levelDisplay = profile.level || levelKey.replace(/_/g, " ");
 
-  // ── Split angle minimum by level ──
-  const splitMin = getSplitMinimum(level, isXcel);
+  const user = `Analyze the attached video routine.
 
-  // ── Level benchmarks ──
-  const bench = SCORE_BENCHMARKS[level];
-  const benchLine = bench
-    ? `Score context for ${level} ${event}: avg ${bench.avg}, top 10% scores ${bench.top10}, typical range ${bench.low}–${bench.high}.`
-    : "";
+ATHLETE: ${athleteName}
+LEVEL: ${levelDisplay}
+EVENT: ${eventName}
+GENDER: ${gender} (${genderFull})
 
-  // ── Required skills ──
-  const eventKey = normalizeEventKey(event);
-  const levelSkills = LEVEL_SKILLS[level];
-  const requiredSkillsLine = levelSkills?.[eventKey]
-    ? `Required/expected skills at ${level} ${event}: ${levelSkills[eventKey]}.`
-    : "";
+Analyze this ${levelDisplay} routine as a Brevet-level USAG Official at a State Championship. You are strictly forbidden from giving "benefit of the doubt." Focus on micro-deductions: toe point, knee tension, chest placement on landings, and artistry.
 
-  // ── Program context ──
-  const programContext = buildProgramContext(level, cat, isComp, isXcel, isElite, splitMin);
-
-  // ── Event-specific rules ──
-  const eventRulesBlock = !isAutoDetect ? buildEventRulesBlock(event, level) : "";
-
-  // ── Deduction reference tables ──
-  const detailedDeductions = !isAutoDetect ? getEventDeductions(event) : "";
-  const strictnessGuidance = !isAutoDetect ? getEventStrictnessGuidance(event) : "";
-  const copBlock = !isAutoDetect
-    ? buildDeductionPromptBlock(profile.gender || "female", level, event)
-    : "";
-
-  // ── Auto-detect instruction ──
-  const autoDetectLine = isAutoDetect
-    ? `\nEVENT AUTO-DETECTION: Identify the apparatus from the video. Look for: balance beam (narrow beam), uneven bars (two bars at different heights), vault (running approach + springboard + table), floor exercise (spring floor, no apparatus). Report the detected apparatus in your response.\n`
-    : "";
-
-  const system = `You are a Brevet-certified USA Gymnastics judge with 20+ years of competition experience at the State and Regional championship level. You have judged thousands of ${level} routines. Watch this entire gymnastics routine from start to finish before outputting anything. You give no benefit of the doubt — when in doubt, take the higher deduction. Your goal is to find EVERY fault so the athlete can improve.`;
-
-  // ── Condensed event rules (top missed deductions only) ──
-  const eventRules = !isAutoDetect ? EVENT_JUDGING_RULES[event] : null;
-  const missedDeds = eventRules?.hiddenDeductions?.slice(0, 5).join("\n   - ") || "";
-  const eventTips = missedDeds ? `\nCOMMONLY MISSED DEDUCTIONS on ${event}:\n   - ${missedDeds}` : "";
-
-  // ── Strictness directive for under-deducted events ──
-  const strictnessBias = eventRules?.strictnessBias || 1.0;
-  const strictnessLine = strictnessBias > 1.0
-    ? `\nSTRICTNESS OVERRIDE (${event}): AI models under-deduct on ${event} by ~${((strictnessBias - 1) * 100).toFixed(0)}%. When in doubt, ALWAYS take the deduction. Be PESSIMISTIC — look for reasons to deduct, not reasons to celebrate.`
-    : "";
-
-  // ── Perspective calibration for bars ──
-  const perspectiveLine = eventRules?.perspectiveBias
-    ? `\nCAMERA PERSPECTIVE: ${eventRules.perspectiveBias}`
-    : "";
-
-  // ── Compound rules for cascading deductions ──
-  const compoundLines = eventRules?.compoundRules?.length
-    ? `\nCOMPOUND RULES:\n${eventRules.compoundRules.join("\n")}`
-    : "";
-
-  const user = `Analyze this ${gender} ${level} ${isAutoDetect ? "gymnastics" : event} routine performed by ${athleteName}.
-${autoDetectLine}
-${programContext}
-${requiredSkillsLine}
-${benchLine}
-${strictnessLine}
-${perspectiveLine}
-
-You are strictly forbidden from giving benefit of the doubt.
-Evaluate using the ${level} Code of Points.
-${compoundLines}
-
-Watch the ENTIRE routine from start to finish. Then provide:
-
-1. TIMESTAMPED SCORECARD — every skill in order:
-   [MM:SS] | Skill Name | Deduction (0.00 if clean) | Reason
-
-2. For EVERY skill — whether clean or not — note:
-   - What the gymnast did WELL on this skill
-   - What deduction was taken and exactly why
-   - What "zero deduction" looks like for this skill
-
-3. ARTISTRY & PRESENTATION (Global):
-   - Finger/hand presentation
-   - Eye contact and performance quality
-   - Musicality and use of space
-   - Energy and confidence
-   - Artistry deductions typically total 0.15–0.40 for youth routines
-
-4. SPLIT CHECK: ${level} requires ${splitMin}° minimum.
-   Flag any leaps/jumps that fall short.
-${eventTips}
-
-5. TRUTH ANALYSIS:
-   Why did this routine score what it scored?
-   What is the single biggest "math win" — one fix that saves the most points?
-
-6. TOP 3 IMPROVEMENTS ranked by point value saved.
-
-7. CELEBRATIONS — top 3 things done exceptionally well.
-
-START VALUE: 10.00
-List every deduction. Sum them. Final Score = 10.00 - total deductions.
-
-CALIBRATION: Total deductions for ${level} typically ${getExpectedDeductionRange(event, level)}.
-Score range 8.60-9.20 for solid routines at State level.
-A score above 9.30 means you missed deductions — re-check.
-If total deductions < 0.80, you are MISSING deductions — re-watch for flexed feet, bent knees, landing steps, artistry gaps.
-
-DEDUCTION VALUES: 0.00, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.50 ONLY.
-${uploadData?.notes ? `Coach notes: "${uploadData.notes}"` : ""}`;
+INSTRUCTIONS:
+1. Identify EVERY skill performed, even if done perfectly. We celebrate the good too.
+2. Name each skill, timestamp it (M:SS format), and assign a quality_grade (10.0 minus deductions for that specific skill, in 0.05 increments).
+3. For skills done well (quality_grade 9.80+), mark is_celebration: true and explain what was excellent.
+4. For every deduction, cite the specific rule, amount, and reason.
+5. Apply the PESSIMISTIC model: if ambiguous, take the maximum deduction.
+6. Apply COMPOUNDING: a poor cast triggers a rhythm deduction on the next skill.
+7. Evaluate artistry separately: expression, quality of movement, choreography variety, musicality.
+8. Calculate the final score: Start Value minus ALL deductions (execution + artistry).
+9. Provide a coaching summary explaining why this routine scored what it did, and the top 3 fixes.
+10. Respond ONLY in the JSON schema provided. No conversational text.
+${event === "Auto-detect" ? "\nIMPORTANT: Auto-detect which apparatus/event this is from the video and include it in the response." : ""}`;
 
   return { system, user };
 }
 
 
-// ─── Pass 2: Analysis Pass ──────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// PASS 2: BIOMECHANICS — Per-skill enrichment with angles, drills, injury data
+// ═══════════════════════════════════════════════════════════════════════════════
 
 /**
- * Build the Pass 2 prompt — biomechanics, injury risk, drills, mental, nutrition.
- * This pass receives Pass 1 output as context + the video for visual reference.
+ * Build the Pass 2 prompt — biomechanics expert enriches each skill.
+ * Takes the Pass 1 skill list so it knows what to analyze.
  *
- * @param {Object} pass1Result - Parsed JSON from Pass 1
- * @param {Object} profile - { name, gender, level }
+ * @param {Object} pass1Result - Parsed Pass 1 output
+ * @param {Object} profile - { name, gender, level, levelCategory }
  * @param {string} event - Event name
  * @returns {{ system: string, user: string }}
  */
 export function buildPass2Prompt(pass1Result, profile, event) {
-  const level = profile.level || "Level 6";
-  const athleteName = profile.name || "the gymnast";
-  const skillCount = pass1Result.skills?.length || 0;
-  const totalDeds = (pass1Result.skills || []).reduce((sum, s) =>
-    sum + (s.deductions || []).reduce((ds, d) => ds + (d.point_value || 0), 0), 0
-  );
+  const gender = (profile.gender || "female").toLowerCase() === "male" ? "MAG" : "WAG";
+  const levelDisplay = profile.level || "Level 6";
 
-  const system = `You are a sports scientist and certified athletic trainer specializing in gymnastics biomechanics and injury prevention. You have a deep understanding of USAG competitive gymnastics at all levels, sport-specific kinesiology, and youth athlete development. You communicate in clear, parent-friendly language — no jargon without explanation.`;
+  const system = `You are an Elite FIG/USAG Brevet-level judge AND biomechanics expert analyzing a ${gender} gymnast competing at ${levelDisplay} ${event || "gymnastics"}.
 
-  const user = `A certified judge has identified ${skillCount} skills and ${totalDeds.toFixed(2)} total deductions in this ${level} ${event} routine by ${athleteName}.
+Your task is to provide BIOMECHANICS ENRICHMENT for each skill already identified.
+Be precise, pessimistic, and specific about body angles and positions.
 
-Here is the judge's full skill-by-skill analysis:
-${JSON.stringify(pass1Result, null, 2)}
+For each skill, provide:
+1. BIOMECHANICS: For each relevant joint (KNEE, HIP, ELBOW, SHOULDER, SPLIT, ANKLE), estimate actual degrees, ideal degrees, and gap status.
+   "good" = within 5° of ideal. "needs_work" = 6-15° off. "significant_gap" = >15° off.
+2. FAULT OBSERVED: Plain language primary fault (or null if clean).
+3. STRENGTH: What was done well on this specific skill.
+4. CORRECT FORM: What perfect execution looks like for this specific skill at this level.
+5. INJURY AWARENESS: 1-3 injury risk notes if the form shown creates physical risk.
+6. TARGETED DRILLS: 2-3 specific drills to fix the faults observed.
+7. GAIN IF FIXED: How many score points would be recovered if this skill is cleaned up.
 
-Watch the video and provide deeper analysis for each skill. For every skill in the list above, analyze:
+Respond ONLY in the JSON schema provided. No conversational text.`;
 
-1. BIOMECHANICS — What you can observe about body mechanics:
-   - Estimate hip angle at peak of skill (degrees, or null if not visible)
-   - Estimate knee angle at peak (degrees, or null if not visible)
-   - Shoulder alignment: "aligned", "deviated_left", or "deviated_right"
-   - Body line score: 0-10 (10 = perfect straight line or position)
-   - Efficiency rating: "excellent" (minimal wasted energy), "good" (minor inefficiencies), or "needs_work" (significant energy leaks)
-   - Elite comparison: one sentence comparing this skill to what an elite gymnast would demonstrate, written for a parent to understand
+  // Build skill list for context
+  const skillList = (pass1Result.deduction_log || []).map(s =>
+    `- "${s.skill}" at ${s.timestamp} (deduction: ${s.deduction_value})`
+  ).join("\n");
 
-2. INJURY RISK — For each skill, assess:
-   - Risk level: "none", "low", "moderate", "high"
-   - Body part at risk (or null)
-   - Description of the risk pattern (or null)
-   - Prevention note (or null)
-   - Be conservative — flag anything that could lead to chronic issues if repeated over a season
+  const user = `Re-watch the attached video. The following skills were identified in the initial judging pass:
 
-3. TRAINING PLAN — For each deduction found by the judge, prescribe ONE specific drill:
-   - Name the drill
-   - Describe it step-by-step so a parent can understand and a gymnast can practice
-   - Prescribe frequency (e.g. "3 sets of 10 reps, 3x per week")
-   - State the expected improvement (e.g. "Should eliminate bent knee deductions within 4-6 weeks")
+${skillList}
 
-4. MENTAL PERFORMANCE — Across the entire routine:
-   - Consistency score (0-10): How consistent was execution quality across all skills?
-   - Focus indicators: What do you observe about the gymnast's concentration?
-   - Patterns: Any recurring tendencies (rushing, hesitating, strong finishes, etc.)?
-   - Recommendations: One actionable mental performance tip
-
-5. NUTRITION & RECOVERY — Based on the training load visible:
-   - Training load assessment: What does this routine demand physically?
-   - Nutrition note: General guidance appropriate for a youth athlete (no medical advice, no supplements, consult coach/doctor disclaimer)
-   - Recovery priority: What should this gymnast focus on for recovery?
-
-Respond with ONLY this JSON — no markdown, no backticks:
-{
-  "skills_analysis": [
-    {
-      "skill_id": "<matching id from judge's list>",
-      "biomechanics": {
-        "hip_angle_at_peak": <degrees or null>,
-        "knee_angle_at_peak": <degrees or null>,
-        "shoulder_alignment": "<aligned|deviated_left|deviated_right>",
-        "body_line_score": <0-10>,
-        "efficiency_rating": "<excellent|good|needs_work>",
-        "elite_comparison": "<one sentence>"
-      },
-      "injury_risk": {
-        "level": "<none|low|moderate|high>",
-        "body_part": "<string or null>",
-        "description": "<string or null>",
-        "prevention_note": "<string or null>"
-      },
-      "drill_recommendation": "<primary drill for this skill's biggest fault>"
-    }
-  ],
-  "training_plan": [
-    {
-      "deduction_targeted": "<fault type from judge's deductions>",
-      "skill_id": "<skill id>",
-      "drill_name": "<name>",
-      "drill_description": "<step-by-step>",
-      "frequency": "<prescription>",
-      "expected_improvement": "<what to expect>"
-    }
-  ],
-  "mental_performance": {
-    "consistency_score": <0-10>,
-    "focus_indicators": "<observations>",
-    "patterns_observed": "<patterns>",
-    "recommendations": "<actionable tip>"
-  },
-  "nutrition_recovery": {
-    "training_load_assessment": "<assessment>",
-    "nutrition_note": "<guidance with disclaimer>",
-    "recovery_priority": "<focus area>"
-  }
-}`;
+For EACH skill listed above, provide the biomechanics enrichment data.
+Match skills by name and timestamp.
+Respond ONLY in the JSON schema provided.`;
 
   return { system, user };
 }
 
 
-// ─── Gemini API config for each pass ────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// Gemini API Configuration
+// ═══════════════════════════════════════════════════════════════════════════════
 
 /**
- * Generation config for Pass 1 (vision — needs deterministic, accurate output)
+ * Pass 1 config: Force structured JSON, low temperature for consistency.
  */
 export const PASS1_CONFIG = {
   temperature: 0.1,
-  topP: 1,
-  topK: 1,
-  maxOutputTokens: 16384,
-  seed: 42,
-  // No responseMimeType — let Gemini return natural language for richer analysis
-  // thinkingConfig: { thinkingBudget: 8192 },  // Enable when Gemini supports it
+  topP: 0.8,
+  maxOutputTokens: 8192,
+  responseMimeType: "application/json",
+  responseSchema: {
+    type: "object",
+    properties: {
+      athlete_name: { type: "string" },
+      level: { type: "string" },
+      event: { type: "string" },
+      gender: { type: "string" },
+      start_value: { type: "number" },
+      special_requirements: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            requirement: { type: "string" },
+            status: { type: "string", enum: ["MET", "NOT_MET"] },
+            comment: { type: "string" },
+            penalty: { type: "number" },
+          },
+          required: ["requirement", "status", "comment", "penalty"],
+        },
+      },
+      deduction_log: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            timestamp: { type: "string" },
+            skill: { type: "string" },
+            quality_grade: { type: "number" },
+            deduction_value: { type: "number" },
+            reason: { type: "string" },
+            rule_reference: { type: "string" },
+            is_celebration: { type: "boolean" },
+          },
+          required: ["timestamp", "skill", "quality_grade", "deduction_value", "reason", "rule_reference", "is_celebration"],
+        },
+      },
+      artistry: {
+        type: "object",
+        properties: {
+          expression_deduction: { type: "number" },
+          quality_of_movement_deduction: { type: "number" },
+          choreography_variety_deduction: { type: "number" },
+          musicality_deduction: { type: "number" },
+          total_artistry_deduction: { type: "number" },
+          notes: { type: "string" },
+        },
+        required: ["expression_deduction", "quality_of_movement_deduction", "choreography_variety_deduction", "musicality_deduction", "total_artistry_deduction", "notes"],
+      },
+      total_execution_deductions: { type: "number" },
+      total_artistry_deductions: { type: "number" },
+      final_score: { type: "number" },
+      score_range: {
+        type: "object",
+        properties: { low: { type: "number" }, high: { type: "number" } },
+        required: ["low", "high"],
+      },
+      confidence: { type: "string", enum: ["HIGH", "MEDIUM", "LOW"] },
+      coaching_summary: { type: "string" },
+      top_3_fixes: { type: "array", items: { type: "string" } },
+      celebrations: { type: "array", items: { type: "string" } },
+    },
+    required: [
+      "start_value", "final_score", "deduction_log", "special_requirements",
+      "artistry", "total_execution_deductions", "total_artistry_deductions",
+      "score_range", "confidence", "coaching_summary", "top_3_fixes", "celebrations",
+    ],
+  },
 };
 
 /**
- * Generation config for Pass 2 (analysis — slightly more creative for coaching)
+ * Pass 2 config: Biomechanics enrichment.
  */
 export const PASS2_CONFIG = {
-  temperature: 0.2,
-  topP: 0.95,
-  topK: 10,
-  maxOutputTokens: 12288,
-  seed: 42,
+  temperature: 0.1,
+  maxOutputTokens: 8192,
   responseMimeType: "application/json",
+  responseSchema: {
+    type: "object",
+    properties: {
+      skill_details: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            skill_name: { type: "string" },
+            timestamp: { type: "string" },
+            category: { type: "string", enum: ["ACRO", "DANCE", "TURN", "LEAP", "DISMOUNT", "MOUNT", "SERIES", "TRANSITION"] },
+            biomechanics: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  label: { type: "string" },
+                  actual_degrees: { type: "number" },
+                  ideal_degrees: { type: "number" },
+                  status: { type: "string", enum: ["good", "needs_work", "significant_gap"] },
+                },
+                required: ["label", "actual_degrees", "ideal_degrees", "status"],
+              },
+            },
+            fault_observed: { type: "string" },
+            strength: { type: "string" },
+            correct_form: { type: "string" },
+            injury_awareness: { type: "array", items: { type: "string" } },
+            targeted_drills: { type: "array", items: { type: "string" } },
+            gain_if_fixed: { type: "number" },
+          },
+          required: ["skill_name", "timestamp", "category", "biomechanics", "correct_form", "gain_if_fixed"],
+        },
+      },
+    },
+    required: ["skill_details"],
+  },
 };
-
-
-// ─── Helper functions ───────────────────────────────────────────────────────
-
-function getSplitMinimum(level, isXcel) {
-  if (isXcel) {
-    if (level.includes("Bronze") || level.includes("Silver")) return 90;
-    if (level.includes("Gold")) return 120;
-    if (level.includes("Platinum")) return 150;
-    return 180;
-  }
-  if (["Level 1", "Level 2", "Level 3", "Level 4"].includes(level)) return 90;
-  if (level === "Level 5") return 120;
-  if (level === "Level 6" || level === "Level 7") return 150;
-  return 180;
-}
-
-function normalizeEventKey(event) {
-  return String(event || "").toLowerCase()
-    .replace("floor exercise", "floor")
-    .replace("balance beam", "beam")
-    .replace("uneven bars", "bars")
-    .replace("still rings", "bars")
-    .replace("parallel bars", "bars")
-    .replace("high bar", "bars")
-    .replace("pommel horse", "vault");
-}
-
-function buildProgramContext(level, cat, isComp, isXcel, isElite, splitMin) {
-  if (isComp) {
-    return `COMPULSORY ROUTINE (${level}): Every gymnast performs the identical prescribed choreography. Deduct for ANY deviation from required choreography, timing, or element order — in addition to execution faults.`;
-  }
-  if (isXcel) {
-    return `XCEL ${level} ROUTINE: Athlete selects skills within Xcel program parameters. Verify all 4 Special Requirements are present (−0.50 each if missing). Split leap/jump minimum is ${splitMin}°.`;
-  }
-  if (isElite) {
-    return `ELITE ROUTINE (FIG Code of Points): Judge execution from 10.0 E-score base. D-score computed separately from difficulty values. Apply FIG deduction standards strictly.`;
-  }
-  return `${level} OPTIONAL ROUTINE: Athlete selects their own skills. Split leap/jump minimum is ${splitMin}°. ${level === "Level 5" ? "Round-off BHS back tuck is required on floor." : ""}`;
-}
-
-function buildEventRulesBlock(event, level) {
-  const eventRules = EVENT_JUDGING_RULES[event];
-  if (!eventRules) return "";
-
-  const parts = [];
-
-  if (eventRules.strictnessBias > 1.0) {
-    parts.push(`STRICTNESS DIRECTIVE (${event}): This apparatus requires STRICTER judging than floor. AI models under-deduct on ${event} by ~${((eventRules.strictnessBias - 1) * 100).toFixed(0)}%. When in doubt, ALWAYS take the deduction.`);
-  }
-
-  if (eventRules.perspectiveBias) {
-    parts.push(`CAMERA PERSPECTIVE: ${eventRules.perspectiveBias}`);
-  }
-
-  if (event === "Uneven Bars" || event === "High Bar") {
-    parts.push(`
-PERSPECTIVE CALIBRATION FOR BARS:
-Standard uneven bars dimensions: low bar 62" (157cm) high, high bar 98" (249cm) high.
-Bar width: 6.5 feet (198cm) between uprights.
-To calibrate for camera angle:
-- If you can see BOTH bars clearly end-to-end, you have a usable side-on view.
-- If the bars appear to converge or one bar is partially hidden, the camera is angled — all cast heights will be OVERESTIMATED by 10-20%. Reduce cast height readings accordingly.
-- A cast to handstand (180°) from a 30° off-axis camera appears as ~155-160°. Do NOT give full credit.
-- A cast to horizontal (90°) from off-axis appears as ~75-80°. Apply the appropriate deduction for the actual estimated angle.
-- If the gymnast's feet are above the high bar at any point in a cast, that is verifiably a good cast regardless of angle.
-- RULE: When camera angle is uncertain, always score the LOWER of two plausible cast heights.`);
-  }
-
-  if (eventRules.compoundRules?.length) {
-    parts.push(`COMPOUND RULES:\n${eventRules.compoundRules.join("\n")}`);
-  }
-
-  if (eventRules.hiddenDeductions?.length) {
-    parts.push(`COMMONLY MISSED DEDUCTIONS — check every skill:\n${eventRules.hiddenDeductions.join("\n")}`);
-  }
-
-  if (eventRules.rhythmJudging) {
-    parts.push(`RHYTHM/FLOW: ${eventRules.rhythmJudging}`);
-  }
-
-  const eventSRs = eventRules.specialRequirements?.[level] || [];
-  if (eventSRs.length) {
-    parts.push(`SPECIAL REQUIREMENTS for ${level} ${event}:\n${eventSRs.map((sr, i) => `  ${i + 1}. ${sr}`).join("\n")}\nMissing any = -0.50 from Start Value.`);
-  }
-
-  // Skill counting guidance
-  if (event === "Uneven Bars" || event === "High Bar") {
-    parts.push(`SKILL COUNTING (${event}): Typical routine has 5-8 DISTINCT SKILLS. Casts are connecting elements, not separate skills — evaluate cast height as part of the following skill.`);
-  } else if (event === "Floor Exercise") {
-    parts.push(`SKILL COUNTING (Floor): Break tumbling passes into individual elements. RO + BHS + Back Tuck = THREE entries. Also identify leaps, jumps, turns, dance passages. Typical: 10-15 entries.`);
-  } else if (event === "Balance Beam") {
-    parts.push(`SKILL COUNTING (Beam): Each acro skill, dance element, turn, mount, and dismount is its own entry. Typical: 8-12 entries.`);
-  } else if (event === "Vault") {
-    parts.push(`SKILL COUNTING (Vault): ONE skill with multiple phases. Create 1 entry covering run, hurdle, board, pre-flight, table, post-flight, landing.`);
-  }
-
-  if (eventRules.typicalDeductionRange) {
-    const dr = eventRules.typicalDeductionRange;
-    parts.push(`DEDUCTION RANGE (${event}): Expected ${dr.min}–${dr.max} for ${level}. ${dr.note}`);
-  }
-
-  if (parts.length === 0) return "";
-  return "\n═══ EVENT-SPECIFIC JUDGING RULES ═══\n" + parts.join("\n\n") + "\n═══ END ═══\n";
-}
-
-function getExpectedDeductionRange(event, level) {
-  const eventRules = EVENT_JUDGING_RULES[event];
-  const min = eventRules?.typicalDeductionRange?.min || 0.80;
-  const max = eventRules?.typicalDeductionRange?.max || 1.50;
-  return `${min}–${max}`;
-}

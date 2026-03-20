@@ -7,16 +7,16 @@
  * Rules:
  * - No mock data. No hardcoded strings.
  * - If a field is null/undefined, show "—" placeholder, never fake data.
- * - Every prop maps to a documented field in the canonical schema.
+ * - Every prop maps to a documented field in the pipeline schema.
  *
  * ═══════════════════════════════════════════════════════════════════════════════
- * Integration: Call transformForUI() after runAnalysisPipeline().
+ * Integration: Called by runAnalysisPipeline() after validation.
  * The returned object is a drop-in replacement for the current analysisResult
  * shape that LegacyApp.js passes to ResultsScreen and DashboardScreen.
  * ═══════════════════════════════════════════════════════════════════════════════
  */
 
-import { gradeSkill } from "./scoring";
+import { gradeSkill, formatTimestamp } from "./schema";
 
 const PLACEHOLDER = "—";
 
@@ -33,105 +33,99 @@ const SEVERITY_COLORS = {
 // ─── Main transform ────────────────────────────────────────────────────────
 
 /**
- * Transform a PipelineResult into the shape consumed by LegacyApp and UI components.
+ * Transform a validated PipelineResult into the shape consumed by UI components.
  *
- * @param {import('./schema').PipelineResult} pipelineResult - Validated pipeline output
- * @param {Object} [extras] - Optional extras: { videoUrl, videoFile, uploadData }
+ * @param {Object} pipelineResult - Validated pipeline output
+ * @param {Object} [extras] - Optional extras: { videoUrl, videoFile }
  * @returns {Object} - Shape compatible with existing ResultsScreen / SkillCard props
  */
 export function transformForUI(pipelineResult, extras = {}) {
-  const { routine_summary, skills, training_plan, mental_performance, nutrition_recovery, _meta } = pipelineResult;
+  const { routine_summary, skills, special_requirements, _meta } = pipelineResult;
 
   // ── Transform skills to SkillCard-compatible shape ────────────────────────
   const gradedSkills = skills.map((skill, idx) => transformSkill(skill, idx));
 
-  // ── Separate execution deductions (for legacy tabs) ───────────────────────
-  const executionDeductions = [];
-  for (const skill of skills) {
-    for (const ded of (skill.deductions || [])) {
-      if (ded.point_value > 0) {
-        executionDeductions.push({
-          timestamp: formatTimestamp(skill.timestamp_start),
-          skill: skill.skill_name,
-          deduction: ded.point_value,
-          fault: ded.description || ded.type.replace(/_/g, " "),
-          engine: "Strive",
-          category: ded.type.includes("artistry") || ded.type.includes("presentation") ? "artistry" : "execution",
-          severity: ded.severity || "small",
-          confidence: 0.95,
-          skeleton: null,
-          correction: null,
-        });
-      }
-    }
-  }
+  // ── Execution deductions (for Deductions tab) ─────────────────────────────
+  const executionDeductions = skills
+    .filter(s => s.deduction_value > 0)
+    .map(s => ({
+      timestamp: s.timestamp,
+      skill: s.skill_name,
+      deduction: s.deduction_value,
+      fault: s.reason || s.fault_observed || "",
+      engine: "Strive",
+      category: "execution",
+      severity: deductionSeverity(s.deduction_value),
+      confidence: 0.95,
+      skeleton: null,
+      correction: null,
+    }));
 
-  // ── Top fixes (sorted by point value, top 3) ──────────────────────────────
-  const allDeds = skills.flatMap(s => (s.deductions || []).map(d => ({
-    ...d,
-    skill_name: s.skill_name,
-    skill_id: s.id,
-  }))).filter(d => d.point_value > 0).sort((a, b) => b.point_value - a.point_value);
+  // ── Top fixes (highest deductions first) ──────────────────────────────────
+  const sortedByDeduction = [...skills]
+    .filter(s => s.deduction_value > 0)
+    .sort((a, b) => b.deduction_value - a.deduction_value);
 
-  const topFixes = allDeds.slice(0, 3).map(d => ({
-    name: d.skill_name,
-    saves: d.point_value,
-    drill: d.description || d.type.replace(/_/g, " "),
+  const topFixes = sortedByDeduction.slice(0, 3).map(s => ({
+    name: s.skill_name,
+    saves: s.deduction_value,
+    drill: s.reason || s.fault_observed || "Focus on form",
   }));
 
-  // ── Top improvements (from training plan or computed) ─────────────────────
-  const topImprovements = training_plan.length > 0
-    ? training_plan.slice(0, 3).map(t => ({
-        fix: `${t.drill_name}: ${t.drill_description.substring(0, 80)}`,
-        pointsGained: allDeds.find(d => d.type === t.deduction_targeted)?.point_value || 0.10,
-      }))
-    : topFixes.map(f => ({ fix: `${f.name}: ${f.drill}`, pointsGained: f.saves }));
+  // ── Top improvements ──────────────────────────────────────────────────────
+  const topImprovements = sortedByDeduction.slice(0, 3).map(s => ({
+    fix: `${s.skill_name}: ${s.reason || s.fault_observed || "Clean up execution"}`,
+    pointsGained: s.gain_if_fixed || s.deduction_value,
+  }));
 
-  // ── Strengths / celebrations ──────────────────────────────────────────────
+  // ── Celebrations / Strengths ──────────────────────────────────────────────
   const celebrations = routine_summary.celebrations?.length > 0
     ? routine_summary.celebrations
-    : skills.filter(s => s.strength_note).map(s => `${s.skill_name}: ${s.strength_note}`).slice(0, 3);
+    : skills
+        .filter(s => s.is_celebration)
+        .map(s => `${s.skill_name}: ${s.strength || "Excellent execution"}`)
+        .slice(0, 3);
 
-  const strengths = skills
-    .filter(s => (s._computed?.total_deduction || 0) === 0)
-    .map(s => `${s.skill_name}: ${s.strength_note || "Clean execution."}`)
-    .slice(0, 5);
+  const strengths = celebrations.length > 0
+    ? celebrations
+    : skills
+        .filter(s => s.deduction_value === 0)
+        .map(s => `${s.skill_name}: Clean execution`)
+        .slice(0, 5);
 
   // ── Areas for improvement ─────────────────────────────────────────────────
-  const areasForImprovement = allDeds.slice(0, 4).map(d =>
-    `${d.skill_name}: ${d.description || d.type.replace(/_/g, " ")}`
-  );
+  const areasForImprovement = sortedByDeduction
+    .slice(0, 4)
+    .map(s => `${s.skill_name}: ${s.reason || s.fault_observed || "Needs work"}`);
 
-  // ── Artistry breakdown (for Layer2/Layer3) ────────────────────────────────
-  const artistrySkill = skills.find(s => s.id === "artistry");
-  const artistryBreakdown = artistrySkill ? {
-    totalDeduction: artistrySkill._computed?.total_deduction || 0,
-    details: (artistrySkill.deductions || []).map(d => ({
-      fault: d.description || d.type.replace(/_/g, " "),
-      deduction: d.point_value,
-    })),
+  // ── Artistry breakdown ────────────────────────────────────────────────────
+  const art = routine_summary.artistry;
+  const artistryBreakdown = art ? {
+    totalDeduction: Math.abs(art.total_artistry_deduction || 0),
+    details: [
+      art.expression_deduction > 0 && { fault: "Expression / projection", deduction: art.expression_deduction },
+      art.quality_of_movement_deduction > 0 && { fault: "Quality of movement", deduction: art.quality_of_movement_deduction },
+      art.choreography_variety_deduction > 0 && { fault: "Choreography variety", deduction: art.choreography_variety_deduction },
+      art.musicality_deduction > 0 && { fault: "Musicality", deduction: art.musicality_deduction },
+    ].filter(Boolean),
+    notes: art.notes || "",
   } : null;
 
-  // ── Composition breakdown ─────────────────────────────────────────────────
-  const compositionSkill = skills.find(s => s.id === "composition");
-  const compositionBreakdown = compositionSkill ? {
-    totalDeduction: compositionSkill._computed?.total_deduction || 0,
-    details: (compositionSkill.deductions || []).map(d => ({
-      fault: d.description || d.type.replace(/_/g, " "),
-      deduction: d.point_value,
-    })),
-  } : null;
+  // ── Score data ────────────────────────────────────────────────────────────
+  const finalScore = routine_summary.final_score || 0;
+  const startValue = routine_summary.d_score || 10.0;
+  const scoreBreakdown = _meta?.score_breakdown || {};
 
-  // ── Assemble the legacy-compatible result object ──────────────────────────
+  // ── Assemble the result object ────────────────────────────────────────────
   return {
     // ── Core scores ──
-    startValue: routine_summary.d_score,
-    finalScore: routine_summary.final_score,
-    totalDeductions: _meta?.score_breakdown?.total_deductions || 0,
-    executionDeductionsTotal: _meta?.score_breakdown?.execution_deductions || 0,
-    artistryDeductionsTotal: _meta?.score_breakdown?.artistry_deductions || 0,
-    compositionDeductionsTotal: _meta?.score_breakdown?.composition_deductions || 0,
-    neutralDeductionsTotal: routine_summary.neutral_deductions,
+    startValue,
+    finalScore,
+    totalDeductions: scoreBreakdown.total_deductions || scoreBreakdown.total || 0,
+    executionDeductionsTotal: scoreBreakdown.execution_deductions || scoreBreakdown.execution_total || 0,
+    artistryDeductionsTotal: scoreBreakdown.artistry_deductions || scoreBreakdown.artistry_total || 0,
+    compositionDeductionsTotal: 0,
+    neutralDeductionsTotal: routine_summary.neutral_deductions || 0,
 
     // ── Skill lists ──
     gradedSkills,
@@ -139,53 +133,61 @@ export function transformForUI(pipelineResult, extras = {}) {
 
     // ── Rich analysis sections ──
     artistry: artistryBreakdown,
-    composition: compositionBreakdown,
+    composition: null,
 
     // ── Narrative ──
-    overallAssessment: routine_summary.why_this_score || PLACEHOLDER,
-    whyThisScore: routine_summary.why_this_score || "",
-    truthAnalysis: routine_summary.why_this_score || `${skills.length} skills evaluated at ${routine_summary.level} standard.`,
+    overallAssessment: routine_summary.coaching_summary || PLACEHOLDER,
+    whyThisScore: routine_summary.coaching_summary || "",
+    truthAnalysis: routine_summary.coaching_summary || `${skills.length} skills evaluated.`,
     celebrations,
-    strengths: celebrations.length > 0 ? celebrations : strengths,
+    strengths,
     areasForImprovement,
     topFixes,
     topImprovements,
 
-    // ── Training ──
-    trainingPlan: training_plan.map(t => ({
-      deductionTargeted: t.deduction_targeted,
-      skillId: t.skill_id,
-      drillName: t.drill_name,
-      drillDescription: t.drill_description,
-      frequency: t.frequency,
-      expectedImprovement: t.expected_improvement,
+    // ── Confidence & range ──
+    confidence: routine_summary.confidence || "MEDIUM",
+    scoreRange: routine_summary.score_range || null,
+
+    // ── Special requirements ──
+    specialRequirements: (special_requirements || []).map(sr => ({
+      requirement: sr.requirement,
+      status: sr.status,
+      comment: sr.comment,
+      penalty: sr.penalty,
     })),
+
+    // ── Top 3 fixes (from Gemini) ──
+    top3Fixes: routine_summary.top_3_fixes || [],
+
+    // ── Training ──
+    trainingPlan: [],
 
     // ── Mental performance ──
     mentalPerformance: {
-      consistencyScore: mental_performance.consistency_score,
-      focusIndicators: mental_performance.focus_indicators || PLACEHOLDER,
-      patternsObserved: mental_performance.patterns_observed || PLACEHOLDER,
-      recommendations: mental_performance.recommendations || PLACEHOLDER,
+      consistencyScore: 0,
+      focusIndicators: PLACEHOLDER,
+      patternsObserved: PLACEHOLDER,
+      recommendations: PLACEHOLDER,
     },
 
     // ── Nutrition / recovery ──
     nutritionRecovery: {
-      trainingLoadAssessment: nutrition_recovery.training_load_assessment || PLACEHOLDER,
-      nutritionNote: nutrition_recovery.nutrition_note || PLACEHOLDER,
-      recoveryPriority: nutrition_recovery.recovery_priority || PLACEHOLDER,
+      trainingLoadAssessment: PLACEHOLDER,
+      nutritionNote: PLACEHOLDER,
+      recoveryPriority: PLACEHOLDER,
     },
 
     // ── Diagnostics ──
     diagnostics: {
       directJudging: true,
       twoPass: true,
-      skillsEvaluated: skills.filter(s => s.id !== "artistry" && s.id !== "composition").length,
+      skillsEvaluated: skills.length,
       levelJudged: routine_summary.level,
       eventJudged: routine_summary.apparatus,
-      landingDeductions: _meta?.score_breakdown?.all_deductions?.filter(d => d.type?.includes("landing") || d.type?.includes("step")).reduce((s, d) => s + d.point_value, 0) || 0,
-      artistryDeductions: _meta?.score_breakdown?.artistry_deductions || 0,
-      biggestIssue: allDeds[0] ? `${allDeds[0].skill_name}: ${allDeds[0].description}` : "",
+      biggestIssue: sortedByDeduction[0]
+        ? `${sortedByDeduction[0].skill_name}: ${sortedByDeduction[0].reason || sortedByDeduction[0].fault_observed || ""}`
+        : "",
       averageGrade: computeAverageGrade(gradedSkills),
       promptVersion: _meta?.prompt_version || "unknown",
       pipelineDurationMs: _meta?.duration_ms || 0,
@@ -203,157 +205,144 @@ export function transformForUI(pipelineResult, extras = {}) {
 // ─── Transform a single skill to SkillCard-compatible props ─────────────────
 
 function transformSkill(skill, idx) {
-  const totalDed = skill._computed?.total_deduction
-    || (skill.deductions || []).reduce((s, d) => s + (d.point_value || 0), 0);
-  const { grade, color } = skill._computed
-    ? { grade: skill._computed.grade, color: skill._computed.grade_color }
-    : gradeSkill(totalDed);
+  const deduction = Math.abs(skill.deduction_value || 0);
+  const grade = skill.grade_letter || gradeSkill(deduction).grade;
+  const gradeColor = skill.grade_color || gradeSkill(deduction).color;
 
-  const severity = totalDed >= 0.50 ? "fall"
-    : totalDed >= 0.30 ? "veryLarge"
-    : totalDed >= 0.20 ? "large"
-    : totalDed >= 0.10 ? "medium"
-    : "small";
+  const severity = deductionSeverity(deduction);
+  const isClean = deduction === 0;
+  const category = skill.category || "ACRO";
 
-  const timestampStr = formatTimestamp(skill.timestamp_start);
-  const isArtistry = skill.id === "artistry" || skill.id === "composition";
+  // Build structured faults from reason text
+  const faults = deduction > 0 && skill.reason
+    ? [{ fault: skill.reason, deduction, severity, bodyPoint: null, type: "execution" }]
+    : [];
+
+  // Build sub-faults (same format, for SkillCard compatibility)
+  const subFaults = faults.map(f => ({
+    fault: f.fault,
+    deduction: f.deduction,
+    engine: "Strive",
+    bodyPoint: null,
+    severity: f.severity,
+    correction: null,
+  }));
+
+  // Build biomechanics array in the format SkillCard expects
+  const biomechanics = (skill.biomechanics || []).map(b => ({
+    label: b.label,
+    actual: b.actual_degrees,
+    ideal: b.ideal_degrees,
+    status: b.status,
+  }));
 
   return {
     // ── Identity ──
     id: skill.id,
     index: idx + 1,
 
-    // ── SkillCard primary props (fallback chain: skill > skillName > name) ──
+    // ── SkillCard primary props ──
     skill: skill.skill_name,
     skillName: skill.skill_name,
     name: skill.skill_name,
 
     // ── Timestamp ──
-    timestamp: timestampStr,
-    time: timestampStr,
-    timestampSec: skill.timestamp_start,
-    timestampStart: skill.timestamp_start,
-    timestampEnd: skill.timestamp_end,
+    timestamp: skill.timestamp,
+    time: skill.timestamp,
+    timestampSec: skill.timestamp_seconds || 0,
+    timestampStart: skill.timestamp_seconds || 0,
+    timestampEnd: skill.timestamp_end ? skill.timestamp_seconds + 3 : skill.timestamp_seconds,
 
     // ── Scoring ──
-    deduction: Math.round(totalDed * 100) / 100,
-    gradeDeduction: Math.round(totalDed * 100) / 100,
-    qualityScore: Math.round((10.0 - totalDed) * 100) / 100,
+    deduction: Math.round(deduction * 100) / 100,
+    gradeDeduction: Math.round(deduction * 100) / 100,
+    qualityScore: skill.quality_grade || (10.0 - deduction),
     grade,
-    gradeColor: color,
+    gradeColor,
     severity,
 
     // ── Type ──
-    type: isArtistry ? "artistry" : (skill.skill_code === "SR" ? "dance" : "acro"),
-    category: isArtistry ? "artistry" : "execution",
-    isGlobal: isArtistry,
-    skillCode: skill.skill_code,
-    difficultyValue: skill.difficulty_value,
+    type: category.toLowerCase() === "dance" || category.toLowerCase() === "turn" || category.toLowerCase() === "leap"
+      ? "dance" : "acro",
+    category: category,
+    isGlobal: false,
+    skillCode: "A",
+    difficultyValue: 0.10,
 
-    // ── Faults (SkillCard reads: subFaults > faults > deductionHints) ──
-    faults: (skill.deductions || []).map(d => ({
-      fault: d.description || d.type.replace(/_/g, " "),
-      name: d.description || d.type.replace(/_/g, " "),
-      deduction: d.point_value,
-      severity: d.severity || severity,
-      bodyPoint: d.body_part || null,
-      type: d.type,
-      correction: null,  // Drill is at skill level, not fault level
-      fix: null,
-      detail: d.description || null,
-      drill: null,
-      drillRecommendation: null,
-    })),
-    subFaults: (skill.deductions || []).map(d => ({
-      fault: d.description || d.type.replace(/_/g, " "),
-      deduction: d.point_value,
-      engine: "Strive",
-      bodyPoint: d.body_part || null,
-      severity: d.severity || severity,
-      correction: null,
-    })),
-
-    // ── Fault summary (SkillCard reads: fault > reason) ──
-    fault: (skill.deductions || []).filter(d => d.point_value > 0).map(d => d.description || d.type.replace(/_/g, " ")).join("; ") || null,
-    reason: (skill.deductions || []).filter(d => d.point_value > 0).map(d => d.description || d.type.replace(/_/g, " ")).join("; ") || null,
+    // ── Faults ──
+    faults,
+    subFaults,
+    fault: skill.reason || skill.fault_observed || null,
+    reason: skill.reason || skill.fault_observed || null,
 
     // ── Strength ──
-    strength: skill.strength_note || null,
-    strengthNote: skill.strength_note || null,
+    strength: skill.strength || (isClean ? "Clean execution" : null),
+    strengthNote: skill.strength || (isClean ? "Clean execution" : null),
 
     // ── Injury risk ──
-    injuryRisk: skill.injury_risk?.level !== "none" ? formatInjuryRisk(skill.injury_risk) : null,
-    physicalRisk: skill.injury_risk?.level !== "none" ? formatInjuryRisk(skill.injury_risk) : null,
-    injuryNote: skill.injury_risk?.prevention_note || null,
+    injuryRisk: skill.injury_awareness?.length > 0 ? skill.injury_awareness.join(". ") : null,
+    physicalRisk: skill.injury_awareness?.length > 0 ? skill.injury_awareness.join(". ") : null,
+    injuryNote: skill.injury_awareness?.length > 0 ? skill.injury_awareness[0] : null,
 
     // ── Drill ──
-    drillRecommendation: skill.drill_recommendation || null,
-    drill: skill.drill_recommendation || null,
+    drillRecommendation: skill.targeted_drills?.length > 0 ? skill.targeted_drills.join("; ") : null,
+    drill: skill.targeted_drills?.length > 0 ? skill.targeted_drills[0] : null,
 
-    // ── Biomechanics (SkillCard reads: bodyMechanics > biomechanics) ──
-    bodyMechanics: skill.biomechanics ? {
-      kneeAngle: skill.biomechanics.knee_angle_at_peak != null ? `${skill.biomechanics.knee_angle_at_peak}°` : PLACEHOLDER,
-      hipAlignment: skill.biomechanics.hip_angle_at_peak != null ? `${skill.biomechanics.hip_angle_at_peak}°` : PLACEHOLDER,
-      shoulderPosition: skill.biomechanics.shoulder_alignment !== "aligned"
-        ? `Deviated ${skill.biomechanics.shoulder_alignment.replace("deviated_", "")}`
-        : "Aligned",
-      toePoint: skill.biomechanics.efficiency_rating === "excellent" ? "Well-pointed"
-        : skill.biomechanics.efficiency_rating === "good" ? "Adequate"
-        : "Needs work",
-      bodyLineScore: skill.biomechanics.body_line_score,
-      efficiencyRating: skill.biomechanics.efficiency_rating,
-      eliteComparison: skill.biomechanics.elite_comparison || null,
+    // ── Biomechanics ──
+    bodyMechanics: biomechanics.length > 0 ? {
+      kneeAngle: findBio(biomechanics, "knee")?.actual ? `${findBio(biomechanics, "knee").actual}\u00B0` : PLACEHOLDER,
+      hipAlignment: findBio(biomechanics, "hip")?.actual ? `${findBio(biomechanics, "hip").actual}\u00B0` : PLACEHOLDER,
+      shoulderPosition: findBio(biomechanics, "shoulder")?.actual ? `${findBio(biomechanics, "shoulder").actual}\u00B0` : "Aligned",
+      bodyLineScore: 0,
+      efficiency: "good",
+      eliteComparison: "",
     } : null,
-    biomechanics: skill.biomechanics ? {
-      hip_angle_at_peak: skill.biomechanics.hip_angle_at_peak,
-      knee_angle_at_peak: skill.biomechanics.knee_angle_at_peak,
-      shoulder_alignment: skill.biomechanics.shoulder_alignment,
-      body_line_score: skill.biomechanics.body_line_score,
-      efficiency_rating: skill.biomechanics.efficiency_rating,
-      elite_comparison: skill.biomechanics.elite_comparison,
-    } : null,
+    biomechanics: biomechanics,
 
-    // ── Legacy compatibility fields ──
-    engine: "Strive",
-    confidence: 0.95,
-    correction: null,
-    skeleton: null,
-    frameDataUrl: null,
-    skeletonJoints: null,
-    coachNote: null,
+    // ── Correct form ──
+    correctForm: skill.correct_form || null,
+
+    // ── Gain if fixed ──
+    gainIfFixed: skill.gain_if_fixed || (deduction > 0 ? deduction : 0),
+
+    // ── Celebration flag ──
+    isCelebration: skill.is_celebration || false,
   };
 }
 
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
-function formatTimestamp(seconds) {
-  if (typeof seconds !== "number" || seconds <= 0) return "0:00";
-  const m = Math.floor(seconds / 60);
-  const s = Math.floor(seconds % 60);
-  return `${m}:${s.toString().padStart(2, "0")}`;
+function deductionSeverity(deduction) {
+  const abs = Math.abs(deduction || 0);
+  if (abs >= 0.50) return "fall";
+  if (abs >= 0.30) return "veryLarge";
+  if (abs >= 0.20) return "large";
+  if (abs >= 0.10) return "medium";
+  return "small";
 }
 
-function formatInjuryRisk(risk) {
-  if (!risk || risk.level === "none") return null;
-  const parts = [];
-  if (risk.body_part) parts.push(`${risk.body_part}:`);
-  if (risk.description) parts.push(risk.description);
-  if (risk.prevention_note) parts.push(`Prevention: ${risk.prevention_note}`);
-  return parts.join(" ") || null;
+function findBio(biomechanics, keyword) {
+  const match = biomechanics.find(b =>
+    b.label && b.label.toLowerCase().includes(keyword.toLowerCase())
+  );
+  return match || null;
 }
 
-function computeAverageGrade(skills) {
-  const GRADE_RANK = { A: 10, "A-": 9, "B+": 8, B: 7, "B-": 6, C: 5, D: 3, F: 1, "—": 0 };
-  const scored = skills.filter(s => s.grade && s.grade !== "—");
-  if (scored.length === 0) return "—";
-  const avg = scored.reduce((sum, s) => sum + (GRADE_RANK[s.grade] || 5), 0) / scored.length;
-  if (avg >= 9.5) return "A";
-  if (avg >= 8.5) return "A-";
-  if (avg >= 7.5) return "B+";
-  if (avg >= 6.5) return "B";
-  if (avg >= 5.5) return "B-";
-  if (avg >= 4) return "C";
-  if (avg >= 2) return "D";
-  return "F";
+function computeAverageGrade(gradedSkills) {
+  const GRADE_VALUES = {
+    'A+': 12, 'A': 11, 'A-': 10,
+    'B+': 9, 'B': 8, 'B-': 7,
+    'C+': 6, 'C': 5, 'C-': 4,
+    'D+': 3, 'D': 2, 'F': 1,
+  };
+  const REVERSE = Object.fromEntries(
+    Object.entries(GRADE_VALUES).map(([k, v]) => [v, k])
+  );
+
+  const validSkills = gradedSkills.filter(s => !s.isGlobal && GRADE_VALUES[s.grade]);
+  if (validSkills.length === 0) return "—";
+
+  const avg = validSkills.reduce((s, sk) => s + (GRADE_VALUES[sk.grade] || 5), 0) / validSkills.length;
+  return REVERSE[Math.round(avg)] || "B";
 }

@@ -21,8 +21,8 @@ describe("prompts.js", () => {
     });
 
     test("includes event-specific rules", () => {
-      const { user } = buildPass1Prompt(profile, event);
-      expect(user.toLowerCase()).toContain("floor");
+      const { system } = buildPass1Prompt(profile, event);
+      expect(system.toLowerCase()).toContain("floor");
     });
 
     test("never mentions Gemini or Claude", () => {
@@ -35,7 +35,11 @@ describe("prompts.js", () => {
   });
 
   describe("buildPass2Prompt", () => {
-    const fakePass1 = { skills: [{ id: "skill_1", skill_name: "Back Tuck", deductions: [] }] };
+    const fakePass1 = {
+      deduction_log: [
+        { skill: "Back Tuck", timestamp: "0:15", deduction_value: 0.10 },
+      ],
+    };
 
     test("returns system and user strings", () => {
       const { system, user } = buildPass2Prompt(fakePass1, profile, event);
@@ -43,7 +47,7 @@ describe("prompts.js", () => {
       expect(typeof user).toBe("string");
     });
 
-    test("includes pass1 data in user prompt", () => {
+    test("includes pass1 skill data in user prompt", () => {
       const { user } = buildPass2Prompt(fakePass1, profile, event);
       expect(user).toContain("Back Tuck");
     });

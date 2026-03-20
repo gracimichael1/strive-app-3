@@ -1,5 +1,6 @@
 import { transformForUI } from "../transform";
 
+// New pipeline result shape — matches what validatePipelineResult outputs
 const makePipelineResult = () => ({
   routine_summary: {
     apparatus: "floor_exercise",
@@ -10,60 +11,60 @@ const makePipelineResult = () => ({
     neutral_deductions: 0,
     level: "Level 6",
     athlete_name: "Emma",
-    why_this_score: "Solid routine with minor execution errors.",
+    coaching_summary: "Solid routine with minor execution errors.",
     celebrations: ["Great tumbling power", "Clean full turn"],
+    top_3_fixes: ["Straighten knees on landing"],
+    artistry: null,
+    confidence: "HIGH",
+    score_range: { low: 9.30, high: 9.50 },
+    raw_gemini_response: "",
   },
   skills: [
     {
       id: "skill_1",
       skill_name: "Round-off Back Handspring Back Tuck",
-      skill_code: "C",
-      timestamp_start: 5,
-      timestamp_end: 9,
-      executed_successfully: true,
-      difficulty_value: 0.30,
-      deductions: [
-        { type: "bent_knees", description: "Slight bent knees on landing", point_value: 0.10, body_part: "knees", severity: "medium" },
+      timestamp: "0:05",
+      timestamp_end: null,
+      timestamp_seconds: 5,
+      quality_grade: 9.90,
+      deduction_value: 0.10,
+      reason: "Slight bent knees on landing",
+      rule_reference: "Execution: bent knees -0.10",
+      is_celebration: false,
+      category: "ACRO",
+      biomechanics: [
+        { label: "KNEE", actual_degrees: 165, ideal_degrees: 180, status: "needs_work" },
       ],
-      biomechanics: {
-        hip_angle_at_peak: 172,
-        knee_angle_at_peak: 165,
-        shoulder_alignment: "aligned",
-        body_line_score: 8.5,
-        efficiency_rating: "good",
-        elite_comparison: "Close to elite hip extension.",
-      },
-      injury_risk: { level: "low", body_part: "knees", description: "Minor landing impact", prevention_note: "Strengthen quads" },
-      strength_note: "Powerful tumbling with good height.",
-      drill_recommendation: "Rebound drills focusing on knee extension at landing.",
-      _computed: { total_deduction: 0.10, grade: "B+", grade_color: "#a3e635" },
+      fault_observed: "Slight bent knees on landing",
+      strength: "Powerful tumbling with good height",
+      correct_form: "Lock knees through landing",
+      injury_awareness: ["Minor landing impact on knees"],
+      targeted_drills: ["Rebound drills focusing on knee extension at landing"],
+      gain_if_fixed: 0.10,
     },
     {
       id: "skill_2",
       skill_name: "Split Leap",
-      skill_code: "A",
-      timestamp_start: 15,
-      timestamp_end: 17,
-      executed_successfully: true,
-      difficulty_value: 0.10,
-      deductions: [],
-      biomechanics: null,
-      injury_risk: { level: "none", body_part: null, description: null, prevention_note: null },
-      strength_note: "Full 180° split with pointed toes.",
-      drill_recommendation: null,
-      _computed: { total_deduction: 0, grade: "A", grade_color: "#22c55e" },
+      timestamp: "0:15",
+      timestamp_end: null,
+      timestamp_seconds: 15,
+      quality_grade: 10.0,
+      deduction_value: 0,
+      reason: "",
+      rule_reference: "",
+      is_celebration: true,
+      category: "LEAP",
+      biomechanics: [],
+      fault_observed: null,
+      strength: "Full 180\u00B0 split with pointed toes",
+      correct_form: null,
+      injury_awareness: [],
+      targeted_drills: [],
+      gain_if_fixed: 0,
     },
   ],
-  training_plan: [
-    {
-      deduction_targeted: "bent_knees",
-      skill_id: "skill_1",
-      drill_name: "Wall Sits",
-      drill_description: "Hold wall sit position for 30 seconds, focusing on knee extension.",
-      frequency: "3 sets daily",
-      expected_improvement: "Cleaner landings within 2 weeks",
-    },
-  ],
+  special_requirements: [],
+  training_plan: [],
   mental_performance: {
     consistency_score: 8.5,
     focus_indicators: "Strong focus throughout",
@@ -76,14 +77,12 @@ const makePipelineResult = () => ({
     recovery_priority: "Stretch hamstrings",
   },
   _meta: {
-    prompt_version: "v8_2pass",
+    prompt_version: "v10_simple",
     duration_ms: 4500,
     score_breakdown: {
       execution_deductions: 0.10,
       artistry_deductions: 0,
-      composition_deductions: 0,
       total_deductions: 0.10,
-      all_deductions: [],
     },
   },
 });
@@ -119,50 +118,27 @@ describe("transform.js", () => {
     expect(skill.time).toBe("0:05");
     // Scoring
     expect(skill.deduction).toBe(0.10);
-    expect(skill.grade).toBe("B+");
-    expect(skill.gradeColor).toBe("#a3e635");
     // Faults
-    expect(skill.faults).toHaveLength(1);
-    expect(skill.subFaults).toHaveLength(1);
     expect(skill.fault).toContain("bent knees");
     // Biomechanics
-    expect(skill.bodyMechanics).not.toBeNull();
-    expect(skill.bodyMechanics.kneeAngle).toBe("165°");
-    expect(skill.biomechanics.knee_angle_at_peak).toBe(165);
+    expect(skill.biomechanics).toHaveLength(1);
+    expect(skill.biomechanics[0].label).toBe("KNEE");
     // Injury risk
     expect(skill.injuryRisk).toBeTruthy();
-    expect(skill.injuryNote).toBe("Strengthen quads");
     // Drill
     expect(skill.drillRecommendation).toContain("Rebound");
-    // Legacy
-    expect(skill.engine).toBe("Strive");
   });
 
-  test("clean skill has grade A and no faults", () => {
+  test("clean skill has no faults", () => {
     const skill = result.gradedSkills[1];
-    expect(skill.grade).toBe("A");
-    expect(skill.faults).toHaveLength(0);
+    expect(skill.deduction).toBe(0);
     expect(skill.fault).toBeNull();
-    expect(skill.injuryRisk).toBeNull();
+    expect(skill.isCelebration).toBe(true);
   });
 
   test("narrative fields are populated", () => {
     expect(result.overallAssessment).toContain("Solid routine");
     expect(result.celebrations).toHaveLength(2);
-    expect(result.topFixes.length).toBeGreaterThan(0);
-  });
-
-  test("training plan is mapped", () => {
-    expect(result.trainingPlan).toHaveLength(1);
-    expect(result.trainingPlan[0].drillName).toBe("Wall Sits");
-  });
-
-  test("mental performance is mapped", () => {
-    expect(result.mentalPerformance.consistencyScore).toBe(8.5);
-  });
-
-  test("nutrition recovery is mapped", () => {
-    expect(result.nutritionRecovery.trainingLoadAssessment).toBe("Moderate load");
   });
 
   test("diagnostics are present", () => {

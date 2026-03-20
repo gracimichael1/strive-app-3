@@ -1,10 +1,12 @@
 /**
  * pipeline.js — 2-Pass Gemini analysis orchestrator.
  *
- * Replaces the single-pass analyzeWithAI() in LegacyApp.js.
- * Pass 1: Vision (video → skill list + deductions)
- * Pass 2: Analysis (Pass 1 output + video → biomechanics + coaching)
- * Score: Code-computed from Pass 1 deductions (never AI)
+ * Pass 1: JUDGING — Brevet judge watches video, identifies skills,
+ *   grades each one, logs deductions, celebrates excellence.
+ * Pass 2: BIOMECHANICS — Enriches each skill with joint angles,
+ *   injury awareness, drills, correct form, gain-if-fixed.
+ *
+ * Score: Code-validated from Pass 1 deductions (corrected if off by >0.10).
  *
  * SECURITY: All Gemini API calls route through /api/gemini server proxy.
  * The API key NEVER reaches the browser.
@@ -16,11 +18,10 @@
  */
 
 import { buildPass1Prompt, buildPass2Prompt, PASS1_CONFIG, PASS2_CONFIG, PROMPT_VERSION } from "./prompts";
-import { validatePipelineResult, snapToUSAG, emptyBiomechanics, emptyInjuryRisk, emptyMentalPerformance, emptyNutritionRecovery } from "./schema";
-import { computeScore, gradeSkill } from "./scoring";
+import { validatePipelineResult, snapToUSAG, gradeFromQuality, parseTimestamp } from "./schema";
 import { transformForUI } from "./transform";
 
-// ─── Structured logging (matches LegacyApp pattern) ─────────────────────────
+// ─── Structured logging ─────────────────────────────────────────────────────
 
 const log = {
   _fmt(level, stage, msg, data) {
@@ -81,19 +82,16 @@ export async function runAnalysisPipeline({ videoFile, profile, event, onProgres
   if (cached) {
     log.info("cache", `Returning cached result (${cached._meta?.prompt_version})`);
     onProgress({ stage: "complete", pct: 100, label: "Score verified — analyzed previously" });
-    // Cached results are already transformed
     return cached;
   }
 
   // ── Verify server has API key ───────────────────────────────────────────
-  // Quick check — if the server doesn't have GEMINI_API_KEY, fail fast
   try {
     await geminiProxy({ action: "pollFile", fileName: "files/__healthcheck__" });
   } catch (e) {
     if (e.message.includes("not configured")) {
       throw new Error("Server API key not configured. Contact the administrator.");
     }
-    // Other errors (like file not found) are fine — means server is reachable
   }
 
   // ── Upload video ──────────────────────────────────────────────────────────
@@ -102,8 +100,10 @@ export async function runAnalysisPipeline({ videoFile, profile, event, onProgres
     onProgress({ stage: "upload", pct: 10 + Math.floor(pct * 0.25), label: "Uploading video..." });
   });
 
-  // ── Pass 1: Vision ────────────────────────────────────────────────────────
-  onProgress({ stage: "pass1", pct: 40, label: "Identifying skills and deductions..." });
+  // ══════════════════════════════════════════════════════════════════════════
+  // PASS 1: JUDGING — Skills, deductions, grades, celebrations, coaching
+  // ══════════════════════════════════════════════════════════════════════════
+  onProgress({ stage: "pass1", pct: 40, label: "Judging routine — identifying skills and deductions..." });
   const { system: sys1, user: usr1 } = buildPass1Prompt(profile, event);
   log.info("pass1", `Prompt: ${usr1.length} chars | Level: ${profile.level} | Event: ${event}`);
 
@@ -111,7 +111,6 @@ export async function runAnalysisPipeline({ videoFile, profile, event, onProgres
   for (let attempt = 1; attempt <= 2; attempt++) {
     try {
       pass1Raw = await callGemini(fileRef, sys1, usr1, PASS1_CONFIG, "pass1");
-      // Accept natural language or JSON — just check for reasonable length
       if (pass1Raw && pass1Raw.length > 100) break;
       log.warn("pass1", `Attempt ${attempt}: response too short (${pass1Raw?.length} chars)`);
       if (attempt < 2) await delay(2000);
@@ -124,93 +123,104 @@ export async function runAnalysisPipeline({ videoFile, profile, event, onProgres
 
   if (!pass1Raw) throw new Error("Pass 1 returned empty response.");
 
-  // Try JSON first, fall back to natural language parser
-  let pass1Parsed;
-  try {
-    pass1Parsed = parseJSON(pass1Raw, "pass1");
-  } catch (e) {
-    log.info("parser", "JSON parse failed — using natural language parser");
-    pass1Parsed = parseGeminiNaturalLanguage(pass1Raw, event, profile);
-  }
+  const scorecard = parseJSON(pass1Raw, "pass1");
+  log.info("pass1", `Scorecard: ${scorecard.deduction_log?.length || 0} skills, ` +
+    `final_score: ${scorecard.final_score}, confidence: ${scorecard.confidence}`);
 
-  // Store raw response for UI display
-  if (!pass1Parsed.raw_gemini_response) {
-    pass1Parsed.raw_gemini_response = pass1Raw;
-  }
+  // Store raw response for diagnostics
+  const rawGeminiResponse = pass1Raw;
 
-  if (!pass1Parsed.skills || pass1Parsed.skills.length === 0) {
+  if (!scorecard.deduction_log || scorecard.deduction_log.length === 0) {
     throw new Error("Pass 1 found no skills in the video.");
   }
 
-  console.log('[PASS1 RAW DEDUCTIONS]', JSON.stringify({
-    skillCount: pass1Parsed.skills?.length,
-    totalDeductionsByGemini: (pass1Parsed.skills||[]).reduce((s,sk) =>
-      s + (sk.deductions||[]).reduce((ds,d) => ds + (d.point_value||0), 0), 0),
-    artistry: (pass1Parsed.artistry?.deductions||[]).reduce((s,d) => s + (d.point_value||0), 0),
-    composition: (pass1Parsed.composition?.deductions||[]).reduce((s,d) => s + (d.point_value||0), 0),
-    skillNames: pass1Parsed.skills?.map(s => s.skill_name)
-  }));
-  log.info("pass1", `Found ${pass1Parsed.skills.length} skills, ${countDeductions(pass1Parsed)} deductions`);
-  onProgress({ stage: "pass1", pct: 60, label: `Found ${pass1Parsed.skills.length} skills — analyzing biomechanics...` });
+  onProgress({ stage: "pass1", pct: 60, label: `Found ${scorecard.deduction_log.length} skills — analyzing biomechanics...` });
 
-  // ── Pass 2: Analysis ──────────────────────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════════
+  // PASS 2: BIOMECHANICS — Joint angles, drills, injury, correct form
+  // ══════════════════════════════════════════════════════════════════════════
   onProgress({ stage: "pass2", pct: 65, label: "Analyzing biomechanics and building training plan..." });
-  const { system: sys2, user: usr2 } = buildPass2Prompt(pass1Parsed, profile, event);
+  const { system: sys2, user: usr2 } = buildPass2Prompt(scorecard, profile, event);
   log.info("pass2", `Prompt: ${usr2.length} chars`);
 
-  let pass2Parsed = null;
+  let pass2Result = null;
   try {
     const pass2Raw = await callGemini(fileRef, sys2, usr2, PASS2_CONFIG, "pass2");
-    pass2Parsed = parseJSON(pass2Raw, "pass2");
-    log.info("pass2", `Analysis complete: ${(pass2Parsed.skills_analysis || []).length} skill analyses, ${(pass2Parsed.training_plan || []).length} drills`);
+    pass2Result = parseJSON(pass2Raw, "pass2");
+    log.info("pass2", `Enriched ${(pass2Result.skill_details || []).length} skills with biomechanics`);
   } catch (e) {
-    // Pass 2 failure is non-fatal — we have scores from Pass 1
+    // Pass 2 failure is non-fatal — we still have full scores from Pass 1
     log.warn("pass2", `Failed (non-fatal): ${e.message}. Proceeding with Pass 1 data only.`);
   }
 
   onProgress({ stage: "scoring", pct: 85, label: "Computing score..." });
 
   // ── Merge Pass 1 + Pass 2 ────────────────────────────────────────────────
-  const mergedSkills = mergeSkills(pass1Parsed, pass2Parsed);
+  const mergedSkills = mergeSkills(scorecard, pass2Result);
 
-  // ── Compute score (CODE, not AI) ──────────────────────────────────────────
-  const detectedEvent = pass1Parsed.apparatus || event;
-  const { d_score, e_score, final_score, breakdown } = computeScore(
-    mergedSkills,
-    pass1Parsed.neutral_deductions || 0,
-    profile.level,
-    profile.levelCategory || "optional"
+  // ── Validate score (code-computed vs Gemini) ──────────────────────────────
+  const executionDeductions = scorecard.deduction_log.reduce(
+    (sum, e) => sum + Math.abs(e.deduction_value || 0), 0
   );
+  const srPenalties = (scorecard.special_requirements || []).reduce(
+    (sum, sr) => sum + Math.abs(sr.penalty || 0), 0
+  );
+  const artDeductions = Math.abs(scorecard.artistry?.total_artistry_deduction || 0);
+  const totalDeductions = executionDeductions + srPenalties + artDeductions;
+  const startValue = scorecard.start_value || 10.0;
+  const codeComputedScore = Math.max(0, Math.round((startValue - totalDeductions) * 100) / 100);
 
-  log.info("score", `FINAL: ${final_score} | D: ${d_score} | E: ${e_score} | Deductions: ${breakdown.total_deductions} (exec: ${breakdown.execution_deductions}, art: ${breakdown.artistry_deductions}, comp: ${breakdown.composition_deductions}) | Skills: ${mergedSkills.length}`);
+  let finalScore = scorecard.final_score;
+  if (Math.abs(finalScore - codeComputedScore) > 0.10) {
+    log.warn("score", `Correcting Gemini score ${finalScore} → ${codeComputedScore} (diff: ${Math.abs(finalScore - codeComputedScore).toFixed(2)})`);
+    finalScore = codeComputedScore;
+  }
+
+  const detectedEvent = scorecard.event || event;
+
+  log.info("score", `FINAL: ${finalScore} | SV: ${startValue} | Exec: -${executionDeductions.toFixed(2)} | Art: -${artDeductions.toFixed(2)} | SR: -${srPenalties.toFixed(2)} | Skills: ${mergedSkills.length}`);
 
   // ── Assemble pipeline result ────────────────────────────────────────────
   const pipelineResult = {
     routine_summary: {
       apparatus: detectedEvent,
-      duration_seconds: pass1Parsed.duration_seconds || 0,
-      d_score,
-      e_score,
-      final_score,
-      neutral_deductions: pass1Parsed.neutral_deductions || 0,
-      level: profile.level,
+      duration_seconds: 0,
+      d_score: startValue,
+      e_score: Math.max(0, 10.0 - totalDeductions),
+      final_score: finalScore,
+      neutral_deductions: 0,
+      level: profile.level || "",
       athlete_name: profile.name || "",
-      why_this_score: pass1Parsed.why_this_score || "",
-      celebrations: pass1Parsed.celebrations || [],
-      raw_gemini_response: pass1Parsed.raw_gemini_response || "",
+      coaching_summary: scorecard.coaching_summary || "",
+      celebrations: scorecard.celebrations || [],
+      top_3_fixes: scorecard.top_3_fixes || [],
+      artistry: scorecard.artistry || null,
+      confidence: scorecard.confidence || "MEDIUM",
+      score_range: scorecard.score_range || null,
+      raw_gemini_response: rawGeminiResponse,
     },
     skills: mergedSkills,
-    training_plan: pass2Parsed?.training_plan || [],
-    mental_performance: pass2Parsed?.mental_performance || emptyMentalPerformance(),
-    nutrition_recovery: pass2Parsed?.nutrition_recovery || emptyNutritionRecovery(),
+    special_requirements: scorecard.special_requirements || [],
+    training_plan: [],
+    mental_performance: { consistency_score: 0, focus_indicators: "", patterns_observed: "", recommendations: "" },
+    nutrition_recovery: { training_load_assessment: "", nutrition_note: "", recovery_priority: "" },
     _meta: {
       prompt_version: PROMPT_VERSION,
       timestamp: Date.now(),
       duration_ms: Date.now() - startTime,
       model: "gemini-2.5-flash",
-      pass1_skills: pass1Parsed.skills?.length || 0,
-      pass2_success: !!pass2Parsed,
-      score_breakdown: breakdown,
+      pass1_skills: scorecard.deduction_log?.length || 0,
+      pass2_success: !!pass2Result,
+      score_breakdown: {
+        start_value: startValue,
+        execution_deductions: executionDeductions,
+        artistry_deductions: artDeductions,
+        sr_penalties: srPenalties,
+        total_deductions: totalDeductions,
+        gemini_score: scorecard.final_score,
+        code_computed_score: codeComputedScore,
+        final_score: finalScore,
+      },
     },
   };
 
@@ -241,7 +251,7 @@ export async function runAnalysisPipeline({ videoFile, profile, event, onProgres
 async function uploadVideo(videoFile, onProgress) {
   const mimeType = videoFile.type || "video/mp4";
 
-  // Step 1: Ask server to initiate resumable upload (API key stays server-side)
+  // Step 1: Ask server to initiate resumable upload
   const { uploadUrl } = await geminiProxy({
     action: "initUpload",
     displayName: "routine_" + Date.now(),
@@ -249,8 +259,7 @@ async function uploadVideo(videoFile, onProgress) {
     mimeType,
   });
 
-  // Step 2: Upload bytes directly to the resumable URL (no API key needed)
-  // In local dev, proxy through /goog-upload to avoid CORS with Google's API
+  // Step 2: Upload bytes directly to the resumable URL
   const isDev = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
   const finalUploadUrl = isDev && uploadUrl.includes("generativelanguage.googleapis.com")
     ? uploadUrl.replace("https://generativelanguage.googleapis.com", "/goog-upload")
@@ -275,7 +284,7 @@ async function uploadVideo(videoFile, onProgress) {
 
   log.info("upload", `Uploaded: ${fileName} (${(videoFile.size / 1024 / 1024).toFixed(1)}MB)`);
 
-  // Step 3: Poll until ACTIVE (via server proxy)
+  // Step 3: Poll until ACTIVE
   for (let i = 0; i < 40; i++) {
     await delay(2000);
     try {
@@ -316,90 +325,65 @@ async function callGemini(fileRef, systemPrompt, userPrompt, config, label) {
 }
 
 
-// ─── Merge Pass 1 + Pass 2 ─────────────────────────────────────────────────
+// ─── Merge Pass 1 (Scorecard) + Pass 2 (Biomechanics) ──────────────────────
 
-function mergeSkills(pass1, pass2) {
-  const skills = (pass1.skills || []).map((s, i) => {
-    const analysis = pass2?.skills_analysis?.find(a => a.skill_id === s.id) || null;
+function mergeSkills(scorecard, pass2Result) {
+  const skillDetails = pass2Result?.skill_details || [];
 
-    const deductions = (s.deductions || []).map(d => ({
-      ...d,
-      point_value: snapToUSAG(d.point_value),
-    }));
+  return (scorecard.deduction_log || []).map((entry, i) => {
+    // Find matching Pass 2 enrichment by skill name or timestamp
+    const enrichment = skillDetails.find(sd =>
+      sd.skill_name === entry.skill ||
+      sd.timestamp === entry.timestamp
+    ) || {};
 
-    const totalDed = deductions.reduce((sum, d) => sum + d.point_value, 0);
-    const { grade, color } = gradeSkill(totalDed);
+    const deductionValue = snapToUSAG(Math.abs(entry.deduction_value || 0));
+    const qualityGrade = typeof entry.quality_grade === "number" ? entry.quality_grade : (10.0 - deductionValue);
+    const gradeInfo = gradeFromQuality(qualityGrade);
 
     return {
-      id: s.id || `skill_${i + 1}`,
-      skill_name: s.skill_name || "Unknown",
-      skill_code: s.skill_code || "A",
-      timestamp_start: s.timestamp_start || 0,
-      timestamp_end: s.timestamp_end || 0,
-      executed_successfully: s.executed_successfully !== false,
-      difficulty_value: s.difficulty_value || 0.10,
-      deductions,
-      biomechanics: analysis?.biomechanics || emptyBiomechanics(),
-      injury_risk: analysis?.injury_risk || emptyInjuryRisk(),
-      strength_note: s.strength_note || "",
-      drill_recommendation: analysis?.drill_recommendation || null,
-      _computed: {
-        total_deduction: Math.round(totalDed * 100) / 100,
-        quality_score: Math.round((10.0 - totalDed) * 100) / 100,
-        grade,
-        grade_color: color,
-      },
+      id: `skill_${i + 1}`,
+      skill_name: entry.skill || "Unknown",
+      timestamp: entry.timestamp || "0:00",
+      timestamp_end: enrichment.timestamp_end || null,
+      timestamp_seconds: parseTimestamp(entry.timestamp),
+      quality_grade: qualityGrade,
+      deduction_value: deductionValue,
+      reason: entry.reason || "",
+      rule_reference: entry.rule_reference || "",
+      is_celebration: !!entry.is_celebration,
+      // Grade (computed from quality_grade)
+      grade_letter: gradeInfo.grade,
+      grade_label: gradeInfo.label,
+      grade_color: gradeInfo.color,
+      // Category from Pass 2 or inferred
+      category: enrichment.category || inferCategory(entry.skill),
+      // Pass 2 enrichment
+      biomechanics: enrichment.biomechanics || [],
+      fault_observed: enrichment.fault_observed || (deductionValue > 0 ? entry.reason : null),
+      strength: enrichment.strength || (entry.is_celebration ? "Clean, well-executed skill" : null),
+      correct_form: enrichment.correct_form || null,
+      injury_awareness: enrichment.injury_awareness || [],
+      targeted_drills: enrichment.targeted_drills || [],
+      gain_if_fixed: enrichment.gain_if_fixed || (deductionValue > 0 ? deductionValue : 0),
     };
   });
+}
 
-  // Add artistry/composition as synthetic skill entries
-  if (pass1.artistry?.deductions?.length) {
-    const artDeds = (pass1.artistry.deductions || []).map(d => ({
-      ...d,
-      point_value: snapToUSAG(d.point_value),
-      severity: d.severity || "small",
-    }));
-    const artTotal = artDeds.reduce((s, d) => s + d.point_value, 0);
-    skills.push({
-      id: "artistry",
-      skill_name: "Artistry & Presentation",
-      skill_code: "SR",
-      timestamp_start: 0, timestamp_end: 0,
-      executed_successfully: true,
-      difficulty_value: 0,
-      deductions: artDeds,
-      biomechanics: emptyBiomechanics(),
-      injury_risk: emptyInjuryRisk(),
-      strength_note: "",
-      drill_recommendation: null,
-      _computed: { total_deduction: artTotal, quality_score: 10.0 - artTotal, grade: "—", grade_color: "#8890AB" },
-    });
-  }
 
-  if (pass1.composition?.deductions?.length) {
-    const compDeds = (pass1.composition.deductions || []).map(d => ({
-      ...d,
-      point_value: snapToUSAG(d.point_value),
-      severity: d.severity || "small",
-    }));
-    const compTotal = compDeds.reduce((s, d) => s + d.point_value, 0);
-    skills.push({
-      id: "composition",
-      skill_name: "Composition & Choreography",
-      skill_code: "SR",
-      timestamp_start: 0, timestamp_end: 0,
-      executed_successfully: true,
-      difficulty_value: 0,
-      deductions: compDeds,
-      biomechanics: emptyBiomechanics(),
-      injury_risk: emptyInjuryRisk(),
-      strength_note: "",
-      drill_recommendation: null,
-      _computed: { total_deduction: compTotal, quality_score: 10.0 - compTotal, grade: "—", grade_color: "#8890AB" },
-    });
-  }
+// ─── Infer skill category from name ─────────────────────────────────────────
 
-  return skills;
+function inferCategory(skillName) {
+  if (!skillName) return "ACRO";
+  const s = skillName.toLowerCase();
+  if (/mount|initial|opening|start/i.test(s)) return "MOUNT";
+  if (/dismount|flyaway|salto.*off/i.test(s)) return "DISMOUNT";
+  if (/turn|pivot|spin/i.test(s)) return "TURN";
+  if (/leap|jump|sissonne|split.*jump/i.test(s)) return "LEAP";
+  if (/dance|passage|choreograph|floor.*work|pose/i.test(s)) return "DANCE";
+  if (/series|connect/i.test(s)) return "SERIES";
+  if (/walk|transition/i.test(s)) return "TRANSITION";
+  return "ACRO";
 }
 
 
@@ -462,144 +446,4 @@ function parseJSON(raw, label) {
     log.error("parse", `[${label}] JSON parse failed. Raw (first 500 chars): ${raw.substring(0, 500)}`);
     throw new Error(`${label}: Could not parse JSON response`);
   }
-}
-
-
-// ─── Natural language parser for simple prompt responses ─────────────────────
-
-function parseGeminiNaturalLanguage(rawText, event, profile) {
-  const lines = rawText.split('\n');
-  const skills = [];
-  const artistry = { deductions: [] };
-  const composition = { deductions: [] };
-  let neutralDeductions = 0;
-  const celebrations = [];
-  let inCelebrations = false;
-
-  // Debug: log first 50 non-empty lines to understand Gemini's format
-  const sampleLines = lines.filter(l => l.trim()).slice(0, 50);
-  log.info("parser", "First 50 lines of response:\n" + sampleLines.join('\n'));
-
-  // Strip markdown bold/italic from text
-  const clean = (s) => s.replace(/\*{1,2}([^*]+)\*{1,2}/g, '$1').trim();
-
-  // Parse timestamped scorecard lines
-  // Flexible: [MM:SS] | Skill | 0.XX | Reason  OR  MM:SS - Skill - 0.XX - Reason  OR  colons
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (!trimmed) continue;
-
-    // Track when we enter celebrations section
-    if (/^#{0,3}\s*(?:\d+\.\s*)?CELEBRATION/i.test(trimmed)) {
-      inCelebrations = true;
-      continue;
-    }
-    // Exit celebrations on next numbered section header
-    if (inCelebrations && /^#{0,3}\s*(?:\d+\.\s*)?[A-Z]{3,}/.test(trimmed) && !/CELEBRATION/i.test(trimmed)) {
-      inCelebrations = false;
-    }
-
-    // Capture celebration items
-    if (inCelebrations && /^[-•*\d.)]+\s*.{10,}/.test(trimmed)) {
-      celebrations.push(clean(trimmed.replace(/^[-•*\d.)]+\s*/, '')));
-      continue;
-    }
-
-    // Skip table headers and separator lines
-    if (/^\|?\s*Time/i.test(trimmed) || /^\|?\s*---/i.test(trimmed) || /^[-|:\s]+$/.test(trimmed.replace(/\s/g, ''))) continue;
-
-    // Match timestamp lines — flexible regex for pipes, dashes, colons, or mixed separators
-    // Handles: | 0:02 | Skill | 0.10 | Reason |  AND  [0:02] | Skill | 0.10 | Reason  AND  0:02 - Skill - 0.10 - Reason
-    const tsMatch = trimmed.match(
-      /^\|?\s*[\[\(]?(\d{1,2}:\d{2})[\]\)]?\s*[|:\-–—]\s*(.+?)\s*[|:\-–—]\s*(-?[\d.]+)\s*(?:[|:\-–—]\s*(.*))?/
-    );
-
-    if (tsMatch) {
-      const [, ts, rawSkillName, dedStr, rawReason] = tsMatch;
-      const skillName = clean(rawSkillName);
-      // Strip trailing pipe from markdown table rows
-      const reason = rawReason ? rawReason.replace(/\s*\|\s*$/, '').trim() : '';
-      const parts = ts.split(':');
-      const seconds = parseInt(parts[0]) * 60 + parseInt(parts[1]);
-      const deduction = Math.abs(parseFloat(dedStr)) || 0;
-
-      const isArtistryLine = /artistry|presentation|global|finger|eye contact|musicality|composition|choreograph/i.test(skillName + (reason || ''));
-
-      if (isArtistryLine) {
-        const isComp = /composition|choreograph|floor space|transition/i.test(skillName + (reason || ''));
-        const target = isComp ? composition : artistry;
-        target.deductions.push({
-          type: isComp ? 'composition' : 'artistry',
-          description: clean(reason || skillName),
-          point_value: deduction,
-          body_part: 'global'
-        });
-      } else {
-        // Only merge if exact same timestamp (not by name prefix — too fragile)
-        const existingSkill = skills.find(s => s.timestamp_start === seconds);
-
-        if (existingSkill) {
-          if (deduction > 0) {
-            existingSkill.deductions.push({
-              type: 'execution',
-              description: clean(reason || 'See judge notes'),
-              point_value: deduction,
-              body_part: 'multiple',
-              severity: deduction <= 0.10 ? 'small' : deduction <= 0.20 ? 'medium' : 'large'
-            });
-          }
-        } else {
-          skills.push({
-            id: `skill_${skills.length + 1}`,
-            skill_name: skillName,
-            skill_code: 'B',
-            timestamp_start: seconds,
-            timestamp_end: seconds + 3,
-            // Only false for falls (0.50 deduction)
-            executed_successfully: deduction < 0.50,
-            difficulty_value: 0.20,
-            deductions: deduction > 0 ? [{
-              type: 'execution',
-              description: clean(reason || 'See judge notes'),
-              point_value: deduction,
-              body_part: 'multiple',
-              severity: deduction <= 0.10 ? 'small' : deduction <= 0.20 ? 'medium' : 'large'
-            }] : [],
-            strength_note: deduction === 0 ? 'Clean execution' : ''
-          });
-        }
-      }
-    }
-  }
-
-  // Extract why_this_score from Truth Analysis section
-  const truthMatch = rawText.match(/TRUTH ANALYSIS[:\s\n]+(.{20,500}?)(?=\n\s*\n|\n\d+\.|$)/is);
-  const whyScore = truthMatch ? clean(truthMatch[1]) :
-    `${profile.level} routine with typical deduction profile.`;
-
-  // Extract duration if mentioned
-  const durMatch = rawText.match(/duration[:\s]+(\d+)\s*(?:seconds|sec|s)/i);
-  const duration = durMatch ? parseInt(durMatch[1]) : 90;
-
-  log.info("parser", `NL parsed: ${skills.length} skills, ${artistry.deductions.length} artistry, ${composition.deductions.length} composition, ${celebrations.length} celebrations`);
-
-  return {
-    apparatus: event,
-    duration_seconds: duration,
-    skills,
-    artistry,
-    composition,
-    neutral_deductions: neutralDeductions,
-    why_this_score: whyScore,
-    celebrations: celebrations.slice(0, 3),
-    raw_gemini_response: rawText
-  };
-}
-
-function countDeductions(pass1) {
-  let count = 0;
-  for (const s of (pass1.skills || [])) count += (s.deductions || []).length;
-  count += (pass1.artistry?.deductions || []).length;
-  count += (pass1.composition?.deductions || []).length;
-  return count;
 }
