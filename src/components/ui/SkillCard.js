@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { safeStr, safeArray } from '../../utils/helpers';
 
 const COLORS = {
@@ -159,9 +159,42 @@ function SectionBox({ borderColor, bgColor, children, style }) {
  * SkillCard — collapsed shows grade circle + skill name + deduction.
  * Expanded shows tabbed data: Overview, Biomechanics, Injury, Drills.
  */
-function SkillCard({ skill, index, onSeek, defaultExpanded }) {
+function SkillCard({ skill, index, onSeek, defaultExpanded, videoFile }) {
   const [expanded, setExpanded] = useState(defaultExpanded || false);
   const [cardTab, setCardTab] = useState('overview');
+  const [playbackRate, setPlaybackRate] = useState(1);
+  const skillVideoRef = useRef(null);
+  const [skillVideoUrl, setSkillVideoUrl] = useState(null);
+
+  // Create/cleanup blob URL for per-skill video
+  useEffect(() => {
+    if (expanded && videoFile && !skillVideoUrl) {
+      const url = URL.createObjectURL(videoFile);
+      setSkillVideoUrl(url);
+    }
+    return () => {
+      // Don't revoke on every render — only on unmount
+    };
+  }, [expanded, videoFile]);
+
+  // Seek to skill timestamp when video loads
+  useEffect(() => {
+    const v = skillVideoRef.current;
+    if (v && expanded && skillVideoUrl) {
+      const seekTo = skill.timestampSec || skill.timestampStart || 0;
+      const handleLoaded = () => {
+        v.currentTime = Math.max(0, seekTo - 0.3);
+        v.playbackRate = playbackRate;
+      };
+      v.addEventListener('loadedmetadata', handleLoaded);
+      // If already loaded
+      if (v.readyState >= 1) {
+        v.currentTime = Math.max(0, seekTo - 0.3);
+        v.playbackRate = playbackRate;
+      }
+      return () => v.removeEventListener('loadedmetadata', handleLoaded);
+    }
+  }, [skillVideoUrl, expanded]);
 
   if (!skill) return null;
 
@@ -215,12 +248,11 @@ function SkillCard({ skill, index, onSeek, defaultExpanded }) {
     ? drillRec.split(/;\s*/).filter(d => d.length > 2)
     : [];
 
-  // Tab config
+  // Tab config (Drills = next phase)
   const cardTabs = [
     { id: 'overview', label: 'Overview' },
     { id: 'bio', label: 'Bio' },
     { id: 'injury', label: 'Injury' },
-    { id: 'drills', label: 'Drills' },
   ];
 
   return (
@@ -390,32 +422,39 @@ function SkillCard({ skill, index, onSeek, defaultExpanded }) {
           id={`skill-detail-${index}`}
           style={{ padding: '0 16px 16px' }}
         >
-          {/* Seek button */}
-          {timestamp && onSeek && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
-              <button
-                onClick={() => onSeek(skill.timestampSec || timestamp)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 4,
-                  padding: '5px 10px',
-                  borderRadius: 6,
-                  background: 'rgba(232,150,42,0.1)',
-                  border: '1px solid rgba(232,150,42,0.2)',
-                  color: COLORS.gold,
-                  fontSize: 11,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  fontFamily: "'Space Mono', monospace",
-                }}
-                aria-label={`Jump to ${formatTimestamp(timestamp)} in video`}
-              >
-                <svg width="10" height="10" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
-                  <path d="M3 2l7 4-7 4V2z" />
-                </svg>
-                Jump to {formatTimestamp(timestamp)}
-              </button>
+          {/* ── Per-skill video player ── */}
+          {skillVideoUrl && (
+            <div style={{ marginBottom: 14, borderRadius: 12, overflow: 'hidden', background: '#0d1422', border: '1px solid rgba(255,255,255,0.08)' }}>
+              <video
+                ref={skillVideoRef}
+                src={skillVideoUrl}
+                controls
+                controlsList="nodownload"
+                playsInline
+                webkit-playsinline=""
+                preload="metadata"
+                style={{ width: '100%', display: 'block', maxHeight: 200 }}
+              />
+              <div style={{ display: 'flex', gap: 6, padding: '6px 10px', background: '#121b2d' }}>
+                {[0.25, 0.5, 1].map(rate => (
+                  <button
+                    key={rate}
+                    onClick={() => {
+                      setPlaybackRate(rate);
+                      if (skillVideoRef.current) skillVideoRef.current.playbackRate = rate;
+                    }}
+                    style={{
+                      padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 700,
+                      fontFamily: "'Space Mono', monospace", cursor: 'pointer',
+                      background: playbackRate === rate ? COLORS.gold : 'rgba(255,255,255,0.06)',
+                      color: playbackRate === rate ? '#070c16' : 'rgba(255,255,255,0.5)',
+                      border: playbackRate === rate ? `1px solid ${COLORS.gold}` : '1px solid rgba(255,255,255,0.1)',
+                    }}
+                  >
+                    {rate}x
+                  </button>
+                ))}
+              </div>
             </div>
           )}
 
@@ -662,63 +701,7 @@ function SkillCard({ skill, index, onSeek, defaultExpanded }) {
             </div>
           )}
 
-          {/* ═══ TAB: DRILLS ═══ */}
-          {cardTab === 'drills' && (
-            <div>
-              {drillList.length > 0 ? (
-                <SectionBox borderColor="rgba(34,197,94,0.15)" bgColor="rgba(34,197,94,0.06)" style={{ borderLeft: `3px solid ${COLORS.green}` }}>
-                  <SectionHeader color={COLORS.green}>Targeted Drills</SectionHeader>
-                  {drillList.map((drill, i) => (
-                    <div
-                      key={i}
-                      style={{
-                        display: 'flex',
-                        gap: 8,
-                        alignItems: 'flex-start',
-                        marginBottom: i < drillList.length - 1 ? 6 : 0,
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: 20,
-                          height: 20,
-                          borderRadius: '50%',
-                          background: 'rgba(34,197,94,0.15)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          flexShrink: 0,
-                          fontSize: 10,
-                          fontWeight: 800,
-                          color: COLORS.green,
-                          fontFamily: "'Space Mono', monospace",
-                        }}
-                      >
-                        {i + 1}
-                      </div>
-                      <div style={{ fontSize: 12, color: COLORS.text, fontFamily: "'Outfit', sans-serif", lineHeight: 1.5 }}>
-                        {drill}
-                      </div>
-                    </div>
-                  ))}
-                </SectionBox>
-              ) : (
-                <div
-                  style={{
-                    padding: '20px 14px',
-                    textAlign: 'center',
-                    borderRadius: 10,
-                    background: 'rgba(255,255,255,0.02)',
-                    border: '1px solid rgba(255,255,255,0.06)',
-                  }}
-                >
-                  <div style={{ fontSize: 13, color: COLORS.textMuted, fontFamily: "'Outfit', sans-serif" }}>
-                    {isClean ? 'Clean skill \u2014 maintain with regular practice.' : 'No specific drills recommended. Focus on general form work.'}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
+          {/* Drills tab — next phase */}
         </div>
       )}
     </div>
