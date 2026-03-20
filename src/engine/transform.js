@@ -299,6 +299,9 @@ function transformSkill(skill, idx) {
     } : null,
     biomechanics: biomechanics,
 
+    // ── Rule reference ──
+    ruleReference: skill.rule_reference || null,
+
     // ── Correct form ──
     correctForm: skill.correct_form || null,
 

@@ -72,7 +72,7 @@ function formatTimestamp(ts) {
   return `${mins}:${secs}`;
 }
 
-// ── GRADE CIRCLE — matches old ResultsScreen style ──
+// ── GRADE CIRCLE ──
 function GradeCircle({ grade, size = 48 }) {
   const color = GRADE_COLOR[grade] || '#e8962a';
   const label = GRADE_LABEL_MAP[grade] || '';
@@ -118,66 +118,50 @@ function GradeCircle({ grade, size = 48 }) {
   );
 }
 
-// ── BIOMECHANICS ESTIMATION ── derive plausible measured vs ideal angles from fault text
-function estimateBiomechanics(skill) {
-  const faultText = safeStr(skill?.fault || '', '').toLowerCase();
-  const faults = safeArray(skill?.subFaults || skill?.faults || skill?.deductionHints);
-  const allFaultText = faults.map(f => safeStr(f?.fault || f?.name || f, '')).join(' ').toLowerCase() + ' ' + faultText;
-  const angles = [];
-  if (allFaultText.includes('knee') || allFaultText.includes('leg') || allFaultText.includes('bent'))
-    angles.push({ label: 'Knee', measured: 155, ideal: 180 });
-  if (allFaultText.includes('arm') || allFaultText.includes('elbow'))
-    angles.push({ label: 'Elbow', measured: 160, ideal: 180 });
-  if (allFaultText.includes('split') || allFaultText.includes('leap'))
-    angles.push({ label: 'Split', measured: 110, ideal: 150 });
-  if (allFaultText.includes('pike') || allFaultText.includes('arch') || allFaultText.includes('body') || allFaultText.includes('hip'))
-    angles.push({ label: 'Hip', measured: 165, ideal: 180 });
-  if (allFaultText.includes('shoulder') || allFaultText.includes('cast'))
-    angles.push({ label: 'Shoulder', measured: 160, ideal: 180 });
-  if (allFaultText.includes('landing') || allFaultText.includes('squat') || allFaultText.includes('step'))
-    angles.push({ label: 'Knee (landing)', measured: 140, ideal: 170 });
-  return angles.slice(0, 4);
+// ── SECTION HEADER ──
+function SectionHeader({ color, children }) {
+  return (
+    <div
+      style={{
+        fontSize: 10,
+        fontWeight: 700,
+        color,
+        letterSpacing: 1,
+        textTransform: 'uppercase',
+        marginBottom: 6,
+        fontFamily: "'Outfit', sans-serif",
+      }}
+    >
+      {children}
+    </div>
+  );
 }
 
-// ── CORRECT FORM DESCRIPTIONS ──
-function getCorrectForm(skill) {
-  const name = safeStr(skill?.skill || skill?.skillName || skill?.name, '').toLowerCase();
-  if (name.includes('round-off') || name.includes('roundoff'))
-    return 'Arms locked straight through support phase. Legs snapped together at vertical. Powerful snap-down with chest up, landing in hollow body position. No arch through back.';
-  if (name.includes('back handspring') || name.includes('bhs'))
-    return 'Sit-back with arms driving overhead. Hands reach floor with locked elbows. Body passes through tight arch, then snaps to hollow. Legs together, toes pointed throughout.';
-  if (name.includes('back tuck') || name.includes('backflip'))
-    return 'Strong vertical takeoff with arm lift. Tight tuck position \u2014 knees together, chin neutral. Quick rotation with early spot of landing. Stick with chest up, knees slightly bent to absorb.';
-  if (name.includes('back layout') || name.includes('back pike'))
-    return 'Maximum height off takeoff. Body fully extended (layout) or tight pike angle. Arms by ears or sides. Complete rotation with early opening to spot landing. Controlled stick.';
-  if (name.includes('split leap') || name.includes('switch leap'))
-    return 'Strong takeoff from one foot. Maximum split angle at peak height. Hips square, chest lifted. Toes pointed, legs fully extended. Controlled landing in demi-plié.';
-  if (name.includes('full turn') || name.includes('turn'))
-    return 'Rise to full relevé on supporting leg. Free leg in clean passé, turned out. Arms tight, core engaged. Complete 360° rotation without wobble. Finish in controlled position.';
-  if (name.includes('cartwheel'))
-    return 'Hand-hand-foot-foot rhythm in a straight line. Legs fully split through vertical. Arms locked. Pass through handstand with body in one plane. Controlled finish.';
-  if (name.includes('walkover'))
-    return 'Controlled reach back with legs splitting through vertical. Shoulders stacked over hands. Full split visible at top. Smooth weight transfer to feet, finish standing tall.';
-  if (name.includes('landing') || name.includes('dismount'))
-    return 'Land with feet together, slight knee bend to absorb. Chest up, arms forward then lifted to salute. No steps, hops, or extra movement. Hold finish position for 1-2 seconds.';
-  if (name.includes('pose') || name.includes('salute'))
-    return 'Strong, confident start position. Eye contact with judges. Arms in controlled position. Core engaged, standing tall. Clean presentation.';
-  return 'Full extension through every position. Pointed toes, locked knees where required. Clean body lines with no unnecessary movement. Controlled throughout.';
+// ── SECTION BOX ──
+function SectionBox({ borderColor, bgColor, children, style }) {
+  return (
+    <div
+      style={{
+        marginBottom: 10,
+        padding: '10px 12px',
+        borderRadius: 10,
+        background: bgColor || 'rgba(255,255,255,0.02)',
+        border: `1px solid ${borderColor || 'rgba(255,255,255,0.06)'}`,
+        ...style,
+      }}
+    >
+      {children}
+    </div>
+  );
 }
 
 /**
- * Rich SkillCard — matches the old LegacyApp GradedSkillCard UI with:
- * - Grade circle with label
- * - Sub-tabs: Overview, Bio, Injury, Drills
- * - Biomechanics angle grid with measured/ideal and progress bars
- * - Correct form descriptions
- * - Strength callouts
- * - Targeted drills per skill
- * - Injury awareness
+ * SkillCard — single expanded view with all data visible (no tabs).
+ * Grade circle, deduction line items, fault observed, strength, correct form,
+ * biomechanics grid, injury awareness, targeted drills, gain-if-fixed bar.
  */
 function SkillCard({ skill, index, onSeek, defaultExpanded }) {
   const [expanded, setExpanded] = useState(defaultExpanded || false);
-  const [cardTab, setCardTab] = useState('overview');
 
   if (!skill) return null;
 
@@ -188,24 +172,29 @@ function SkillCard({ skill, index, onSeek, defaultExpanded }) {
   const timestamp = skill.timestamp || skill.time || '';
   const faults = safeArray(skill.subFaults || skill.faults || skill.deductionHints);
   const hasInjuryRisk = !!(skill.injuryRisk || skill.physicalRisk);
-  const injuryText = safeStr(skill.injuryRisk || skill.injuryNote || skill.physicalRisk, 'This skill has physical risk factors. Ensure proper conditioning before progression.');
+  const injuryText = safeStr(skill.injuryRisk || skill.injuryNote || skill.physicalRisk, '');
   const drillRec = safeStr(skill.drillRecommendation || skill.drill, '');
   const strengthNote = safeStr(skill.strengthNote || skill.strength, '');
   const isClean = faults.length === 0 && deduction === 0;
-  const bodyMechanics = skill.bodyMechanics || null;
+  const correctForm = safeStr(skill.correctForm || skill.correct_form, '');
+  const gainIfFixed = typeof skill.gainIfFixed === 'number' ? skill.gainIfFixed : 0;
+  const ruleRef = safeStr(skill.ruleReference || skill.rule_reference, '');
+  const category = safeStr(skill.category, '');
 
   // Left border color based on grade
   const gradeGroup = (grade || '').charAt(0);
   const borderLeftColor = gradeGroup === 'A' ? '#22c55e' : gradeGroup === 'B' ? '#e8962a' : gradeGroup === 'C' ? '#e06820' : '#dc2626';
 
-  // Biomechanics: angle estimation from fault text
-  const bioAngles = skill.biomechanics && Array.isArray(skill.biomechanics) ? skill.biomechanics : estimateBiomechanics(skill);
+  // Biomechanics: use real data from Gemini, no fake estimation
+  const bioAngles = skill.biomechanics && Array.isArray(skill.biomechanics) && skill.biomechanics.length > 0
+    ? skill.biomechanics
+    : [];
 
-  // Parse sub-faults for detailed breakdown
-  const subFaults = (() => {
-    if (faults.length > 0) return null; // use structured faults instead
+  // Parse fault text into deduction line items if no structured faults
+  const deductionLines = (() => {
+    if (faults.length > 0) return null; // structured faults exist
     const faultText = safeStr(skill.fault || skill.reason, '');
-    if (!faultText) return [];
+    if (!faultText || deduction === 0) return [];
     const parts = faultText
       .split(/;\s*|(?<!\d)\.(?!\d)(?![^(]*\))\s+/)
       .map(s => s.trim().replace(/\.$/, ''))
@@ -220,16 +209,10 @@ function SkillCard({ skill, index, onSeek, defaultExpanded }) {
     }));
   })();
 
-  // Correct form description
-  const correctForm = getCorrectForm(skill);
-
-  // Card tabs
-  const cardTabs = [
-    { id: 'overview', label: 'Overview' },
-    { id: 'bio', label: 'Bio' },
-    { id: 'injury', label: 'Injury' },
-    { id: 'drills', label: 'Drills' },
-  ];
+  // Parse drill recommendation into list
+  const drillList = drillRec
+    ? drillRec.split(/;\s*/).filter(d => d.length > 2)
+    : [];
 
   return (
     <div
@@ -290,7 +273,7 @@ function SkillCard({ skill, index, onSeek, defaultExpanded }) {
                 {formatTimestamp(timestamp)}
               </span>
             )}
-            {skill.type && (
+            {category && (
               <span
                 style={{
                   fontSize: 10,
@@ -302,7 +285,7 @@ function SkillCard({ skill, index, onSeek, defaultExpanded }) {
                   textTransform: 'uppercase',
                 }}
               >
-                {skill.type}
+                {category}
               </span>
             )}
             {hasInjuryRisk && (
@@ -384,13 +367,13 @@ function SkillCard({ skill, index, onSeek, defaultExpanded }) {
         </svg>
       </button>
 
-      {/* ── Expanded detail ── */}
+      {/* ── Expanded detail — all sections visible (no tabs) ── */}
       {expanded && (
         <div
           id={`skill-detail-${index}`}
           style={{ padding: '0 16px 16px' }}
         >
-          {/* Seek button + timestamp */}
+          {/* Seek button */}
           {timestamp && onSeek && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
               <button
@@ -419,673 +402,391 @@ function SkillCard({ skill, index, onSeek, defaultExpanded }) {
             </div>
           )}
 
-          {/* Sub-tab selector */}
-          <div
-            style={{
-              display: 'flex',
-              gap: 2,
-              marginBottom: 14,
-              background: 'rgba(255,255,255,0.02)',
-              borderRadius: 10,
-              padding: 2,
-            }}
-          >
-            {cardTabs.map(t => (
-              <button
-                key={t.id}
-                onClick={() => setCardTab(t.id)}
-                style={{
-                  flex: 1,
-                  padding: '6px 4px',
-                  borderRadius: 8,
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontSize: 10,
-                  fontWeight: 600,
-                  fontFamily: "'Outfit', sans-serif",
-                  background: cardTab === t.id ? COLORS.gold : 'transparent',
-                  color: cardTab === t.id ? '#070c16' : 'rgba(255,255,255,0.4)',
-                  transition: 'all 0.15s',
-                  minHeight: 28,
-                }}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
-
-          {/* ═══ TAB: OVERVIEW ═══ */}
-          {cardTab === 'overview' && (
-            <>
-              {/* Deductions found */}
-              {faults.length > 0 ? (
-                <div
-                  style={{
-                    marginBottom: 12,
-                    padding: '10px 12px',
-                    borderRadius: 10,
-                    background: 'rgba(224,104,32,0.04)',
-                    border: '1px solid rgba(224,104,32,0.15)',
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: 10,
-                      fontWeight: 700,
-                      color: COLORS.orange,
-                      letterSpacing: 1,
-                      textTransform: 'uppercase',
-                      marginBottom: 8,
-                    }}
-                  >
-                    Deductions Found
-                  </div>
-                  {faults.map((fault, i) => {
-                    const faultName = safeStr(fault.fault || fault.name || fault, '');
-                    const faultFix = safeStr(fault.correction || fault.fix || fault.detail, '');
-                    const faultDrill = safeStr(fault.drill || fault.drillRecommendation, '');
-                    const severity = fault.severity || 'medium';
-                    const sevColor = SEV_COLORS[severity] || SEV_COLORS[severity?.replace(/\s+/g, '')] || COLORS.gold;
-                    const faultDed = typeof fault.deduction === 'number' ? fault.deduction : null;
-
-                    return (
-                      <div
-                        key={i}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'stretch',
-                          gap: 10,
-                          marginBottom: 6,
-                          padding: '6px 10px',
-                          borderRadius: 8,
-                          background: 'rgba(255,255,255,0.02)',
-                          border: '1px solid rgba(255,255,255,0.05)',
-                        }}
-                      >
-                        {/* Severity bar */}
-                        <div
-                          style={{
-                            width: 3,
-                            borderRadius: 2,
-                            background: sevColor,
-                            flexShrink: 0,
-                          }}
-                          aria-label={`${severity} severity`}
-                        />
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div
-                            style={{
-                              fontSize: 12,
-                              color: COLORS.text,
-                              lineHeight: 1.5,
-                              fontFamily: "'Outfit', sans-serif",
-                            }}
-                          >
-                            {faultName}
-                          </div>
-                          {faultFix && (
-                            <div
-                              style={{
-                                fontSize: 11,
-                                color: COLORS.textSecondary,
-                                marginTop: 2,
-                                lineHeight: 1.4,
-                                fontFamily: "'Outfit', sans-serif",
-                              }}
-                            >
-                              {faultFix}
-                            </div>
-                          )}
-                          {faultDrill && (
-                            <div
-                              style={{
-                                fontSize: 11,
-                                color: COLORS.gold,
-                                marginTop: 4,
-                                fontWeight: 500,
-                                fontFamily: "'Outfit', sans-serif",
-                              }}
-                            >
-                              Drill: {faultDrill}
-                            </div>
-                          )}
-                        </div>
-                        {faultDed != null && faultDed > 0 && (
-                          <div
-                            style={{
-                              fontSize: 13,
-                              fontWeight: 800,
-                              color: sevColor,
-                              fontFamily: "'Space Mono', monospace",
-                              flexShrink: 0,
-                              alignSelf: 'center',
-                            }}
-                          >
-                            -{faultDed.toFixed(2)}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : subFaults && subFaults.length > 0 && deduction > 0 ? (
-                <div
-                  style={{
-                    marginBottom: 12,
-                    padding: '10px 12px',
-                    borderRadius: 10,
-                    background: 'rgba(224,104,32,0.04)',
-                    border: '1px solid rgba(224,104,32,0.15)',
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: 10,
-                      fontWeight: 700,
-                      color: COLORS.orange,
-                      letterSpacing: 1,
-                      textTransform: 'uppercase',
-                      marginBottom: 8,
-                    }}
-                  >
-                    Deductions Found
-                  </div>
-                  {subFaults.map((sf, i) => {
-                    const sColor = dedColor(sf.amount);
-                    return (
-                      <div
-                        key={i}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'stretch',
-                          gap: 10,
-                          marginBottom: 6,
-                          padding: '6px 10px',
-                          borderRadius: 8,
-                          background: 'rgba(255,255,255,0.02)',
-                          border: '1px solid rgba(255,255,255,0.05)',
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: 3,
-                            borderRadius: 2,
-                            background: sColor,
-                            flexShrink: 0,
-                          }}
-                        />
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 12, color: COLORS.text, lineHeight: 1.5 }}>{sf.text}</div>
-                        </div>
-                        <div
-                          style={{
-                            fontSize: 13,
-                            fontWeight: 800,
-                            color: sColor,
-                            fontFamily: "'Space Mono', monospace",
-                            flexShrink: 0,
-                            alignSelf: 'center',
-                          }}
-                        >
-                          -{sf.amount.toFixed(2)}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : isClean ? (
-                <div
-                  style={{
-                    marginBottom: 12,
-                    padding: '10px 12px',
-                    borderRadius: 10,
-                    background: 'rgba(34,197,94,0.06)',
-                    border: '1px solid rgba(34,197,94,0.15)',
-                    display: 'flex',
-                    gap: 8,
-                    alignItems: 'center',
-                  }}
-                >
-                  <span style={{ fontSize: 14, color: COLORS.green }} aria-hidden="true">&#10003;</span>
-                  <span style={{ fontSize: 13, color: COLORS.green, fontFamily: "'Outfit', sans-serif" }}>
-                    Clean execution \u2014 no major faults detected
-                  </span>
-                </div>
-              ) : null}
-
-              {/* Correct Form */}
+          {/* ═══ FAULT OBSERVED ═══ */}
+          {skill.fault && deduction > 0 && (
+            <SectionBox borderColor="rgba(224,104,32,0.15)" bgColor="rgba(224,104,32,0.04)">
+              <SectionHeader color={COLORS.orange}>Fault Observed</SectionHeader>
               <div
                 style={{
-                  marginBottom: 12,
-                  padding: '10px 12px',
-                  borderRadius: 10,
-                  background: 'rgba(34,197,94,0.04)',
-                  border: '1px solid rgba(34,197,94,0.15)',
+                  fontSize: 13,
+                  color: COLORS.text,
+                  lineHeight: 1.6,
+                  fontFamily: "'Outfit', sans-serif",
                 }}
               >
-                <div
-                  style={{
-                    fontSize: 10,
-                    fontWeight: 700,
-                    color: COLORS.green,
-                    letterSpacing: 1,
-                    textTransform: 'uppercase',
-                    marginBottom: 4,
-                    fontFamily: "'Outfit', sans-serif",
-                  }}
-                >
-                  Correct Form
-                </div>
-                <div
-                  style={{
-                    fontSize: 12,
-                    color: 'rgba(255,255,255,0.65)',
-                    lineHeight: 1.6,
-                    fontFamily: "'Outfit', sans-serif",
-                  }}
-                >
-                  {correctForm}
-                </div>
+                {safeStr(skill.fault, '')}
               </div>
-
-              {/* Strength */}
-              {(strengthNote || isClean) && (
+              {ruleRef && (
                 <div
                   style={{
-                    marginBottom: 12,
-                    padding: '10px 12px',
-                    borderRadius: 10,
-                    background: 'rgba(232,150,42,0.04)',
-                    border: '1px solid rgba(232,150,42,0.15)',
+                    fontSize: 11,
+                    color: COLORS.textMuted,
+                    marginTop: 4,
+                    fontStyle: 'italic',
+                    fontFamily: "'Outfit', sans-serif",
                   }}
                 >
-                  <div
-                    style={{
-                      fontSize: 10,
-                      fontWeight: 700,
-                      color: COLORS.gold,
-                      letterSpacing: 1,
-                      textTransform: 'uppercase',
-                      marginBottom: 4,
-                      fontFamily: "'Outfit', sans-serif",
-                    }}
-                  >
-                    Strength
-                  </div>
-                  <div
-                    style={{
-                      fontSize: 12,
-                      color: COLORS.text,
-                      lineHeight: 1.6,
-                      fontFamily: "'Outfit', sans-serif",
-                    }}
-                  >
-                    {strengthNote || 'Clean execution \u2014 no deduction taken.'}
-                  </div>
+                  Rule: {ruleRef}
                 </div>
               )}
-            </>
+            </SectionBox>
           )}
 
-          {/* ═══ TAB: BIOMECHANICS ═══ */}
-          {cardTab === 'bio' && (
-            <div>
-              {/* Angle grid */}
-              {bioAngles.length > 0 ? (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-                  {bioAngles.map((a, i) => {
-                    const diff = Math.abs(a.measured - a.ideal);
-                    const aColor = diff > 15 ? '#dc2626' : diff > 10 ? '#ffc15a' : '#22c55e';
-                    const pct = Math.min(100, (a.measured / a.ideal) * 100);
-                    const statusLabel = diff <= 5 ? 'Excellent' : diff <= 10 ? 'Good' : diff <= 20 ? 'Needs work' : 'Significant gap';
-                    return (
-                      <div
-                        key={i}
-                        style={{
-                          padding: '10px 12px',
-                          borderRadius: 10,
-                          background: 'rgba(255,255,255,0.02)',
-                          border: `1px solid ${aColor}20`,
-                        }}
-                      >
-                        <div
-                          style={{
-                            fontSize: 10,
-                            fontWeight: 700,
-                            color: 'rgba(255,255,255,0.4)',
-                            textTransform: 'uppercase',
-                            letterSpacing: 0.5,
-                            marginBottom: 4,
-                            fontFamily: "'Outfit', sans-serif",
-                          }}
-                        >
-                          {a.label}
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 4 }}>
-                          <span
-                            style={{
-                              fontSize: 18,
-                              fontWeight: 900,
-                              color: aColor,
-                              fontFamily: "'Space Mono', monospace",
-                            }}
-                          >
-                            {typeof a.measured === 'number' ? a.measured : parseInt(String(a.measured).replace(/[^\d]/g, ''), 10) || a.measured}°
-                          </span>
-                          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>/</span>
-                          <span
-                            style={{
-                              fontSize: 12,
-                              fontWeight: 600,
-                              color: 'rgba(255,255,255,0.4)',
-                              fontFamily: "'Space Mono', monospace",
-                            }}
-                          >
-                            {typeof a.ideal === 'number' ? a.ideal : parseInt(String(a.ideal).replace(/[^\d]/g, ''), 10) || a.ideal}°
-                          </span>
-                        </div>
-                        <div
-                          style={{
-                            height: 4,
-                            background: 'rgba(255,255,255,0.06)',
-                            borderRadius: 2,
-                            overflow: 'hidden',
-                            marginBottom: 4,
-                          }}
-                        >
-                          <div
-                            style={{
-                              height: '100%',
-                              width: `${pct}%`,
-                              background: aColor,
-                              borderRadius: 2,
-                              transition: 'width 0.6s ease',
-                            }}
-                          />
-                        </div>
-                        <div style={{ fontSize: 9, color: aColor, fontWeight: 600 }}>{statusLabel}</div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                /* Fallback to text-based body mechanics if no angle data */
-                bodyMechanics && (bodyMechanics.kneeAngle || bodyMechanics.hipAlignment || bodyMechanics.shoulderPosition || bodyMechanics.toePoint) ? (
-                  <div>
-                    {[
-                      { icon: '\uD83E\uDDB5', label: 'Knee Angle', value: bodyMechanics.kneeAngle },
-                      { icon: '\uD83C\uDFCB\uFE0F', label: 'Hip Alignment', value: bodyMechanics.hipAlignment },
-                      { icon: '\uD83D\uDCAA', label: 'Shoulder Position', value: bodyMechanics.shoulderPosition },
-                      { icon: '\uD83E\uDDB6', label: 'Toe Point', value: bodyMechanics.toePoint },
-                    ].filter(row => row.value).map((row, i) => (
-                      <div
-                        key={i}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'flex-start',
-                          gap: 8,
-                          padding: '8px 12px',
-                          borderBottom: '1px solid rgba(255,255,255,0.03)',
-                        }}
-                      >
-                        <span style={{ fontSize: 14, flexShrink: 0 }} aria-hidden="true">{row.icon}</span>
-                        <div style={{ flex: 1 }}>
-                          <div
-                            style={{
-                              fontSize: 11,
-                              fontWeight: 600,
-                              color: COLORS.textMuted,
-                              textTransform: 'uppercase',
-                              letterSpacing: 0.5,
-                              fontFamily: "'Outfit', sans-serif",
-                              marginBottom: 2,
-                            }}
-                          >
-                            {row.label}
-                          </div>
-                          <div
-                            style={{
-                              fontSize: 13,
-                              color: COLORS.text,
-                              fontFamily: "'Outfit', sans-serif",
-                              lineHeight: 1.4,
-                            }}
-                          >
-                            {safeStr(row.value, '')}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div
-                    style={{
-                      padding: '20px 0',
-                      textAlign: 'center',
-                      fontSize: 12,
-                      color: 'rgba(255,255,255,0.35)',
-                    }}
-                  >
-                    No biomechanics data available for this skill.
-                  </div>
-                )
-              )}
-            </div>
-          )}
+          {/* ═══ DEDUCTION LINE ITEMS ═══ */}
+          {faults.length > 0 ? (
+            <SectionBox borderColor="rgba(224,104,32,0.15)" bgColor="rgba(224,104,32,0.04)">
+              <SectionHeader color={COLORS.orange}>Deductions Found</SectionHeader>
+              {faults.map((fault, i) => {
+                const faultName = safeStr(fault.fault || fault.name || fault, '');
+                const severity = fault.severity || 'medium';
+                const sevColor = SEV_COLORS[severity] || SEV_COLORS[severity?.replace(/\s+/g, '')] || COLORS.gold;
+                const faultDed = typeof fault.deduction === 'number' ? fault.deduction : null;
 
-          {/* ═══ TAB: INJURY ═══ */}
-          {cardTab === 'injury' && (
-            <div>
-              {hasInjuryRisk ? (
-                <div
-                  style={{
-                    padding: '12px 14px',
-                    borderRadius: 10,
-                    background: 'rgba(220,38,38,0.08)',
-                    border: '1px solid rgba(220,38,38,0.2)',
-                    borderLeft: `3px solid ${COLORS.orange}`,
-                  }}
-                  role="alert"
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                    <span style={{ fontSize: 16 }} aria-hidden="true">&#9888;&#65039;</span>
-                    <span
-                      style={{
-                        fontSize: 12,
-                        fontWeight: 700,
-                        color: COLORS.orange,
-                        fontFamily: "'Outfit', sans-serif",
-                        textTransform: 'uppercase',
-                        letterSpacing: 0.5,
-                      }}
-                    >
-                      Injury Awareness
-                    </span>
-                  </div>
+                return (
                   <div
+                    key={i}
                     style={{
-                      fontSize: 13,
-                      color: COLORS.text,
-                      fontFamily: "'Outfit', sans-serif",
-                      lineHeight: 1.6,
+                      display: 'flex',
+                      alignItems: 'stretch',
+                      gap: 10,
+                      marginBottom: 6,
+                      padding: '6px 10px',
+                      borderRadius: 8,
+                      background: 'rgba(255,255,255,0.02)',
+                      border: '1px solid rgba(255,255,255,0.05)',
                     }}
                   >
-                    {injuryText}
-                  </div>
-                  {/* Landing-specific advice */}
-                  {(skillName.toLowerCase().includes('landing') || skillName.toLowerCase().includes('tuck') || skillName.toLowerCase().includes('layout') || skillName.toLowerCase().includes('dismount')) && (
                     <div
                       style={{
-                        marginTop: 10,
-                        padding: '8px 10px',
-                        borderRadius: 8,
-                        background: 'rgba(255,255,255,0.03)',
-                        border: '1px solid rgba(255,255,255,0.06)',
+                        width: 3,
+                        borderRadius: 2,
+                        background: sevColor,
+                        flexShrink: 0,
                       }}
-                    >
+                      aria-label={`${severity} severity`}
+                    />
+                    <div style={{ flex: 1, minWidth: 0 }}>
                       <div
                         style={{
-                          fontSize: 11,
-                          color: COLORS.textSecondary,
+                          fontSize: 12,
+                          color: COLORS.text,
                           lineHeight: 1.5,
                           fontFamily: "'Outfit', sans-serif",
                         }}
                       >
-                        <strong style={{ color: COLORS.orange }}>Landing forces:</strong> Repetitive impact can stress ankles and knees. Ensure proper conditioning and consider landing mats during training.
+                        {faultName}
                       </div>
                     </div>
-                  )}
-                </div>
-              ) : (
-                <div
-                  style={{
-                    padding: '20px 14px',
-                    textAlign: 'center',
-                    borderRadius: 10,
-                    background: 'rgba(34,197,94,0.04)',
-                    border: '1px solid rgba(34,197,94,0.12)',
-                  }}
-                >
-                  <div style={{ fontSize: 14, color: COLORS.green, marginBottom: 4 }}>&#10003;</div>
+                    {faultDed != null && faultDed > 0 && (
+                      <div
+                        style={{
+                          fontSize: 13,
+                          fontWeight: 800,
+                          color: sevColor,
+                          fontFamily: "'Space Mono', monospace",
+                          flexShrink: 0,
+                          alignSelf: 'center',
+                        }}
+                      >
+                        -{faultDed.toFixed(2)}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </SectionBox>
+          ) : deductionLines && deductionLines.length > 0 && deduction > 0 ? (
+            <SectionBox borderColor="rgba(224,104,32,0.15)" bgColor="rgba(224,104,32,0.04)">
+              <SectionHeader color={COLORS.orange}>Deductions Found</SectionHeader>
+              {deductionLines.map((sf, i) => {
+                const sColor = dedColor(sf.amount);
+                return (
                   <div
+                    key={i}
                     style={{
-                      fontSize: 13,
-                      color: COLORS.green,
-                      fontFamily: "'Outfit', sans-serif",
+                      display: 'flex',
+                      alignItems: 'stretch',
+                      gap: 10,
+                      marginBottom: 6,
+                      padding: '6px 10px',
+                      borderRadius: 8,
+                      background: 'rgba(255,255,255,0.02)',
+                      border: '1px solid rgba(255,255,255,0.05)',
                     }}
                   >
-                    No specific injury risks flagged for this skill
+                    <div
+                      style={{
+                        width: 3,
+                        borderRadius: 2,
+                        background: sColor,
+                        flexShrink: 0,
+                      }}
+                    />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 12, color: COLORS.text, lineHeight: 1.5 }}>{sf.text}</div>
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 800,
+                        color: sColor,
+                        fontFamily: "'Space Mono', monospace",
+                        flexShrink: 0,
+                        alignSelf: 'center',
+                      }}
+                    >
+                      -{sf.amount.toFixed(2)}
+                    </div>
                   </div>
-                  <div
-                    style={{
-                      fontSize: 11,
-                      color: COLORS.textMuted,
-                      marginTop: 6,
-                      fontFamily: "'Outfit', sans-serif",
-                    }}
-                  >
-                    Always warm up properly and listen to your body.
-                  </div>
-                </div>
-              )}
-            </div>
+                );
+              })}
+            </SectionBox>
+          ) : isClean ? (
+            <SectionBox borderColor="rgba(34,197,94,0.15)" bgColor="rgba(34,197,94,0.06)" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <span style={{ fontSize: 14, color: COLORS.green }} aria-hidden="true">&#10003;</span>
+              <span style={{ fontSize: 13, color: COLORS.green, fontFamily: "'Outfit', sans-serif" }}>
+                Clean execution &mdash; no major faults detected
+              </span>
+            </SectionBox>
+          ) : null}
+
+          {/* ═══ STRENGTH ═══ */}
+          {(strengthNote || isClean) && (
+            <SectionBox borderColor="rgba(232,150,42,0.15)" bgColor="rgba(232,150,42,0.04)">
+              <SectionHeader color={COLORS.gold}>Strength</SectionHeader>
+              <div
+                style={{
+                  fontSize: 12,
+                  color: COLORS.text,
+                  lineHeight: 1.6,
+                  fontFamily: "'Outfit', sans-serif",
+                }}
+              >
+                {strengthNote || 'Clean execution \u2014 no deduction taken.'}
+              </div>
+            </SectionBox>
           )}
 
-          {/* ═══ TAB: DRILLS ═══ */}
-          {cardTab === 'drills' && (
-            <div>
-              {drillRec ? (
-                <div
-                  style={{
-                    padding: '12px 14px',
-                    borderRadius: 10,
-                    background: 'rgba(34,197,94,0.06)',
-                    border: '1px solid rgba(34,197,94,0.15)',
-                    borderLeft: `3px solid ${COLORS.green}`,
-                    marginBottom: 12,
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: 10,
-                      fontWeight: 700,
-                      color: COLORS.green,
-                      textTransform: 'uppercase',
-                      letterSpacing: 0.5,
-                      marginBottom: 6,
-                      fontFamily: "'Outfit', sans-serif",
-                    }}
-                  >
-                    Targeted Drill
-                  </div>
-                  <div
-                    style={{
-                      fontSize: 13,
-                      color: COLORS.text,
-                      fontFamily: "'Outfit', sans-serif",
-                      lineHeight: 1.6,
-                    }}
-                  >
-                    {drillRec}
-                  </div>
-                </div>
-              ) : null}
+          {/* ═══ CORRECT FORM ═══ */}
+          {correctForm && (
+            <SectionBox borderColor="rgba(34,197,94,0.15)" bgColor="rgba(34,197,94,0.04)">
+              <SectionHeader color={COLORS.green}>Correct Form</SectionHeader>
+              <div
+                style={{
+                  fontSize: 12,
+                  color: 'rgba(255,255,255,0.65)',
+                  lineHeight: 1.6,
+                  fontFamily: "'Outfit', sans-serif",
+                }}
+              >
+                {correctForm}
+              </div>
+            </SectionBox>
+          )}
 
-              {/* Per-fault drills */}
-              {faults.filter(f => f.drill || f.drillRecommendation).length > 0 && (
-                <div>
-                  <div
-                    style={{
-                      fontSize: 10,
-                      fontWeight: 700,
-                      color: COLORS.gold,
-                      letterSpacing: 1,
-                      textTransform: 'uppercase',
-                      marginBottom: 8,
-                      fontFamily: "'Outfit', sans-serif",
-                    }}
-                  >
-                    Drills by Fault
-                  </div>
-                  {faults.filter(f => f.drill || f.drillRecommendation).map((f, i) => (
+          {/* ═══ BIOMECHANICS GRID ═══ */}
+          {bioAngles.length > 0 && (
+            <SectionBox borderColor="rgba(232,150,42,0.12)" bgColor="rgba(255,255,255,0.02)">
+              <SectionHeader color={COLORS.goldLight}>Biomechanics</SectionHeader>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                {bioAngles.map((a, i) => {
+                  const actual = typeof a.actual === 'number' ? a.actual : (typeof a.actual_degrees === 'number' ? a.actual_degrees : parseInt(String(a.actual || a.actual_degrees).replace(/[^\d]/g, ''), 10) || 0);
+                  const ideal = typeof a.ideal === 'number' ? a.ideal : (typeof a.ideal_degrees === 'number' ? a.ideal_degrees : parseInt(String(a.ideal || a.ideal_degrees).replace(/[^\d]/g, ''), 10) || 180);
+                  const diff = Math.abs(actual - ideal);
+                  const aColor = diff > 15 ? '#dc2626' : diff > 10 ? '#ffc15a' : '#22c55e';
+                  const pct = ideal > 0 ? Math.min(100, (actual / ideal) * 100) : 100;
+                  const status = a.status || (diff <= 5 ? 'excellent' : diff <= 10 ? 'good' : diff <= 20 ? 'needs_work' : 'significant_gap');
+                  const statusLabel = status === 'excellent' ? 'Excellent' : status === 'good' ? 'Good' : status === 'needs_work' ? 'Needs Work' : 'Significant Gap';
+
+                  return (
                     <div
                       key={i}
                       style={{
-                        padding: '8px 10px',
-                        marginBottom: 6,
-                        borderRadius: 8,
+                        padding: '10px 12px',
+                        borderRadius: 10,
                         background: 'rgba(255,255,255,0.02)',
-                        border: '1px solid rgba(255,255,255,0.05)',
+                        border: `1px solid ${aColor}20`,
                       }}
                     >
                       <div
                         style={{
-                          fontSize: 11,
-                          fontWeight: 600,
-                          color: COLORS.textMuted,
+                          fontSize: 10,
+                          fontWeight: 700,
+                          color: 'rgba(255,255,255,0.4)',
+                          textTransform: 'uppercase',
+                          letterSpacing: 0.5,
                           marginBottom: 4,
                           fontFamily: "'Outfit', sans-serif",
                         }}
                       >
-                        For: {safeStr(f.fault || f.name, 'This fault')}
+                        {a.label}
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 4 }}>
+                        <span
+                          style={{
+                            fontSize: 18,
+                            fontWeight: 900,
+                            color: aColor,
+                            fontFamily: "'Space Mono', monospace",
+                          }}
+                        >
+                          {actual}&deg;
+                        </span>
+                        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>/</span>
+                        <span
+                          style={{
+                            fontSize: 12,
+                            fontWeight: 600,
+                            color: 'rgba(255,255,255,0.4)',
+                            fontFamily: "'Space Mono', monospace",
+                          }}
+                        >
+                          {ideal}&deg;
+                        </span>
                       </div>
                       <div
                         style={{
-                          fontSize: 12,
-                          color: COLORS.green,
-                          fontFamily: "'Outfit', sans-serif",
-                          lineHeight: 1.5,
+                          height: 4,
+                          background: 'rgba(255,255,255,0.06)',
+                          borderRadius: 2,
+                          overflow: 'hidden',
+                          marginBottom: 4,
                         }}
                       >
-                        {safeStr(f.drill || f.drillRecommendation, '')}
+                        <div
+                          style={{
+                            height: '100%',
+                            width: `${pct}%`,
+                            background: aColor,
+                            borderRadius: 2,
+                            transition: 'width 0.6s ease',
+                          }}
+                        />
                       </div>
+                      <div style={{ fontSize: 9, color: aColor, fontWeight: 600 }}>{statusLabel}</div>
                     </div>
-                  ))}
-                </div>
-              )}
+                  );
+                })}
+              </div>
+            </SectionBox>
+          )}
 
-              {!drillRec && faults.filter(f => f.drill || f.drillRecommendation).length === 0 && (
+          {/* ═══ INJURY AWARENESS ═══ */}
+          {hasInjuryRisk && (
+            <SectionBox
+              borderColor="rgba(220,38,38,0.2)"
+              bgColor="rgba(220,38,38,0.08)"
+              style={{ borderLeft: `3px solid ${COLORS.orange}` }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                <span style={{ fontSize: 14 }} aria-hidden="true">&#9888;&#65039;</span>
+                <SectionHeader color={COLORS.orange}>Injury Awareness</SectionHeader>
+              </div>
+              <div
+                style={{
+                  fontSize: 13,
+                  color: COLORS.text,
+                  fontFamily: "'Outfit', sans-serif",
+                  lineHeight: 1.6,
+                }}
+              >
+                {injuryText}
+              </div>
+            </SectionBox>
+          )}
+
+          {/* ═══ TARGETED DRILLS ═══ */}
+          {drillList.length > 0 && (
+            <SectionBox borderColor="rgba(34,197,94,0.15)" bgColor="rgba(34,197,94,0.06)" style={{ borderLeft: `3px solid ${COLORS.green}` }}>
+              <SectionHeader color={COLORS.green}>Targeted Drills</SectionHeader>
+              {drillList.map((drill, i) => (
                 <div
+                  key={i}
                   style={{
-                    padding: '20px 14px',
-                    textAlign: 'center',
-                    borderRadius: 10,
-                    background: 'rgba(255,255,255,0.02)',
-                    border: '1px solid rgba(255,255,255,0.06)',
+                    display: 'flex',
+                    gap: 8,
+                    alignItems: 'flex-start',
+                    marginBottom: i < drillList.length - 1 ? 6 : 0,
                   }}
                 >
                   <div
                     style={{
-                      fontSize: 13,
-                      color: COLORS.textMuted,
-                      fontFamily: "'Outfit', sans-serif",
+                      width: 20,
+                      height: 20,
+                      borderRadius: '50%',
+                      background: 'rgba(34,197,94,0.15)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                      fontSize: 10,
+                      fontWeight: 800,
+                      color: COLORS.green,
+                      fontFamily: "'Space Mono', monospace",
                     }}
                   >
-                    {isClean ? 'Clean skill \u2014 maintain with regular practice.' : 'No specific drills recommended. Focus on general form work.'}
+                    {i + 1}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: COLORS.text,
+                      fontFamily: "'Outfit', sans-serif",
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    {drill}
                   </div>
                 </div>
-              )}
-            </div>
+              ))}
+            </SectionBox>
+          )}
+
+          {/* ═══ GAIN IF FIXED ═══ */}
+          {gainIfFixed > 0 && (
+            <SectionBox borderColor="rgba(232,150,42,0.12)">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                <SectionHeader color={COLORS.gold}>Gain If Fixed</SectionHeader>
+                <span
+                  style={{
+                    fontSize: 14,
+                    fontWeight: 900,
+                    color: COLORS.gold,
+                    fontFamily: "'Space Mono', monospace",
+                  }}
+                >
+                  +{gainIfFixed.toFixed(2)}
+                </span>
+              </div>
+              <div
+                style={{
+                  height: 8,
+                  background: 'rgba(255,255,255,0.06)',
+                  borderRadius: 4,
+                  overflow: 'hidden',
+                }}
+              >
+                <div
+                  style={{
+                    height: '100%',
+                    width: `${Math.min(100, (gainIfFixed / 0.50) * 100)}%`,
+                    background: `linear-gradient(90deg, ${COLORS.gold}, ${COLORS.goldLight})`,
+                    borderRadius: 4,
+                    transition: 'width 0.6s ease',
+                  }}
+                />
+              </div>
+              <div
+                style={{
+                  fontSize: 10,
+                  color: COLORS.textMuted,
+                  marginTop: 4,
+                  fontFamily: "'Outfit', sans-serif",
+                }}
+              >
+                Fixing this fault could add {gainIfFixed.toFixed(2)} to the final score
+              </div>
+            </SectionBox>
           )}
         </div>
       )}
