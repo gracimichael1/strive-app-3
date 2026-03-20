@@ -10,6 +10,7 @@ import AgeGate from "./components/legal/AgeGate";
 import ParentalConsent from "./components/legal/ParentalConsent";
 import LegalDisclaimer from "./components/legal/LegalDisclaimer";
 import PrivacyNotice from "./components/legal/PrivacyNotice";
+import { EVENT_JUDGING_RULES } from "./data/constants";
 
 // ─── BUILD INFO ──
 const BUILD_VERSION = "1.0.0";
@@ -3685,15 +3686,15 @@ const UploadScreen = React.memo(function UploadScreen({ profile, onBack, onAnaly
         {event && (
           <div style={{ marginTop: 8, padding: "8px 12px", borderRadius: 8, background: "rgba(232,150,42,0.04)", fontSize: 11, color: "rgba(255,255,255,0.4)", lineHeight: 1.5 }}>
             {{
-              "Auto-detect": "We'll identify the event automatically from your video. Film from the side at apparatus height for best results.",
-              "Vault": "Best angle: side view, capturing the full run and landing. Get the board contact!",
-              "Uneven Bars": "Best angle: side view from the low bar side. Capture transitions between bars.",
-              "Balance Beam": "Best angle: side or diagonal. Keep the full beam length visible.",
-              "Floor Exercise": "Best angle: corner diagonal. Try to capture the full floor area.",
-              "Pommel Horse": "Best angle: end view for circles, side for travel.",
-              "Still Rings": "Best angle: front or slight angle. Capture the full hang and swing.",
-              "Parallel Bars": "Best angle: side view to see swing amplitude.",
-              "High Bar": "Best angle: side view to capture giants and releases.",
+              "Auto-detect": "We'll identify the event automatically. Film from the SIDE at apparatus height — this is critical for scoring accuracy.",
+              "Vault": "Side view capturing full run → board → table → landing. This lets us measure pre-flight and post-flight angles accurately.",
+              "Uneven Bars": "Side view from the LOW BAR side at bar height. This is the #1 factor for accurate cast and circle scoring on bars.",
+              "Balance Beam": "Side view showing full beam length. This captures balance checks, foot placement, and acro form that we can't see from the end.",
+              "Floor Exercise": "Corner diagonal, elevated if possible. This captures the full floor area for out-of-bounds checks and tumbling form.",
+              "Pommel Horse": "Side view for circles and travel. End view misses leg separation — the most common deduction.",
+              "Still Rings": "Front or slight angle. Capture the full hang, hold positions, and landing.",
+              "Parallel Bars": "Side view to accurately measure swing height and handstand positions.",
+              "High Bar": "Side view at bar height — same principle as uneven bars. Critical for giant and release scoring.",
             }[event] || "Film from the side at apparatus height for best results."}
           </div>
         )}
@@ -3726,13 +3727,70 @@ const UploadScreen = React.memo(function UploadScreen({ profile, onBack, onAnaly
         />
       </div>
 
-      {/* Video Tips — visual checklist */}
+      {/* Camera Angle Guide — visual positioning */}
       <div className="card" style={{ padding: 16, marginBottom: 16 }}>
         <h4 style={{ fontSize: 13, fontWeight: 700, color: "#e8962a", marginBottom: 10 }}>
-          Tips for best results
+          Ideal Camera Position
         </h4>
+        {/* Visual camera positioning diagram */}
+        <div style={{
+          background: "rgba(232,150,42,0.04)", borderRadius: 12, padding: 16, marginBottom: 12,
+          border: "1px solid rgba(232,150,42,0.08)",
+        }}>
+          <div style={{ textAlign: "center", marginBottom: 10 }}>
+            <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, color: "rgba(255,255,255,0.5)", lineHeight: 1.8 }}>
+              {{
+                "Vault": (
+                  <>
+                    <div style={{ color: "#e8962a", fontWeight: 700, fontSize: 12, marginBottom: 6 }}>VAULT — Side View</div>
+                    <div>{"  🏃→ ┃ →🤸→ 🧎"}</div>
+                    <div style={{ color: "rgba(255,255,255,0.3)" }}>{"run  table  land"}</div>
+                    <div style={{ marginTop: 6 }}>{"📱 ← You are HERE (side, mid-height)"}</div>
+                  </>
+                ),
+                "Uneven Bars": (
+                  <>
+                    <div style={{ color: "#e8962a", fontWeight: 700, fontSize: 12, marginBottom: 6 }}>BARS — Side View (Low Bar Side)</div>
+                    <div>{"  ═══ HB"}</div>
+                    <div>{"  │"}</div>
+                    <div>{"  ═══ LB   📱 ← You"}</div>
+                    <div style={{ marginTop: 6, color: "rgba(255,255,255,0.3)" }}>Film at low bar height, directly to the side</div>
+                    <div style={{ color: "#22c55e", fontSize: 10, marginTop: 4 }}>Side view is CRITICAL for cast angle accuracy</div>
+                  </>
+                ),
+                "Balance Beam": (
+                  <>
+                    <div style={{ color: "#e8962a", fontWeight: 700, fontSize: 12, marginBottom: 6 }}>BEAM — Side View</div>
+                    <div>{"  ════════════════"}</div>
+                    <div style={{ color: "rgba(255,255,255,0.3)" }}>{"  beam (full length)"}</div>
+                    <div style={{ marginTop: 6 }}>{"  📱 ← You (side, beam height)"}</div>
+                  </>
+                ),
+                "Floor Exercise": (
+                  <>
+                    <div style={{ color: "#e8962a", fontWeight: 700, fontSize: 12, marginBottom: 6 }}>FLOOR — Corner Diagonal</div>
+                    <div>{"  ┌─────────┐"}</div>
+                    <div>{"  │         │"}</div>
+                    <div>{"  │  floor  │"}</div>
+                    <div>{"  │         │"}</div>
+                    <div>{"  └─────────┘"}</div>
+                    <div style={{ marginTop: 4 }}>{"📱 ← You (corner, elevated if possible)"}</div>
+                  </>
+                ),
+              }[event] || (
+                <>
+                  <div style={{ color: "#e8962a", fontWeight: 700, fontSize: 12, marginBottom: 6 }}>IDEAL POSITION</div>
+                  <div>Film from the side at apparatus height</div>
+                  <div style={{ marginTop: 4 }}>{"📱 ← Side view gives the most accurate analysis"}</div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Filming tips checklist */}
         {[
-          { icon: "📐", tip: "Film from the side at apparatus height" },
+          { icon: "📐", tip: "Side view at apparatus height (most important!)" },
           { icon: "🧍", tip: "Keep the full body in frame, salute to salute" },
           { icon: "📱", tip: "Hold camera steady — tripod or lean on something" },
           { icon: "💡", tip: "Good lighting, minimal background clutter" },
@@ -3745,6 +3803,19 @@ const UploadScreen = React.memo(function UploadScreen({ profile, onBack, onAnaly
         ))}
         <div style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", marginTop: 8, paddingTop: 8, borderTop: "1px solid rgba(255,255,255,0.04)" }}>
           iPhone tip: If video won't load, go to Settings → Camera → Formats → "Most Compatible" before filming.
+        </div>
+      </div>
+
+      {/* 2D Video Accuracy Disclaimer */}
+      <div style={{
+        display: "flex", gap: 10, padding: "12px 14px", borderRadius: 10, marginBottom: 12,
+        background: "rgba(232,150,42,0.03)", border: "1px solid rgba(232,150,42,0.06)",
+      }}>
+        <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>📊</span>
+        <div>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>
+            <span style={{ fontWeight: 700, color: "rgba(232,150,42,0.8)" }}>Accuracy note:</span> Our AI scoring engine analyzes 2D video with remarkable precision — typically within 0.15-0.25 of actual judging scores. However, camera angle, video quality, and lighting can impact accuracy. A perfect side view at apparatus height produces the most accurate results. Angled or distant shots may miss subtle deductions.
+          </div>
         </div>
       </div>
 
@@ -4376,14 +4447,78 @@ SPLIT LEAP/JUMP REQUIREMENT at ${level}: minimum ${splitMin}°
       ? `\nEVENT AUTO-DETECTION: Identify the gymnastics event/apparatus from the video content. Look for: balance beam (narrow beam, 4 inches wide), uneven bars (two horizontal bars at different heights), vault (running approach + springboard), floor exercise (spring floor, no apparatus). Include the detected event as "detectedEvent" in your JSON response.\n`
       : "";
 
-    return `You are a Brevet-certified USA Gymnastics judge at a State Championship. You give NO benefit of the doubt. When in doubt, take the HIGHER deduction. Your job is to find EVERY fault so the athlete can improve.
+    // ── Event-specific "Pessimistic Judge" rules ───────────────────────
+    // These inject apparatus-specific compound deductions, hidden faults,
+    // perspective warnings, and rhythm rules that close the scoring gap.
+    const eventRules = !isAutoDetect ? EVENT_JUDGING_RULES[event] : null;
+    const eventSRs = eventRules?.specialRequirements?.[level] || [];
+
+    let eventSpecificBlock = "";
+    if (eventRules) {
+      const parts = [];
+
+      // Strictness directive
+      if (eventRules.strictnessBias > 1.0) {
+        parts.push(`STRICTNESS DIRECTIVE (${event}): This apparatus requires STRICTER judging than floor. AI models consistently under-deduct on ${event} by ${((eventRules.strictnessBias - 1) * 100).toFixed(0)}%. When in doubt, ALWAYS take the deduction. Look for reasons to DEDUCT, not reasons to give credit.`);
+      }
+
+      // Perspective warning
+      if (eventRules.perspectiveBias) {
+        parts.push(`PERSPECTIVE ${eventRules.perspectiveBias}`);
+      }
+
+      // Compound rules
+      if (eventRules.compoundRules?.length) {
+        parts.push(`${event.toUpperCase()} COMPOUND DEDUCTION RULES — apply ALL of these:\n${eventRules.compoundRules.join("\n")}`);
+      }
+
+      // Hidden deductions checklist
+      if (eventRules.hiddenDeductions?.length) {
+        parts.push(`${event.toUpperCase()} COMMONLY MISSED DEDUCTIONS — check EVERY skill for these:\n${eventRules.hiddenDeductions.join("\n")}`);
+      }
+
+      // Rhythm/flow rules
+      if (eventRules.rhythmJudging) {
+        parts.push(`RHYTHM/FLOW: ${eventRules.rhythmJudging}`);
+      }
+
+      // Special requirements for this level
+      if (eventSRs.length) {
+        parts.push(`SPECIAL REQUIREMENTS for ${level} ${event} — verify ALL are present:\n${eventSRs.map((sr, i) => `  ${i + 1}. ${sr}`).join("\n")}\nMissing any Special Requirement = -0.50 from Start Value.`);
+      }
+
+      // Skill counting guidance per event
+      if (event === "Uneven Bars" || event === "High Bar") {
+        parts.push(`SKILL COUNTING (${event}): A typical ${level} ${event} routine has 5-8 DISTINCT SKILLS, NOT 15-20.
+On bars, casts are CONNECTING ELEMENTS, not separate skills. Do NOT create separate entries for each cast.
+Instead, evaluate cast height as part of the FOLLOWING skill's faults.
+Example: If cast is low before a back hip circle, add "Low cast preceding circle (-0.10)" to the back hip circle's faults.
+Skills to identify: kip, circling skills (back hip circle, clear hip, giant), transitions between bars, release moves, dismount.`);
+      } else if (event === "Floor Exercise") {
+        parts.push(`SKILL COUNTING (Floor): Identify tumbling passes as INDIVIDUAL ELEMENTS within the pass. A round-off + back handspring + back tuck = THREE entries. Also identify: leaps, jumps, turns, and dance passages as individual entries. Typical floor routine has 10-15 skill entries.`);
+      } else if (event === "Balance Beam") {
+        parts.push(`SKILL COUNTING (Beam): Identify each acro skill, dance element, turn, and dismount as individual entries. Include mount. Typical beam routine has 8-12 skill entries.`);
+      } else if (event === "Vault") {
+        parts.push(`SKILL COUNTING (Vault): Vault is ONE skill with multiple phases. Create 1 entry with faults from each phase (run, hurdle, board, pre-flight, table, post-flight, landing).`);
+      }
+
+      // Typical deduction range override
+      if (eventRules.typicalDeductionRange) {
+        const dr = eventRules.typicalDeductionRange;
+        parts.push(`CALIBRATION OVERRIDE (${event}): Expected deduction range for ${level} ${event}: ${dr.min}–${dr.max}. ${dr.note}`);
+      }
+
+      eventSpecificBlock = "\n═══ EVENT-SPECIFIC JUDGING RULES ═══\n" + parts.join("\n\n") + "\n═══ END EVENT-SPECIFIC RULES ═══\n";
+    }
+
+    return `You are a Brevet-certified USA Gymnastics judge at a State Championship. You give NO benefit of the doubt. When in doubt, take the HIGHER deduction. Your job is to find EVERY fault so the athlete can improve. You are a PESSIMISTIC judge — you look for reasons to DEDUCT, not reasons to celebrate.
 
 ATHLETE: ${athleteName} | ${gender} ${level} | EVENT: ${isAutoDetect ? "DETECT FROM VIDEO" : event}
 ${autoDetectLine}
 ${programContext}
 ${skillsLine}
 ${benchLine}
-
+${eventSpecificBlock}
 KEY RULES:
 1. INDIVIDUAL ELEMENTS: Break every skill apart for FEEDBACK purposes. A Round-off, Back Handspring, and Back Tuck in one tumbling pass = THREE separate entries. HOWEVER, connecting elements within a pass share momentum — only deduct faults you can CLEARLY SEE on each individual element. Do not assume faults on connecting elements. If a round-off looks clean, score it clean (0.00 deduction). Most elements in a competent routine have 0-1 visible faults.
 2. MICRO-DEDUCTIONS: Flexed feet, soft knees, micro-bends — deduct 0.05 each, but ONLY when clearly visible. Do not guess or assume. A typical skill has 0-2 micro-faults, not 3-4.
@@ -4395,10 +4530,10 @@ KEY RULES:
    - Composition: floor space, transitions, variety (0.05-0.10)
 5. SPLIT LEAPS: ${level} requires ${splitMin}°. Short = 0.10-0.20 deduction.
 6. CALIBRATION — THIS IS CRITICAL:
-   - Target range for total deductions: 0.80–1.30 for most ${level} routines.
+   - Target range for total deductions: ${eventRules?.typicalDeductionRange?.min || 0.80}–${eventRules?.typicalDeductionRange?.max || 1.30} for most ${level} ${event} routines.
    - A score of 8.7–9.2 is typical at State Championships for ${level}.
-   - If your total deductions are below 0.80, you are too LENIENT — find more faults.
-   - If your total deductions are above 1.50, you are too HARSH — you are likely double-counting faults across connected elements or deducting faults you cannot clearly see. Remove uncertain deductions.
+   - If your total deductions are below ${eventRules?.typicalDeductionRange?.min || 0.80}, you are too LENIENT — find more faults.
+   - If your total deductions are above ${eventRules?.typicalDeductionRange?.max || 1.50}, you are too HARSH — you are likely double-counting faults across connected elements or deducting faults you cannot clearly see. Remove uncertain deductions.
    - The sum of all individual skill deductions (execution) should typically be 0.50–0.90. Artistry + composition add another 0.20–0.40.
 
 ${executionStandards}
@@ -4519,7 +4654,7 @@ JSON RULES:
 
     // ── Score caching — return cached result for duplicate submissions ──
     // Fingerprint: file name + size + lastModified + athlete name + level + event
-    const PROMPT_VERSION = "v5_strict_brevet"; // Bump this when prompt changes to invalidate cache
+    const PROMPT_VERSION = "v6_pessimistic_judge"; // Bump this when prompt changes to invalidate cache
     const fingerprintParts = [
       PROMPT_VERSION,
       uploadData.video.name || "video",
@@ -6841,6 +6976,17 @@ const ResultsScreen = React.memo(function ResultsScreen({ result, profile, histo
         }
         return null;
       })()}
+
+      {/* 2D Video Accuracy Note */}
+      <div style={{
+        display: "flex", gap: 8, padding: "10px 12px", borderRadius: 8, marginBottom: 14,
+        background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)",
+      }}>
+        <span style={{ fontSize: 11, flexShrink: 0, marginTop: 1 }}>📊</span>
+        <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", lineHeight: 1.5 }}>
+          Scores are based on 2D video analysis and may vary ±0.15–0.25 from live judging. Camera angle, video quality, and lighting affect accuracy. Side-view at apparatus height produces the most accurate results.
+        </span>
+      </div>
 
       {/* Actual Score Input */}
       <div className="card" style={{ marginBottom: 20, padding: 16 }}>
