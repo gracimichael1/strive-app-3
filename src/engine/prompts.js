@@ -108,12 +108,15 @@ YOUR TASK — identify every skill and every deduction:
 
 6. STRENGTH NOTES: For each skill, note one thing the gymnast did well.
 
-CALIBRATION — THIS IS CRITICAL:
+CALIBRATION — THIS IS A HARD CONSTRAINT, NOT A SUGGESTION:
 - Expected total deductions for ${level}: ${getExpectedDeductionRange(event, level)}
 - Score of 8.7–9.2 is typical at State Championships for ${level}
-- If your total is below the minimum, you are too LENIENT — find more faults
-- If your total exceeds the maximum, you are too HARSH — remove uncertain deductions
-- Execution deductions typically 0.50–0.90. Artistry + composition add 0.20–0.40.
+- A score above 9.20 is EXCEPTIONALLY RARE at any level — only 1-2% of routines at State Championships score above 9.20
+- HARD FLOOR: If your total deductions sum to less than 0.80, YOUR ANALYSIS IS WRONG. Go back and find more faults. Every routine has at least 0.80 in deductions — flexed feet, slight bent knees, imperfect landings, artistry gaps. You are missing them.
+- HARD CEILING: If your total exceeds 1.50, you are too harsh. Remove your least certain deductions until you are in range.
+- TARGET: 0.90–1.20 total deductions for a typical ${level} routine
+- Execution deductions typically 0.50–0.90. Artistry + composition add 0.20–0.40. These are SEPARATE — do not skip artistry.
+- VALIDATION: After generating your JSON, mentally sum ALL point_values across all skills + artistry + composition. If the sum is below 0.80, you MUST re-examine and add deductions you missed before outputting.
 
 SPLIT REQUIREMENT: ${level} requires ${splitMin}° minimum on split leaps/jumps. Short = deduction.
 
@@ -169,13 +172,17 @@ Respond with ONLY this JSON — no markdown, no backticks, no text outside:
   "celebrations": ["<top 3 things done well>"]
 }
 
-SECOND-PASS SELF-CHECK — after your initial pass, re-watch focusing on:
-1. Feet — any flexed feet you missed? Count them.
-2. Pauses — hesitations or rhythm breaks between skills?
-3. Landings — did you deduct every step, hop, squat?
-4. Split leaps — is the angle truly at or above ${splitMin}°?
-5. Arms — bent arm moments in support or flight?
-Add any missed deductions to your JSON.`;
+MANDATORY SELF-CHECK — you MUST do this before outputting:
+1. SUM every point_value in your JSON (skills + artistry + composition). Write the total mentally.
+2. If total < 0.80: You are TOO LENIENT. Re-watch and find what you missed:
+   a. Feet — count every instance of flexed/relaxed feet. Each = 0.05.
+   b. Landings — did you deduct for EVERY step, hop, or squat? Even small steps = 0.05.
+   c. Pauses — hesitations or rhythm breaks between skills? Each = 0.05–0.10.
+   d. Split leaps — is the angle truly at or above ${splitMin}°? Measure critically.
+   e. Arms — any bent arm moments in support or flight? Each = 0.05–0.10.
+   f. Artistry — did you include at least 0.15 in artistry deductions? No youth routine has perfect presentation.
+3. If total > 1.50: Remove your least certain deductions until in range.
+4. ONLY output your JSON after the total is between 0.80 and 1.50.`;
 
   return { system, user };
 }
