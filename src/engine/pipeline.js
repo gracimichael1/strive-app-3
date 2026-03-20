@@ -111,8 +111,9 @@ export async function runAnalysisPipeline({ videoFile, profile, event, onProgres
   for (let attempt = 1; attempt <= 2; attempt++) {
     try {
       pass1Raw = await callGemini(fileRef, sys1, usr1, PASS1_CONFIG, "pass1");
-      if (pass1Raw && pass1Raw.length > 100 && pass1Raw.includes('"skills"')) break;
-      log.warn("pass1", `Attempt ${attempt}: short or missing skills (${pass1Raw?.length} chars)`);
+      // Accept natural language or JSON — just check for reasonable length
+      if (pass1Raw && pass1Raw.length > 100) break;
+      log.warn("pass1", `Attempt ${attempt}: response too short (${pass1Raw?.length} chars)`);
       if (attempt < 2) await delay(2000);
     } catch (e) {
       log.warn("pass1", `Attempt ${attempt} failed: ${e.message}`);
@@ -123,11 +124,32 @@ export async function runAnalysisPipeline({ videoFile, profile, event, onProgres
 
   if (!pass1Raw) throw new Error("Pass 1 returned empty response.");
 
-  const pass1Parsed = parseJSON(pass1Raw, "pass1");
+  // Try JSON first, fall back to natural language parser
+  let pass1Parsed;
+  try {
+    pass1Parsed = parseJSON(pass1Raw, "pass1");
+  } catch (e) {
+    log.info("parser", "JSON parse failed — using natural language parser");
+    pass1Parsed = parseGeminiNaturalLanguage(pass1Raw, event, profile);
+  }
+
+  // Store raw response for UI display
+  if (!pass1Parsed.raw_gemini_response) {
+    pass1Parsed.raw_gemini_response = pass1Raw;
+  }
+
   if (!pass1Parsed.skills || pass1Parsed.skills.length === 0) {
     throw new Error("Pass 1 found no skills in the video.");
   }
 
+  console.log('[PASS1 RAW DEDUCTIONS]', JSON.stringify({
+    skillCount: pass1Parsed.skills?.length,
+    totalDeductionsByGemini: (pass1Parsed.skills||[]).reduce((s,sk) =>
+      s + (sk.deductions||[]).reduce((ds,d) => ds + (d.point_value||0), 0), 0),
+    artistry: (pass1Parsed.artistry?.deductions||[]).reduce((s,d) => s + (d.point_value||0), 0),
+    composition: (pass1Parsed.composition?.deductions||[]).reduce((s,d) => s + (d.point_value||0), 0),
+    skillNames: pass1Parsed.skills?.map(s => s.skill_name)
+  }));
   log.info("pass1", `Found ${pass1Parsed.skills.length} skills, ${countDeductions(pass1Parsed)} deductions`);
   onProgress({ stage: "pass1", pct: 60, label: `Found ${pass1Parsed.skills.length} skills — analyzing biomechanics...` });
 
@@ -175,6 +197,7 @@ export async function runAnalysisPipeline({ videoFile, profile, event, onProgres
       athlete_name: profile.name || "",
       why_this_score: pass1Parsed.why_this_score || "",
       celebrations: pass1Parsed.celebrations || [],
+      raw_gemini_response: pass1Parsed.raw_gemini_response || "",
     },
     skills: mergedSkills,
     training_plan: pass2Parsed?.training_plan || [],
@@ -433,6 +456,131 @@ function parseJSON(raw, label) {
     log.error("parse", `[${label}] JSON parse failed. Raw (first 500 chars): ${raw.substring(0, 500)}`);
     throw new Error(`${label}: Could not parse JSON response`);
   }
+}
+
+
+// ─── Natural language parser for simple prompt responses ─────────────────────
+
+function parseGeminiNaturalLanguage(rawText, event, profile) {
+  const lines = rawText.split('\n');
+  const skills = [];
+  const artistry = { deductions: [] };
+  const composition = { deductions: [] };
+  let neutralDeductions = 0;
+  const celebrations = [];
+  let inCelebrations = false;
+
+  // Strip markdown bold/italic from text
+  const clean = (s) => s.replace(/\*{1,2}([^*]+)\*{1,2}/g, '$1').trim();
+
+  // Parse timestamped scorecard lines
+  // Flexible: [MM:SS] | Skill | 0.XX | Reason  OR  MM:SS - Skill - 0.XX - Reason  OR  colons
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+
+    // Track when we enter celebrations section
+    if (/^#{0,3}\s*(?:\d+\.\s*)?CELEBRATION/i.test(trimmed)) {
+      inCelebrations = true;
+      continue;
+    }
+    // Exit celebrations on next numbered section header
+    if (inCelebrations && /^#{0,3}\s*(?:\d+\.\s*)?[A-Z]{3,}/.test(trimmed) && !/CELEBRATION/i.test(trimmed)) {
+      inCelebrations = false;
+    }
+
+    // Capture celebration items
+    if (inCelebrations && /^[-•*\d.)]+\s*.{10,}/.test(trimmed)) {
+      celebrations.push(clean(trimmed.replace(/^[-•*\d.)]+\s*/, '')));
+      continue;
+    }
+
+    // Skip table headers
+    if (/^\|?\s*Time\s*\|/i.test(trimmed) || /^[-|:]+$/.test(trimmed.replace(/\s/g, ''))) continue;
+
+    // Match timestamp lines — flexible regex for pipes, dashes, colons, or mixed separators
+    const tsMatch = trimmed.match(
+      /^[\[\(]?(\d{1,2}:\d{2})[\]\)]?\s*[|:\-–—]\s*(.+?)\s*[|:\-–—]\s*(-?[\d.]+)\s*(?:[|:\-–—]\s*(.*))?/
+    );
+
+    if (tsMatch) {
+      const [, ts, rawSkillName, dedStr, reason] = tsMatch;
+      const skillName = clean(rawSkillName);
+      const parts = ts.split(':');
+      const seconds = parseInt(parts[0]) * 60 + parseInt(parts[1]);
+      const deduction = Math.abs(parseFloat(dedStr)) || 0;
+
+      const isArtistryLine = /artistry|presentation|global|finger|eye contact|musicality|composition|choreograph/i.test(skillName + (reason || ''));
+
+      if (isArtistryLine) {
+        const isComp = /composition|choreograph|floor space|transition/i.test(skillName + (reason || ''));
+        const target = isComp ? composition : artistry;
+        target.deductions.push({
+          type: isComp ? 'composition' : 'artistry',
+          description: clean(reason || skillName),
+          point_value: deduction,
+          body_part: 'global'
+        });
+      } else {
+        // Only merge if exact same timestamp (not by name prefix — too fragile)
+        const existingSkill = skills.find(s => s.timestamp_start === seconds);
+
+        if (existingSkill) {
+          if (deduction > 0) {
+            existingSkill.deductions.push({
+              type: 'execution',
+              description: clean(reason || 'See judge notes'),
+              point_value: deduction,
+              body_part: 'multiple',
+              severity: deduction <= 0.10 ? 'small' : deduction <= 0.20 ? 'medium' : 'large'
+            });
+          }
+        } else {
+          skills.push({
+            id: `skill_${skills.length + 1}`,
+            skill_name: skillName,
+            skill_code: 'B',
+            timestamp_start: seconds,
+            timestamp_end: seconds + 3,
+            // Only false for falls (0.50 deduction)
+            executed_successfully: deduction < 0.50,
+            difficulty_value: 0.20,
+            deductions: deduction > 0 ? [{
+              type: 'execution',
+              description: clean(reason || 'See judge notes'),
+              point_value: deduction,
+              body_part: 'multiple',
+              severity: deduction <= 0.10 ? 'small' : deduction <= 0.20 ? 'medium' : 'large'
+            }] : [],
+            strength_note: deduction === 0 ? 'Clean execution' : ''
+          });
+        }
+      }
+    }
+  }
+
+  // Extract why_this_score from Truth Analysis section
+  const truthMatch = rawText.match(/TRUTH ANALYSIS[:\s\n]+(.{20,500}?)(?=\n\s*\n|\n\d+\.|$)/is);
+  const whyScore = truthMatch ? clean(truthMatch[1]) :
+    `${profile.level} routine with typical deduction profile.`;
+
+  // Extract duration if mentioned
+  const durMatch = rawText.match(/duration[:\s]+(\d+)\s*(?:seconds|sec|s)/i);
+  const duration = durMatch ? parseInt(durMatch[1]) : 90;
+
+  log.info("parser", `NL parsed: ${skills.length} skills, ${artistry.deductions.length} artistry, ${composition.deductions.length} composition, ${celebrations.length} celebrations`);
+
+  return {
+    apparatus: event,
+    duration_seconds: duration,
+    skills,
+    artistry,
+    composition,
+    neutral_deductions: neutralDeductions,
+    why_this_score: whyScore,
+    celebrations: celebrations.slice(0, 3),
+    raw_gemini_response: rawText
+  };
 }
 
 function countDeductions(pass1) {

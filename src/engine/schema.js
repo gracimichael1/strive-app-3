@@ -217,6 +217,7 @@ export function validatePipelineResult(raw) {
     athlete_name: typeof summary.athlete_name === "string" ? summary.athlete_name : "",
     why_this_score: typeof summary.why_this_score === "string" ? summary.why_this_score : "",
     celebrations: Array.isArray(summary.celebrations) ? summary.celebrations.filter(c => typeof c === "string").slice(0, 5) : [],
+    raw_gemini_response: typeof summary.raw_gemini_response === "string" ? summary.raw_gemini_response : "",
   };
 
   // Validate skills array

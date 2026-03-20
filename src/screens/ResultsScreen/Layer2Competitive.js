@@ -34,6 +34,7 @@ function Layer2Competitive({ result, profile, previousResult, onSeek, videoUrl }
   const deductions = safeArray(result?.executionDeductions);
   const finalScore = safeNum(result?.finalScore, 0);
   const [skillFilter, setSkillFilter] = useState('all');
+  const [showFullAnalysis, setShowFullAnalysis] = useState(true);
 
   // New summary data — check both result.summary (JSON direct) and top-level fields (parsed)
   const summary = result?.summary || null;
@@ -245,6 +246,129 @@ function Layer2Competitive({ result, profile, previousResult, onSeek, videoUrl }
               </span>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Full Analysis — Raw Gemini coaching notes */}
+      {result?.rawResponse && (
+        <div
+          style={{
+            margin: '12px 20px 0',
+            background: COLORS.surface,
+            border: `1px solid ${COLORS.border}`,
+            borderRadius: 16,
+            overflow: 'hidden',
+          }}
+          role="region"
+          aria-label="Full coaching analysis"
+        >
+          <button
+            onClick={() => setShowFullAnalysis(!showFullAnalysis)}
+            aria-expanded={showFullAnalysis}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: 20,
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              color: COLORS.text,
+            }}
+          >
+            <span style={{ fontSize: 15, fontWeight: 700, fontFamily: "'Outfit', sans-serif" }}>
+              Full Coaching Analysis
+            </span>
+            <svg
+              width="12" height="12" viewBox="0 0 14 14"
+              fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="2"
+              style={{ transform: showFullAnalysis ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}
+              aria-hidden="true"
+            >
+              <path d="M2 5l5 4 5-4" />
+            </svg>
+          </button>
+
+          {showFullAnalysis && (
+            <div
+              style={{
+                padding: '0 20px 20px',
+                maxHeight: 600,
+                overflowY: 'auto',
+                WebkitOverflowScrolling: 'touch',
+              }}
+            >
+              {result.rawResponse.split('\n').map((line, i) => {
+                const trimmed = line.trim();
+                if (!trimmed) return <div key={i} style={{ height: 8 }} />;
+
+                // Gold headers for section titles
+                const isHeader = /^(#{1,3}\s|TIMESTAMPED|ARTISTRY|SPLIT CHECK|TRUTH ANALYSIS|TOP 3|CELEBRATION|IMPROVEMENTS|START VALUE|CALIBRATION|FINAL SCORE)/i.test(trimmed);
+                // Green for celebrations/positives
+                const isCelebration = /celebration|exceptionally|excellent|outstanding|beautiful|clean|well|strong/i.test(trimmed) && !/deduction|fault|error/i.test(trimmed);
+                // Scorecard line (has timestamp)
+                const isScorecard = /^\[?\d{1,2}:\d{2}\]?\s*\|/.test(trimmed);
+
+                if (isHeader) {
+                  return (
+                    <div key={i} style={{
+                      fontSize: 13,
+                      fontWeight: 700,
+                      color: COLORS.gold,
+                      letterSpacing: 0.5,
+                      marginTop: i > 0 ? 16 : 0,
+                      marginBottom: 4,
+                      fontFamily: "'Outfit', sans-serif",
+                    }}>
+                      {trimmed.replace(/^#{1,3}\s*/, '')}
+                    </div>
+                  );
+                }
+
+                if (isScorecard) {
+                  return (
+                    <div key={i} style={{
+                      fontSize: 12,
+                      color: COLORS.text,
+                      fontFamily: "'Space Mono', monospace",
+                      padding: '3px 0',
+                      lineHeight: 1.5,
+                      borderBottom: '1px solid rgba(255,255,255,0.03)',
+                    }}>
+                      {trimmed}
+                    </div>
+                  );
+                }
+
+                if (isCelebration) {
+                  return (
+                    <div key={i} style={{
+                      fontSize: 13,
+                      color: COLORS.green,
+                      fontFamily: "'Outfit', sans-serif",
+                      padding: '2px 0',
+                      lineHeight: 1.5,
+                    }}>
+                      {trimmed}
+                    </div>
+                  );
+                }
+
+                return (
+                  <div key={i} style={{
+                    fontSize: 13,
+                    color: COLORS.textSecondary,
+                    fontFamily: "'Outfit', sans-serif",
+                    padding: '2px 0',
+                    lineHeight: 1.6,
+                  }}>
+                    {trimmed}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 

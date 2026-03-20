@@ -195,7 +195,7 @@ export function transformForUI(pipelineResult, extras = {}) {
     event: routine_summary.apparatus,
     level: routine_summary.level,
     videoUrl: extras.videoUrl || null,
-    rawResponse: null,  // Don't expose raw Gemini output to UI
+    rawResponse: routine_summary.raw_gemini_response || null,
   };
 }
 

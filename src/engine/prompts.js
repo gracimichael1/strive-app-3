@@ -30,7 +30,7 @@ export const PROMPT_VERSION = "v8_2pass";
  * @param {string} event - Event name (e.g. "Floor Exercise") or "Auto-detect"
  * @returns {{ system: string, user: string }}
  */
-export function buildPass1Prompt(profile, event) {
+export function buildPass1Prompt(profile, event, uploadData = null) {
   const level = profile.level || "Level 6";
   const gender = profile.gender === "female" ? "Women's" : "Men's";
   const isAutoDetect = event === "Auto-detect";
@@ -76,113 +76,59 @@ export function buildPass1Prompt(profile, event) {
 
   const system = `You are a Brevet-certified USA Gymnastics judge with 20+ years of competition experience at the State and Regional championship level. You have judged thousands of ${level} routines. Watch this entire gymnastics routine from start to finish before outputting anything. You give no benefit of the doubt — when in doubt, take the higher deduction. Your goal is to find EVERY fault so the athlete can improve.`;
 
-  const user = `Analyze this ${gender} ${level} ${isAutoDetect ? "" : event + " "}routine performed by ${athleteName}.
+  // ── Condensed event rules (top missed deductions only) ──
+  const eventRules = !isAutoDetect ? EVENT_JUDGING_RULES[event] : null;
+  const missedDeds = eventRules?.hiddenDeductions?.slice(0, 5).join("\n   - ") || "";
+  const eventTips = missedDeds ? `\nCOMMONLY MISSED DEDUCTIONS on ${event}:\n   - ${missedDeds}` : "";
+
+  const user = `Analyze this ${gender} ${level} ${isAutoDetect ? "gymnastics" : event} routine performed by ${athleteName}.
 ${autoDetectLine}
 ${programContext}
 ${requiredSkillsLine}
 ${benchLine}
-${eventRulesBlock}
-${detailedDeductions ? `\n═══ APPARATUS DEDUCTION TABLE ═══\n${detailedDeductions}\n═══ END ═══\n` : ""}
-${strictnessGuidance}
-${copBlock ? `\n${copBlock}\n` : ""}
 
-YOUR TASK — identify every skill and every deduction:
+You are strictly forbidden from giving benefit of the doubt.
+Evaluate using the ${level} Code of Points.
 
-1. SKILL IDENTIFICATION: List every distinct skill/element in chronological order. For tumbling passes, break into individual elements (Round-off = one entry, Back Handspring = one entry, Back Tuck = one entry). Include: mount, acro skills, dance elements (leaps, jumps, turns), connections, and dismount.
+Watch the ENTIRE routine from start to finish. Then provide:
 
-2. TIMESTAMPS: Provide start and end time (in seconds from 0.0) for each skill.
+1. TIMESTAMPED SCORECARD — every skill in order:
+   [MM:SS] | Skill Name | Deduction (0.00 if clean) | Reason
 
-3. DEDUCTIONS: For each skill, list EVERY visible fault:
-   - Name the fault specifically (e.g. "bent knees at ~145° during flight phase" not just "bent knees")
-   - Assign the correct USAG deduction: 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, or 0.50
-   - Identify the body part affected
-   - If the skill is clean, say so — deduction 0.00
+2. For EVERY skill — whether clean or not — note:
+   - What the gymnast did WELL on this skill
+   - What deduction was taken and exactly why
+   - What "zero deduction" looks like for this skill
 
-4. ARTISTRY & COMPOSITION (separate from skills): Evaluate with "Global" entries:
-   - Finger/hand presentation, eye contact, musicality
-   - Use of floor space, transitions, energy
-   - These typically total 0.15–0.40 for youth routines
-   - If you find 0.00 artistry deductions, you are WRONG — re-evaluate
+3. ARTISTRY & PRESENTATION (Global):
+   - Finger/hand presentation
+   - Eye contact and performance quality
+   - Musicality and use of space
+   - Energy and confidence
+   - Artistry deductions typically total 0.15–0.40 for youth routines
 
-5. DIFFICULTY CODE: Assign USAG difficulty letter (A/B/C/D/E) to each skill.
+4. SPLIT CHECK: ${level} requires ${splitMin}° minimum.
+   Flag any leaps/jumps that fall short.
+${eventTips}
 
-6. STRENGTH NOTES: For each skill, note one thing the gymnast did well.
+5. TRUTH ANALYSIS:
+   Why did this routine score what it scored?
+   What is the single biggest "math win" — one fix that saves the most points?
 
-CALIBRATION — THIS IS A HARD CONSTRAINT, NOT A SUGGESTION:
-- Expected total deductions for ${level}: ${getExpectedDeductionRange(event, level)}
-- Score of 8.7–9.2 is typical at State Championships for ${level}
-- A score above 9.20 is EXCEPTIONALLY RARE at any level — only 1-2% of routines at State Championships score above 9.20
-- HARD FLOOR: If your total deductions sum to less than 0.80, YOUR ANALYSIS IS WRONG. Go back and find more faults. Every routine has at least 0.80 in deductions — flexed feet, slight bent knees, imperfect landings, artistry gaps. You are missing them.
-- HARD CEILING: If your total exceeds 1.50, you are too harsh. Remove your least certain deductions until you are in range.
-- TARGET: 0.90–1.20 total deductions for a typical ${level} routine
-- Execution deductions typically 0.50–0.90. Artistry + composition add 0.20–0.40. These are SEPARATE — do not skip artistry.
-- VALIDATION: After generating your JSON, mentally sum ALL point_values across all skills + artistry + composition. If the sum is below 0.80, you MUST re-examine and add deductions you missed before outputting.
+6. TOP 3 IMPROVEMENTS ranked by point value saved.
 
-SPLIT REQUIREMENT: ${level} requires ${splitMin}° minimum on split leaps/jumps. Short = deduction.
+7. CELEBRATIONS — top 3 things done exceptionally well.
+
+START VALUE: 10.00
+List every deduction. Sum them. Final Score = 10.00 - total deductions.
+
+CALIBRATION: Total deductions for ${level} typically ${getExpectedDeductionRange(event, level)}.
+Score range 8.60-9.20 for solid routines at State level.
+A score above 9.30 means you missed deductions — re-check.
+If total deductions < 0.80, you are MISSING deductions — re-watch for flexed feet, bent knees, landing steps, artistry gaps.
 
 DEDUCTION VALUES: 0.00, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.50 ONLY.
-
-Respond with ONLY this JSON — no markdown, no backticks, no text outside:
-{
-  "apparatus": "${isAutoDetect ? "<detected apparatus>" : event}",
-  "duration_seconds": <number>,
-  "skills": [
-    {
-      "id": "skill_1",
-      "skill_name": "<e.g. Round-off>",
-      "skill_code": "<A|B|C|D|E>",
-      "timestamp_start": <seconds>,
-      "timestamp_end": <seconds>,
-      "executed_successfully": <true|false>,
-      "difficulty_value": <0.10|0.20|0.30|0.40|0.50>,
-      "deductions": [
-        {
-          "type": "<machine_readable e.g. bent_knees>",
-          "description": "<parent-friendly: 'Knees were noticeably bent during the flight phase of the back tuck'>",
-          "point_value": <0.05|0.10|0.15|0.20|0.25|0.30|0.50>,
-          "body_part": "<e.g. both_knees>",
-          "severity": "<small|medium|large|veryLarge|fall>"
-        }
-      ],
-      "strength_note": "<what went well>"
-    }
-  ],
-  "artistry": {
-    "deductions": [
-      {
-        "type": "<e.g. flat_feet_in_dance>",
-        "description": "<parent-friendly>",
-        "point_value": <number>,
-        "body_part": "<e.g. both_feet>"
-      }
-    ]
-  },
-  "composition": {
-    "deductions": [
-      {
-        "type": "<e.g. limited_floor_space>",
-        "description": "<parent-friendly>",
-        "point_value": <number>,
-        "body_part": "global"
-      }
-    ]
-  },
-  "neutral_deductions": <0 unless time violation or coaching intervention>,
-  "why_this_score": "<1-2 sentences explaining the overall deduction picture>",
-  "celebrations": ["<top 3 things done well>"]
-}
-
-MANDATORY SELF-CHECK — you MUST do this before outputting:
-1. SUM every point_value in your JSON (skills + artistry + composition). Write the total mentally.
-2. If total < 0.80: You are TOO LENIENT. Re-watch and find what you missed:
-   a. Feet — count every instance of flexed/relaxed feet. Each = 0.05.
-   b. Landings — did you deduct for EVERY step, hop, or squat? Even small steps = 0.05.
-   c. Pauses — hesitations or rhythm breaks between skills? Each = 0.05–0.10.
-   d. Split leaps — is the angle truly at or above ${splitMin}°? Measure critically.
-   e. Arms — any bent arm moments in support or flight? Each = 0.05–0.10.
-   f. Artistry — did you include at least 0.15 in artistry deductions? No youth routine has perfect presentation.
-3. If total > 1.50: Remove your least certain deductions until in range.
-4. ONLY output your JSON after the total is between 0.80 and 1.50.`;
+${uploadData?.notes ? `Coach notes: "${uploadData.notes}"` : ""}`;
 
   return { system, user };
 }
@@ -308,8 +254,7 @@ export const PASS1_CONFIG = {
   topK: 1,
   maxOutputTokens: 16384,
   seed: 42,
-  responseMimeType: "application/json",
-  // Thinking budget: medium — accuracy gains plateau past this, latency hurts UX
+  // No responseMimeType — let Gemini return natural language for richer analysis
   // thinkingConfig: { thinkingBudget: 8192 },  // Enable when Gemini supports it
 };
 
