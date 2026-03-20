@@ -259,9 +259,9 @@ async function uploadVideo(videoFile, onProgress) {
     mimeType,
   });
 
-  // Step 2: Upload bytes directly to the resumable URL
-  const isDev = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
-  const finalUploadUrl = isDev && uploadUrl.includes("generativelanguage.googleapis.com")
+  // Step 2: Upload bytes via /goog-upload proxy to avoid CORS
+  // Both dev (setupProxy.js) and production (vercel.json rewrite) handle this proxy
+  const finalUploadUrl = uploadUrl.includes("generativelanguage.googleapis.com")
     ? uploadUrl.replace("https://generativelanguage.googleapis.com", "/goog-upload")
     : uploadUrl;
 

@@ -8,6 +8,7 @@
     }
   },
   "rewrites": [
+    { "source": "/goog-upload/(.*)", "destination": "https://generativelanguage.googleapis.com/$1" },
     { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ],
