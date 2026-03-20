@@ -2,6 +2,11 @@
   "buildCommand": "REACT_APP_VERCEL_GIT_COMMIT_SHA=$VERCEL_GIT_COMMIT_SHA npm run build",
   "outputDirectory": "build",
   "framework": "create-react-app",
+  "functions": {
+    "api/gemini.js": {
+      "maxDuration": 120
+    }
+  },
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }

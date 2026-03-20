@@ -145,7 +145,7 @@ export const EVENT_JUDGING_RULES = {
       "HIDDEN: Cast height — if hips don't reach bar height, -0.10 to -0.30 depending on shortfall.",
       "HIDDEN: Extra swing (pump) before a skill = -0.10 to -0.30.",
     ],
-    perspectiveBias: "WARNING: Camera angle affects bar skill perception. If the camera is not perfectly side-on, cast angles may appear higher than reality. When in doubt about cast height, assume it is LOWER than it appears and deduct accordingly.",
+    perspectiveBias: "WARNING: See PERSPECTIVE CALIBRATION section below. Camera angle is the #1 source of scoring error on bars. If not perfectly side-on, cast heights are overestimated — always score the lower plausible value.",
     rhythmJudging: "Bars are judged on FLOW. The routine should move continuously from one skill to the next. Any pause, hesitation, or 'setting up' between skills is a rhythm deduction. Total rhythm deductions on a typical youth routine: 0.10-0.30.",
     specialRequirements: {
       "Xcel Gold": [

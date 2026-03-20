@@ -13,6 +13,7 @@ import PrivacyNotice from "./components/legal/PrivacyNotice";
 import { EVENT_JUDGING_RULES } from "./data/constants";
 import { getEventDeductions, getEventStrictnessGuidance } from "./data/eventDeductions";
 import { buildDeductionPromptBlock } from "./data/codeOfPoints";
+import { runAnalysisPipeline } from "./engine/pipeline";
 
 // ─── BUILD INFO ──
 const BUILD_VERSION = "1.0.0";
@@ -2624,7 +2625,7 @@ const DashboardScreen = React.memo(function DashboardScreen({ profile, history, 
                 Analyze routine
               </span>
               <span style={{ color: "rgba(255,255,255,0.25)", fontSize: 11, marginTop: 2, display: "block" }}>
-                {isPro ? "Unlimited · 3-pass scoring" : `${remaining} free remaining`}
+                {isPro ? "Unlimited · 2-pass scoring" : `${remaining} free remaining`}
               </span>
             </div>
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0, opacity: 0.3 }}>
@@ -2897,7 +2898,7 @@ const DashboardScreen = React.memo(function DashboardScreen({ profile, history, 
             <div style={{ fontSize: 36, marginBottom: 12 }}>🤸</div>
             <h4 style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>Ready to see your score?</h4>
             <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, lineHeight: 1.6, maxWidth: 280, margin: "0 auto 16px" }}>
-              Upload a routine video and STRIVE's 3-pass scoring engine will break down every deduction — just like a real judge.
+              Upload a routine video and STRIVE's 2-pass scoring engine will break down every deduction — just like a real judge.
             </p>
             <button className="btn-gold" onClick={onUpload} style={{ fontSize: 14, padding: "12px 32px" }}>
               Upload First Video
@@ -3024,7 +3025,7 @@ const DashboardScreen = React.memo(function DashboardScreen({ profile, history, 
           WebkitBackgroundClip: "text", color: "transparent", marginBottom: 4,
         }}>STRIVE</div>
         <div style={{ fontSize: 9, color: "rgba(255,255,255,0.12)", letterSpacing: 1 }}>
-          v1.0 · 3-Pass Scoring Engine · {profile.level}
+          v1.0 · 2-Pass Scoring Engine · {profile.level}
         </div>
       </div>
 
@@ -3291,18 +3292,23 @@ const UploadScreen = React.memo(function UploadScreen({ profile, onBack, onAnaly
   const [inlineKey, setInlineKey] = useState("");
   const [keySaving, setKeySaving] = useState(false);
 
-  // Check for API key on mount (server proxy first, then user saved key)
+  // Check if server-side Gemini proxy is available (API key stays server-side)
   useEffect(() => {
     (async () => {
       try {
-        const resp = await fetch("/api/gemini-key", { headers: { "X-Strive-Token": "strive-2026-launch" } });
-        if (resp.ok) { setHasApiKey(true); return; }
-      } catch {}
-      try {
-        const k = await storage.get("strive-gemini-key");
-        if (k?.value) { setHasApiKey(true); return; }
-      } catch {}
-      setHasApiKey(false);
+        const resp = await fetch("/api/gemini", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-Strive-Token": "strive-2026-launch" },
+          body: JSON.stringify({ action: "pollFile", fileName: "files/__healthcheck__" }),
+        });
+        // Any response (even file-not-found) means the proxy is up and has the key
+        if (resp.ok || resp.status !== 500) { setHasApiKey(true); return; }
+        const data = await resp.json().catch(() => ({}));
+        if (data.error?.includes("not configured")) { setHasApiKey(false); return; }
+        setHasApiKey(true);
+      } catch {
+        setHasApiKey(false);
+      }
     })();
   }, []);
   const fileRef = useRef(null);
@@ -3475,7 +3481,7 @@ const UploadScreen = React.memo(function UploadScreen({ profile, onBack, onAnaly
         <Icon name="camera" size={20} /> New Analysis
       </h2>
       <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, marginBottom: 24 }}>
-        Upload a routine video — 3-pass scoring engine scores using {profile.level} {profile.levelCategory === "xcel" ? "Xcel" : "USAG"} criteria.
+        Upload a routine video — 2-pass scoring engine scores using {profile.level} {profile.levelCategory === "xcel" ? "Xcel" : "USAG"} criteria.
       </p>
 
       {/* Video Upload / Record */}
@@ -3895,8 +3901,8 @@ const UploadScreen = React.memo(function UploadScreen({ profile, onBack, onAnaly
           background: "rgba(34,197,94,0.04)", border: "1px solid rgba(34,197,94,0.08)",
         }}>
           <span style={{ color: "#22c55e", fontSize: 14 }}>✓</span>
-          <span style={{ fontSize: 12, color: "rgba(34,197,94,0.7)" }}>3-pass analysis engine ready</span>
-          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.15)", marginLeft: "auto" }}>Detect → Judge → Verify</span>
+          <span style={{ fontSize: 12, color: "rgba(34,197,94,0.7)" }}>2-pass analysis engine ready</span>
+          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.15)", marginLeft: "auto" }}>Detect → Analyze</span>
         </div>
       ) : (
         <div style={{ padding: "10px 14px", borderRadius: 10, marginBottom: 16, background: "rgba(255,255,255,0.02)" }}>
@@ -5184,42 +5190,38 @@ Add any missed deductions to your final JSON.`;
 
 
 
+  // ── New engine pipeline (replaces analyzeWithAI) ──────────────────────
   useEffect(() => {
     if (hasStarted.current) return;
     hasStarted.current = true;
 
     (async () => {
-      // Small delay to ensure the hidden video element is mounted
-      await new Promise(r => setTimeout(r, 300));
-
-      const extracted = await extractFrames();
-      setFrames(extracted);
-
-      if (extracted.length === 0) {
-        // LAST RESORT: Don't dead-end. Proceed with demo results.
-        setStatus("Could not extract frames — generating analysis from video metadata...");
-        setProgress(50);
-        const demoResult = generateDemoResult(uploadData.event, profile, []);
-        demoResult.videoUrl = uploadData.videoUrl;
-        demoResult.failureReason = "Frame extraction failed — video format not supported. Try re-saving: open in Photos → Edit → Done, then re-upload.";
-        demoResult.overallAssessment = "Note: Frame extraction was not possible for this video format. " +
-          "The analysis below is a general assessment for your level. For full video analysis, " +
-          "try re-saving the video: open it in Photos → tap Edit → tap Done, then re-upload. " +
-          "This re-encodes the video in a compatible format.\n\n" + demoResult.overallAssessment;
-        setProgress(100);
-        setStatus("Analysis complete!");
-        setTimeout(() => onComplete(demoResult), 800);
-        return;
-      }
-
       try {
-        const result = await analyzeWithAI(extracted);
+        if (!uploadData.video) throw new Error("No video file available.");
+
+        const result = await runAnalysisPipeline({
+          videoFile: uploadData.video,
+          profile: {
+            name: profile.name || "",
+            gender: profile.gender || "female",
+            level: profile.level || "Level 6",
+            levelCategory: profile.levelCategory || "optional",
+          },
+          event: uploadData.event || "Auto-detect",
+          onProgress: ({ pct, label }) => {
+            setProgress(pct);
+            setStatus(label);
+          },
+        });
+
+        // Attach video URL for VideoReviewPlayer
+        result.videoUrl = uploadData.videoUrl;
         setProgress(100);
         setStatus("Analysis complete!");
         setTimeout(() => onComplete(result), 800);
       } catch (err) {
-        console.error("All AI analysis failed:", err);
-        const demoResult = generateDemoResult(uploadData.event, profile, extracted);
+        console.error("Analysis pipeline failed:", err);
+        const demoResult = generateDemoResult(uploadData.event, profile, []);
         demoResult.videoUrl = uploadData.videoUrl;
         demoResult.failureReason = err.message || "Unknown error";
         setProgress(100);
@@ -5227,7 +5229,7 @@ Add any missed deductions to your final JSON.`;
         setTimeout(() => onComplete(demoResult), 800);
       }
     })();
-  }, [extractFrames, analyzeWithAI, uploadData, profile, onComplete]);
+  }, [uploadData, profile, onComplete]);
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 32 }}>
@@ -5252,7 +5254,7 @@ Add any missed deductions to your final JSON.`;
 
       <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 6, textAlign: "center", maxWidth: 300 }}>{status}</h3>
 
-      {/* 3-Pass Pipeline Indicator */}
+      {/* 2-Pass Pipeline Indicator */}
       <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 16, marginBottom: 16 }}>
         {[
           { label: "Detect", threshold: 60 },
@@ -5365,7 +5367,7 @@ Add any missed deductions to your final JSON.`;
           <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(232,150,42,0.5)", letterSpacing: 1, marginBottom: 6 }}>DID YOU KNOW?</div>
           <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", lineHeight: 1.6 }}>
             {[
-              "STRIVE uses a 3-pass system: first identifying every skill, then judging each one, then verifying to remove false deductions.",
+              "STRIVE uses a 2-pass system: first identifying every skill and deduction, then analyzing biomechanics and building your training plan.",
               "A typical Level 5-7 routine has 8-12 scoreable elements. Judges evaluate each one independently.",
               "The most common deduction in all of gymnastics? Flexed feet. It happens on almost every skill and adds up fast.",
               "A 'stuck' landing (zero steps) is the single most impressive thing to a judge. It also saves 0.05-0.30.",
@@ -8368,7 +8370,7 @@ const SettingsScreen = React.memo(function SettingsScreen({ profile, onSave, onB
             <span style={{ color: "#22c55e", fontSize: 14 }}>✓</span>
             <div>
               <span style={{ fontSize: 12, color: "rgba(34,197,94,0.8)" }}>API key configured</span>
-              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", marginTop: 2 }}>3-pass engine: Detect → Judge → Verify</div>
+              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", marginTop: 2 }}>2-Pass Engine: Detect → Analyze</div>
             </div>
           </div>
         ) : (
