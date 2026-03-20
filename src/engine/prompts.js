@@ -18,7 +18,7 @@ import { EVENT_JUDGING_RULES, SCORE_BENCHMARKS, LEVEL_SKILLS } from "../data/con
 import { getEventDeductions, getEventStrictnessGuidance } from "../data/eventDeductions";
 import { buildDeductionPromptBlock } from "../data/codeOfPoints";
 
-export const PROMPT_VERSION = "v8_2pass";
+export const PROMPT_VERSION = "v9_natural";
 
 // ─── Pass 1: Vision Pass ────────────────────────────────────────────────────
 

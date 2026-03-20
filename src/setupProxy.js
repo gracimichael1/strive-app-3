@@ -13,8 +13,15 @@ module.exports = function (app) {
   const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
   if (!GEMINI_API_KEY) {
-    console.warn('[setupProxy] No GEMINI_API_KEY env var — /api/gemini will return 500.');
-    console.warn('[setupProxy] Set it: GEMINI_API_KEY=your_key npm start');
+    console.warn('[setupProxy] No GEMINI_API_KEY env var — proxying /api to production Vercel.');
+    // Proxy to production when no local key
+    app.use('/api', createProxyMiddleware({
+      target: 'https://strive-app-3.vercel.app',
+      changeOrigin: true,
+      secure: true,
+      logLevel: 'warn',
+    }));
+    return; // Skip local handler
   }
 
   app.post('/api/gemini', async (req, res) => {
