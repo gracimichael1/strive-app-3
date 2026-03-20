@@ -17,7 +17,7 @@
  * ═══════════════════════════════════════════════════════════════════════════════
  */
 
-export const PROMPT_VERSION = "v10_simple";
+export const PROMPT_VERSION = "v11_natural";
 
 // ─── Core Judge Instruction ─────────────────────────────────────────────────
 // This is the "brain" — a strict, pessimistic Brevet judge persona.
