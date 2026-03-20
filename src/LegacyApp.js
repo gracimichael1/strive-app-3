@@ -14,6 +14,7 @@ import { EVENT_JUDGING_RULES } from "./data/constants";
 import { getEventDeductions, getEventStrictnessGuidance } from "./data/eventDeductions";
 import { buildDeductionPromptBlock } from "./data/codeOfPoints";
 import { runAnalysisPipeline } from "./engine/pipeline";
+import SkillCard from "./components/ui/SkillCard";
 
 // ─── BUILD INFO ──
 const BUILD_VERSION = "1.0.0";
@@ -6634,11 +6635,10 @@ function GradedSkillsView({ result, videoUrl, videoFile }) {
 
       {skills.map((skill, idx) => (
         <StriveErrorBoundary key={skill.id || idx} name="Skill Card">
-        <GradedSkillCard
+        <SkillCard
           skill={skill}
+          index={skill.index || idx + 1}
           onSeek={videoUrl ? handleSeek : null}
-          videoFile={videoFile}
-          videoUrl={videoUrl}
         />
         </StriveErrorBoundary>
       ))}
