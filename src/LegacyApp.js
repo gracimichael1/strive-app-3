@@ -3320,7 +3320,7 @@ const UploadScreen = React.memo(function UploadScreen({ profile, onBack, onAnaly
   // The old approach played at 3x speed which caused frame skipping and choppy output.
   // New approach: 1x playback, 1080p, 8Mbps = quality like a text message video.
   // Under 50MB: send original. Over 50MB: gentle re-encode preserving all motion detail.
-  const COMPRESS_THRESHOLD = 50 * 1024 * 1024; // 50MB — typical phone routine is 15-45MB
+  const COMPRESS_THRESHOLD = 500 * 1024 * 1024; // 500MB — Gemini accepts up to 2GB, only compress truly huge files
   const TARGET_WIDTH = 1080; // 1080p preserves body positions, toe points, knee angles
   const TARGET_BITRATE = 8000000; // 8 Mbps — high quality, like iMessage/text compression
 

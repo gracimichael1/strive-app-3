@@ -250,7 +250,13 @@ async function uploadVideo(videoFile, onProgress) {
   });
 
   // Step 2: Upload bytes directly to the resumable URL (no API key needed)
-  const uploadRes = await fetch(uploadUrl, {
+  // In local dev, proxy through /goog-upload to avoid CORS with Google's API
+  const isDev = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+  const finalUploadUrl = isDev && uploadUrl.includes("generativelanguage.googleapis.com")
+    ? uploadUrl.replace("https://generativelanguage.googleapis.com", "/goog-upload")
+    : uploadUrl;
+
+  const uploadRes = await fetch(finalUploadUrl, {
     method: "POST",
     headers: {
       "X-Goog-Upload-Command": "upload, finalize",
@@ -470,6 +476,10 @@ function parseGeminiNaturalLanguage(rawText, event, profile) {
   const celebrations = [];
   let inCelebrations = false;
 
+  // Debug: log first 50 non-empty lines to understand Gemini's format
+  const sampleLines = lines.filter(l => l.trim()).slice(0, 50);
+  log.info("parser", "First 50 lines of response:\n" + sampleLines.join('\n'));
+
   // Strip markdown bold/italic from text
   const clean = (s) => s.replace(/\*{1,2}([^*]+)\*{1,2}/g, '$1').trim();
 
@@ -495,17 +505,20 @@ function parseGeminiNaturalLanguage(rawText, event, profile) {
       continue;
     }
 
-    // Skip table headers
-    if (/^\|?\s*Time\s*\|/i.test(trimmed) || /^[-|:]+$/.test(trimmed.replace(/\s/g, ''))) continue;
+    // Skip table headers and separator lines
+    if (/^\|?\s*Time/i.test(trimmed) || /^\|?\s*---/i.test(trimmed) || /^[-|:\s]+$/.test(trimmed.replace(/\s/g, ''))) continue;
 
     // Match timestamp lines — flexible regex for pipes, dashes, colons, or mixed separators
+    // Handles: | 0:02 | Skill | 0.10 | Reason |  AND  [0:02] | Skill | 0.10 | Reason  AND  0:02 - Skill - 0.10 - Reason
     const tsMatch = trimmed.match(
-      /^[\[\(]?(\d{1,2}:\d{2})[\]\)]?\s*[|:\-–—]\s*(.+?)\s*[|:\-–—]\s*(-?[\d.]+)\s*(?:[|:\-–—]\s*(.*))?/
+      /^\|?\s*[\[\(]?(\d{1,2}:\d{2})[\]\)]?\s*[|:\-–—]\s*(.+?)\s*[|:\-–—]\s*(-?[\d.]+)\s*(?:[|:\-–—]\s*(.*))?/
     );
 
     if (tsMatch) {
-      const [, ts, rawSkillName, dedStr, reason] = tsMatch;
+      const [, ts, rawSkillName, dedStr, rawReason] = tsMatch;
       const skillName = clean(rawSkillName);
+      // Strip trailing pipe from markdown table rows
+      const reason = rawReason ? rawReason.replace(/\s*\|\s*$/, '').trim() : '';
       const parts = ts.split(':');
       const seconds = parseInt(parts[0]) * 60 + parseInt(parts[1]);
       const deduction = Math.abs(parseFloat(dedStr)) || 0;

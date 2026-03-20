@@ -81,14 +81,33 @@ export function buildPass1Prompt(profile, event, uploadData = null) {
   const missedDeds = eventRules?.hiddenDeductions?.slice(0, 5).join("\n   - ") || "";
   const eventTips = missedDeds ? `\nCOMMONLY MISSED DEDUCTIONS on ${event}:\n   - ${missedDeds}` : "";
 
+  // ── Strictness directive for under-deducted events ──
+  const strictnessBias = eventRules?.strictnessBias || 1.0;
+  const strictnessLine = strictnessBias > 1.0
+    ? `\nSTRICTNESS OVERRIDE (${event}): AI models under-deduct on ${event} by ~${((strictnessBias - 1) * 100).toFixed(0)}%. When in doubt, ALWAYS take the deduction. Be PESSIMISTIC — look for reasons to deduct, not reasons to celebrate.`
+    : "";
+
+  // ── Perspective calibration for bars ──
+  const perspectiveLine = eventRules?.perspectiveBias
+    ? `\nCAMERA PERSPECTIVE: ${eventRules.perspectiveBias}`
+    : "";
+
+  // ── Compound rules for cascading deductions ──
+  const compoundLines = eventRules?.compoundRules?.length
+    ? `\nCOMPOUND RULES:\n${eventRules.compoundRules.join("\n")}`
+    : "";
+
   const user = `Analyze this ${gender} ${level} ${isAutoDetect ? "gymnastics" : event} routine performed by ${athleteName}.
 ${autoDetectLine}
 ${programContext}
 ${requiredSkillsLine}
 ${benchLine}
+${strictnessLine}
+${perspectiveLine}
 
 You are strictly forbidden from giving benefit of the doubt.
 Evaluate using the ${level} Code of Points.
+${compoundLines}
 
 Watch the ENTIRE routine from start to finish. Then provide:
 

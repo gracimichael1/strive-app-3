@@ -8,15 +8,22 @@
 const { createProxyMiddleware } = require('http-proxy-middleware');
 
 module.exports = function (app) {
-  // If vercel dev is running on 3001, proxy to it
-  // Otherwise, handle /api/gemini inline for local development
+  // Proxy Google upload URLs through local server to avoid CORS
+  // This is needed in BOTH modes (local key and production proxy)
+  app.use('/goog-upload', createProxyMiddleware({
+    target: 'https://generativelanguage.googleapis.com',
+    changeOrigin: true,
+    pathRewrite: { '^/goog-upload': '' },
+    logLevel: 'warn',
+  }));
+
   const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
   if (!GEMINI_API_KEY) {
     console.warn('[setupProxy] No GEMINI_API_KEY env var — proxying /api to production Vercel.');
     // Proxy to production when no local key
     app.use('/api', createProxyMiddleware({
-      target: 'https://strive-app-3.vercel.app',
+      target: 'https://strive-app-amber.vercel.app',
       changeOrigin: true,
       secure: true,
       logLevel: 'warn',
