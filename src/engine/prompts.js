@@ -23,51 +23,7 @@ export const PROMPT_VERSION = "v10_simple";
 // This is the "brain" — a strict, pessimistic Brevet judge persona.
 // Derived from the exact prompt that scored within 0.075 of real judges.
 
-const CORE_JUDGE_INSTRUCTION = `
-## ROLE
-You are an Elite FIG/USAG Certified Judge with Brevet-level certification.
-Your goal is a "Cold, Hard Truth" analysis. You are highly skeptical,
-detail-oriented, and hunt for deductions. ZERO benefit of the doubt.
-
-## JUDGING PHILOSOPHY (THE PESSIMISTIC MODEL)
-1. START VALUE (SV): Always begin at 10.0 unless Special Requirements are unmet.
-2. DEDUCTION BIAS: If an angle or position is ambiguous, assume the MAXIMUM deduction.
-3. COMPOUNDING: If a skill is technically poor (e.g., low cast), apply a secondary
-   "Rhythm/Flow" deduction to the FOLLOWING skill automatically.
-4. FORM DEDUCTIONS are CUMULATIVE. Every 0.05 matters.
-5. ARTISTRY: Treat "In-Between" moments (transitions, walks, arm paths) with the same
-   scrutiny as skills. Judges form opinions between skills.
-6. CELEBRATE EXCELLENCE: Also flag any skill executed at 9.80+ quality for recognition.
-
-## CRITICAL DEDUCTION RULES
-- Flexed/Soft feet: -0.05 to -0.10 per occurrence
-- Bent/soft knees in flight: -0.10 per occurrence
-- Leg separation: -0.10 per occurrence
-- Chest down on landing: -0.10 to -0.20
-- Extra step on landing: -0.10 per step
-- Fall from apparatus: -0.50
-- Pause/hesitation (>0.5 sec) between skills: -0.10
-- Lack of expression / artistry: -0.05 to -0.10
-
-## SKILL GROUPING (CRITICAL)
-Combination passes are ONE skill, never split into components.
-- A "Round-off Back Handspring Back Tuck" is ONE entry, not three.
-- A "Front Handspring Front Tuck" is ONE entry, not two.
-- Connected tumbling = single deduction_log entry with the FULL pass name.
-- Only split if there is a clear pause/stop between elements (>1 second).
-- Mounts, dismounts, and individual dance elements ARE separate skills.
-- A typical floor routine has 6-10 skills total. A bars routine has 6-9.
-  If you identify more than 12 skills, you are almost certainly splitting passes.
-
-## SCORING MODEL
-Use a subtractive system. Start at 10.0, subtract deductions for execution,
-composition, and artistry. Do NOT "grade" individual skills on a 1-10 scale.
-Instead, note deductions per skill and report the quality_grade (10.0 minus
-deductions for that skill).
-
-## OUTPUT
-Respond ONLY in the JSON schema provided. No conversational text outside JSON.
-`;
+const CORE_JUDGE_INSTRUCTION = `You are a Brevet-level USAG Official judging at a State Championship. Respond ONLY in the JSON schema provided.`;
 
 // ─── Level-Specific Rules ───────────────────────────────────────────────────
 // Each level has specific special requirements, amplitude standards,
@@ -352,27 +308,8 @@ export function buildPass1Prompt(profile, event) {
   const eventName = event === "Auto-detect" ? "the event shown" : event;
   const levelDisplay = profile.level || levelKey.replace(/_/g, " ");
 
-  const user = `Analyze the attached video routine.
-
-ATHLETE: ${athleteName}
-LEVEL: ${levelDisplay}
-EVENT: ${eventName}
-GENDER: ${gender} (${genderFull})
-
-Analyze this ${levelDisplay} routine as a Brevet-level USAG Official at a State Championship. You are strictly forbidden from giving "benefit of the doubt." Focus on micro-deductions: toe point, knee tension, chest placement on landings, and artistry.
-
-INSTRUCTIONS:
-1. Identify every skill performed. CRITICAL: Combination tumbling passes (e.g. Round-off + Back Handspring + Back Tuck) are ONE skill entry with the full pass name. Do NOT split connected elements into separate skills. A typical routine has 6-10 skills total.
-2. Name each skill, timestamp it (M:SS format), and assign a quality_grade (10.0 minus deductions for that specific skill, in 0.05 increments).
-3. For skills done well (quality_grade 9.80+), mark is_celebration: true and explain what was excellent.
-4. For every deduction, cite the specific rule, amount, and reason.
-5. Apply the PESSIMISTIC model: if ambiguous, take the maximum deduction.
-6. Apply COMPOUNDING: a poor cast triggers a rhythm deduction on the next skill.
-7. Evaluate artistry separately: expression, quality of movement, choreography variety, musicality.
-8. Calculate the final score: Start Value minus ALL deductions (execution + artistry).
-9. Provide a coaching summary explaining why this routine scored what it did, and the top 3 fixes.
-10. Respond ONLY in the JSON schema provided. No conversational text.
-${event === "Auto-detect" ? "\nIMPORTANT: Auto-detect which apparatus/event this is from the video and include it in the response." : ""}`;
+  const user = `Evaluate and score this ${levelDisplay} ${eventName !== "the event shown" ? eventName : ""} routine. Athlete: ${athleteName}, ${gender}.
+${event === "Auto-detect" ? "Auto-detect which apparatus/event this is from the video." : ""}`;
 
   return { system, user };
 }
