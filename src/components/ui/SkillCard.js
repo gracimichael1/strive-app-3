@@ -151,9 +151,9 @@ function getCorrectForm(skill) {
   if (name.includes('back layout') || name.includes('back pike'))
     return 'Maximum height off takeoff. Body fully extended (layout) or tight pike angle. Arms by ears or sides. Complete rotation with early opening to spot landing. Controlled stick.';
   if (name.includes('split leap') || name.includes('switch leap'))
-    return 'Strong takeoff from one foot. Maximum split angle at peak height. Hips square, chest lifted. Toes pointed, legs fully extended. Controlled landing in demi-pli\u00E9.';
+    return 'Strong takeoff from one foot. Maximum split angle at peak height. Hips square, chest lifted. Toes pointed, legs fully extended. Controlled landing in demi-plié.';
   if (name.includes('full turn') || name.includes('turn'))
-    return 'Rise to full relev\u00E9 on supporting leg. Free leg in clean pass\u00E9, turned out. Arms tight, core engaged. Complete 360\u00B0 rotation without wobble. Finish in controlled position.';
+    return 'Rise to full relevé on supporting leg. Free leg in clean passé, turned out. Arms tight, core engaged. Complete 360° rotation without wobble. Finish in controlled position.';
   if (name.includes('cartwheel'))
     return 'Hand-hand-foot-foot rhythm in a straight line. Legs fully split through vertical. Arms locked. Pass through handstand with body in one plane. Controlled finish.';
   if (name.includes('walkover'))
@@ -770,7 +770,7 @@ function SkillCard({ skill, index, onSeek, defaultExpanded }) {
                               fontFamily: "'Space Mono', monospace",
                             }}
                           >
-                            {a.measured}&deg;
+                            {typeof a.measured === 'number' ? a.measured : parseInt(String(a.measured).replace(/[^\d]/g, ''), 10) || a.measured}°
                           </span>
                           <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>/</span>
                           <span
@@ -781,7 +781,7 @@ function SkillCard({ skill, index, onSeek, defaultExpanded }) {
                               fontFamily: "'Space Mono', monospace",
                             }}
                           >
-                            {a.ideal}&deg;
+                            {typeof a.ideal === 'number' ? a.ideal : parseInt(String(a.ideal).replace(/[^\d]/g, ''), 10) || a.ideal}°
                           </span>
                         </div>
                         <div

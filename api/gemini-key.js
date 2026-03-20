@@ -16,12 +16,17 @@ function setCorsHeaders(req, res) {
   const origin = req.headers.origin;
   if (origin && isAllowedOrigin(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
-  } else if (!origin) {
-    // Same-origin request — no CORS header needed
   }
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Strive-Token');
   res.setHeader('Vary', 'Origin');
+}
+
+// Simple app token to prevent unauthorized access
+function validateAppToken(req) {
+  const token = req.headers['x-strive-token'];
+  const expected = process.env.STRIVE_APP_TOKEN || 'strive-2026-launch';
+  return token === expected;
 }
 
 export default function handler(req, res) {
@@ -35,12 +40,16 @@ export default function handler(req, res) {
     return res.status(403).json({ error: 'Forbidden' });
   }
 
+  if (!validateAppToken(req)) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
   const key = process.env.GEMINI_API_KEY;
 
   if (!key) {
     return res.status(404).json({ available: false });
   }
 
-  // Return key only to allowed origins (CORS-restricted above)
+  // Return key only to authenticated, allowed-origin requests
   res.status(200).json({ available: true, key });
 }

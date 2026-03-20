@@ -649,6 +649,13 @@ function safeNum(val, fallback = 0, min = -Infinity, max = Infinity) {
   return Math.max(min, Math.min(max, n));
 }
 
+// Round a deduction value to the nearest valid USAG amount (multiple of 0.05)
+function roundToUSAG(val) {
+  const n = typeof val === "number" ? val : parseFloat(val);
+  if (isNaN(n) || n === 0) return 0;
+  return Math.round(Math.abs(n) * 20) / 20; // Round to nearest 0.05
+}
+
 // ─── RESPONSE VALIDATION (normalizes Gemini JSON into safe, consistent shape) ──
 function validateResult(parsed) {
   if (!parsed || typeof parsed !== "object") return parsed;
@@ -1530,28 +1537,10 @@ export default function LegacyApp() {
   // Load profile, history, and saved results from storage
   useEffect(() => {
     (async () => {
-      // ── TESTING DEFAULTS — auto-create profile & bypass consent ──
-      const TEST_MODE = true; // Set to false before production launch
       try {
         const stored = await storage.get("strive-profile");
         if (stored) {
           setProfile(JSON.parse(stored.value));
-          setScreen("dashboard");
-        } else if (TEST_MODE) {
-          const testProfile = {
-            name: "Lilly",
-            gender: "female",
-            levelCategory: "xcel",
-            level: "Xcel Gold",
-            primaryEvents: ["Floor", "Beam", "Vault", "Bars"],
-            age: 11,
-            goals: "college gymnastics",
-          };
-          setProfile(testProfile);
-          await storage.set("strive-profile", JSON.stringify(testProfile));
-          try { localStorage.setItem("strive-legal-accepted", "true"); } catch {}
-          try { localStorage.setItem("strive-tier", "competitive"); } catch {}
-          setUserTier("competitive");
           setScreen("dashboard");
         } else {
           setScreen("splash");
@@ -3290,7 +3279,7 @@ const UploadScreen = React.memo(function UploadScreen({ profile, onBack, onAnaly
   const [compressing, setCompressing] = useState(false);
   const [compressProgress, setCompressProgress] = useState(0);
   const [originalSize, setOriginalSize] = useState(0);
-  const [event, setEvent] = useState(profile.primaryEvents[0] || "");
+  const [event, setEvent] = useState("Auto-detect");
   const [notes, setNotes] = useState("");
   const [meetName, setMeetName] = useState("");
   const [meetLocation, setMeetLocation] = useState("");
@@ -3303,7 +3292,7 @@ const UploadScreen = React.memo(function UploadScreen({ profile, onBack, onAnaly
   useEffect(() => {
     (async () => {
       try {
-        const resp = await fetch("/api/gemini-key");
+        const resp = await fetch("/api/gemini-key", { headers: { "X-Strive-Token": "strive-2026-launch" } });
         if (resp.ok) { setHasApiKey(true); return; }
       } catch {}
       try {
@@ -3662,7 +3651,20 @@ const UploadScreen = React.memo(function UploadScreen({ profile, onBack, onAnaly
         <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, display: "block", color: "rgba(255,255,255,0.6)" }}>
           EVENT
         </label>
-        <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(events.length, 4)}, 1fr)`, gap: 8 }}>
+        <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(events.length + 1, 5)}, 1fr)`, gap: 8 }}>
+          <button
+            key="auto"
+            onClick={() => setEvent("Auto-detect")}
+            style={{
+              padding: "12px 8px", borderRadius: 10, border: "none", cursor: "pointer",
+              fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 11,
+              background: event === "Auto-detect" ? "linear-gradient(135deg, #22c55e, #4ade80)" : "rgba(255,255,255,0.06)",
+              color: event === "Auto-detect" ? "#070c16" : "rgba(255,255,255,0.5)",
+              transition: "all 0.2s",
+            }}
+          >
+            Auto
+          </button>
           {events.map(e => (
             <button
               key={e}
@@ -3683,6 +3685,7 @@ const UploadScreen = React.memo(function UploadScreen({ profile, onBack, onAnaly
         {event && (
           <div style={{ marginTop: 8, padding: "8px 12px", borderRadius: 8, background: "rgba(232,150,42,0.04)", fontSize: 11, color: "rgba(255,255,255,0.4)", lineHeight: 1.5 }}>
             {{
+              "Auto-detect": "We'll identify the event automatically from your video. Film from the side at apparatus height for best results.",
               "Vault": "Best angle: side view, capturing the full run and landing. Get the board contact!",
               "Uneven Bars": "Best angle: side view from the low bar side. Capture transitions between bars.",
               "Balance Beam": "Best angle: side or diagonal. Keep the full beam length visible.",
@@ -4279,7 +4282,9 @@ const AnalyzingScreen = React.memo(function AnalyzingScreen({ uploadData, profil
   const buildJudgingPrompt = useCallback(() => {
     const level   = profile.level  || "Level 6";
     const gender  = profile.gender === "female" ? "Women's" : "Men's";
-    const event   = uploadData?.event || "Floor Exercise";
+    const rawEvent = uploadData?.event || "Floor Exercise";
+    const isAutoDetect = rawEvent === "Auto-detect";
+    const event   = isAutoDetect ? "Auto-detect" : rawEvent;
     const cat     = profile.levelCategory || "optional";
     const isXcel  = cat === "xcel";
     const isComp  = cat === "compulsory";
@@ -4367,9 +4372,14 @@ SPLIT LEAP/JUMP REQUIREMENT at ${level}: minimum ${splitMin}°
 
     const athleteName = profile.name || "the gymnast";
 
+    const autoDetectLine = isAutoDetect
+      ? `\nEVENT AUTO-DETECTION: Identify the gymnastics event/apparatus from the video content. Look for: balance beam (narrow beam, 4 inches wide), uneven bars (two horizontal bars at different heights), vault (running approach + springboard), floor exercise (spring floor, no apparatus). Include the detected event as "detectedEvent" in your JSON response.\n`
+      : "";
+
     return `You are a Brevet-certified USA Gymnastics judge at a State Championship. You give NO benefit of the doubt. When in doubt, take the HIGHER deduction. Your job is to find EVERY fault so the athlete can improve.
 
-ATHLETE: ${athleteName} | ${gender} ${level} | EVENT: ${event}
+ATHLETE: ${athleteName} | ${gender} ${level} | EVENT: ${isAutoDetect ? "DETECT FROM VIDEO" : event}
+${autoDetectLine}
 ${programContext}
 ${skillsLine}
 ${benchLine}
@@ -4496,7 +4506,7 @@ JSON RULES:
     let serverKeyAvailable = false;
     let apiKey = null;
     try {
-      const resp = await fetch("/api/gemini-key");
+      const resp = await fetch("/api/gemini-key", { headers: { "X-Strive-Token": "strive-2026-launch" } });
       if (resp.ok) { const d = await resp.json(); serverKeyAvailable = !!d.available; if (d.key) apiKey = d.key; }
     } catch {}
     // If server key available, use server proxy at /api/analyze — no client-side key needed
@@ -4577,7 +4587,7 @@ JSON RULES:
         setStatus(`Server-side analysis of ${profile.level} ${uploadData.event}...`);
         const proxyResp = await fetch("/api/analyze", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", "X-Strive-Token": "strive-2026-launch" },
           body: JSON.stringify({
             athleteProfile: {
               name: profile.name,
@@ -4608,6 +4618,7 @@ JSON RULES:
       let pathToGoal = "";
       let parsedTopImprovements = [];
       let isRichJSON = false;
+      let detectedEvent = uploadData.event;
 
       // ── Primary: Parse JSON response (new rich format) ──────────
       try {
@@ -4616,16 +4627,21 @@ JSON RULES:
           const parsed = JSON.parse(jsonMatch[0]);
           if (parsed.skills && Array.isArray(parsed.skills) && parsed.skills.length > 0) {
             isRichJSON = true;
+            // Capture auto-detected event if Gemini identified it
+            if (parsed.detectedEvent) {
+              detectedEvent = parsed.detectedEvent;
+              log.info("parse", `Gemini auto-detected event: ${detectedEvent}`);
+            }
             parsedSkills = parsed.skills.map(s => ({
               timestamp: s.timestamp || "0:00",
               skill: s.name || s.skill || "Unknown",
               type: (s.type || "acro").toLowerCase(),
-              deduction: Math.max(0, parseFloat(s.deduction) || 0),
-              qualityScore: parseFloat(s.qualityScore) || (10.0 - (parseFloat(s.deduction) || 0)),
+              deduction: roundToUSAG(s.deduction),
+              qualityScore: parseFloat(s.qualityScore) || (10.0 - roundToUSAG(s.deduction)),
               reason: safeArray(s.faults).map(f => f.fault).filter(Boolean).join("; ") || null,
               faults: safeArray(s.faults).map(f => ({
                 fault: safeStr(f.fault),
-                deduction: parseFloat(f.deduction) || 0,
+                deduction: roundToUSAG(f.deduction),
                 severity: safeStr(f.severity || "small"),
               })),
               strength: safeStr(s.strengthNote || s.strength),
@@ -4637,10 +4653,10 @@ JSON RULES:
             // Artistry section
             if (parsed.artistry) {
               parsedArtistry = {
-                totalDeduction: parseFloat(parsed.artistry.totalDeduction) || 0,
+                totalDeduction: roundToUSAG(parsed.artistry.totalDeduction),
                 details: safeArray(parsed.artistry.details).map(d => ({
                   fault: safeStr(d.fault),
-                  deduction: parseFloat(d.deduction) || 0,
+                  deduction: roundToUSAG(d.deduction),
                 })),
               };
             }
@@ -4648,10 +4664,10 @@ JSON RULES:
             // Composition section
             if (parsed.composition) {
               parsedComposition = {
-                totalDeduction: parseFloat(parsed.composition.totalDeduction) || 0,
+                totalDeduction: roundToUSAG(parsed.composition.totalDeduction),
                 details: safeArray(parsed.composition.details).map(d => ({
                   fault: safeStr(d.fault),
-                  deduction: parseFloat(d.deduction) || 0,
+                  deduction: roundToUSAG(d.deduction),
                 })),
               };
             }
@@ -4682,14 +4698,15 @@ JSON RULES:
           const parts = line.split("|").map(p => p.trim());
           if (parts.length < 5) continue;
           const [timestamp, skillName, skillType, dedStr, faultDesc, strengthNote] = parts;
-          const deduction = parseFloat(dedStr);
-          if (isNaN(deduction) || !skillName) continue;
+          const deduction = roundToUSAG(dedStr);
+          if (!deduction && deduction !== 0) continue;
+          if (!skillName) continue;
           parsedSkills.push({
             timestamp: timestamp || "0:00",
             skill: skillName,
             type: (skillType || "acro").toLowerCase(),
-            deduction: Math.max(0, Math.min(deduction, 0.50)),
-            qualityScore: 10.0 - Math.max(0, Math.min(deduction, 0.50)),
+            deduction: Math.min(deduction, 0.50),
+            qualityScore: 10.0 - Math.min(deduction, 0.50),
             reason: (!faultDesc || faultDesc.toLowerCase() === "clean") ? null : faultDesc,
             faults: [],
             strength: (strengthNote && strengthNote.length > 1) ? strengthNote : null,
@@ -4939,7 +4956,7 @@ JSON RULES:
         composition: parsedComposition,
 
         // ── Full report — everything Gemini gave us ──
-        overallAssessment: whyThisScore || `${profile.level} ${uploadData.event} — ${processedSkills.length} skills judged. ${benchContext}`,
+        overallAssessment: whyThisScore || `${profile.level} ${detectedEvent} — ${processedSkills.length} skills judged. ${benchContext}`,
         whyThisScore:      whyThisScore || "",
         truthAnalysis:     whyThisScore || `${processedSkills.length} skills evaluated at ${profile.level} standard.`,
         pathToGoal,
@@ -4961,7 +4978,7 @@ JSON RULES:
           directJudging:     true,
           skillsEvaluated:   processedSkills.length,
           levelJudged:       profile.level,
-          eventJudged:       uploadData.event,
+          eventJudged:       detectedEvent,
           splitMinRequired:  (() => {
             const lv = profile.level; const xc = profile.levelCategory === "xcel";
             return xc ? (lv.includes("Bronze")||lv.includes("Silver")?90:lv.includes("Gold")?120:lv.includes("Platinum")?150:180)
@@ -4975,7 +4992,7 @@ JSON RULES:
 
         // ── Pass-through ──
         frames:   extractedFrames,
-        event:    uploadData.event,
+        event:    detectedEvent,
         level:    profile.level,
         videoUrl: uploadData.videoUrl,
         rawResponse,
@@ -6199,9 +6216,9 @@ function GradedSkillCard({ skill, onSeek, videoFile, videoUrl }) {
                       <div key={i} style={{ padding: "10px 12px", borderRadius: 10, background: "rgba(255,255,255,0.02)", border: `1px solid ${aColor}20` }}>
                         <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>{a.label}</div>
                         <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginBottom: 4 }}>
-                          <span style={{ fontSize: 18, fontWeight: 900, color: aColor, fontFamily: "'Space Mono', monospace" }}>{a.measured}°</span>
+                          <span style={{ fontSize: 18, fontWeight: 900, color: aColor, fontFamily: "'Space Mono', monospace" }}>{typeof a.measured === 'number' ? a.measured : parseInt(String(a.measured).replace(/[^\d]/g, ''), 10) || a.measured}°</span>
                           <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>/</span>
-                          <span style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.4)", fontFamily: "'Space Mono', monospace" }}>{a.ideal}°</span>
+                          <span style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.4)", fontFamily: "'Space Mono', monospace" }}>{typeof a.ideal === 'number' ? a.ideal : parseInt(String(a.ideal).replace(/[^\d]/g, ''), 10) || a.ideal}°</span>
                         </div>
                         <div style={{ height: 4, background: "rgba(255,255,255,0.06)", borderRadius: 2, overflow: "hidden", marginBottom: 4 }}>
                           <div style={{ height: "100%", width: `${pct}%`, background: aColor, borderRadius: 2, transition: "width 0.6s ease" }} />
@@ -6241,7 +6258,7 @@ function GradedSkillCard({ skill, onSeek, videoFile, videoUrl }) {
             const risks = [];
             const kneeAngle = bioAngles.find(a => a.label.toLowerCase().includes("knee"));
             if (kneeAngle && Math.abs(kneeAngle.measured - kneeAngle.ideal) > 15)
-              risks.push({ area: "Knee / ACL", desc: "Repeated landing with knee flexion at " + kneeAngle.measured + "\u00B0 increases ACL strain risk.", prevention: "Quad strengthening: wall sits 3x30s, single-leg squats 3x10 each leg." });
+              risks.push({ area: "Knee / ACL", desc: "Repeated landing with knee flexion at " + kneeAngle.measured + "° increases ACL strain risk.", prevention: "Quad strengthening: wall sits 3x30s, single-leg squats 3x10 each leg." });
             else if (f.includes("knee") || f.includes("squat") || f.includes("deep"))
               risks.push({ area: "Knee / ACL", desc: "Excess knee bend on landing increases strain.", prevention: "Wall sits 3x30s, box jump landings 3x8 focusing on soft knees." });
             if (f.includes("arch") || f.includes("hyperext") || f.includes("back"))

@@ -24,8 +24,14 @@ function setCorsHeaders(req, res) {
     res.setHeader('Access-Control-Allow-Origin', origin);
   }
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Strive-Token');
   res.setHeader('Vary', 'Origin');
+}
+
+function validateAppToken(req) {
+  const token = req.headers['x-strive-token'];
+  const expected = process.env.STRIVE_APP_TOKEN || 'strive-2026-launch';
+  return token === expected;
 }
 
 export default async function handler(req, res) {
@@ -36,6 +42,10 @@ export default async function handler(req, res) {
   const origin = req.headers.origin;
   if (!isAllowedOrigin(origin)) {
     return res.status(403).json({ error: 'Forbidden' });
+  }
+
+  if (!validateAppToken(req)) {
+    return res.status(401).json({ error: 'Unauthorized' });
   }
 
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
