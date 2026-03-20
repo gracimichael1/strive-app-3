@@ -20,10 +20,20 @@ const COLORS = {
   border: 'rgba(232, 150, 42, 0.12)',
 };
 
+// Grade colors for stats bar
+const GRADE_COLOR = {
+  'A+': '#22c55e', 'A': '#22c55e', 'A-': '#4ade80',
+  'B+': '#4ade80', 'B': '#ffc15a', 'B-': '#ffc15a',
+  'C+': '#e06820', 'C': '#e06820', 'C-': '#dc2626',
+  'D+': '#dc2626', 'D': '#dc2626', 'F': '#8b72d4',
+};
+const GRADE_RANK = { 'A+': 12, 'A': 11, 'A-': 10, 'B+': 9, 'B': 8, 'B-': 7, 'C+': 6, 'C': 5, 'C-': 4, 'D+': 3, 'D': 2, 'F': 1 };
+
 function Layer2Competitive({ result, profile, previousResult, onSeek, videoUrl }) {
   const gradedSkills = safeArray(result?.gradedSkills);
   const deductions = safeArray(result?.executionDeductions);
   const finalScore = safeNum(result?.finalScore, 0);
+  const [skillFilter, setSkillFilter] = useState('all');
 
   // New summary data — check both result.summary (JSON direct) and top-level fields (parsed)
   const summary = result?.summary || null;
@@ -431,6 +441,54 @@ function Layer2Competitive({ result, profile, previousResult, onSeek, videoUrl }
         </div>
       )}
 
+      {/* ── Stats Summary Bar ── */}
+      {gradedSkills.length > 0 && (() => {
+        const cleanCount = gradedSkills.filter(s => (!s.fault && !s.subFaults?.length && !s.faults?.length) || (typeof s.deduction === 'number' ? s.deduction : s.gradeDeduction || 0) === 0).length;
+        const faultCount = gradedSkills.length - cleanCount;
+        const bestGrade = gradedSkills.reduce((best, s) => (GRADE_RANK[s.grade] || 0) > (GRADE_RANK[best] || 0) ? s.grade : best, 'F');
+        const stats = [
+          { label: 'Skills', val: gradedSkills.length, color: COLORS.gold, bg: 'rgba(255,255,255,0.03)', border: 'rgba(255,255,255,0.07)' },
+          { label: 'Clean', val: cleanCount, color: COLORS.green, bg: 'rgba(34,197,94,0.05)', border: 'rgba(34,197,94,0.2)' },
+          { label: 'Faults', val: faultCount, color: COLORS.red, bg: 'rgba(220,38,38,0.05)', border: 'rgba(220,38,38,0.2)' },
+          { label: 'Best', val: bestGrade, color: GRADE_COLOR[bestGrade] || COLORS.gold, bg: 'rgba(232,150,42,0.05)', border: 'rgba(232,150,42,0.15)' },
+        ];
+        return (
+          <div style={{ display: 'flex', gap: 8, margin: '20px 20px 0' }}>
+            {stats.map(s => (
+              <div key={s.label} style={{ flex: 1, padding: '12px 6px', background: s.bg, border: `1px solid ${s.border}`, borderRadius: 12, textAlign: 'center' }}>
+                <div style={{ fontSize: 22, fontWeight: 900, color: s.color, fontFamily: "'Space Mono', monospace" }}>{s.val}</div>
+                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: 0.5, fontFamily: "'Outfit', sans-serif" }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+        );
+      })()}
+
+      {/* ── Filter Pills ── */}
+      {gradedSkills.length > 0 && (
+        <div style={{ display: 'flex', gap: 6, margin: '16px 20px 0', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+          {[
+            { id: 'all', label: 'All' },
+            { id: 'acro', label: 'Acro' },
+            { id: 'dance', label: 'Dance' },
+            { id: 'clean', label: 'Clean' },
+            { id: 'faults', label: 'Faults' },
+          ].map(pill => (
+            <button key={pill.id} onClick={() => setSkillFilter(pill.id)}
+              style={{
+                padding: '6px 16px', borderRadius: 20, fontSize: 12, fontWeight: 600,
+                fontFamily: "'Outfit', sans-serif", cursor: 'pointer', whiteSpace: 'nowrap',
+                minHeight: 32, transition: 'all 0.2s',
+                background: skillFilter === pill.id ? COLORS.gold : 'transparent',
+                color: skillFilter === pill.id ? '#070c16' : 'rgba(255,255,255,0.5)',
+                border: skillFilter === pill.id ? `1px solid ${COLORS.gold}` : '1px solid rgba(255,255,255,0.1)',
+              }}>
+              {pill.label}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Skills section header */}
       <div
         style={{
@@ -442,38 +500,56 @@ function Layer2Competitive({ result, profile, previousResult, onSeek, videoUrl }
       >
         <h2
           style={{
-            fontSize: 18,
+            fontSize: 15,
             fontWeight: 700,
-            color: COLORS.text,
+            color: 'rgba(255,255,255,0.3)',
             fontFamily: "'Outfit', sans-serif",
             margin: 0,
+            letterSpacing: 1,
+            textTransform: 'uppercase',
           }}
         >
-          Skills Performed
+          Skill-by-Skill Breakdown
         </h2>
-        <span
-          style={{
-            fontFamily: "'Space Mono', monospace",
-            fontSize: 12,
-            color: COLORS.textMuted,
-            background: COLORS.surface2,
-            padding: '4px 10px',
-            borderRadius: 10,
-          }}
-        >
-          {gradedSkills.length} skills
-        </span>
+        {skillFilter !== 'all' && (
+          <span
+            style={{
+              fontFamily: "'Space Mono', monospace",
+              fontSize: 12,
+              color: COLORS.textMuted,
+              background: COLORS.surface2,
+              padding: '4px 10px',
+              borderRadius: 10,
+            }}
+          >
+            {(() => {
+              const filtered = skillFilter === 'acro' ? gradedSkills.filter(s => (s.type || '').toLowerCase() === 'acro')
+                : skillFilter === 'dance' ? gradedSkills.filter(s => (s.type || '').toLowerCase() === 'dance')
+                : skillFilter === 'clean' ? gradedSkills.filter(s => (!s.fault && !s.subFaults?.length && !s.faults?.length) || (typeof s.deduction === 'number' ? s.deduction : s.gradeDeduction || 0) === 0)
+                : skillFilter === 'faults' ? gradedSkills.filter(s => (s.fault || s.subFaults?.length || s.faults?.length) && (typeof s.deduction === 'number' ? s.deduction : s.gradeDeduction || 0) > 0)
+                : gradedSkills;
+              return `${filtered.length} shown`;
+            })()}
+          </span>
+        )}
       </div>
 
-      {/* Skill cards */}
-      {gradedSkills.map((skill, i) => (
-        <SkillCard
-          key={i}
-          skill={skill}
-          index={i + 1}
-          onSeek={onSeek}
-        />
-      ))}
+      {/* Skill cards (filtered) */}
+      {(() => {
+        const filtered = skillFilter === 'all' ? gradedSkills
+          : skillFilter === 'acro' ? gradedSkills.filter(s => (s.type || '').toLowerCase() === 'acro')
+          : skillFilter === 'dance' ? gradedSkills.filter(s => (s.type || '').toLowerCase() === 'dance')
+          : skillFilter === 'clean' ? gradedSkills.filter(s => (!s.fault && !s.subFaults?.length && !s.faults?.length) || (typeof s.deduction === 'number' ? s.deduction : s.gradeDeduction || 0) === 0)
+          : skillFilter === 'faults' ? gradedSkills.filter(s => (s.fault || s.subFaults?.length || s.faults?.length) && (typeof s.deduction === 'number' ? s.deduction : s.gradeDeduction || 0) > 0)
+          : gradedSkills;
+        return filtered.length === 0 ? (
+          <div style={{ padding: '24px 20px', textAlign: 'center', fontSize: 13, color: 'rgba(255,255,255,0.35)' }}>
+            No {skillFilter} skills found in this routine.
+          </div>
+        ) : filtered.map((skill, i) => (
+          <SkillCard key={i} skill={skill} index={i + 1} onSeek={onSeek} />
+        ));
+      })()}
 
       {/* Weekly Focus Drills */}
       {topDrills.length > 0 && (
