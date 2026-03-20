@@ -11,6 +11,12 @@ import ParentalConsent from "./components/legal/ParentalConsent";
 import LegalDisclaimer from "./components/legal/LegalDisclaimer";
 import PrivacyNotice from "./components/legal/PrivacyNotice";
 
+// ─── BUILD INFO ──
+const BUILD_VERSION = "1.0.0";
+const BUILD_HASH = process.env.REACT_APP_VERCEL_GIT_COMMIT_SHA ? process.env.REACT_APP_VERCEL_GIT_COMMIT_SHA.slice(0, 7) : "dev";
+const BUILD_DATE = new Date().toISOString().slice(0, 10);
+const PROMPT_VER = "v5_strict_brevet";
+
 // ─── STORAGE WRAPPER — works in Claude artifacts AND real browsers ──
 const storage = {
   async get(key) {
@@ -1524,10 +1530,28 @@ export default function LegacyApp() {
   // Load profile, history, and saved results from storage
   useEffect(() => {
     (async () => {
+      // ── TESTING DEFAULTS — auto-create profile & bypass consent ──
+      const TEST_MODE = true; // Set to false before production launch
       try {
         const stored = await storage.get("strive-profile");
         if (stored) {
           setProfile(JSON.parse(stored.value));
+          setScreen("dashboard");
+        } else if (TEST_MODE) {
+          const testProfile = {
+            name: "Lilly",
+            gender: "female",
+            levelCategory: "xcel",
+            level: "Xcel Gold",
+            primaryEvents: ["Floor", "Beam", "Vault", "Bars"],
+            age: 11,
+            goals: "college gymnastics",
+          };
+          setProfile(testProfile);
+          await storage.set("strive-profile", JSON.stringify(testProfile));
+          try { localStorage.setItem("strive-legal-accepted", "true"); } catch {}
+          try { localStorage.setItem("strive-tier", "competitive"); } catch {}
+          setUserTier("competitive");
           setScreen("dashboard");
         } else {
           setScreen("splash");
@@ -1797,6 +1821,7 @@ export default function LegacyApp() {
           profile={profile}
           onSave={(p) => { saveProfile(p); setScreen("dashboard"); }}
           onBack={() => setScreen("dashboard")}
+          onTierChange={(t) => { try { localStorage.setItem("strive-tier", t); } catch {} setUserTier(t); }}
           onReset={() => {
             setProfile(null);
             setHistory([]);
@@ -7953,7 +7978,7 @@ function DeductionsScreen({ onBack, profile }) {
 }
 
 // ─── SETTINGS SCREEN ────────────────────────────────────────────────
-const SettingsScreen = React.memo(function SettingsScreen({ profile, onSave, onBack, onReset }) {
+const SettingsScreen = React.memo(function SettingsScreen({ profile, onSave, onBack, onReset, onTierChange }) {
   // Load season goals from athlete record into editProfile
   const athleteRecord = getAthleteRecord(profile);
   const sg = athleteRecord ? athleteRecord.seasonGoals || {} : {};
@@ -8228,8 +8253,7 @@ const SettingsScreen = React.memo(function SettingsScreen({ profile, onSave, onB
                     <button
                       key={t}
                       onClick={() => {
-                        try { localStorage.setItem("strive-tier", t); } catch {}
-                        setUserTier(t);
+                        if (onTierChange) onTierChange(t);
                       }}
                       style={{
                         flex: 1, padding: "12px 8px", borderRadius: 12,
@@ -8268,9 +8292,26 @@ const SettingsScreen = React.memo(function SettingsScreen({ profile, onSave, onB
             Advanced gymnastics scoring using USAG criteria. Built for athletes, parents, and coaches. Levels 1-10, Xcel Bronze-Sapphire, WAG & MAG.
           </div>
           <div style={{ fontSize: 10, color: "rgba(255,255,255,0.15)", marginTop: 12, fontFamily: "'Space Mono', monospace" }}>
-            v1.0.0 · 3-Pass Scoring Engine · strive-app-amber.vercel.app
+            v{BUILD_VERSION} · {BUILD_HASH.slice(0, 7)} · {BUILD_DATE}
+          </div>
+          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.12)", marginTop: 4, fontFamily: "'Space Mono', monospace" }}>
+            Prompt: {PROMPT_VER} · strive-app-amber.vercel.app
           </div>
         </div>
+
+        {/* ── Clear Analysis Cache ── */}
+        <button onClick={() => {
+          const keys = Object.keys(localStorage).filter(k => k.startsWith("strive_cache_") || k.startsWith("debug-gemini-"));
+          keys.forEach(k => localStorage.removeItem(k));
+          alert("Cleared " + keys.length + " cached items. Next analysis will be fresh.");
+        }} style={{
+          width: "100%", padding: 12, borderRadius: 12, marginBottom: 12,
+          border: "1px solid rgba(255,193,90,0.2)", background: "rgba(255,193,90,0.04)",
+          color: "#ffc15a", cursor: "pointer", fontFamily: "'Outfit', sans-serif",
+          fontWeight: 600, fontSize: 13,
+        }}>
+          Clear Analysis Cache
+        </button>
 
         {!showConfirm ? (
           <button onClick={() => setShowConfirm(true)} style={{
