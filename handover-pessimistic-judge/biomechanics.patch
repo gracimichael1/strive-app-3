@@ -1,0 +1,140 @@
+diff --git a/src/analysis/biomechanics.js b/src/analysis/biomechanics.js
+index 40b8d9a..c9db05f 100644
+--- a/src/analysis/biomechanics.js
++++ b/src/analysis/biomechanics.js
+@@ -91,6 +91,9 @@ export function computeSkillBiomechanics(skillFrames) {
+ /**
+  * Produce a list of likely deductions based on biomechanics.
+  * Returns array of { fault, deduction, severity, detail }.
++ *
++ * The "Pessimistic Judge" philosophy: when a measurement is borderline,
++ * always take the deduction. Err strict, targeting within 0.150 of actual.
+  */
+ export function inferDeductions(bio) {
+   const hints = [];
+@@ -98,58 +101,99 @@ export function inferDeductions(bio) {
+ 
+   const { peak, landing, worstKneeAngle, avgHipAngle } = bio;
+ 
+-  // Bent knees (threshold: < 160° is noticeable)
+-  if (worstKneeAngle !== null && worstKneeAngle < 155) {
+-    const diff = 160 - worstKneeAngle;
+-    const ded  = diff > 30 ? 0.30 : diff > 15 ? 0.15 : 0.10;
++  // Bent knees (threshold: < 165° is noticeable — lowered from 160° to catch more)
++  if (worstKneeAngle !== null && worstKneeAngle < 165) {
++    const diff = 170 - worstKneeAngle;
++    const ded  = diff > 35 ? 0.30 : diff > 20 ? 0.20 : diff > 10 ? 0.10 : 0.05;
+     hints.push({
+       fault:     'Bent knees / legs',
+       deduction: ded,
+       severity:  ded >= 0.20 ? 'large' : ded >= 0.10 ? 'medium' : 'small',
+-      detail:    `Knee angle measured at ~${Math.round(worstKneeAngle)}° during flight (ideal ≥160°)`,
++      detail:    `Knee angle measured at ~${Math.round(worstKneeAngle)}° during flight (ideal ≥170°)`,
+     });
+   }
+ 
+   // Hip angle (piked body)
+-  if (avgHipAngle !== null && avgHipAngle < 155) {
+-    const diff = 160 - avgHipAngle;
+-    const ded  = diff > 30 ? 0.20 : 0.10;
++  if (avgHipAngle !== null && avgHipAngle < 160) {
++    const diff = 165 - avgHipAngle;
++    const ded  = diff > 30 ? 0.20 : diff > 15 ? 0.15 : 0.10;
+     hints.push({
+       fault:     'Pike / arch in body position',
+       deduction: ded,
+-      severity:  ded >= 0.20 ? 'large' : 'small',
+-      detail:    `Average hip angle ~${Math.round(avgHipAngle)}° (ideal ≥160° for layouts)`,
++      severity:  ded >= 0.20 ? 'large' : ded >= 0.10 ? 'medium' : 'small',
++      detail:    `Average hip angle ~${Math.round(avgHipAngle)}° (ideal ≥165° for layouts)`,
+     });
+   }
+ 
+-  // Landing posture
++  // Landing posture — more granular
+   if (landing) {
+-    if (landing.kneeAngle !== null && landing.kneeAngle < 120) {
+-      hints.push({
+-        fault:     'Deep squat on landing',
+-        deduction: 0.30,
+-        severity:  'large',
+-        detail:    `Landing knee angle ~${Math.round(landing.kneeAngle)}° (below 90° threshold)`,
+-      });
++    if (landing.kneeAngle !== null) {
++      if (landing.kneeAngle < 90) {
++        hints.push({
++          fault:     'Deep squat on landing',
++          deduction: 0.30,
++          severity:  'large',
++          detail:    `Landing knee angle ~${Math.round(landing.kneeAngle)}° (below 90° — deep squat)`,
++        });
++      } else if (landing.kneeAngle < 120) {
++        hints.push({
++          fault:     'Squat on landing',
++          deduction: 0.20,
++          severity:  'medium',
++          detail:    `Landing knee angle ~${Math.round(landing.kneeAngle)}° (moderate squat)`,
++        });
++      } else if (landing.kneeAngle < 145) {
++        hints.push({
++          fault:     'Slight squat on landing',
++          deduction: 0.10,
++          severity:  'small',
++          detail:    `Landing knee angle ~${Math.round(landing.kneeAngle)}° (slight bend)`,
++        });
++      }
+     }
+ 
+-    if (landing.bodyLineDev > 0.06) {
++    if (landing.bodyLineDev > 0.04) {
++      const ded = landing.bodyLineDev > 0.08 ? 0.20 : 0.10;
+       hints.push({
+         fault:     'Body alignment deviation on landing',
+-        deduction: 0.10,
+-        severity:  'small',
+-        detail:    'Hips not stacked vertically over feet on landing',
++        deduction: ded,
++        severity:  ded >= 0.20 ? 'medium' : 'small',
++        detail:    `Hips offset from vertical by ${(landing.bodyLineDev * 100).toFixed(0)}% on landing`,
+       });
+     }
+   }
+ 
++  // Arm bend (elbow angle)
++  if (peak && peak.elbowAngle !== null && peak.elbowAngle < 160) {
++    const diff = 165 - peak.elbowAngle;
++    const ded = diff > 30 ? 0.20 : diff > 15 ? 0.10 : 0.05;
++    hints.push({
++      fault:     'Bent arms',
++      deduction: ded,
++      severity:  ded >= 0.20 ? 'large' : ded >= 0.10 ? 'medium' : 'small',
++      detail:    `Elbow angle ~${Math.round(peak.elbowAngle)}° at peak (ideal ≥165°)`,
++    });
++  }
++
+   // Arm symmetry
+-  if (peak && peak.armSym > 0.08) {
++  if (peak && peak.armSym > 0.06) {
++    const ded = peak.armSym > 0.12 ? 0.15 : 0.10;
+     hints.push({
+-      fault:     'Bent arms / asymmetric arm position',
+-      deduction: 0.10,
++      fault:     'Asymmetric arm position',
++      deduction: ded,
+       severity:  'small',
+-      detail:    'Arm positions appear asymmetric at peak of skill',
++      detail:    `Arm positions asymmetric by ${(peak.armSym * 100).toFixed(0)}% at peak of skill`,
++    });
++  }
++
++  // Leg separation
++  if (peak && peak.legSep > 0.04) {
++    const ded = peak.legSep > 0.10 ? 0.20 : 0.10;
++    hints.push({
++      fault:     'Leg separation',
++      deduction: ded,
++      severity:  ded >= 0.20 ? 'medium' : 'small',
++      detail:    `Legs apart by ${(peak.legSep * 100).toFixed(0)}% at peak (should be together)`,
+     });
+   }
+ 

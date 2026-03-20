@@ -1,0 +1,292 @@
+diff --git a/src/LegacyApp.js b/src/LegacyApp.js
+index c31ebd2..759fbb4 100644
+--- a/src/LegacyApp.js
++++ b/src/LegacyApp.js
+@@ -10,12 +10,14 @@ import AgeGate from "./components/legal/AgeGate";
+ import ParentalConsent from "./components/legal/ParentalConsent";
+ import LegalDisclaimer from "./components/legal/LegalDisclaimer";
+ import PrivacyNotice from "./components/legal/PrivacyNotice";
++import { getEventDeductions, getEventStrictnessGuidance, formatBiomechanicsForPrompt } from "./data/eventDeductions";
++import { analyzeVideo as runMediaPipePipeline } from "./analysis/analysisPipeline";
+ 
+ // ─── BUILD INFO ──
+ const BUILD_VERSION = "1.0.0";
+ const BUILD_HASH = process.env.REACT_APP_VERCEL_GIT_COMMIT_SHA ? process.env.REACT_APP_VERCEL_GIT_COMMIT_SHA.slice(0, 7) : "dev";
+ const BUILD_DATE = new Date().toISOString().slice(0, 10);
+-const PROMPT_VER = "v5_strict_brevet";
++const PROMPT_VER = "v6_pessimistic_judge";
+ 
+ // ─── STORAGE WRAPPER — works in Claude artifacts AND real browsers ──
+ const storage = {
+@@ -4279,7 +4281,9 @@ const AnalyzingScreen = React.memo(function AnalyzingScreen({ uploadData, profil
+   //   compulsory/optional/xcel → judging context
+   // ══════════════════════════════════════════════════════════════════
+ 
+-  const buildJudgingPrompt = useCallback(() => {
++  // ── Build event-specific "Pessimistic Judge" prompt ─────────────────────
++  // Import event-specific deduction rules (loaded at top of file)
++  const buildJudgingPrompt = useCallback((biomechanicsData) => {
+     const level   = profile.level  || "Level 6";
+     const gender  = profile.gender === "female" ? "Women's" : "Men's";
+     const rawEvent = uploadData?.event || "Floor Exercise";
+@@ -4309,19 +4313,19 @@ const AnalyzingScreen = React.memo(function AnalyzingScreen({ uploadData, profil
+ 
+     // ── Required skills for this level and event ────────────────────
+     const eventKey = String(event || '').toLowerCase().replace("floor exercise","floor").replace("balance beam","beam")
+-      .replace("uneven bars","bars").replace("still rings","bars")
+-      .replace("parallel bars","bars").replace("high bar","bars")
+-      .replace("pommel horse","vault");
++      .replace("uneven bars","bars").replace("still rings","rings")
++      .replace("parallel bars","pbars").replace("high bar","highbar")
++      .replace("pommel horse","pommel");
+     const levelSkills = LEVEL_SKILLS[level];
+-    const skillsLine = levelSkills?.[eventKey]
+-      ? `Required/expected skills at ${level} ${event}: ${levelSkills[eventKey]}.`
++    const skillsLine = levelSkills?.[eventKey] || levelSkills?.["bars"] || levelSkills?.["floor"]
++      ? `Required/expected skills at ${level} ${event}: ${levelSkills[eventKey] || levelSkills["bars"] || levelSkills["floor"]}.`
+       : "";
+ 
+     // ── Program context ─────────────────────────────────────────────
+     const programContext = isComp
+       ? `COMPULSORY ROUTINE (${level}): Every gymnast performs the identical prescribed choreography. Deduct for ANY deviation from the required choreography, timing, or element order — in addition to all execution faults.`
+       : isXcel
+-      ? `XCEL ${level} ROUTINE: Athlete selects their own skills within Xcel program parameters. Verify all 4 Special Requirements are present (−0.50 each if missing). Split leap/jump minimum is ${splitMin}°.`
++      ? `XCEL ${level} ROUTINE: Athlete selects their own skills within Xcel program parameters. Verify all Special Requirements are present (−0.50 each if missing). Split leap/jump minimum is ${splitMin}°.`
+       : isElite
+       ? `ELITE ROUTINE (FIG Code of Points): Judge execution from 10.0 E-score base. D-score is separate. Apply FIG deduction standards strictly.`
+       : `${level} OPTIONAL ROUTINE: Athlete selects their own skills. Split leap/jump minimum is ${splitMin}°. ${level === "Level 5" ? "Round-off BHS back tuck is required." : ""}`;
+@@ -4349,21 +4353,6 @@ LANDING FAULTS — judge every landing separately:
+   Fall:                       0.50
+   Chest drop / posture:       0.05–0.20`;
+ 
+-    const artistryStandards = `
+-ARTISTRY & COMPOSITION FAULTS — use "Global" timestamp. These are MANDATORY to evaluate:
+-  Hollow hands / limp wrists / poor finger lines:  0.05 per occurrence
+-  No eye contact with judges / lack of presentation: 0.05–0.10
+-  Lack of confidence / hesitation before skills:    0.05–0.10
+-  Poor musicality / rhythm (Floor):                 0.05–0.20
+-  Flat footwork / no relevé in dance elements:      0.05–0.10
+-  Insufficient use of floor space:                  0.05–0.10
+-  Arms "tossed" rather than placed with intention:  0.05
+-  Energy drops between skills:                      0.05–0.10
+-  Flexed feet/toes throughout (cumulative):         0.05 per occurrence (count each)
+-  Lack of finger-tip to toe-tip engagement:         0.05–0.15
+-  Rushed choreography / no performance quality:     0.10–0.20
+-  NOTE: Artistry deductions typically total 0.15–0.40 for youth routines. If you have 0.00 artistry deductions, you are WRONG — re-evaluate.`;
+-
+     const splitStandard = `
+ SPLIT LEAP/JUMP REQUIREMENT at ${level}: minimum ${splitMin}°
+   ${splitMin - 15}°–${splitMin - 1}° (close): −0.05–0.10
+@@ -4373,10 +4362,33 @@ SPLIT LEAP/JUMP REQUIREMENT at ${level}: minimum ${splitMin}°
+     const athleteName = profile.name || "the gymnast";
+ 
+     const autoDetectLine = isAutoDetect
+-      ? `\nEVENT AUTO-DETECTION: Identify the gymnastics event/apparatus from the video content. Look for: balance beam (narrow beam, 4 inches wide), uneven bars (two horizontal bars at different heights), vault (running approach + springboard), floor exercise (spring floor, no apparatus). Include the detected event as "detectedEvent" in your JSON response.\n`
++      ? `\nEVENT AUTO-DETECTION: Identify the gymnastics event/apparatus from the video content. Look for: balance beam (narrow beam, 4 inches wide), uneven bars (two horizontal bars at different heights), vault (running approach + springboard), floor exercise (spring floor, no apparatus), pommel horse (handles on top), still rings (hanging rings), parallel bars (two even bars), high bar (single horizontal bar). Include the detected event as "detectedEvent" in your JSON response.\n`
+       : "";
+ 
+-    return `You are a Brevet-certified USA Gymnastics judge at a State Championship. You give NO benefit of the doubt. When in doubt, take the HIGHER deduction. Your job is to find EVERY fault so the athlete can improve.
++    // ── Event-specific deduction rules (THE KEY ACCURACY FIX) ──────
++    const eventDeductionRules = getEventDeductions(event);
++    const strictnessOverride = getEventStrictnessGuidance(event);
++
++    // ── MediaPipe biomechanics data (if available) ─────────────────
++    const biomechanicsSection = biomechanicsData
++      ? `\n${formatBiomechanicsForPrompt(biomechanicsData)}\n`
++      : '';
++
++    // ── Calibration targets adjusted per event ─────────────────────
++    const eventLower = (event || '').toLowerCase();
++    const isBarEvent = eventLower.includes('bar') || eventLower.includes('uneven') || eventLower.includes('high bar');
++    const isBeamEvent = eventLower.includes('beam');
++    const isPommelEvent = eventLower.includes('pommel');
++    const targetDeductionLow = isBarEvent ? 1.00 : isBeamEvent ? 1.00 : isPommelEvent ? 1.00 : 0.80;
++    const targetDeductionHigh = isBarEvent ? 1.60 : isBeamEvent ? 1.80 : isPommelEvent ? 2.00 : 1.40;
++    const targetDeductionMid = ((targetDeductionLow + targetDeductionHigh) / 2).toFixed(2);
++
++    return `You are a Brevet-certified USA Gymnastics judge at a State Championship. You are STRICT BY DEFAULT. When in doubt, take the HIGHER deduction. Your job is to find EVERY fault — the athlete improves by knowing what judges see.
++
++CRITICAL JUDGING PHILOSOPHY: "Hunt for deductions, don't look for reasons to give points."
++- A judge's job is to SUBTRACT from 10.0. Start at 10.0 and remove points for every visible fault.
++- If you are unsure whether a fault is 0.05 or 0.10, take 0.10. Always err STRICT.
++- Your target accuracy: within 0.150 of what a real State Championship panel would score.
+ 
+ ATHLETE: ${athleteName} | ${gender} ${level} | EVENT: ${isAutoDetect ? "DETECT FROM VIDEO" : event}
+ ${autoDetectLine}
+@@ -4384,26 +4396,36 @@ ${programContext}
+ ${skillsLine}
+ ${benchLine}
+ 
++${eventDeductionRules}
++${strictnessOverride}
++${biomechanicsSection}
++
++GENERAL EXECUTION STANDARDS (apply to ALL events):
++${executionStandards}
++${landingStandards}
++${splitStandard}
++
+ KEY RULES:
+-1. INDIVIDUAL ELEMENTS: Break every skill apart for FEEDBACK purposes. A Round-off, Back Handspring, and Back Tuck in one tumbling pass = THREE separate entries. HOWEVER, connecting elements within a pass share momentum — only deduct faults you can CLEARLY SEE on each individual element. Do not assume faults on connecting elements. If a round-off looks clean, score it clean (0.00 deduction). Most elements in a competent routine have 0-1 visible faults.
+-2. MICRO-DEDUCTIONS: Flexed feet, soft knees, micro-bends — deduct 0.05 each, but ONLY when clearly visible. Do not guess or assume. A typical skill has 0-2 micro-faults, not 3-4.
+-3. LANDINGS: Only the FINAL landing of a tumbling pass gets full landing deductions. Intermediate landings (between RO and BHS, between BHS and tuck) are transitional and only deducted if there's a clear error (stumble, extra step, loss of momentum). Final landing: step = 0.05-0.10, squat = 0.10-0.20, deep squat = 0.20-0.30.
+-4. ARTISTRY — THE HIDDEN DEDUCTIONS (typically 0.15-0.35 total for youth):
++1. INDIVIDUAL ELEMENTS: Break every skill apart. A Round-off, Back Handspring, and Back Tuck in one tumbling pass = THREE separate entries. Only deduct faults you can CLEARLY SEE on each element. If an element looks clean, score it clean (0.00 deduction).
++2. MICRO-DEDUCTIONS: Flexed feet, soft knees, micro-bends — deduct 0.05 each when clearly visible. These add up and are real. A typical skill has 0-2 micro-faults.
++3. LANDINGS: Only the FINAL landing of a tumbling pass gets full landing deductions. Intermediate connections are transitional — only deduct clear errors.
++4. ARTISTRY (typically 0.15-0.40 total for youth):
+    - Finger-tip to toe-tip engagement, arms tossed vs placed (0.05-0.10)
+-   - Hesitations before passes (0.05-0.10)
++   - Hesitations before skills (0.05-0.10)
+    - Flexed feet in dance/transitions — cumulative (0.05-0.15)
+-   - Composition: floor space, transitions, variety (0.05-0.10)
++   - Composition: use of space, transitions, variety (0.05-0.10)
++   - NOTE: Zero artistry deductions = WRONG. Re-evaluate.
+ 5. SPLIT LEAPS: ${level} requires ${splitMin}°. Short = 0.10-0.20 deduction.
+ 6. CALIBRATION — THIS IS CRITICAL:
+-   - Target range for total deductions: 0.80–1.30 for most ${level} routines.
+-   - A score of 8.7–9.2 is typical at State Championships for ${level}.
+-   - If your total deductions are below 0.80, you are too LENIENT — find more faults.
+-   - If your total deductions are above 1.50, you are too HARSH — you are likely double-counting faults across connected elements or deducting faults you cannot clearly see. Remove uncertain deductions.
+-   - The sum of all individual skill deductions (execution) should typically be 0.50–0.90. Artistry + composition add another 0.20–0.40.
+-
+-${executionStandards}
+-${landingStandards}
+-${splitStandard}
++   - Target deduction range for ${event}: ${targetDeductionLow}–${targetDeductionHigh} total.
++   - Target midpoint: ~${targetDeductionMid} total deductions.
++   - If total deductions < ${targetDeductionLow}, you are too LENIENT — actively look for missed rhythm, feet, and form deductions.
++   - If total deductions > ${targetDeductionHigh}, you may be double-counting — verify each deduction is for a distinct, visible fault.
++7. SECOND PASS: After completing your initial assessment, re-watch the routine mentally focusing ONLY on:
++   - Feet (flexed vs pointed) throughout the entire routine
++   - Pauses/hesitations between skills (especially on bars/beam)
++   - Overall rhythm and flow
++   Add any deductions you missed on the first pass.
+ 
+ DEDUCTION VALUES: 0.00, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.50 ONLY.
+ Timestamps: M:SS format from video start (0:00).
+@@ -4429,23 +4451,6 @@ Skills in chronological order. qualityScore = 10.0 minus that skill's total dedu
+       "bodyMechanics": {"kneeAngle": "Slight bend at snap-down", "hipAlignment": "Good extension", "shoulderPosition": "Adequate block", "toePoint": "Pointed in flight"},
+       "injuryRisk": null,
+       "drillRecommendation": "T-handstand snap-downs against wall — focus on tight legs throughout."
+-    },
+-    {
+-      "timestamp": "0:06",
+-      "name": "Back Handspring",
+-      "type": "acro",
+-      "qualityScore": 9.70,
+-      "deduction": 0.30,
+-      "faults": [
+-        {"fault": "Bent arms in support phase", "deduction": 0.10, "severity": "medium"},
+-        {"fault": "Knees bent in flight", "deduction": 0.10, "severity": "medium"},
+-        {"fault": "Feet sickled", "deduction": 0.05, "severity": "small"},
+-        {"fault": "Slight leg separation", "deduction": 0.05, "severity": "small"}
+-      ],
+-      "strengthNote": "Good rebound height into next skill",
+-      "bodyMechanics": {"kneeAngle": "Bent through flight phase", "hipAlignment": "Slight arch", "shoulderPosition": "Arms bent at push-off", "toePoint": "Sickled"},
+-      "injuryRisk": "Bent arms increase wrist strain. Strengthen with handstand push-ups.",
+-      "drillRecommendation": "BHS over barrel — focus on straight arms and tight body."
+     }
+   ],
+   "artistry": {
+@@ -4493,8 +4498,8 @@ JSON RULES:
+ - Artistry/composition faults go in their own sections, NOT in skills array.
+ - Each deduction exactly two decimal places. Only values: 0.00, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.50.
+ - Chronological order by timestamp.
+-- If total deductions < 0.80, you are too lenient. Re-evaluate.
+-- If total deductions > 1.50, you are too harsh — remove uncertain deductions. Target: 0.90–1.20 total.`;
++- If total deductions < ${targetDeductionLow}, you are too lenient. Re-evaluate and find more faults.
++- If total deductions > ${targetDeductionHigh}, verify each deduction. Target: ${targetDeductionLow}–${targetDeductionHigh} total.`;
+   }, [profile, uploadData]);
+ 
+   // ── Main analysis orchestrator — single pass ─────────────────────
+@@ -4546,19 +4551,72 @@ JSON RULES:
+     } catch (e) { log.warn("cache", `Cache read failed: ${e.message}`); }
+ 
+     try {
++      // ── Run MediaPipe pose analysis in parallel with video upload ──
++      // MediaPipe gives us mathematical joint angles that we feed to Gemini
++      // alongside the video, so Gemini has both visual AND numerical data.
++      let mediaPipeResult = null;
++      let biomechanicsData = null;
++
++      // Only run MediaPipe if we have a video element available
++      // (browser-based, not server proxy path)
++      if (uploadData.video && typeof document !== 'undefined') {
++        try {
++          setStatus("Running pose detection for accuracy boost...");
++          setProgress(40);
++
++          // Create a temporary video element for MediaPipe analysis
++          const tempVideo = document.createElement('video');
++          tempVideo.src = URL.createObjectURL(uploadData.video);
++          tempVideo.muted = true;
++          tempVideo.playsInline = true;
++
++          await new Promise((resolve, reject) => {
++            tempVideo.onloadeddata = resolve;
++            tempVideo.onerror = reject;
++            setTimeout(reject, 10000); // 10s timeout
++          });
++
++          mediaPipeResult = await runMediaPipePipeline(tempVideo, (update) => {
++            setStatus(update.label);
++            // Scale MediaPipe progress from 40-60%
++            setProgress(40 + Math.round(update.pct * 0.2));
++          });
++
++          biomechanicsData = mediaPipeResult?.skillAnalysis || null;
++
++          // Clean up
++          URL.revokeObjectURL(tempVideo.src);
++
++          if (biomechanicsData && biomechanicsData.length > 0) {
++            log.info("mediapipe", `Extracted biomechanics for ${biomechanicsData.length} skills — feeding to Gemini`);
++          } else {
++            log.info("mediapipe", "No skill biomechanics detected — Gemini will judge from video only");
++          }
++        } catch (mpErr) {
++          // MediaPipe is a bonus, not a blocker — continue without it
++          log.warn("mediapipe", `Pose detection failed (non-blocking): ${mpErr.message}`);
++          biomechanicsData = null;
++        }
++      }
++
+       // Upload video once — requires a client-side API key for direct Gemini uploads
+       if (!apiKey && serverKeyAvailable) {
+         // Server has the key but we can't do client-side video upload without it.
+         // Use server proxy for text-based analysis when video upload isn't possible.
+         log.info("analyze", "Server key available — routing through /api/analyze proxy");
+       }
++
++      setStatus("Uploading video for AI analysis...");
++      setProgress(62);
+       const fileRef = apiKey ? await uploadVideoToGemini(uploadData.video, apiKey) : null;
+ 
+       // ── Single judging pass ──────────────────────────────────────
+       setStatus(`Evaluating ${profile.level} ${uploadData.event} routine...`);
+       setProgress(68);
+ 
+-      const prompt = buildJudgingPrompt();
++      // Pass MediaPipe biomechanics data INTO the prompt so Gemini
++      // has mathematical angles alongside its visual assessment
++      const prompt = buildJudgingPrompt(biomechanicsData);
+       log.info("gemini", `Prompt length: ${prompt.length} chars | Level: ${profile.level} | Event: ${uploadData.event}`);
+ 
+       let rawResponse = null;
+@@ -4996,6 +5054,15 @@ JSON RULES:
+         level:    profile.level,
+         videoUrl: uploadData.videoUrl,
+         rawResponse,
++
++        // ── MediaPipe pose data (for skeleton overlay in VideoReviewPlayer) ──
++        mediaPipe: mediaPipeResult ? {
++          poseFrames: mediaPipeResult.poseFrames,
++          skills: mediaPipeResult.skills,
++          skillAnalysis: mediaPipeResult.skillAnalysis,
++          frameWidth: mediaPipeResult.frameWidth,
++          frameHeight: mediaPipeResult.frameHeight,
++        } : null,
+       };
+ 
+       // ── Cache the result for duplicate submissions ──────────────
