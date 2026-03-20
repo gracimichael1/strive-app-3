@@ -297,177 +297,6 @@ function computeFaultIntelligence(athleteRecord) {
 }
 
 // FIX 3 — Personalized drill plan from fault intelligence
-const FAULT_DRILLS = {
-  bent_arms: [
-    { name: "Wall Handstand Holds", reps: "3 x 30s", cue: "Press to handstand against wall. Lock elbows, squeeze triceps, push through shoulders." },
-    { name: "Straight-Arm Plank Walks", reps: "3 x 8 steps", cue: "Walk hands forward and back in plank. Arms must stay locked through entire set." },
-    { name: "Cast to Handstand (Rails)", reps: "10 reps", cue: "Focus on full arm extension through each cast. Partner taps elbows as reminder." },
-  ],
-  bent_knees: [
-    { name: "Releve Walks on Beam Line", reps: "2 x beam length", cue: "Walk in releve with knees fully locked. Squeeze quads with each step." },
-    { name: "Handstand Leg Lifts", reps: "3 x 8 each leg", cue: "From handstand, lift one leg out. Keep support leg completely straight." },
-    { name: "Needle Kick Holds", reps: "3 x 15s each", cue: "Hold scale position with both legs fully extended. No micro-bend allowed." },
-  ],
-  leg_separation: [
-    { name: "Foam Block Squeeze Jumps", reps: "3 x 10", cue: "Place block between ankles during jumps. Squeeze through entire flight." },
-    { name: "Resistance Band Squeezes", reps: "3 x 15s holds", cue: "Band around ankles during handstands to train constant leg squeeze." },
-    { name: "Salto Drill w/ Squeeze Cue", reps: "10 reps", cue: "Practice flips with legs glued together. Cue: 'Zip from hip to toe.'" },
-  ],
-  toe_point: [
-    { name: "Theraband Foot Presses", reps: "3 x 20 each", cue: "Wrap band around ball of foot. Press through full extension, hold 2s." },
-    { name: "Releve Balance (Eyes Closed)", reps: "3 x 20s each foot", cue: "Full releve, eyes closed. Train ankle awareness and point reflex." },
-    { name: "Pointed Foot Running Drill", reps: "2 x floor length", cue: "Jog with exaggerated toe point on each stride. Make it automatic." },
-  ],
-  step_landing: [
-    { name: "Stick Drills (Low Block)", reps: "20 reps", cue: "Jump from low block, land and FREEZE 3 full seconds. Zero movement." },
-    { name: "Drop Landings (Progressive)", reps: "3 x 8", cue: "Step off increasing heights. Absorb through ankles and knees. Freeze on impact." },
-    { name: "Pit-to-Stick Progressions", reps: "10-15 reps", cue: "Land on elevated surface from pit. Chest up, arms up, complete stillness." },
-  ],
-  wobble: [
-    { name: "Single Leg Balance (Beam)", reps: "3 x 30s each", cue: "Stand on one foot on low beam. Arms in position. No correction steps." },
-    { name: "Releve Relevance Walks", reps: "3 x beam length", cue: "Walk full beam in releve. Pause 2 seconds between each step." },
-    { name: "Core Stabilization (Bosu)", reps: "3 x 30s", cue: "Plank on Bosu ball. Engage core to prevent any rocking." },
-  ],
-  split_angle: [
-    { name: "Oversplit Holds (Elevated)", reps: "3 x 30s each", cue: "Front foot on panel mat. Sink past 180 degrees. Breathe and relax into it." },
-    { name: "Grande Battement Series", reps: "3 x 12 each leg", cue: "Controlled kick to maximum height. Both legs fully straight." },
-    { name: "Active Flexibility Pulses", reps: "3 x 15 each", cue: "In split, pulse up 2 inches and back down. Build active range." },
-  ],
-  body_angle: [
-    { name: "Hollow Body Hold", reps: "3 x 30s", cue: "Lower back pressed to floor. Arms by ears, legs straight. No gap." },
-    { name: "Superman Rocks", reps: "3 x 15", cue: "Rock from hollow to arch. Maintain tight body shape throughout." },
-    { name: "Pike Press Conditioning", reps: "3 x 8", cue: "From standing, fold to pike. Hands to floor, legs straight. Hold 3s." },
-  ],
-  alignment: [
-    { name: "Dowel Rod Alignment Check", reps: "5 min warm-up", cue: "Hold dowel along spine during handstands and jumps. Feel when alignment breaks." },
-    { name: "Mirror Wall Drills", reps: "10 reps each skill", cue: "Perform skills facing mirror. Self-correct lean and centering in real time." },
-    { name: "Handstand Shape Holds", reps: "5 x 15s", cue: "Partner checks shoulder-hip-ankle alignment. Squeeze everything tight." },
-  ],
-  landing: [
-    { name: "Stick Landing Series", reps: "20 reps", cue: "Jump off low surface, land perfectly still for 3 seconds. Build the habit." },
-    { name: "Single Leg Landing Hops", reps: "3 x 10 each", cue: "Hop forward on one foot, stick each landing. Build ankle stability." },
-    { name: "Absorb & Freeze Drill", reps: "3 x 10", cue: "Back tuck to stick. Focus: absorb through legs, chest stays up." },
-  ],
-  fall: [
-    { name: "Skill Progressions on Low Beam", reps: "10 reps", cue: "Practice the skill on low beam until 8/10 are clean before moving up." },
-    { name: "Spot Training (Confidence)", reps: "15 reps w/ spot", cue: "Do the skill with a spot. Build confidence before going solo." },
-    { name: "Mental Rehearsal + Walk-Through", reps: "5 min", cue: "Walk through the skill slowly. Visualize each body position before attempting." },
-  ],
-  upper_body: [
-    { name: "Shoulder Flexibility Series", reps: "3 x 30s each", cue: "Wall slides, doorway stretches, band pull-aparts. Open up the shoulders." },
-    { name: "Press Handstand Conditioning", reps: "3 x 5", cue: "Slow press to handstand. Focus: shoulders stack over wrists, chest neutral." },
-    { name: "Posture Board Handstands", reps: "5 x 15s", cue: "Handstand against posture board. Feel correct shoulder and chest position." },
-  ],
-  timing: [
-    { name: "Rhythm Clapping Drill", reps: "3 x full routine", cue: "Clap the rhythm of the routine without doing it. Internalize the timing." },
-    { name: "Music Walk-Through", reps: "3 full routines", cue: "Walk through routine to music. Mark each skill on the correct beat." },
-    { name: "Metronome Tumbling", reps: "10 reps", cue: "Set a metronome. Match tumbling pace to beats. Build consistency." },
-  ],
-  arch: [
-    { name: "Hollow Body Hold", reps: "3 x 30s", cue: "Lower back flat to floor. No arch. Arms by ears, legs straight." },
-    { name: "Plank to Hollow Transitions", reps: "3 x 10", cue: "From plank, round into hollow body. Control the shape change." },
-    { name: "Pike Stretches (Daily)", reps: "3 x 30s", cue: "Seated pike fold. Chest to thighs. Counteracts excessive arch habit." },
-  ],
-};
-
-function generateWeeklyDrillPlan(faultIntelligence) {
-  if (!faultIntelligence || !faultIntelligence.faultFrequencies || faultIntelligence.faultFrequencies.length === 0) return null;
-
-  // Take top 3 most common unfixed faults
-  const fixed = new Set((faultIntelligence.fixedFaults || []).map(f => f.type));
-  const unfixed = faultIntelligence.faultFrequencies.filter(f => !fixed.has(f.type));
-  const top3 = unfixed.slice(0, 3);
-
-  if (top3.length === 0) return null;
-
-  const days = ["monday", "wednesday", "friday"];
-  const plan = {};
-  top3.forEach((fault, i) => {
-    const dayDrills = FAULT_DRILLS[fault.type] || FAULT_DRILLS.body_angle; // fallback
-    plan[days[i]] = {
-      fault: fault.label,
-      faultType: fault.type,
-      count: fault.count,
-      totalRoutines: fault.totalRoutines,
-      drills: dayDrills.slice(0, 3),
-    };
-  });
-
-  // Fill remaining days if fewer than 3 faults
-  days.forEach(day => {
-    if (!plan[day] && top3.length > 0) {
-      const fallbackFault = top3[0];
-      const dayDrills = FAULT_DRILLS[fallbackFault.type] || FAULT_DRILLS.body_angle;
-      plan[day] = {
-        fault: fallbackFault.label + " (Reinforcement)",
-        faultType: fallbackFault.type,
-        count: fallbackFault.count,
-        totalRoutines: fallbackFault.totalRoutines,
-        drills: dayDrills.slice(0, 3),
-      };
-    }
-  });
-
-  return plan;
-}
-
-// FIX 4 — Improvement curves: fault deduction trends over time
-function computeImprovementCurves(athleteRecord) {
-  if (!athleteRecord) return { scoreHistory: [], faultTrends: [] };
-
-  const analyses = (athleteRecord.analysisHistory || []).slice(-20);
-  const faults = athleteRecord.faultHistory || [];
-
-  // Score progression
-  const scoreHistory = analyses.map((a, i) => ({
-    label: `#${i + 1}`,
-    score: a.finalScore,
-    date: a.date,
-    event: a.event,
-  }));
-
-  // Per fault category: average deduction in windows
-  if (analyses.length < 3) return { scoreHistory, faultTrends: [] };
-
-  const routineIds = analyses.map(a => a.routineId);
-  const faultTypes = [...new Set(faults.map(f => f.faultType))];
-
-  const faultTrends = faultTypes.map(type => {
-    const typeFaults = faults.filter(f => f.faultType === type);
-    // Get average deduction per analysis window
-    const recentIds = routineIds.slice(-Math.min(10, routineIds.length));
-    const recentAvg = recentIds.length > 0
-      ? recentIds.reduce((sum, rid) => {
-          const routineFaults = typeFaults.filter(f => f.routineId === rid);
-          return sum + routineFaults.reduce((s, f) => s + f.deductionAmount, 0);
-        }, 0) / recentIds.length
-      : 0;
-
-    // Early average (first half of available data)
-    const halfPoint = Math.floor(routineIds.length / 2);
-    const earlyIds = routineIds.slice(0, Math.max(1, halfPoint));
-    const earlyAvg = earlyIds.length > 0
-      ? earlyIds.reduce((sum, rid) => {
-          const routineFaults = typeFaults.filter(f => f.routineId === rid);
-          return sum + routineFaults.reduce((s, f) => s + f.deductionAmount, 0);
-        }, 0) / earlyIds.length
-      : 0;
-
-    const diff = recentAvg - earlyAvg;
-    const trend = diff < -0.02 ? "improving" : diff > 0.02 ? "worsening" : "plateaued";
-
-    return {
-      type,
-      label: FAULT_LABELS[type] || type,
-      earlyAvg,
-      recentAvg,
-      diff,
-      trend,
-    };
-  }).filter(t => t.earlyAvg > 0 || t.recentAvg > 0);
-
-  return { scoreHistory, faultTrends };
-}
 
 // FIX 5 — Goal tracking calculations
 function computeGoalTracking(athleteRecord) {
@@ -600,24 +429,7 @@ if (typeof window !== "undefined") {
       results.push({ test: "Fault History Accumulation", result: "FAIL", details: e.message });
     }
 
-    // Test 3 — Drill plan generation
-    try {
-      const mockIntel = {
-        faultFrequencies: [
-          { type: "bent_arms", label: "Bent Arms", count: 4, totalRoutines: 5 },
-          { type: "toe_point", label: "Toe Point / Feet", count: 3, totalRoutines: 5 },
-        ],
-        fixedFaults: [],
-        regressionFaults: [],
-      };
-      const plan = generateWeeklyDrillPlan(mockIntel);
-      const pass = plan && plan.monday && plan.monday.fault === "Bent Arms" && plan.monday.drills.length >= 2;
-      results.push({ test: "Drill Plan Generation", result: pass ? "PASS" : "FAIL", details: pass ? `Monday: ${plan.monday.fault} (${plan.monday.drills.length} drills)` : "Plan missing or incomplete" });
-    } catch (e) {
-      results.push({ test: "Drill Plan Generation", result: "FAIL", details: e.message });
-    }
-
-    // Test 4 — Goal calculation
+    // Test 3 — Goal calculation
     try {
       const mockRecord = {
         name: "GoalTest",
@@ -6649,6 +6461,7 @@ function GradedSkillsView({ result, videoUrl, videoFile }) {
 // ─── RESULTS SCREEN ─────────────────────────────────────────────────
 const ResultsScreen = React.memo(function ResultsScreen({ result, profile, history, videoUrl, videoFile, onBack, onDrills }) {
   const [activeTab, setActiveTab] = useState("overview");
+  const [detailTab, setDetailTab] = useState("artistry");
   const [actualScore, setActualScore] = useState("");
   const [scoreSaved, setScoreSaved] = useState(false);
   const [showSkeleton, setShowSkeleton] = useState(true);
@@ -7247,83 +7060,116 @@ const ResultsScreen = React.memo(function ResultsScreen({ result, profile, histo
               </div>
             )}
 
-            {/* Artistry Breakdown */}
-            {result.artistry && (
-              <div style={{ padding: "16px 18px", borderRadius: 14, background: "rgba(139,114,212,0.04)", border: "1px solid rgba(139,114,212,0.12)" }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: "#8b72d4", letterSpacing: 1, textTransform: "uppercase", marginBottom: 14 }}>
-                  Artistry Breakdown
-                </div>
-                {(() => {
-                  const art = result.artistry;
-                  const artFields = [
-                    { key: "expression_deduction", label: "Expression / Projection" },
-                    { key: "quality_of_movement_deduction", label: "Quality of Movement" },
-                    { key: "choreography_variety_deduction", label: "Choreography Variety" },
-                    { key: "musicality_deduction", label: "Musicality" },
-                  ];
-                  return artFields.map(({ key, label }) => {
-                    // art.details is an array of { fault, deduction } from transform.js
-                    const detail = (art.details || []).find(d => d.fault && d.fault.toLowerCase().includes(label.split(" ")[0].toLowerCase()));
-                    const ded = detail ? safeNum(detail.deduction, 0) : 0;
-                    const score = Math.max(0, Math.min(10, 10 - ded * 20));
-                    const pct = (score / 10) * 100;
-                    return (
-                      <div key={key} style={{ marginBottom: 10 }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-                          <span style={{ fontSize: 12, fontWeight: 500, color: "rgba(255,255,255,0.6)" }}>{label}</span>
-                          <span style={{ fontSize: 12, fontWeight: 700, fontFamily: "'Space Mono', monospace", color: "#8b72d4" }}>-{ded.toFixed(2)}</span>
-                        </div>
-                        <div style={{ height: 6, background: "rgba(255,255,255,0.06)", borderRadius: 3, overflow: "hidden" }}>
-                          <div style={{ height: "100%", width: `${pct}%`, background: "linear-gradient(90deg, #8b72d4, #a990e8)", borderRadius: 3, transition: "width 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94)" }} />
-                        </div>
-                      </div>
-                    );
-                  });
-                })()}
-                {result.artistry.notes && (
-                  <div style={{ marginTop: 8, fontSize: 11, color: "rgba(255,255,255,0.4)", fontStyle: "italic", lineHeight: 1.5 }}>
-                    {result.artistry.notes}
-                  </div>
-                )}
-              </div>
-            )}
           </div>
 
-          {/* ── FULL ROUTINE VIDEO with speed controls ── */}
-          {(videoUrl || result.videoUrl) && (() => {
-            const vUrl = videoUrl || result.videoUrl;
+          {/* ── SUB-TABS: Artistry | Video ── */}
+          {(() => {
+            const hasArtistry = !!result.artistry;
+            const hasVideo = !!(videoUrl || result.videoUrl);
+            const subTabs = [];
+            if (hasArtistry) subTabs.push({ id: "artistry", label: "Artistry" });
+            if (hasVideo) subTabs.push({ id: "video", label: "Video" });
+            if (subTabs.length === 0) return null;
             return (
-              <div style={{ marginBottom: 24, borderRadius: 16, overflow: "hidden", background: "#0d1422", border: "1px solid rgba(255,255,255,0.08)" }}>
-                <video
-                  src={vUrl}
-                  controls
-                  controlsList="nodownload"
-                  playsInline
-                  webkit-playsinline=""
-                  preload="metadata"
-                  style={{ width: "100%", display: "block", maxHeight: 280 }}
-                  ref={(el) => { if (el) el._striveVideoRef = el; }}
-                />
-                <div style={{ display: "flex", gap: 6, padding: "8px 12px", background: "#121b2d" }}>
-                  {[0.25, 0.5, 1].map(rate => (
+              <div style={{ marginBottom: 20 }}>
+                {/* Tab buttons */}
+                <div style={{ display: "flex", gap: 2, marginBottom: 14, background: "rgba(255,255,255,0.02)", borderRadius: 10, padding: 2 }}>
+                  {subTabs.map(t => (
                     <button
-                      key={rate}
-                      onClick={(e) => {
-                        const video = e.target.closest("div[style]")?.previousElementSibling;
-                        if (video && video.tagName === "VIDEO") video.playbackRate = rate;
-                      }}
+                      key={t.id}
+                      onClick={() => setDetailTab(t.id)}
                       style={{
-                        padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: 700,
-                        fontFamily: "'Space Mono', monospace", cursor: "pointer",
-                        background: rate === 1 ? "#e8962a" : "rgba(255,255,255,0.06)",
-                        color: rate === 1 ? "#070c16" : "rgba(255,255,255,0.5)",
-                        border: rate === 1 ? "1px solid #e8962a" : "1px solid rgba(255,255,255,0.1)",
+                        flex: 1, padding: "8px 4px", borderRadius: 8, fontSize: 11, fontWeight: 700,
+                        letterSpacing: 0.8, textTransform: "uppercase", cursor: "pointer", border: "none",
+                        background: detailTab === t.id ? "rgba(232,150,42,0.12)" : "transparent",
+                        color: detailTab === t.id ? "#e8962a" : "rgba(255,255,255,0.35)",
+                        transition: "all 0.2s",
                       }}
                     >
-                      {rate}x
+                      {t.label}
                     </button>
                   ))}
                 </div>
+
+                {/* Artistry tab content */}
+                {detailTab === "artistry" && result.artistry && (
+                  <div style={{ padding: "16px 18px", borderRadius: 14, background: "rgba(139,114,212,0.04)", border: "1px solid rgba(139,114,212,0.12)" }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#8b72d4", letterSpacing: 1, textTransform: "uppercase", marginBottom: 14 }}>
+                      Artistry Breakdown
+                    </div>
+                    {(() => {
+                      const art = result.artistry;
+                      const artFields = [
+                        { key: "expression_deduction", label: "Expression / Projection" },
+                        { key: "quality_of_movement_deduction", label: "Quality of Movement" },
+                        { key: "choreography_variety_deduction", label: "Choreography Variety" },
+                        { key: "musicality_deduction", label: "Musicality" },
+                      ];
+                      return artFields.map(({ key, label }) => {
+                        const detail = (art.details || []).find(d => d.fault && d.fault.toLowerCase().includes(label.split(" ")[0].toLowerCase()));
+                        const ded = detail ? safeNum(detail.deduction, 0) : 0;
+                        const score = Math.max(0, Math.min(10, 10 - ded * 20));
+                        const pct = (score / 10) * 100;
+                        return (
+                          <div key={key} style={{ marginBottom: 10 }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                              <span style={{ fontSize: 12, fontWeight: 500, color: "rgba(255,255,255,0.6)" }}>{label}</span>
+                              <span style={{ fontSize: 12, fontWeight: 700, fontFamily: "'Space Mono', monospace", color: "#8b72d4" }}>-{ded.toFixed(2)}</span>
+                            </div>
+                            <div style={{ height: 6, background: "rgba(255,255,255,0.06)", borderRadius: 3, overflow: "hidden" }}>
+                              <div style={{ height: "100%", width: `${pct}%`, background: "linear-gradient(90deg, #8b72d4, #a990e8)", borderRadius: 3, transition: "width 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94)" }} />
+                            </div>
+                          </div>
+                        );
+                      });
+                    })()}
+                    {result.artistry.notes && (
+                      <div style={{ marginTop: 8, fontSize: 11, color: "rgba(255,255,255,0.4)", fontStyle: "italic", lineHeight: 1.5 }}>
+                        {result.artistry.notes}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Video tab content */}
+                {detailTab === "video" && (() => {
+                  const vUrl = videoUrl || result.videoUrl;
+                  if (!vUrl) return null;
+                  return (
+                    <div style={{ borderRadius: 16, overflow: "hidden", background: "#0d1422", border: "1px solid rgba(255,255,255,0.08)" }}>
+                      <video
+                        src={vUrl}
+                        controls
+                        controlsList="nodownload"
+                        playsInline
+                        webkit-playsinline=""
+                        preload="metadata"
+                        style={{ width: "100%", display: "block", maxHeight: 280 }}
+                        ref={(el) => { if (el) el._striveVideoRef = el; }}
+                      />
+                      <div style={{ display: "flex", gap: 6, padding: "8px 12px", background: "#121b2d" }}>
+                        {[0.25, 0.5, 1].map(rate => (
+                          <button
+                            key={rate}
+                            onClick={(e) => {
+                              const video = e.target.closest("div[style]")?.previousElementSibling;
+                              if (video && video.tagName === "VIDEO") video.playbackRate = rate;
+                            }}
+                            style={{
+                              padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: 700,
+                              fontFamily: "'Space Mono', monospace", cursor: "pointer",
+                              background: rate === 1 ? "#e8962a" : "rgba(255,255,255,0.06)",
+                              color: rate === 1 ? "#070c16" : "rgba(255,255,255,0.5)",
+                              border: rate === 1 ? "1px solid #e8962a" : "1px solid rgba(255,255,255,0.1)",
+                            }}
+                          >
+                            {rate}x
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             );
           })()}

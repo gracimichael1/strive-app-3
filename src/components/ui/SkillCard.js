@@ -159,7 +159,7 @@ function SectionBox({ borderColor, bgColor, children, style }) {
  * SkillCard — collapsed shows grade circle + skill name + deduction.
  * Expanded shows tabbed data: Overview, Biomechanics, Injury, Drills.
  */
-function SkillCard({ skill, index, onSeek, defaultExpanded, videoFile }) {
+function SkillCard({ skill, index, defaultExpanded, videoFile }) {
   const [expanded, setExpanded] = useState(defaultExpanded || false);
   const [cardTab, setCardTab] = useState('overview');
   const [playbackRate, setPlaybackRate] = useState(1);
@@ -422,42 +422,6 @@ function SkillCard({ skill, index, onSeek, defaultExpanded, videoFile }) {
           id={`skill-detail-${index}`}
           style={{ padding: '0 16px 16px' }}
         >
-          {/* ── Per-skill video player ── */}
-          {skillVideoUrl && (
-            <div style={{ marginBottom: 14, borderRadius: 12, overflow: 'hidden', background: '#0d1422', border: '1px solid rgba(255,255,255,0.08)' }}>
-              <video
-                ref={skillVideoRef}
-                src={skillVideoUrl}
-                controls
-                controlsList="nodownload"
-                playsInline
-                webkit-playsinline=""
-                preload="metadata"
-                style={{ width: '100%', display: 'block', maxHeight: 200 }}
-              />
-              <div style={{ display: 'flex', gap: 6, padding: '6px 10px', background: '#121b2d' }}>
-                {[0.25, 0.5, 1].map(rate => (
-                  <button
-                    key={rate}
-                    onClick={() => {
-                      setPlaybackRate(rate);
-                      if (skillVideoRef.current) skillVideoRef.current.playbackRate = rate;
-                    }}
-                    style={{
-                      padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 700,
-                      fontFamily: "'Space Mono', monospace", cursor: 'pointer',
-                      background: playbackRate === rate ? COLORS.gold : 'rgba(255,255,255,0.06)',
-                      color: playbackRate === rate ? '#070c16' : 'rgba(255,255,255,0.5)',
-                      border: playbackRate === rate ? `1px solid ${COLORS.gold}` : '1px solid rgba(255,255,255,0.1)',
-                    }}
-                  >
-                    {rate}x
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
           {/* ── Tab selector ── */}
           <div
             style={{
@@ -702,6 +666,42 @@ function SkillCard({ skill, index, onSeek, defaultExpanded, videoFile }) {
           )}
 
           {/* Drills tab — next phase */}
+
+          {/* ── Per-skill video player (below tab content) ── */}
+          {skillVideoUrl && (
+            <div style={{ marginTop: 14, borderRadius: 12, overflow: 'hidden', background: '#0d1422', border: '1px solid rgba(255,255,255,0.08)' }}>
+              <video
+                ref={skillVideoRef}
+                src={skillVideoUrl}
+                controls
+                controlsList="nodownload"
+                playsInline
+                webkit-playsinline=""
+                preload="metadata"
+                style={{ width: '100%', display: 'block', maxHeight: 200 }}
+              />
+              <div style={{ display: 'flex', gap: 6, padding: '6px 10px', background: '#121b2d' }}>
+                {[0.25, 0.5, 1].map(rate => (
+                  <button
+                    key={rate}
+                    onClick={() => {
+                      setPlaybackRate(rate);
+                      if (skillVideoRef.current) skillVideoRef.current.playbackRate = rate;
+                    }}
+                    style={{
+                      padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 700,
+                      fontFamily: "'Space Mono', monospace", cursor: 'pointer',
+                      background: playbackRate === rate ? COLORS.gold : 'rgba(255,255,255,0.06)',
+                      color: playbackRate === rate ? '#070c16' : 'rgba(255,255,255,0.5)',
+                      border: playbackRate === rate ? `1px solid ${COLORS.gold}` : '1px solid rgba(255,255,255,0.1)',
+                    }}
+                  >
+                    {rate}x
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -417,14 +417,15 @@ function VideoReviewPlayer({ videoUrl: propUrl, result }) {
                 <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', lineHeight: 1.5, marginBottom: 4 }}>{ad.fault}</div>
               )}
 
-              {/* Frame compare */}
+              {/* Frame compare — ACTUAL + PERFECT FORM side by side */}
               {showCompare && (
-                <div style={{ marginTop: 10 }}>
-                  <div style={{ borderRadius: 12, overflow: 'hidden', position: 'relative', border: `2px solid ${adColor}40`, background: '#000', marginBottom: 8 }}>
+                <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
+                  {/* ACTUAL frame */}
+                  <div style={{ flex: 1, borderRadius: 10, overflow: 'hidden', position: 'relative', border: `2px solid ${adColor}40`, background: '#000' }}>
                     {capturingFrame ? (
-                      <div style={{ width: '100%', aspectRatio: '16/9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 8 }}>
-                        <div style={{ width: 28, height: 28, borderRadius: '50%', border: '2px solid rgba(232,150,42,0.2)', borderTopColor: '#e8962a', animation: 'rotate 1s linear infinite' }} />
-                        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>Capturing frame...</span>
+                      <div style={{ width: '100%', aspectRatio: '16/9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 6 }}>
+                        <div style={{ width: 22, height: 22, borderRadius: '50%', border: '2px solid rgba(232,150,42,0.2)', borderTopColor: '#e8962a', animation: 'rotate 1s linear infinite' }} />
+                        <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)' }}>Capturing...</span>
                       </div>
                     ) : displayFrame ? (
                       <div style={{ position: 'relative' }}>
@@ -432,26 +433,19 @@ function VideoReviewPlayer({ videoUrl: propUrl, result }) {
                         {showSkeleton && skelJoints && <SkeletonCanvas joints={skelJoints} />}
                       </div>
                     ) : (
-                      <div style={{ width: '100%', aspectRatio: '16/9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 6 }}>
-                        <span style={{ fontSize: 20 }}>🎬</span>
-                        <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '0 16px' }}>
-                          Tap a skill below to capture frame
+                      <div style={{ width: '100%', aspectRatio: '16/9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 4 }}>
+                        <span style={{ fontSize: 16 }}>🎬</span>
+                        <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '0 6px' }}>
+                          Tap skill to capture
                         </span>
                       </div>
                     )}
-                    {displayFrame && !capturingFrame && (
-                      <div style={{ position: 'absolute', top: 8, left: 8, background: 'rgba(220,38,38,0.9)', padding: '3px 10px', borderRadius: 6, fontSize: 11, fontWeight: 700, color: 'white' }}>ACTUAL</div>
-                    )}
-                    {ad?.fault && displayFrame && (
-                      <div style={{ position: 'absolute', bottom: 8, left: 8, right: 8, background: 'rgba(0,0,0,0.8)', padding: '6px 10px', borderRadius: 6, fontSize: 11, color: 'rgba(255,255,255,0.8)', lineHeight: 1.4 }}>
-                        {ad.fault}
-                      </div>
-                    )}
+                    <div style={{ position: 'absolute', top: 4, left: 4, background: 'rgba(220,38,38,0.9)', padding: '2px 6px', borderRadius: 4, fontSize: 9, fontWeight: 700, color: 'white' }}>ACTUAL</div>
                   </div>
-                  {/* Perfect form reference */}
-                  <div style={{ borderRadius: 12, overflow: 'hidden', position: 'relative', border: '1px solid rgba(34,197,94,0.25)', background: 'rgba(34,197,94,0.03)', aspectRatio: '16/9' }}>
+                  {/* PERFECT FORM skeleton */}
+                  <div style={{ flex: 1, borderRadius: 10, overflow: 'hidden', position: 'relative', border: '1px solid rgba(34,197,94,0.25)', background: 'rgba(34,197,94,0.03)', aspectRatio: '16/9' }}>
                     <PerfectFormSVG joints={correctRef?.joints} label={correctRef?.label} />
-                    <div style={{ position: 'absolute', top: 8, left: 8, background: 'rgba(34,197,94,0.9)', padding: '3px 10px', borderRadius: 6, fontSize: 11, fontWeight: 700, color: 'white' }}>PERFECT FORM</div>
+                    <div style={{ position: 'absolute', top: 4, left: 4, background: 'rgba(34,197,94,0.9)', padding: '2px 6px', borderRadius: 4, fontSize: 9, fontWeight: 700, color: 'white' }}>PERFECT FORM</div>
                   </div>
                 </div>
               )}
@@ -470,32 +464,7 @@ function VideoReviewPlayer({ videoUrl: propUrl, result }) {
                 </div>
               )}
 
-              {/* Reference links */}
-              {(() => {
-                const skillClean = (ad.skill || '').replace(/[-—–]/g, ' ').replace(/\s+/g, ' ').trim();
-                const levelShort = (result?.level || '').replace('Xcel ', '').replace('Level ', 'L');
-                const genderWord = result?.level?.includes('Xcel') || !result?.event ? '' : 'gymnastics';
-                const coreSkill = skillClean.replace(/landing|foot form|foot articulation|arm position|support phase|flight phase|same.*|finish position/gi, '').replace(/first|second|third|final|opening/gi, '').trim() || skillClean;
-                const ytQuery = encodeURIComponent(`${coreSkill} ${genderWord} perfect form tutorial`.trim());
-                const imgQuery = encodeURIComponent(`${coreSkill} gymnastics perfect form`.trim());
-                const levelQuery = encodeURIComponent(`${coreSkill} ${result?.level || ''} gymnastics`.trim());
-                return (
-                  <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
-                    <a href={`https://www.youtube.com/results?search_query=${ytQuery}`} target="_blank" rel="noopener noreferrer"
-                      style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, padding: '8px 6px', borderRadius: 8, fontSize: 10, fontWeight: 700, background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.15)', color: '#dc2626', textDecoration: 'none', minHeight: 44 }}>
-                      Watch Perfect Form
-                    </a>
-                    <a href={`https://www.google.com/search?q=${imgQuery}&tbm=isch`} target="_blank" rel="noopener noreferrer"
-                      style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, padding: '8px 6px', borderRadius: 8, fontSize: 10, fontWeight: 700, background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.15)', color: '#3b82f6', textDecoration: 'none', minHeight: 44 }}>
-                      See Examples
-                    </a>
-                    <a href={`https://www.youtube.com/results?search_query=${levelQuery}`} target="_blank" rel="noopener noreferrer"
-                      style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, padding: '8px 6px', borderRadius: 8, fontSize: 10, fontWeight: 700, background: 'rgba(232,150,42,0.08)', border: '1px solid rgba(232,150,42,0.15)', color: '#e8962a', textDecoration: 'none', minHeight: 44 }}>
-                      {levelShort} Examples
-                    </a>
-                  </div>
-                );
-              })()}
+              {/* Reference links — removed for now, revisit later */}
 
               {/* Controls */}
               <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
