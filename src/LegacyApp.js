@@ -11,12 +11,14 @@ import ParentalConsent from "./components/legal/ParentalConsent";
 import LegalDisclaimer from "./components/legal/LegalDisclaimer";
 import PrivacyNotice from "./components/legal/PrivacyNotice";
 import { EVENT_JUDGING_RULES } from "./data/constants";
+import { getEventDeductions, getEventStrictnessGuidance } from "./data/eventDeductions";
+import { buildDeductionPromptBlock } from "./data/codeOfPoints";
 
 // ─── BUILD INFO ──
 const BUILD_VERSION = "1.0.0";
 const BUILD_HASH = process.env.REACT_APP_VERCEL_GIT_COMMIT_SHA ? process.env.REACT_APP_VERCEL_GIT_COMMIT_SHA.slice(0, 7) : "dev";
 const BUILD_DATE = new Date().toISOString().slice(0, 10);
-const PROMPT_VER = "v5_strict_brevet";
+const PROMPT_VER = "v7_full_pessimistic";
 
 // ─── STORAGE WRAPPER — works in Claude artifacts AND real browsers ──
 const storage = {
@@ -3308,9 +3310,13 @@ const UploadScreen = React.memo(function UploadScreen({ profile, onBack, onAnaly
   const videoPreviewRef = useRef(null);
   const events = profile.gender === "female" ? WOMEN_EVENTS : MEN_EVENTS;
 
-  const COMPRESS_THRESHOLD = 100 * 1024 * 1024; // Only compress above 100MB — quality matters for judging
-  const TARGET_WIDTH = 1080; // 1080p preserves toe points, knee angles, body lines
-  const TARGET_BITRATE = 4000000; // 4.0 Mbps — higher quality for accurate frame analysis
+  // Smart compression: only for large files (>50MB), at REAL-TIME speed to preserve every frame.
+  // The old approach played at 3x speed which caused frame skipping and choppy output.
+  // New approach: 1x playback, 1080p, 8Mbps = quality like a text message video.
+  // Under 50MB: send original. Over 50MB: gentle re-encode preserving all motion detail.
+  const COMPRESS_THRESHOLD = 50 * 1024 * 1024; // 50MB — typical phone routine is 15-45MB
+  const TARGET_WIDTH = 1080; // 1080p preserves body positions, toe points, knee angles
+  const TARGET_BITRATE = 8000000; // 8 Mbps — high quality, like iMessage/text compression
 
   const formatFileSize = (bytes) => {
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + " KB";
@@ -3374,7 +3380,10 @@ const UploadScreen = React.memo(function UploadScreen({ profile, onBack, onAnaly
           reject(new Error("Compression failed: " + (e.error?.message || "unknown")));
         };
 
-        // Play video and draw each frame to canvas
+        // Play at REAL-TIME speed (1x) to capture every frame accurately.
+        // The old 3x approach skipped frames and produced choppy output that
+        // destroyed Gemini's ability to judge landings, rhythm, and body positions.
+        // A 90-second routine takes 90 seconds to compress — acceptable tradeoff for accuracy.
         recorder.start(100); // Collect data every 100ms
         sourceVideo.currentTime = 0;
         sourceVideo.play().catch(reject);
@@ -3395,8 +3404,8 @@ const UploadScreen = React.memo(function UploadScreen({ profile, onBack, onAnaly
           setTimeout(() => { if (recorder.state === "recording") recorder.stop(); }, 200);
         };
 
-        // Speed up playback for faster compression (3x)
-        sourceVideo.playbackRate = 3;
+        // CRITICAL: Play at 1x speed. Never speed up — frame skipping destroys scoring accuracy.
+        sourceVideo.playbackRate = 1;
       };
 
       sourceVideo.onerror = () => {
@@ -3423,13 +3432,13 @@ const UploadScreen = React.memo(function UploadScreen({ profile, onBack, onAnaly
     setVideoError(null);
     let processedFile = file;
 
-    // Auto-compress large videos
+    // Smart compress: >50MB gets gentle re-encode (1080p, 8Mbps, real-time speed — no frame skipping)
     if (file.size > COMPRESS_THRESHOLD) {
       try {
         processedFile = await compressVideo(file);
       } catch (err) {
         console.warn("Compression failed, using original:", err.message);
-        setVideoError(`Video is large (${formatFileSize(file.size)}). Compression wasn't possible — upload may be slow.`);
+        setVideoError(`Large video (${formatFileSize(file.size)}) — using original file. Upload may be slower.`);
         processedFile = file;
       }
     }
@@ -4305,6 +4314,7 @@ const AnalyzingScreen = React.memo(function AnalyzingScreen({ uploadData, profil
           topK: 1,
           maxOutputTokens: 16384,
           seed: 42,
+          responseMimeType: "application/json",
         },
       }),
     });
@@ -4443,6 +4453,15 @@ SPLIT LEAP/JUMP REQUIREMENT at ${level}: minimum ${splitMin}°
 
     const athleteName = profile.name || "the gymnast";
 
+    // ── Enhanced event deductions from eventDeductions.js ──────────────
+    const detailedEventDeductions = !isAutoDetect ? getEventDeductions(event) : "";
+    const strictnessGuidance = !isAutoDetect ? getEventStrictnessGuidance(event) : "";
+
+    // ── Code of Points deduction reference ─────────────────────────────
+    const copBlock = !isAutoDetect
+      ? buildDeductionPromptBlock(profile.gender || "female", level, event)
+      : "";
+
     const autoDetectLine = isAutoDetect
       ? `\nEVENT AUTO-DETECTION: Identify the gymnastics event/apparatus from the video content. Look for: balance beam (narrow beam, 4 inches wide), uneven bars (two horizontal bars at different heights), vault (running approach + springboard), floor exercise (spring floor, no apparatus). Include the detected event as "detectedEvent" in your JSON response.\n`
       : "";
@@ -4519,6 +4538,9 @@ ${programContext}
 ${skillsLine}
 ${benchLine}
 ${eventSpecificBlock}
+${detailedEventDeductions ? `\n═══ DETAILED APPARATUS DEDUCTION TABLE ═══\n${detailedEventDeductions}\n═══ END APPARATUS DEDUCTIONS ═══\n` : ""}
+${strictnessGuidance}
+${copBlock ? `\n${copBlock}\n` : ""}
 KEY RULES:
 1. INDIVIDUAL ELEMENTS: Break every skill apart for FEEDBACK purposes. A Round-off, Back Handspring, and Back Tuck in one tumbling pass = THREE separate entries. HOWEVER, connecting elements within a pass share momentum — only deduct faults you can CLEARLY SEE on each individual element. Do not assume faults on connecting elements. If a round-off looks clean, score it clean (0.00 deduction). Most elements in a competent routine have 0-1 visible faults.
 2. MICRO-DEDUCTIONS: Flexed feet, soft knees, micro-bends — deduct 0.05 each, but ONLY when clearly visible. Do not guess or assume. A typical skill has 0-2 micro-faults, not 3-4.
@@ -4629,7 +4651,16 @@ JSON RULES:
 - Each deduction exactly two decimal places. Only values: 0.00, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.50.
 - Chronological order by timestamp.
 - If total deductions < 0.80, you are too lenient. Re-evaluate.
-- If total deductions > 1.50, you are too harsh — remove uncertain deductions. Target: 0.90–1.20 total.`;
+- If total deductions > 1.50, you are too harsh — remove uncertain deductions. Target: 0.90–1.20 total.
+
+SECOND-PASS CHECK (do this AFTER your initial assessment):
+Re-watch the routine focusing ONLY on these commonly missed items:
+1. Feet — were there flexed feet you missed? Count them.
+2. Pauses — any hesitations or rhythm breaks between skills?
+3. Landings — did you deduct for every step, hop, or squat?
+4. Split leaps — is the angle truly at or above ${splitMin}°?
+5. Arms — any bent arm moments in support or flight?
+Add any missed deductions to your final JSON.`;
   }, [profile, uploadData]);
 
   // ── Main analysis orchestrator — single pass ─────────────────────
@@ -4654,7 +4685,7 @@ JSON RULES:
 
     // ── Score caching — return cached result for duplicate submissions ──
     // Fingerprint: file name + size + lastModified + athlete name + level + event
-    const PROMPT_VERSION = "v6_pessimistic_judge"; // Bump this when prompt changes to invalidate cache
+    const PROMPT_VERSION = "v7_full_pessimistic"; // Bump this when prompt changes to invalidate cache
     const fingerprintParts = [
       PROMPT_VERSION,
       uploadData.video.name || "video",
