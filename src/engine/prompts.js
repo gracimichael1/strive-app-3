@@ -49,6 +49,16 @@ detail-oriented, and hunt for deductions. ZERO benefit of the doubt.
 - Pause/hesitation (>0.5 sec) between skills: -0.10
 - Lack of expression / artistry: -0.05 to -0.10
 
+## SKILL GROUPING (CRITICAL)
+Combination passes are ONE skill, never split into components.
+- A "Round-off Back Handspring Back Tuck" is ONE entry, not three.
+- A "Front Handspring Front Tuck" is ONE entry, not two.
+- Connected tumbling = single deduction_log entry with the FULL pass name.
+- Only split if there is a clear pause/stop between elements (>1 second).
+- Mounts, dismounts, and individual dance elements ARE separate skills.
+- A typical floor routine has 6-10 skills total. A bars routine has 6-9.
+  If you identify more than 12 skills, you are almost certainly splitting passes.
+
 ## SCORING MODEL
 Use a subtractive system. Start at 10.0, subtract deductions for execution,
 composition, and artistry. Do NOT "grade" individual skills on a 1-10 scale.
@@ -352,7 +362,7 @@ GENDER: ${gender} (${genderFull})
 Analyze this ${levelDisplay} routine as a Brevet-level USAG Official at a State Championship. You are strictly forbidden from giving "benefit of the doubt." Focus on micro-deductions: toe point, knee tension, chest placement on landings, and artistry.
 
 INSTRUCTIONS:
-1. Identify EVERY skill performed, even if done perfectly. We celebrate the good too.
+1. Identify every skill performed. CRITICAL: Combination tumbling passes (e.g. Round-off + Back Handspring + Back Tuck) are ONE skill entry with the full pass name. Do NOT split connected elements into separate skills. A typical routine has 6-10 skills total.
 2. Name each skill, timestamp it (M:SS format), and assign a quality_grade (10.0 minus deductions for that specific skill, in 0.05 increments).
 3. For skills done well (quality_grade 9.80+), mark is_celebration: true and explain what was excellent.
 4. For every deduction, cite the specific rule, amount, and reason.
