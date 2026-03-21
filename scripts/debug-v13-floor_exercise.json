@@ -1,0 +1,235 @@
+{
+  "start_value": 10,
+  "final_score": 8.6,
+  "deduction_log": [
+    {
+      "skill_name": "Jump Full Turn",
+      "skill_order": 1,
+      "timestamp_start": 29,
+      "timestamp_end": 30.2,
+      "executed_successfully": true,
+      "difficulty_value": 0.1,
+      "total_deduction": 0.05,
+      "deductions": [
+        {
+          "type": "Execution",
+          "body_part": "Knees",
+          "description": "Slight knee bend on landing (KTM)",
+          "point_value": 0.05
+        }
+      ],
+      "quality_grade": 0.95,
+      "reason": "Minor form break on landing.",
+      "is_celebration": false
+    },
+    {
+      "skill_name": "Round-off Back Handspring Back Tuck",
+      "skill_order": 2,
+      "timestamp_start": 31.5,
+      "timestamp_end": 32.8,
+      "executed_successfully": true,
+      "difficulty_value": 0.2,
+      "total_deduction": 0.5,
+      "deductions": [
+        {
+          "type": "Execution",
+          "body_part": "Knees",
+          "description": "Slight bent knees in round-off (KTM)",
+          "point_value": 0.05
+        },
+        {
+          "type": "Execution",
+          "body_part": "Feet",
+          "description": "Flexed feet on round-off block (TPM)",
+          "point_value": 0.05
+        },
+        {
+          "type": "Execution",
+          "body_part": "Arms",
+          "description": "Slight bent arms in back handspring",
+          "point_value": 0.05
+        },
+        {
+          "type": "Execution",
+          "body_part": "Legs",
+          "description": "Slight leg separation in back handspring",
+          "point_value": 0.05
+        },
+        {
+          "type": "Execution",
+          "body_part": "Body Position",
+          "description": "Open tuck position, not tight throughout flight ('Early Pike' flag)",
+          "point_value": 0.2
+        },
+        {
+          "type": "Execution",
+          "body_part": "Landing",
+          "description": "Small hop back on landing",
+          "point_value": 0.1
+        },
+        {
+          "type": "Execution",
+          "body_part": "Landing",
+          "description": "Deep squat on landing (chest below hips)",
+          "point_value": 0.1
+        }
+      ],
+      "quality_grade": 0.5,
+      "reason": "Multiple form breaks and landing control issues. The tuck opened prematurely.",
+      "is_celebration": false
+    },
+    {
+      "skill_name": "Split Leap",
+      "skill_order": 3,
+      "timestamp_start": 45.5,
+      "timestamp_end": 46.8,
+      "executed_successfully": true,
+      "difficulty_value": 0.1,
+      "total_deduction": 0.15,
+      "deductions": [
+        {
+          "type": "Execution",
+          "body_part": "Legs",
+          "description": "Split not 180 degrees at apex",
+          "point_value": 0.1
+        },
+        {
+          "type": "Execution",
+          "body_part": "Knees",
+          "description": "Slight knee bend in front leg (KTM)",
+          "point_value": 0.05
+        }
+      ],
+      "quality_grade": 0.85,
+      "reason": "Lack of full split and knee tension in the lead leg.",
+      "is_celebration": false
+    },
+    {
+      "skill_name": "Round-off Back Handspring Back Handspring",
+      "skill_order": 4,
+      "timestamp_start": 56.5,
+      "timestamp_end": 58,
+      "executed_successfully": true,
+      "difficulty_value": 0.2,
+      "total_deduction": 0.4,
+      "deductions": [
+        {
+          "type": "Execution",
+          "body_part": "Knees",
+          "description": "Slight bent knees in round-off (KTM)",
+          "point_value": 0.05
+        },
+        {
+          "type": "Execution",
+          "body_part": "Feet",
+          "description": "Flexed feet on round-off block (TPM)",
+          "point_value": 0.05
+        },
+        {
+          "type": "Execution",
+          "body_part": "Arms",
+          "description": "Slight bent arms in first back handspring",
+          "point_value": 0.05
+        },
+        {
+          "type": "Execution",
+          "body_part": "Legs",
+          "description": "Slight leg separation in first back handspring",
+          "point_value": 0.05
+        },
+        {
+          "type": "Execution",
+          "body_part": "Arms",
+          "description": "Slight bent arms in second back handspring",
+          "point_value": 0.05
+        },
+        {
+          "type": "Execution",
+          "body_part": "Legs",
+          "description": "Slight leg separation in second back handspring",
+          "point_value": 0.05
+        },
+        {
+          "type": "Execution",
+          "body_part": "Landing",
+          "description": "Small step forward on landing",
+          "point_value": 0.1
+        }
+      ],
+      "quality_grade": 0.6,
+      "reason": "Consistent minor form breaks throughout the series and a step on landing.",
+      "is_celebration": false
+    },
+    {
+      "skill_name": "Split",
+      "skill_order": 5,
+      "timestamp_start": 107,
+      "timestamp_end": 109,
+      "executed_successfully": true,
+      "difficulty_value": 0.1,
+      "total_deduction": 0.1,
+      "deductions": [
+        {
+          "type": "Execution",
+          "body_part": "Legs",
+          "description": "Split not 180 degrees",
+          "point_value": 0.1
+        }
+      ],
+      "quality_grade": 0.9,
+      "reason": "Lack of full split extension.",
+      "is_celebration": false
+    }
+  ],
+  "special_requirements": [
+    {
+      "requirement": "Two different acro passes",
+      "status": "MET",
+      "comment": "Performed Round-off Back Handspring Back Tuck and Round-off Back Handspring Back Handspring.",
+      "penalty": 0
+    },
+    {
+      "requirement": "Salto required in both acro passes",
+      "status": "NOT_MET",
+      "comment": "The second acro pass (Round-off Back Handspring Back Handspring) does not contain a salto.",
+      "penalty": 0.5
+    }
+  ],
+  "artistry": {
+    "expression_deduction": 0.05,
+    "quality_of_movement_deduction": 0.1,
+    "choreography_variety_deduction": 0.05,
+    "musicality_deduction": 0.05,
+    "total_artistry_deduction": 0.25,
+    "notes": "The gymnast showed some expression, but there were moments of stiffness and a lack of consistent connection to the music's accents. Choreography was generally appropriate for the level but lacked dynamic variation in some transitions."
+  },
+  "total_execution_deductions": 0.9,
+  "total_artistry_deductions": 0.2,
+  "score_range": {
+    "low": 8.4,
+    "high": 9.3
+  },
+  "confidence": "HIGH",
+  "coaching_summary": "This routine demonstrates solid foundational skills for Level 6. The gymnast successfully performed all required elements, including two distinct acro passes. However, the routine incurred a significant Special Requirement penalty due to the absence of a salto in the second tumbling pass. Execution-wise, consistent minor form breaks, particularly bent knees and flexed feet in tumbling, along with slightly open body positions in flight and landing control issues, were observed. Artistry could be enhanced through more dynamic movement quality and consistent expression. The overall performance, while complete, sits at the lower end of the competitive range for a State Championship due to the SR penalty and accumulated execution deductions.",
+  "top_3_fixes": [
+    "Master the 'Hollow-Arch-Hollow' shape: Focus on maintaining a tight, hollow body position throughout all flight elements (especially the back tuck) and handsprings. Drills like candlestick rolls to hollow, arch holds, and snap-downs with a strong hollow finish will build core strength and body awareness. For the back tuck, ensure a tight, compact shape is achieved at the apex of flight before opening for landing.",
+    "Improve Landing Control and Absorption: Consistently practice 'sticking' landings with locked knees (KTM) and pointed toes (TPM) upon contact, absorbing the impact through controlled ankle, knee, and hip flexion. Drills involving rebound jumps to a 'stick' landing, and plyometric box jumps with controlled dismounts, will help build strength and precision. The CoM should be stacked directly over the base of support at impact.",
+    "Enhance Toe Point and Knee Tension: Implement daily drills specifically targeting toe point (TPM) and knee tension (KTM) in all dance elements, leaps, and tumbling connections. This includes active flexibility for full splits and strengthening exercises for the quadriceps and calf muscles to maintain locked knees and pointed toes throughout the routine, even for a single frame."
+  ],
+  "celebrations": [
+    "The gymnast demonstrated good rhythm and flow between elements in the dance sections.",
+    "The first acro pass (Round-off Back Handspring Back Tuck) was performed with good height and rotation.",
+    "The gymnast maintained composure and completed the routine without any major falls or balance checks."
+  ],
+  "athlete_name": "the gymnast",
+  "duration_seconds": 110,
+  "event": "Floor Exercise",
+  "gender": "WAG",
+  "level": "JO LEVEL 6",
+  "_code_score": 8.415,
+  "_blended": 8.6,
+  "_source": "ai",
+  "_cal_factor": 0.7,
+  "_raw_exec": 1.3000000000000005,
+  "_scaled_exec": 0.91
+}

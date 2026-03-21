@@ -1,0 +1,377 @@
+{
+  "start_value": 10,
+  "final_score": 8.65,
+  "deduction_log": [
+    {
+      "skill_name": "Jump to Low Bar",
+      "skill_order": 1,
+      "timestamp_start": 1,
+      "timestamp_end": 2,
+      "executed_successfully": true,
+      "difficulty_value": 0,
+      "total_deduction": 0.05,
+      "deductions": [
+        {
+          "type": "Form Break",
+          "body_part": "Legs",
+          "description": "Slight pike in hips and bent knees on catch",
+          "point_value": 0.05
+        }
+      ],
+      "quality_grade": 0.95,
+      "reason": "Minor form breaks during mount.",
+      "is_celebration": false
+    },
+    {
+      "skill_name": "Low Bar Kip",
+      "skill_order": 2,
+      "timestamp_start": 2,
+      "timestamp_end": 3,
+      "executed_successfully": true,
+      "difficulty_value": 0,
+      "total_deduction": 0.1,
+      "deductions": [
+        {
+          "type": "Form Break",
+          "body_part": "Legs/Feet",
+          "description": "Slight pike in hips, bent knees, and flexed feet at end of kip",
+          "point_value": 0.1
+        }
+      ],
+      "quality_grade": 0.9,
+      "reason": "Consistent minor form breaks throughout the kip.",
+      "is_celebration": false
+    },
+    {
+      "skill_name": "Cast to Horizontal",
+      "skill_order": 3,
+      "timestamp_start": 3,
+      "timestamp_end": 4,
+      "executed_successfully": true,
+      "difficulty_value": 0,
+      "total_deduction": 0.15,
+      "deductions": [
+        {
+          "type": "Amplitude",
+          "body_part": "Hips",
+          "description": "Cast below horizontal",
+          "point_value": 0.1
+        },
+        {
+          "type": "Form Break",
+          "body_part": "Legs/Feet",
+          "description": "Slight pike in hips and flexed feet during cast",
+          "point_value": 0.05
+        }
+      ],
+      "quality_grade": 0.85,
+      "reason": "Cast did not reach horizontal and minor leg form breaks.",
+      "is_celebration": false
+    },
+    {
+      "skill_name": "Back Hip Circle",
+      "skill_order": 4,
+      "timestamp_start": 4,
+      "timestamp_end": 5,
+      "executed_successfully": true,
+      "difficulty_value": 0,
+      "total_deduction": 0.1,
+      "deductions": [
+        {
+          "type": "Form Break",
+          "body_part": "Legs/Feet",
+          "description": "Slightly bent knees and flexed feet during circle",
+          "point_value": 0.1
+        }
+      ],
+      "quality_grade": 0.9,
+      "reason": "Minor leg and foot form breaks.",
+      "is_celebration": false
+    },
+    {
+      "skill_name": "Cast to Horizontal",
+      "skill_order": 5,
+      "timestamp_start": 5,
+      "timestamp_end": 6,
+      "executed_successfully": true,
+      "difficulty_value": 0,
+      "total_deduction": 0.15,
+      "deductions": [
+        {
+          "type": "Amplitude",
+          "body_part": "Hips",
+          "description": "Cast below horizontal",
+          "point_value": 0.1
+        },
+        {
+          "type": "Form Break",
+          "body_part": "Legs/Feet",
+          "description": "Slight pike in hips and flexed feet during cast",
+          "point_value": 0.05
+        }
+      ],
+      "quality_grade": 0.85,
+      "reason": "Cast did not reach horizontal and minor leg form breaks.",
+      "is_celebration": false
+    },
+    {
+      "skill_name": "Squat On to High Bar",
+      "skill_order": 6,
+      "timestamp_start": 6,
+      "timestamp_end": 7,
+      "executed_successfully": true,
+      "difficulty_value": 0.1,
+      "total_deduction": 0.15,
+      "deductions": [
+        {
+          "type": "Technical Error",
+          "body_part": "Feet",
+          "description": "Heavy bar contact / slight stumble on feet",
+          "point_value": 0.1
+        },
+        {
+          "type": "Form Break",
+          "body_part": "Legs/Feet",
+          "description": "Slightly bent knees and flexed feet in squat position",
+          "point_value": 0.05
+        }
+      ],
+      "quality_grade": 0.85,
+      "reason": "Heavy bar contact and minor leg/foot form.",
+      "is_celebration": false
+    },
+    {
+      "skill_name": "Long Hang Kip",
+      "skill_order": 7,
+      "timestamp_start": 8,
+      "timestamp_end": 9,
+      "executed_successfully": true,
+      "difficulty_value": 0,
+      "total_deduction": 0.1,
+      "deductions": [
+        {
+          "type": "Form Break",
+          "body_part": "Legs/Feet",
+          "description": "Slight pike in hips, bent knees, and flexed feet at end of kip",
+          "point_value": 0.1
+        }
+      ],
+      "quality_grade": 0.9,
+      "reason": "Consistent minor form breaks throughout the kip.",
+      "is_celebration": false
+    },
+    {
+      "skill_name": "Cast to Horizontal",
+      "skill_order": 8,
+      "timestamp_start": 9,
+      "timestamp_end": 10,
+      "executed_successfully": true,
+      "difficulty_value": 0,
+      "total_deduction": 0.15,
+      "deductions": [
+        {
+          "type": "Amplitude",
+          "body_part": "Hips",
+          "description": "Cast below horizontal",
+          "point_value": 0.1
+        },
+        {
+          "type": "Form Break",
+          "body_part": "Legs/Feet",
+          "description": "Slight pike in hips and flexed feet during cast",
+          "point_value": 0.05
+        }
+      ],
+      "quality_grade": 0.85,
+      "reason": "Cast did not reach horizontal and minor leg form breaks.",
+      "is_celebration": false
+    },
+    {
+      "skill_name": "Back Hip Circle",
+      "skill_order": 9,
+      "timestamp_start": 10,
+      "timestamp_end": 11,
+      "executed_successfully": true,
+      "difficulty_value": 0,
+      "total_deduction": 0.1,
+      "deductions": [
+        {
+          "type": "Form Break",
+          "body_part": "Legs/Feet",
+          "description": "Slightly bent knees and flexed feet during circle",
+          "point_value": 0.1
+        }
+      ],
+      "quality_grade": 0.9,
+      "reason": "Minor leg and foot form breaks.",
+      "is_celebration": false
+    },
+    {
+      "skill_name": "Cast to Horizontal",
+      "skill_order": 10,
+      "timestamp_start": 11,
+      "timestamp_end": 12,
+      "executed_successfully": true,
+      "difficulty_value": 0,
+      "total_deduction": 0.15,
+      "deductions": [
+        {
+          "type": "Amplitude",
+          "body_part": "Hips",
+          "description": "Cast below horizontal",
+          "point_value": 0.1
+        },
+        {
+          "type": "Form Break",
+          "body_part": "Legs/Feet",
+          "description": "Slight pike in hips and flexed feet during cast",
+          "point_value": 0.05
+        }
+      ],
+      "quality_grade": 0.85,
+      "reason": "Cast did not reach horizontal and minor leg form breaks.",
+      "is_celebration": false
+    },
+    {
+      "skill_name": "Tuck Flyaway Dismount",
+      "skill_order": 11,
+      "timestamp_start": 12,
+      "timestamp_end": 14,
+      "executed_successfully": true,
+      "difficulty_value": 0.2,
+      "total_deduction": 0.5,
+      "deductions": [
+        {
+          "type": "Technical Error",
+          "body_part": "Body Position",
+          "description": "Early pike/tuck before reaching apex of flight",
+          "point_value": 0.2
+        },
+        {
+          "type": "Form Break",
+          "body_part": "Knees",
+          "description": "Knees apart in tuck position",
+          "point_value": 0.1
+        },
+        {
+          "type": "Landing Error",
+          "body_part": "Torso",
+          "description": "Chest down on landing",
+          "point_value": 0.1
+        },
+        {
+          "type": "Landing Error",
+          "body_part": "Feet",
+          "description": "Small hop on landing",
+          "point_value": 0.1
+        }
+      ],
+      "quality_grade": 0.5,
+      "reason": "Significant form breaks in flight and on landing.",
+      "is_celebration": false
+    },
+    {
+      "skill_name": "Rhythm Deduction (Cast 3 to BHC 4)",
+      "skill_order": 12,
+      "timestamp_start": 4,
+      "timestamp_end": 4,
+      "executed_successfully": true,
+      "difficulty_value": 0,
+      "total_deduction": 0.1,
+      "deductions": [
+        {
+          "type": "Rhythm",
+          "body_part": "Routine Flow",
+          "description": "Rhythm break due to low cast amplitude affecting subsequent skill",
+          "point_value": 0.1
+        }
+      ],
+      "quality_grade": 0.9,
+      "reason": "Low cast amplitude caused a slight rhythm break into the next skill.",
+      "is_celebration": false
+    },
+    {
+      "skill_name": "Rhythm Deduction (Cast 8 to BHC 9)",
+      "skill_order": 13,
+      "timestamp_start": 10,
+      "timestamp_end": 10,
+      "executed_successfully": true,
+      "difficulty_value": 0,
+      "total_deduction": 0.1,
+      "deductions": [
+        {
+          "type": "Rhythm",
+          "body_part": "Routine Flow",
+          "description": "Rhythm break due to low cast amplitude affecting subsequent skill",
+          "point_value": 0.1
+        }
+      ],
+      "quality_grade": 0.9,
+      "reason": "Low cast amplitude caused a slight rhythm break into the next skill.",
+      "is_celebration": false
+    }
+  ],
+  "special_requirements": [
+    {
+      "requirement": "Cast to horizontal",
+      "status": "MET",
+      "comment": "Casts were performed, fulfilling the requirement, though amplitude deductions were taken for not reaching true horizontal.",
+      "penalty": 0
+    },
+    {
+      "requirement": "B-value element required",
+      "status": "MET",
+      "comment": "Squat On (B-value) was performed.",
+      "penalty": 0
+    },
+    {
+      "requirement": "Kip",
+      "status": "MET",
+      "comment": "Multiple kips were performed.",
+      "penalty": 0
+    },
+    {
+      "requirement": "Dismount",
+      "status": "MET",
+      "comment": "Tuck Flyaway was performed as the dismount.",
+      "penalty": 0
+    }
+  ],
+  "artistry": {
+    "expression_deduction": 0,
+    "quality_of_movement_deduction": 0.15,
+    "choreography_variety_deduction": 0,
+    "musicality_deduction": 0,
+    "total_artistry_deduction": 0.15,
+    "notes": "Overall body tension is present, but consistent minor form breaks (bent knees, flexed feet) detract from the quality of movement and extension. Rhythm was slightly broken by low casts."
+  },
+  "total_execution_deductions": 1.15,
+  "total_artistry_deductions": 0.15,
+  "score_range": {
+    "low": 8.4,
+    "high": 9.3
+  },
+  "confidence": "HIGH",
+  "coaching_summary": "This routine demonstrates a solid foundation of Level 6 skills with good effort. The gymnast maintains a generally consistent pace and completes all required elements. However, consistent minor form breaks, particularly in leg and foot tension, and insufficient cast amplitude are significant areas for improvement. The dismount, while completed, shows clear technical faults that limit its scoring potential. Focusing on precise body lines and full extension will elevate the overall presentation and score.",
+  "top_3_fixes": [
+    "**Cast Amplitude & Body Line:** Focus on aggressive hollow-arch-hollow swings to achieve true horizontal on all casts. Drill casts to handstand on a single bar with a spot to reinforce the vertical line and full hip extension. This is the 'Technical Anchor' that will be a liability at higher levels.",
+    "**Leg & Foot Tension (TPM/KTM):** Implement daily drills for pointed toes and locked knees in all positions – swings, kips, and circles. Use resistance bands for toe point drills and emphasize 'straight legs, tight knees' verbally and physically throughout training.",
+    "**Flyaway Dismount Shape:** Prioritize a strong, stretched hollow body position off the bar before initiating the tuck. Use a pit or soft landing surface to practice a 'straight body drop' before tucking, ensuring the rotation is initiated from a fully extended position, not an early pike. This will improve height and rotation quality."
+  ],
+  "celebrations": [
+    "The gymnast successfully completed all required elements for a Level 6 routine.",
+    "The Squat On to High Bar was performed successfully, fulfilling the B-value requirement.",
+    "The routine maintained a generally good pace and flow between most skills."
+  ],
+  "athlete_name": "the gymnast",
+  "duration_seconds": 14,
+  "event": "Uneven Bars",
+  "gender": "WAG",
+  "level": "JO LEVEL 6",
+  "_code_score": 8.257,
+  "_blended": 8.65,
+  "_source": "ai!",
+  "_cal_factor": 0.85,
+  "_raw_exec": 1.9000000000000006,
+  "_scaled_exec": 1.615
+}

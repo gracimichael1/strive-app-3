@@ -1,0 +1,728 @@
+{
+  "start_value": 10,
+  "final_score": 3,
+  "deduction_log": [
+    {
+      "skill_name": "Jump to Low Bar",
+      "skill_order": 1,
+      "timestamp_start": 1.5,
+      "timestamp_end": 2.5,
+      "executed_successfully": true,
+      "difficulty_value": 0.1,
+      "total_deduction": 0.1,
+      "deductions": [
+        {
+          "type": "Form",
+          "body_part": "Knees",
+          "description": "Slightly bent on catch (KTM)",
+          "point_value": 0.05
+        },
+        {
+          "type": "Form",
+          "body_part": "Toes",
+          "description": "Slightly flexed on catch (TPM)",
+          "point_value": 0.05
+        }
+      ],
+      "quality_grade": 0,
+      "reason": "Minor form breaks on entry.",
+      "is_celebration": false
+    },
+    {
+      "skill_name": "Low Bar Kip",
+      "skill_order": 2,
+      "timestamp_start": 2.5,
+      "timestamp_end": 3.5,
+      "executed_successfully": true,
+      "difficulty_value": 0.1,
+      "total_deduction": 0.3,
+      "deductions": [
+        {
+          "type": "Form",
+          "body_part": "Hips",
+          "description": "Slight pike during kip drive",
+          "point_value": 0.1
+        },
+        {
+          "type": "Form",
+          "body_part": "Knees",
+          "description": "Slightly bent during kip (KTM)",
+          "point_value": 0.05
+        },
+        {
+          "type": "Form",
+          "body_part": "Toes",
+          "description": "Slightly flexed during kip (TPM)",
+          "point_value": 0.05
+        },
+        {
+          "type": "Technique",
+          "body_part": "Arms",
+          "description": "Bent arms on top of bar",
+          "point_value": 0.1
+        }
+      ],
+      "quality_grade": -0.2,
+      "reason": "Multiple form and technique errors during the kip.",
+      "is_celebration": false
+    },
+    {
+      "skill_name": "Cast (LB)",
+      "skill_order": 3,
+      "timestamp_start": 3.5,
+      "timestamp_end": 4.5,
+      "executed_successfully": true,
+      "difficulty_value": 0.1,
+      "total_deduction": 0.55,
+      "deductions": [
+        {
+          "type": "Structural",
+          "body_part": "Body Position",
+          "description": "Cast failed to reach horizontal (30-Degree Penalty)",
+          "point_value": 0.3
+        },
+        {
+          "type": "Form",
+          "body_part": "Hips",
+          "description": "Slight pike at peak of cast",
+          "point_value": 0.05
+        },
+        {
+          "type": "Form",
+          "body_part": "Knees",
+          "description": "Slightly bent at peak of cast (KTM)",
+          "point_value": 0.05
+        },
+        {
+          "type": "Form",
+          "body_part": "Toes",
+          "description": "Slightly flexed at peak of cast (TPM)",
+          "point_value": 0.05
+        },
+        {
+          "type": "Rhythm",
+          "body_part": "Routine Flow",
+          "description": "Rhythm break due to low cast impacting subsequent skill (Compounding Rule)",
+          "point_value": 0.1
+        }
+      ],
+      "quality_grade": -0.45,
+      "reason": "Significant deduction for cast height, compounded by form breaks and rhythm impact.",
+      "is_celebration": false
+    },
+    {
+      "skill_name": "Back Hip Circle (LB)",
+      "skill_order": 4,
+      "timestamp_start": 4.5,
+      "timestamp_end": 5.5,
+      "executed_successfully": true,
+      "difficulty_value": 0.1,
+      "total_deduction": 0.15,
+      "deductions": [
+        {
+          "type": "Form",
+          "body_part": "Hips",
+          "description": "Slight pike during circle",
+          "point_value": 0.05
+        },
+        {
+          "type": "Form",
+          "body_part": "Knees",
+          "description": "Slightly bent during circle (KTM)",
+          "point_value": 0.05
+        },
+        {
+          "type": "Form",
+          "body_part": "Toes",
+          "description": "Slightly flexed during circle (TPM)",
+          "point_value": 0.05
+        }
+      ],
+      "quality_grade": -0.05,
+      "reason": "Minor form breaks throughout the skill.",
+      "is_celebration": false
+    },
+    {
+      "skill_name": "Cast (LB)",
+      "skill_order": 5,
+      "timestamp_start": 5.5,
+      "timestamp_end": 6.5,
+      "executed_successfully": true,
+      "difficulty_value": 0.1,
+      "total_deduction": 0.55,
+      "deductions": [
+        {
+          "type": "Structural",
+          "body_part": "Body Position",
+          "description": "Cast failed to reach horizontal (30-Degree Penalty)",
+          "point_value": 0.3
+        },
+        {
+          "type": "Form",
+          "body_part": "Hips",
+          "description": "Slight pike at peak of cast",
+          "point_value": 0.05
+        },
+        {
+          "type": "Form",
+          "body_part": "Knees",
+          "description": "Slightly bent at peak of cast (KTM)",
+          "point_value": 0.05
+        },
+        {
+          "type": "Form",
+          "body_part": "Toes",
+          "description": "Slightly flexed at peak of cast (TPM)",
+          "point_value": 0.05
+        },
+        {
+          "type": "Rhythm",
+          "body_part": "Routine Flow",
+          "description": "Rhythm break due to low cast impacting subsequent skill (Compounding Rule)",
+          "point_value": 0.1
+        }
+      ],
+      "quality_grade": -0.45,
+      "reason": "Significant deduction for cast height, compounded by form breaks and rhythm impact.",
+      "is_celebration": false
+    },
+    {
+      "skill_name": "Back Hip Circle (LB)",
+      "skill_order": 6,
+      "timestamp_start": 6.5,
+      "timestamp_end": 7.5,
+      "executed_successfully": true,
+      "difficulty_value": 0.1,
+      "total_deduction": 0.15,
+      "deductions": [
+        {
+          "type": "Form",
+          "body_part": "Hips",
+          "description": "Slight pike during circle",
+          "point_value": 0.05
+        },
+        {
+          "type": "Form",
+          "body_part": "Knees",
+          "description": "Slightly bent during circle (KTM)",
+          "point_value": 0.05
+        },
+        {
+          "type": "Form",
+          "body_part": "Toes",
+          "description": "Slightly flexed during circle (TPM)",
+          "point_value": 0.05
+        }
+      ],
+      "quality_grade": -0.05,
+      "reason": "Minor form breaks throughout the skill.",
+      "is_celebration": false
+    },
+    {
+      "skill_name": "Cast (LB)",
+      "skill_order": 7,
+      "timestamp_start": 7.5,
+      "timestamp_end": 8.5,
+      "executed_successfully": true,
+      "difficulty_value": 0.1,
+      "total_deduction": 0.45,
+      "deductions": [
+        {
+          "type": "Structural",
+          "body_part": "Body Position",
+          "description": "Cast failed to reach horizontal (30-Degree Penalty)",
+          "point_value": 0.3
+        },
+        {
+          "type": "Form",
+          "body_part": "Hips",
+          "description": "Slight pike at peak of cast",
+          "point_value": 0.05
+        },
+        {
+          "type": "Form",
+          "body_part": "Knees",
+          "description": "Slightly bent at peak of cast (KTM)",
+          "point_value": 0.05
+        },
+        {
+          "type": "Form",
+          "body_part": "Toes",
+          "description": "Slightly flexed at peak of cast (TPM)",
+          "point_value": 0.05
+        }
+      ],
+      "quality_grade": -0.35,
+      "reason": "Significant deduction for cast height and consistent form breaks.",
+      "is_celebration": false
+    },
+    {
+      "skill_name": "Cast to Squat-on (LB)",
+      "skill_order": 8,
+      "timestamp_start": 8.5,
+      "timestamp_end": 9.5,
+      "executed_successfully": true,
+      "difficulty_value": 0.1,
+      "total_deduction": 0.25,
+      "deductions": [
+        {
+          "type": "Form",
+          "body_part": "Knees",
+          "description": "Slightly bent during squat-on (KTM)",
+          "point_value": 0.05
+        },
+        {
+          "type": "Form",
+          "body_part": "Toes",
+          "description": "Slightly flexed during squat-on (TPM)",
+          "point_value": 0.05
+        },
+        {
+          "type": "Control",
+          "body_part": "Feet",
+          "description": "Clunky foot contact on bar (Heavy Bar Audit)",
+          "point_value": 0.1
+        },
+        {
+          "type": "Form",
+          "body_part": "Hips",
+          "description": "Slightly piked on catch",
+          "point_value": 0.05
+        }
+      ],
+      "quality_grade": -0.15,
+      "reason": "Lack of control and form breaks during the squat-on.",
+      "is_celebration": false
+    },
+    {
+      "skill_name": "Jump to High Bar",
+      "skill_order": 9,
+      "timestamp_start": 9.5,
+      "timestamp_end": 10.5,
+      "executed_successfully": true,
+      "difficulty_value": 0.1,
+      "total_deduction": 0.25,
+      "deductions": [
+        {
+          "type": "Form",
+          "body_part": "Hips",
+          "description": "Piked hips during jump",
+          "point_value": 0.1
+        },
+        {
+          "type": "Form",
+          "body_part": "Knees",
+          "description": "Bent knees during jump (KTM)",
+          "point_value": 0.1
+        },
+        {
+          "type": "Form",
+          "body_part": "Toes",
+          "description": "Slightly flexed on catch (TPM)",
+          "point_value": 0.05
+        }
+      ],
+      "quality_grade": -0.15,
+      "reason": "Piked hips and bent knees during the transfer.",
+      "is_celebration": false
+    },
+    {
+      "skill_name": "Long Hang Kip (HB)",
+      "skill_order": 10,
+      "timestamp_start": 10.5,
+      "timestamp_end": 11.5,
+      "executed_successfully": true,
+      "difficulty_value": 0.2,
+      "total_deduction": 0.3,
+      "deductions": [
+        {
+          "type": "Form",
+          "body_part": "Hips",
+          "description": "Slight pike during kip drive",
+          "point_value": 0.1
+        },
+        {
+          "type": "Form",
+          "body_part": "Knees",
+          "description": "Slightly bent during kip (KTM)",
+          "point_value": 0.05
+        },
+        {
+          "type": "Form",
+          "body_part": "Toes",
+          "description": "Slightly flexed during kip (TPM)",
+          "point_value": 0.05
+        },
+        {
+          "type": "Technique",
+          "body_part": "Arms",
+          "description": "Bent arms on top of bar",
+          "point_value": 0.1
+        }
+      ],
+      "quality_grade": -0.1,
+      "reason": "Multiple form and technique errors during the kip.",
+      "is_celebration": false
+    },
+    {
+      "skill_name": "Cast (HB)",
+      "skill_order": 11,
+      "timestamp_start": 11.5,
+      "timestamp_end": 12.5,
+      "executed_successfully": true,
+      "difficulty_value": 0.1,
+      "total_deduction": 0.55,
+      "deductions": [
+        {
+          "type": "Structural",
+          "body_part": "Body Position",
+          "description": "Cast failed to reach horizontal (30-Degree Penalty)",
+          "point_value": 0.3
+        },
+        {
+          "type": "Form",
+          "body_part": "Hips",
+          "description": "Slight pike at peak of cast",
+          "point_value": 0.05
+        },
+        {
+          "type": "Form",
+          "body_part": "Knees",
+          "description": "Slightly bent at peak of cast (KTM)",
+          "point_value": 0.05
+        },
+        {
+          "type": "Form",
+          "body_part": "Toes",
+          "description": "Slightly flexed at peak of cast (TPM)",
+          "point_value": 0.05
+        },
+        {
+          "type": "Rhythm",
+          "body_part": "Routine Flow",
+          "description": "Rhythm break due to low cast impacting subsequent skill (Compounding Rule)",
+          "point_value": 0.1
+        }
+      ],
+      "quality_grade": -0.45,
+      "reason": "Significant deduction for cast height, compounded by form breaks and rhythm impact.",
+      "is_celebration": false
+    },
+    {
+      "skill_name": "Back Hip Circle (HB)",
+      "skill_order": 12,
+      "timestamp_start": 12.5,
+      "timestamp_end": 13.5,
+      "executed_successfully": true,
+      "difficulty_value": 0.1,
+      "total_deduction": 0.15,
+      "deductions": [
+        {
+          "type": "Form",
+          "body_part": "Hips",
+          "description": "Slight pike during circle",
+          "point_value": 0.05
+        },
+        {
+          "type": "Form",
+          "body_part": "Knees",
+          "description": "Slightly bent during circle (KTM)",
+          "point_value": 0.05
+        },
+        {
+          "type": "Form",
+          "body_part": "Toes",
+          "description": "Slightly flexed during circle (TPM)",
+          "point_value": 0.05
+        }
+      ],
+      "quality_grade": -0.05,
+      "reason": "Minor form breaks throughout the skill.",
+      "is_celebration": false
+    },
+    {
+      "skill_name": "Cast (HB)",
+      "skill_order": 13,
+      "timestamp_start": 13.5,
+      "timestamp_end": 14.5,
+      "executed_successfully": true,
+      "difficulty_value": 0.1,
+      "total_deduction": 0.55,
+      "deductions": [
+        {
+          "type": "Structural",
+          "body_part": "Body Position",
+          "description": "Cast failed to reach horizontal (30-Degree Penalty)",
+          "point_value": 0.3
+        },
+        {
+          "type": "Form",
+          "body_part": "Hips",
+          "description": "Slight pike at peak of cast",
+          "point_value": 0.05
+        },
+        {
+          "type": "Form",
+          "body_part": "Knees",
+          "description": "Slightly bent at peak of cast (KTM)",
+          "point_value": 0.05
+        },
+        {
+          "type": "Form",
+          "body_part": "Toes",
+          "description": "Slightly flexed at peak of cast (TPM)",
+          "point_value": 0.05
+        },
+        {
+          "type": "Rhythm",
+          "body_part": "Routine Flow",
+          "description": "Rhythm break due to low cast impacting subsequent skill (Compounding Rule)",
+          "point_value": 0.1
+        }
+      ],
+      "quality_grade": -0.45,
+      "reason": "Significant deduction for cast height, compounded by form breaks and rhythm impact.",
+      "is_celebration": false
+    },
+    {
+      "skill_name": "Back Hip Circle (HB)",
+      "skill_order": 14,
+      "timestamp_start": 14.5,
+      "timestamp_end": 15.5,
+      "executed_successfully": true,
+      "difficulty_value": 0.1,
+      "total_deduction": 0.15,
+      "deductions": [
+        {
+          "type": "Form",
+          "body_part": "Hips",
+          "description": "Slight pike during circle",
+          "point_value": 0.05
+        },
+        {
+          "type": "Form",
+          "body_part": "Knees",
+          "description": "Slightly bent during circle (KTM)",
+          "point_value": 0.05
+        },
+        {
+          "type": "Form",
+          "body_part": "Toes",
+          "description": "Slightly flexed during circle (TPM)",
+          "point_value": 0.05
+        }
+      ],
+      "quality_grade": -0.05,
+      "reason": "Minor form breaks throughout the skill.",
+      "is_celebration": false
+    },
+    {
+      "skill_name": "Cast (HB)",
+      "skill_order": 15,
+      "timestamp_start": 15.5,
+      "timestamp_end": 16.5,
+      "executed_successfully": true,
+      "difficulty_value": 0.1,
+      "total_deduction": 0.55,
+      "deductions": [
+        {
+          "type": "Structural",
+          "body_part": "Body Position",
+          "description": "Cast failed to reach horizontal (30-Degree Penalty)",
+          "point_value": 0.3
+        },
+        {
+          "type": "Form",
+          "body_part": "Hips",
+          "description": "Slight pike at peak of cast",
+          "point_value": 0.05
+        },
+        {
+          "type": "Form",
+          "body_part": "Knees",
+          "description": "Slightly bent at peak of cast (KTM)",
+          "point_value": 0.05
+        },
+        {
+          "type": "Form",
+          "body_part": "Toes",
+          "description": "Slightly flexed at peak of cast (TPM)",
+          "point_value": 0.05
+        },
+        {
+          "type": "Rhythm",
+          "body_part": "Routine Flow",
+          "description": "Rhythm break due to low cast impacting subsequent skill (Compounding Rule)",
+          "point_value": 0.1
+        }
+      ],
+      "quality_grade": -0.45,
+      "reason": "Significant deduction for cast height, compounded by form breaks and rhythm impact.",
+      "is_celebration": false
+    },
+    {
+      "skill_name": "Back Hip Circle (HB)",
+      "skill_order": 16,
+      "timestamp_start": 16.5,
+      "timestamp_end": 17.5,
+      "executed_successfully": true,
+      "difficulty_value": 0.1,
+      "total_deduction": 0.15,
+      "deductions": [
+        {
+          "type": "Form",
+          "body_part": "Hips",
+          "description": "Slight pike during circle",
+          "point_value": 0.05
+        },
+        {
+          "type": "Form",
+          "body_part": "Knees",
+          "description": "Slightly bent during circle (KTM)",
+          "point_value": 0.05
+        },
+        {
+          "type": "Form",
+          "body_part": "Toes",
+          "description": "Slightly flexed during circle (TPM)",
+          "point_value": 0.05
+        }
+      ],
+      "quality_grade": -0.05,
+      "reason": "Minor form breaks throughout the skill.",
+      "is_celebration": false
+    },
+    {
+      "skill_name": "Cast (HB)",
+      "skill_order": 17,
+      "timestamp_start": 17.5,
+      "timestamp_end": 18.5,
+      "executed_successfully": true,
+      "difficulty_value": 0.1,
+      "total_deduction": 0.45,
+      "deductions": [
+        {
+          "type": "Structural",
+          "body_part": "Body Position",
+          "description": "Cast failed to reach horizontal (30-Degree Penalty)",
+          "point_value": 0.3
+        },
+        {
+          "type": "Form",
+          "body_part": "Hips",
+          "description": "Slight pike at peak of cast",
+          "point_value": 0.05
+        },
+        {
+          "type": "Form",
+          "body_part": "Knees",
+          "description": "Slightly bent at peak of cast (KTM)",
+          "point_value": 0.05
+        },
+        {
+          "type": "Form",
+          "body_part": "Toes",
+          "description": "Slightly flexed at peak of cast (TPM)",
+          "point_value": 0.05
+        }
+      ],
+      "quality_grade": -0.35,
+      "reason": "Significant deduction for cast height and consistent form breaks.",
+      "is_celebration": false
+    },
+    {
+      "skill_name": "Tuck Flyaway Dismount (HB)",
+      "skill_order": 18,
+      "timestamp_start": 18.5,
+      "timestamp_end": 20,
+      "executed_successfully": true,
+      "difficulty_value": 0.2,
+      "total_deduction": 0.6,
+      "deductions": [
+        {
+          "type": "Flight",
+          "body_part": "Body Position",
+          "description": "Early pike/tuck initiation before apex of flight (Early Pike Logic)",
+          "point_value": 0.2
+        },
+        {
+          "type": "Form",
+          "body_part": "Knees",
+          "description": "Knees apart in tuck position (Cowboy Knees)",
+          "point_value": 0.1
+        },
+        {
+          "type": "Landing",
+          "body_part": "Feet",
+          "description": "Small hop forward on landing",
+          "point_value": 0.1
+        },
+        {
+          "type": "Landing",
+          "body_part": "Torso",
+          "description": "Chest slightly down on landing",
+          "point_value": 0.1
+        },
+        {
+          "type": "Landing",
+          "body_part": "Knees",
+          "description": "Slightly bent on landing (KTM)",
+          "point_value": 0.05
+        },
+        {
+          "type": "Landing",
+          "body_part": "Toes",
+          "description": "Slightly flexed on landing (TPM)",
+          "point_value": 0.05
+        }
+      ],
+      "quality_grade": -0.4,
+      "reason": "Multiple deductions in flight and on landing, indicating lack of control and precision.",
+      "is_celebration": false
+    }
+  ],
+  "special_requirements": [
+    {
+      "requirement": "Cast to horizontal",
+      "status": "NOT_MET",
+      "comment": "All casts consistently failed to reach horizontal, incurring significant deductions.",
+      "penalty": 0
+    },
+    {
+      "requirement": "B-value element required",
+      "status": "MET",
+      "comment": "Long Hang Kip (0.2) and Tuck Flyaway (0.2) were performed, fulfilling the B-value requirement.",
+      "penalty": 0
+    }
+  ],
+  "artistry": {
+    "expression_deduction": 0,
+    "quality_of_movement_deduction": 0,
+    "choreography_variety_deduction": 0,
+    "musicality_deduction": 0,
+    "total_artistry_deduction": 0,
+    "notes": "Artistry is not typically a major deduction category for WAG Uneven Bars at this level, and no specific artistry errors were observed."
+  },
+  "total_execution_deductions": 7,
+  "total_artistry_deductions": 0,
+  "score_range": {
+    "low": 2.5,
+    "high": 3.5
+  },
+  "confidence": "HIGH",
+  "coaching_summary": "This routine demonstrates a foundational understanding of the required skills for JO Level 6 Uneven Bars, but the execution is severely hampered by consistent and significant form breaks. The most critical and recurring issue is the inability to cast to horizontal, which incurs a substantial penalty for every attempt. Additionally, general body tension, particularly in the knees and toes, is lacking throughout the routine, leading to numerous micro-deductions that compound quickly. The dismount showed an early tuck, indicating a timing issue in flight. While the gymnast successfully completed all elements, the quality of execution needs drastic improvement to be competitive.",
+  "top_3_fixes": [
+    "Mastering the Cast to Handstand Shape: Focus on drills that emphasize a strong hollow-body shape, active shoulders, and a powerful 'toe beat' to drive the hips over the bar, ensuring casts consistently reach or exceed horizontal. Utilize spotting and resistance bands to build strength in the correct positions.",
+    "Developing Full Body Tension: Implement conditioning drills specifically targeting core strength, locked knees (KTM), and pointed toes (TPM) in every position. Practice holding perfect hollow and arch shapes, and integrate these shapes into every swing and skill to eliminate bent knees, flexed feet, and piked hips.",
+    "Improving Dismount Timing and Shape: Work on dismount drills that focus on achieving maximum height and a stretched, open body position *before* initiating the tuck. Use a trampoline or tumble track for repetition, emphasizing a strong block off the bar and delaying the tuck until the apex of flight to improve rotation and landing control."
+  ],
+  "celebrations": [
+    "The gymnast successfully completed all required elements for a JO Level 6 routine.",
+    "The gymnast demonstrated good rhythm and flow between some of the back hip circles, despite the low casts."
+  ],
+  "athlete_name": "Gymnast",
+  "duration_seconds": 20,
+  "event": "Uneven Bars",
+  "gender": "WAG",
+  "level": "JO LEVEL 6"
+}
