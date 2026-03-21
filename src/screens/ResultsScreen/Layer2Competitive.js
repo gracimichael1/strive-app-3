@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import ScoreHero from './ScoreHero';
+import JudgeScoreInput from '../../components/ui/JudgeScoreInput';
 import SkillCard from '../../components/ui/SkillCard';
 import VideoReviewPlayer from '../../components/video/VideoReviewPlayer';
 import { safeStr, safeArray, safeNum } from '../../utils/helpers';
@@ -84,6 +85,8 @@ function Layer2Competitive({ result, profile, previousResult, onSeek, videoUrl }
         previousResult={previousResult}
         tier="competitive"
       />
+
+      <JudgeScoreInput result={result} profile={profile} />
 
       {/* Video Review Player — slow-mo, seek-to-skill, skeleton overlay */}
       <VideoReviewPlayer videoUrl={videoUrl} result={result} />

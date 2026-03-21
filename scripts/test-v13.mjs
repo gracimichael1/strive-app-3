@@ -293,7 +293,13 @@ async function run(v) {
   const ai = sc.final_score;
   const aiDelta = Math.abs(ai - v.realScore);
   const codeDelta = Math.abs(codeScore - v.realScore);
-  const pass = codeDelta <= 0.10;
+
+  // Score blending: AI always primary, flag if code diverges > 0.30
+  const scoreDiff = Math.abs(codeScore - ai);
+  const blended = ai;
+  const source = scoreDiff > 0.30 ? "ai!" : "ai";
+  const blendedDelta = Math.abs(blended - v.realScore);
+  const pass = blendedDelta <= 0.10;
   const elapsed = ((Date.now() - t0) / 1000).toFixed(0);
 
   console.log("SKILLS:");
@@ -310,17 +316,17 @@ async function run(v) {
   console.log(`Score range: ${sc.score_range?.low} - ${sc.score_range?.high}`);
 
   console.log(`\n${"═".repeat(60)}`);
-  console.log(`  AI raw:  ${ai}     |  Judge: ${v.realScore}  |  Δ ${aiDelta.toFixed(3)}`);
-  console.log(`  Code:    ${codeScore.toFixed(2)}   |  Judge: ${v.realScore}  |  Δ ${codeDelta.toFixed(3)} ${pass ? "✅ PASS" : "❌ FAIL"}`);
+  console.log(`  AI raw:  ${ai}     |  Code: ${codeScore.toFixed(2)}  |  Diff: ${scoreDiff.toFixed(3)}`);
+  console.log(`  Blended: ${blended} (${source})  |  Judge: ${v.realScore}  |  Δ ${blendedDelta.toFixed(3)} ${pass ? "✅ PASS" : "❌ FAIL"}`);
   console.log(`  Cal: ×${calFactor}  |  Skills: ${sc.deduction_log?.length}  |  ${elapsed}s`);
   console.log("═".repeat(60));
 
   try { await api({ action: "deleteFile", fileName: f.fileName }); } catch {}
   const outPath = path.join(process.env.HOME, "Desktop/StriveGymnastics/scripts", `debug-v13-${v.event.replace(/\s/g, "_").toLowerCase()}.json`);
-  fs.writeFileSync(outPath, JSON.stringify({ ...sc, _code_score: codeScore, _cal_factor: calFactor, _raw_exec: rawExec, _scaled_exec: scaledExec }, null, 2));
+  fs.writeFileSync(outPath, JSON.stringify({ ...sc, _code_score: codeScore, _blended: blended, _source: source, _cal_factor: calFactor, _raw_exec: rawExec, _scaled_exec: scaledExec }, null, 2));
   console.log(`Full JSON: ${outPath}`);
 
-  return { event: v.event, ai, code: codeScore, real: v.realScore, aiDelta, codeDelta, pass };
+  return { event: v.event, ai, code: codeScore, blended, source, real: v.realScore, blendedDelta, pass };
 }
 
 async function main() {
@@ -340,23 +346,20 @@ async function main() {
   console.log(`\n\n${"═".repeat(60)}`);
   console.log("SUMMARY — v13 BHPA Prompt");
   console.log("═".repeat(60));
-  console.log(`${"Event".padEnd(18)} ${"AI Raw".padEnd(8)} ${"Code".padEnd(8)} ${"Judge".padEnd(8)} ${"AI Δ".padEnd(8)} ${"Code Δ".padEnd(8)} Result`);
-  console.log("-".repeat(70));
+  console.log(`${"Event".padEnd(18)} ${"Blended".padEnd(8)} ${"Src".padEnd(6)} ${"Judge".padEnd(8)} ${"Δ".padEnd(8)} Result`);
+  console.log("-".repeat(56));
   let passCount = 0;
   for (const r of results) {
-    const ai = r.ai != null ? r.ai.toFixed(2) : "ERR";
-    const code = r.code != null ? r.code.toFixed(2) : "ERR";
-    const ad = r.aiDelta != null ? r.aiDelta.toFixed(3) : "N/A";
-    const cd = r.codeDelta != null ? r.codeDelta.toFixed(3) : "N/A";
-    console.log(`${r.event.padEnd(18)} ${ai.padEnd(8)} ${code.padEnd(8)} ${r.real.toFixed(3).padEnd(8)} ${ad.padEnd(8)} ${cd.padEnd(8)} ${r.pass ? "✅" : "❌"}`);
+    const bl = r.blended != null ? r.blended.toFixed(2) : "ERR";
+    const d = r.blendedDelta != null ? r.blendedDelta.toFixed(3) : "N/A";
+    console.log(`${r.event.padEnd(18)} ${bl.padEnd(8)} ${(r.source||"?").padEnd(6)} ${r.real.toFixed(3).padEnd(8)} ${d.padEnd(8)} ${r.pass ? "✅" : "❌"}`);
     if (r.pass) passCount++;
   }
-  const valid = results.filter(r => r.codeDelta != null);
-  const avgAiDelta = valid.length > 0 ? (valid.reduce((s, r) => s + r.aiDelta, 0) / valid.length) : 0;
-  const avgCodeDelta = valid.length > 0 ? (valid.reduce((s, r) => s + r.codeDelta, 0) / valid.length) : 0;
-  console.log("-".repeat(70));
-  console.log(`${passCount}/${results.length} pass | avg AI Δ ${avgAiDelta.toFixed(3)} | avg Code Δ ${avgCodeDelta.toFixed(3)}`);
-  console.log("═".repeat(70));
+  const valid = results.filter(r => r.blendedDelta != null);
+  const avgDelta = valid.length > 0 ? (valid.reduce((s, r) => s + r.blendedDelta, 0) / valid.length) : 0;
+  console.log("-".repeat(56));
+  console.log(`${passCount}/${results.length} pass | avg Δ ${avgDelta.toFixed(3)}`);
+  console.log("═".repeat(56));
 }
 
 main().catch(e => { console.error(e); process.exit(1); });

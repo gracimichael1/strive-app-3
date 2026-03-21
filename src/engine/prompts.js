@@ -370,6 +370,15 @@ export function buildPass1Prompt(profile, event) {
 - BEAM: A typical routine has 8-12 skills.
 - If your skill count is outside these ranges, re-evaluate before finalizing.
 
+## SPECIAL REQUIREMENTS — VALIDATION RULES
+- Only mark a special requirement as NOT_MET if the required skill is genuinely ABSENT from the routine.
+- If the gymnast ATTEMPTED the skill but executed it poorly, the SR is MET — poor execution is an execution deduction, not a missing requirement.
+- BEAM SR validation: If you see a back walkover, back handspring, cartwheel, or any acro element in the routine, the "acro element" SR is MET. If you see a leap, jump, or sissonne, the "dance element" SR is MET. If you see a dismount, the "dismount" SR is MET.
+- FLOOR SR validation: If you see any tumbling pass with a salto (tuck, layout, full), the "salto" SR is MET. If you see two distinct tumbling passes, the "two acro passes" SR is MET.
+- BARS SR validation: If you see a kip, the "kip" SR is MET. If you see a flyaway/dismount, the "dismount" SR is MET.
+- A completed routine (gymnast performs start to finish without leaving the apparatus) should have 0 SR penalties in most cases. SR penalties of 0.50+ on a completed routine are almost always wrong.
+- penalty field: Use 0 for MET requirements. Use 0.50 ONLY for genuinely missing requirements.
+
 ## SECOND-PASS CHECK
 After initial assessment, re-watch focusing ONLY on:
 1. Feet — were there flexed feet you missed? Count them.

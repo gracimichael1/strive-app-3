@@ -138,22 +138,35 @@ export function computeScoreFromScorecard(scorecard, startValue = 10.0, options 
     final_score = Math.max(0, roundTo3(startValue - totalDeductions));
   }
 
-  // ── Validate against AI estimate ────────────────────────────────────────
+  // ── Score blending: AI holistic primary, code-computed as validation ────
+  // AI holistic score is the better single estimator across events.
+  // Code-computed score serves as validation bounds only.
   const aiScore = scorecard.final_score;
-  const scoreDiff = typeof aiScore === "number" ? Math.abs(final_score - aiScore) : 0;
+  const codeScore = final_score;
   let warning = null;
+  let scoreSource = "code";
 
-  if (scoreDiff > 0.30) {
-    warning = `SCORE VALIDATION WARNING: Code-computed ${final_score} differs from AI-estimated ${aiScore} by ${scoreDiff.toFixed(2)} (>0.30 threshold). Using code-computed score.`;
-    console.warn(`[scoring] ${warning}`);
-  } else if (scoreDiff > 0.10) {
-    console.warn(`[scoring] Minor score diff: code ${final_score} vs AI ${aiScore} (delta: ${scoreDiff.toFixed(2)}). Using code-computed score.`);
+  if (typeof aiScore === "number" && aiScore > 0) {
+    const scoreDiff = Math.abs(codeScore - aiScore);
+
+    // Always use AI holistic score as primary — it's the better estimator
+    final_score = roundTo3(aiScore);
+    scoreSource = "ai_holistic";
+
+    if (scoreDiff > 0.30) {
+      // Flag for review but do NOT override — AI holistic is still primary
+      warning = `SCORE REVIEW FLAGGED: AI estimated ${aiScore} but code computed ${codeScore} (diff: ${scoreDiff.toFixed(2)}). Using AI score. Review deductions for calibration data.`;
+      scoreSource = "ai_flagged";
+      console.warn(`[scoring] ${warning}`);
+    }
   }
 
   return {
     d_score,
     e_score,
     final_score,
+    score_source: scoreSource,
+    code_computed_score: roundTo3(codeScore),
     execution_total: roundTo3(executionTotal),
     artistry_total: roundTo3(calibratedArtistry),
     sr_total: roundTo3(srTotal),

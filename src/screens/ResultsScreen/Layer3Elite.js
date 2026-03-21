@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import ScoreHero from './ScoreHero';
+import JudgeScoreInput from '../../components/ui/JudgeScoreInput';
 import SkillCard from '../../components/ui/SkillCard';
 import VideoReviewPlayer from '../../components/video/VideoReviewPlayer';
 import { safeStr, safeArray, safeNum } from '../../utils/helpers';
@@ -512,6 +513,8 @@ function Layer3Elite({ result, profile, previousResult, history, onSeek, videoUr
         previousResult={previousResult}
         tier="elite"
       />
+
+      <JudgeScoreInput result={result} profile={profile} />
 
       {/* Video Review Player — slow-mo, seek-to-skill, skeleton overlay */}
       <VideoReviewPlayer videoUrl={videoUrl} result={result} />
