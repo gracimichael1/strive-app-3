@@ -4180,13 +4180,14 @@ const AnalyzingScreen = React.memo(function AnalyzingScreen({ uploadData, profil
     const level   = profile.level  || "Level 6";
     const gender  = profile.gender === "female" ? "Women's" : "Men's";
     const cat     = profile.levelCategory || "optional";
-    const categoryLabel = cat === "xcel" ? "Xcel" : cat === "compulsory" ? "Compulsory" : "Optional";
+    // For Xcel, the level already contains "Xcel" (e.g. "Xcel Gold") — don't prepend category
+    const levelDisplay = cat === "xcel" ? level : `${cat === "compulsory" ? "Compulsory" : "Optional"} ${level}`;
     const athleteName = profile.name || "the gymnast";
 
     return `The BHPA Master System Instruction: "The Eyes"
-Role: Act as a Brevet-level USAG "${gender} ${categoryLabel} ${level}" Lead Judge and Biomechanical Analyst. Your goal is to provide a "Zero-Lenience" technical audit and raw kinetic data for downstream coaching logic.
+Role: Act as a Brevet-level USAG "${gender} ${levelDisplay}" Lead Judge and Biomechanical Analyst. Your goal is to provide a "Zero-Lenience" technical audit and raw kinetic data for downstream coaching logic.
 
-ATHLETE: ${athleteName} | ${gender} ${categoryLabel} ${level}
+ATHLETE: ${athleteName} | ${gender} ${levelDisplay}
 
 I. Operational Protocol: The Professional Audit
 * Double-Pass Scrub: * Pass 1 (The Skills): Analyze primary flight elements, handstands, and saltos.
@@ -4240,7 +4241,7 @@ Important: You must output only valid JSON. Do not include conversational text, 
 
     // ── Score caching — return cached result for duplicate submissions ──
     // Fingerprint: file name + size + lastModified + athlete name + level + event
-    const PROMPT_VERSION = "v10_bhpa_eyes"; // Bump this when prompt changes to invalidate cache
+    const PROMPT_VERSION = "v11_bhpa_eyes"; // Bump this when prompt changes to invalidate cache
     const fingerprintParts = [
       PROMPT_VERSION,
       uploadData.video.name || "video",
@@ -4344,35 +4345,114 @@ Important: You must output only valid JSON. Do not include conversational text, 
       let parsedPrescriptiveTraining = null;
       let parsedPowerLeakCircuit = null;
       let parsedFourWeekTracker = null;
+      let geminiFinalScore = null;
 
       // ── Primary: Parse JSON response (new rich format) ──────────
       try {
         const jsonMatch = rawResponse.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
           const parsed = JSON.parse(jsonMatch[0]);
-          const skillsArray = parsed.scorecard || parsed.skills || [];
+          // Accept any field name Gemini chooses for the skills array
+          const skillsArray = parsed.scorecard || parsed.skills || parsed.deduction_log || parsed.elements || parsed.skill_log || [];
+          // Capture Gemini's reported final score — use it directly instead of recomputing
+          geminiFinalScore = parsed.final_score || parsed.summary?.overallScore || null;
+          if (geminiFinalScore) log.info("parse", `Gemini final_score: ${geminiFinalScore}`);
+
           if (Array.isArray(skillsArray) && skillsArray.length > 0) {
             isRichJSON = true;
-            if (parsed.audit_meta?.event) {
-              detectedEvent = parsed.audit_meta.event;
+            // Detect event from any field Gemini might use
+            const eventFromMeta = parsed.audit_meta?.event || parsed.detectedEvent || parsed.event;
+            if (eventFromMeta) {
+              detectedEvent = eventFromMeta;
               log.info("parse", `Gemini detected event: ${detectedEvent}`);
             }
-            parsedSkills = skillsArray.map(s => {
-              const ded = roundToUSAG(s.deduction || 0);
+            // Helper: parse "Fault label (0.10), Another (0.20)" → [{fault, deduction}]
+            const parsePrimaryDeductionText = (text) => {
+              if (!text || typeof text !== "string") return [];
+              const parts = [];
+              const re = /([^,(]+?)\s*\(([\d.]+)\)/g;
+              let m;
+              while ((m = re.exec(text)) !== null) {
+                const d = parseFloat(m[2]);
+                if (!isNaN(d) && d > 0) parts.push({ fault: m[1].trim(), deduction: roundToUSAG(d) });
+              }
+              return parts;
+            };
+
+            const rawParsed = skillsArray.map(s => {
+              // Normalize timestamp from seconds or M:SS
+              let ts = s.timestamp || s.timestamp_start;
+              if (typeof ts === "number") {
+                const m = Math.floor(ts / 60);
+                const sec = Math.round(ts % 60);
+                ts = `${m}:${String(sec).padStart(2, "0")}`;
+              }
+              ts = ts || "0:00";
+              // Normalize skill name
+              const skillName = s.element || s.name || s.skill_name || s.skill || "Unknown";
+              // Normalize reason/deduction text
+              const primaryDeductionText = s.primary_deduction || s.reason || s.technical_flaw || s.fault_description || null;
+              // Numeric deduction: explicit field → quality_grade fallback → parse from text
+              let ded;
+              if (s.deduction != null && !isNaN(Number(s.deduction))) {
+                ded = roundToUSAG(Number(s.deduction));
+              } else if (s.total_deduction != null && !isNaN(Number(s.total_deduction))) {
+                ded = roundToUSAG(Number(s.total_deduction));
+              } else if (s.penalty != null && !isNaN(Number(s.penalty))) {
+                ded = roundToUSAG(Number(s.penalty));
+              } else if (s.quality_grade != null && !isNaN(Number(s.quality_grade))) {
+                ded = roundToUSAG(10.0 - Number(s.quality_grade));
+              } else if (primaryDeductionText) {
+                // Sum all numeric values inside parentheses from the text
+                const nums = [...primaryDeductionText.matchAll(/\(([\d.]+)\)/g)].map(x => parseFloat(x[1]));
+                ded = roundToUSAG(nums.reduce((a, b) => a + b, 0));
+              } else {
+                ded = 0;
+              }
+              // Build faults
+              const rawFaults = s.faults || s.deductions || s.fault_list || [];
+              let faults;
+              if (safeArray(rawFaults).length > 0) {
+                faults = safeArray(rawFaults).map(f => ({
+                  fault: safeStr(f.fault || f.description || f.reason || ""),
+                  deduction: roundToUSAG(f.deduction ?? f.point_value ?? 0),
+                  severity: ded >= 0.30 ? "veryLarge" : ded >= 0.20 ? "large" : ded >= 0.10 ? "medium" : "small",
+                }));
+              } else if (primaryDeductionText && primaryDeductionText !== "None") {
+                const parsed_faults = parsePrimaryDeductionText(primaryDeductionText);
+                faults = parsed_faults.length > 0
+                  ? parsed_faults.map(f => ({ ...f, severity: f.deduction >= 0.30 ? "veryLarge" : f.deduction >= 0.20 ? "large" : f.deduction >= 0.10 ? "medium" : "small" }))
+                  : [{ fault: primaryDeductionText, deduction: ded, severity: ded >= 0.30 ? "veryLarge" : ded >= 0.20 ? "large" : ded >= 0.10 ? "medium" : "small" }];
+              } else {
+                faults = [];
+              }
+              const isStrength = s.is_celebration === true || ded === 0;
               return {
-                timestamp: s.timestamp || "0:00",
-                skill: s.element || s.name || "Unknown",
+                timestamp: ts,
+                skill: skillName,
                 type: "acro",
                 deduction: ded,
                 qualityScore: 10.0 - ded,
-                reason: s.reason || null,
-                faults: s.reason ? [{ fault: safeStr(s.reason), deduction: ded, severity: ded >= 0.30 ? "veryLarge" : ded >= 0.20 ? "large" : ded >= 0.10 ? "medium" : "small" }] : [],
-                strength: null,
+                reason: primaryDeductionText && primaryDeductionText !== "None" ? primaryDeductionText : null,
+                faults,
+                strength: isStrength ? (s.strength_note || "Clean execution") : null,
                 bodyMechanics: null,
                 injuryRisk: null,
                 drillRecommendation: null,
               };
             });
+
+            // Consolidate duplicate skill names — keep the one with highest deduction
+            // (Gemini lists each Giant swing separately; collapse to unique skills)
+            const skillMap = new Map();
+            rawParsed.forEach(sk => {
+              const key = sk.skill.toLowerCase().replace(/\s*\d+$/, "").trim(); // strip trailing number
+              const existing = skillMap.get(key);
+              if (!existing || sk.deduction > existing.deduction) {
+                skillMap.set(key, sk);
+              }
+            });
+            parsedSkills = Array.from(skillMap.values());
 
             // Artistry section
             if (parsed.artistry) {
@@ -4639,7 +4719,10 @@ Important: You must output only valid JSON. Do not include conversational text, 
 
       // ── Validation: ensure final score = start value - total deductions ──
       const startValue = 10.0;
-      const finalScore = Math.max(0, Math.round((startValue - totalDed) * 1000) / 1000);
+      // Use Gemini's reported score directly — it is the authoritative score
+      const finalScore = geminiFinalScore
+        ? Math.round(geminiFinalScore * 1000) / 1000
+        : Math.max(0, Math.round((startValue - totalDed) * 1000) / 1000);
 
       // Sanity check: individual deductions must sum to total (within 0.01 tolerance)
       const individualSum = Math.round(processedSkills.reduce((sum, s) => sum + s.deduction, 0) * 1000) / 1000;
