@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "dependencies": {
+    "@google/genai": "^1.46.0",
     "@mediapipe/tasks-vision": "^0.10.32",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",

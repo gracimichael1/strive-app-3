@@ -4396,25 +4396,22 @@ IMPORTANT: The deduction_log must contain ONE entry per distinct skill or transi
         // Cleanup uploaded file
         try { fetch(`https://generativelanguage.googleapis.com/v1beta/${fileRef.fileName}?key=${apiKey}`, { method: "DELETE" }); } catch {}
       } else if (serverKeyAvailable) {
-        // Server proxy path — send extracted frame data + prompt to /api/analyze
+        // Server proxy path — send full video as base64 to /api/analyze
         setStatus(`Server-side analysis of ${profile.level} ${uploadData.event}...`);
+        const videoBuffer = await uploadData.video.arrayBuffer();
+        const videoBase64 = btoa(String.fromCharCode(...new Uint8Array(videoBuffer)));
         const proxyResp = await fetch("/api/analyze", {
           method: "POST",
           headers: { "Content-Type": "application/json", "X-Strive-Token": "strive-2026-launch" },
           body: JSON.stringify({
-            athleteProfile: {
-              name: profile.name,
-              gender: profile.gender,
-              level: profile.level,
-              levelCategory: profile.levelCategory,
-            },
-            frames: (extractedFrames || []).map(f => ({ base64: f.base64, timestamp: f.timestamp, mimeType: "image/jpeg" })),
-            event: uploadData.event || "floor",
+            videoBase64,
+            mimeType: uploadData.video.type || "video/mp4",
+            level: profile.level || "Xcel Gold",
           }),
         });
         if (!proxyResp.ok) throw new Error(`Server analysis failed (${proxyResp.status})`);
         const proxyData = await proxyResp.json();
-        rawResponse = proxyData.rawText || JSON.stringify(proxyData);
+        rawResponse = JSON.stringify(proxyData);
       }
 
       if (!rawResponse) throw new Error("Analysis engine returned empty response.");
