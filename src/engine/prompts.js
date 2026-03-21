@@ -33,12 +33,12 @@ I. Operational Protocol: The Professional Audit
 2. Frame-by-Frame Apex Scrub: Manually identify and analyze the "Apex Frame" of every flight element and the "Contact Frame" of every landing or bar transition. Document any form breaks (TPM/KTM) that exist even for a single frame.
 3. The "Monitors": Activate Toe Point Monitor (TPM) and Knee Tension Monitor (KTM) for every frame.
 4. Zero Lenience: Strictly forbidden from giving "benefit of the doubt." If a toe isn't pointed or a knee isn't locked, it is a deduction (0.05 - 0.10).
-5. The "Zero-Variance" Audit Upgrade:
-   * The 30-Degree Penalty: Any cast failing to reach the required horizontal/vertical line (based on the specified level) is an automatic 0.30 deduction. No "marginal" passes.
-   * The "Compounder" Rule: If a form break (KTM/TPM) occurs during a technical error (e.g., bent arms during a Kip), the deduction is doubled. (0.10 for form + 0.10 for technique).
-   * The 1.5-Second Rhythm Clock: Any pause, hesitation, or "adjustment" of hands on the bar lasting longer than 1.5 seconds is an automatic 0.10 rhythm break.
-   * The "Early Pike" Logic: Any salto (dismount) that begins to pike/tuck before reaching the apex of flight loses 0.20 for "Poor Body Position in Flight."
-   * The "Heavy Bar" Audit: Any "stumble" or "clunky" foot contact during a Squat-on or transition is a 0.10 deduction for lack of control.
+5. The "Zero-Variance" Audit — WATCH FOR (apply only when clearly visible):
+   * Cast amplitude: Note casts that fail to reach the required line. Deduct per the level-specific rules (NOT a blanket -0.30 every time).
+   * The "Compounder" flag: If a form break (KTM/TPM) occurs DURING a technical error (e.g., bent arms during a Kip), note BOTH but do NOT double the deduction — each fault is deducted once at its own value.
+   * Rhythm: Any pause or hesitation >1.5 seconds between skills is -0.10.
+   * The "Early Pike" flag: A salto that pikes/tucks before reaching the apex of flight = -0.20 for poor body position in flight.
+   * The "Heavy Bar" flag: A "stumble" or "clunky" foot contact during a Squat-on = -0.10.
 
 II. Skill Identification Rules
 A "skill" is a complete, named element or connected sequence — NOT individual components. Examples:
@@ -46,6 +46,7 @@ A "skill" is a complete, named element or connected sequence — NOT individual 
 - FLOOR: "Round-off Back Handspring Back Tuck" is ONE skill (the full tumbling pass). A typical floor routine has 6-10 skills.
 - BEAM: "Back Walkover", "Split Leap", "Cartwheel Back Handspring" (series) — each named sequence is ONE skill.
 Do NOT break a named skill into sub-movements. Do NOT count swings, grips, or transitions as skills.
+CRITICAL: Each skill appears ONCE in your output. Do NOT list the same skill multiple times. A bars routine has 7-10 skills total, floor has 6-10, beam has 8-12. If your list exceeds these counts, you are duplicating skills — remove duplicates.
 
 III. Output Protocol
 For each skill and transition:
@@ -347,14 +348,25 @@ export function buildPass1Prompt(profile, event) {
 
   // Calibration block
   parts.push(`
-## CALIBRATION — CRITICAL
-- Target range for total deductions: 0.80-1.30 for most routines.
-- A score of 8.7-9.2 is typical at State Championships.
+## CALIBRATION — CRITICAL (THIS OVERRIDES ALL OTHER DEDUCTION LOGIC)
+- FINAL SCORE MUST equal start_value minus total_execution_deductions minus total_artistry_deductions. Compute it mechanically. Do NOT round up or adjust.
+- Target range for total deductions: 1.00-1.50 for most completed routines (no falls).
+- State Championship scores range from 8.2-9.3. A score of 8.5-8.9 is the most common range. Do NOT bias toward 9.0+.
+- If your final_score is below 7.5 for a completed routine (no falls): you are OVER-DEDUCTING. Step back and recalibrate.
 - If total deductions < 0.80: you are too LENIENT — find more faults.
-- If total deductions > 1.50: you are too HARSH — remove uncertain deductions.
-- Execution deductions typically 0.50-0.90; artistry + composition add 0.20-0.40.
+- If total deductions > 2.00: you are too HARSH — remove the least certain deductions until you are in range.
+- Execution deductions typically 0.70-1.10 for an average routine.
+- ARTISTRY IS NEVER ZERO: Even on bars, quality of movement, rhythm, and body tension contribute 0.10-0.30 in artistry deductions. Always assess artistry.
 - Deduction values: 0.00, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.50 ONLY.
-- If you find fewer than 5 deductions total, you are MISSING deductions.
+- If you find fewer than 8 deductions total, you are MISSING deductions. Re-watch transitions and landings.
+- If you find more than 20 deductions total, you are likely over-counting — merge related micro-faults on the same skill.
+- Apply TPM/KTM deductions only when the form break is clearly visible. Most skills will have at least one micro-deduction (0.05) — do not skip deductions to inflate the score.
+
+## SKILL COUNT CHECK
+- BARS: A typical routine has 7-10 skills. If you have more than 12, you are splitting skills that should be combined.
+- FLOOR: A typical routine has 6-10 skills. Tumbling passes are ONE skill.
+- BEAM: A typical routine has 8-12 skills.
+- If your skill count is outside these ranges, re-evaluate before finalizing.
 
 ## SECOND-PASS CHECK
 After initial assessment, re-watch focusing ONLY on:
@@ -364,6 +376,12 @@ After initial assessment, re-watch focusing ONLY on:
 4. Split leaps — is the angle truly at or above the minimum?
 5. Arms — any bent arm moments in support or flight?
 Add any missed deductions to your final JSON.
+
+## FINAL SANITY CHECK
+Before outputting, verify:
+- final_score = start_value - total_execution_deductions - total_artistry_deductions. If they don't match, fix the final_score.
+- Your final_score is between 7.5 and 9.5 for a completed routine with no falls. Scores of 8.3-8.8 are the most common — do not bias toward 9.0+.
+- If it is not, adjust your deductions to match what a real judge panel would award.
 `);
 
   const system = parts.join("\n");
@@ -459,7 +477,7 @@ Respond ONLY in the JSON schema provided.`;
  * Thinking budget: medium — prompt quality drives accuracy more than max thinking.
  */
 export const PASS1_CONFIG = {
-  temperature: 0.4,
+  temperature: 0.2,
   topP: 0.95,
   maxOutputTokens: 16384,
   responseMimeType: "application/json",
