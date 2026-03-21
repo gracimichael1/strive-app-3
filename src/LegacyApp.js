@@ -10,9 +10,6 @@ import AgeGate from "./components/legal/AgeGate";
 import ParentalConsent from "./components/legal/ParentalConsent";
 import LegalDisclaimer from "./components/legal/LegalDisclaimer";
 import PrivacyNotice from "./components/legal/PrivacyNotice";
-import { EVENT_JUDGING_RULES } from "./data/constants";
-import { getEventDeductions, getEventStrictnessGuidance } from "./data/eventDeductions";
-import { buildDeductionPromptBlock } from "./data/codeOfPoints";
 import { runAnalysisPipeline } from "./engine/pipeline";
 import SkillCard from "./components/ui/SkillCard";
 
@@ -4134,6 +4131,122 @@ const AnalyzingScreen = React.memo(function AnalyzingScreen({ uploadData, profil
           maxOutputTokens: 16384,
           seed: 42,
           responseMimeType: "application/json",
+          responseSchema: {
+            type: "object",
+            properties: {
+              skills: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    timestamp:           { type: "string" },
+                    name:                { type: "string" },
+                    type:                { type: "string" },
+                    qualityScore:        { type: "number" },
+                    deduction:           { type: "number" },
+                    faults: {
+                      type: "array",
+                      items: {
+                        type: "object",
+                        properties: {
+                          fault:     { type: "string" },
+                          deduction: { type: "number" },
+                          severity:  { type: "string" },
+                        },
+                        required: ["fault", "deduction", "severity"],
+                      },
+                    },
+                    strengthNote:        { type: "string" },
+                    bodyMechanics: {
+                      type: "object",
+                      properties: {
+                        kneeAngle:        { type: "string" },
+                        hipAlignment:     { type: "string" },
+                        shoulderPosition: { type: "string" },
+                        toePoint:         { type: "string" },
+                      },
+                    },
+                    injuryRisk:          { type: "string" },
+                  },
+                  required: ["timestamp", "name", "type", "qualityScore", "deduction", "faults"],
+                },
+              },
+              detectedEvent: { type: "string" },
+              artistry: {
+                type: "object",
+                properties: {
+                  totalDeduction: { type: "number" },
+                  details: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        fault:     { type: "string" },
+                        deduction: { type: "number" },
+                      },
+                      required: ["fault", "deduction"],
+                    },
+                  },
+                },
+                required: ["totalDeduction", "details"],
+              },
+              composition: {
+                type: "object",
+                properties: {
+                  totalDeduction: { type: "number" },
+                  details: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        fault:     { type: "string" },
+                        deduction: { type: "number" },
+                      },
+                      required: ["fault", "deduction"],
+                    },
+                  },
+                },
+                required: ["totalDeduction", "details"],
+              },
+              biomechanicalOverlay: {
+                type: "object",
+                properties: {
+                  swingFlightRadius: { type: "string" },
+                  widthOfMassAudit:  { type: "string" },
+                  landingVector:     { type: "string" },
+                },
+              },
+              summary: {
+                type: "object",
+                properties: {
+                  overallScore:          { type: "number" },
+                  startValue:            { type: "number" },
+                  totalDeductions:       { type: "number" },
+                  executionDeductions:   { type: "number" },
+                  artistryDeductions:    { type: "number" },
+                  compositionDeductions: { type: "number" },
+                  whyThisScore:          { type: "string" },
+                  celebrations: {
+                    type: "array",
+                    items: { type: "string" },
+                  },
+                  topImprovements: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        fix:          { type: "string" },
+                        pointsGained: { type: "number" },
+                      },
+                      required: ["fix", "pointsGained"],
+                    },
+                  },
+                },
+                required: ["overallScore", "startValue", "totalDeductions", "whyThisScore"],
+              },
+            },
+            required: ["skills", "detectedEvent", "summary"],
+          },
         },
       }),
     });
@@ -4182,305 +4295,39 @@ const AnalyzingScreen = React.memo(function AnalyzingScreen({ uploadData, profil
   const buildJudgingPrompt = useCallback(() => {
     const level   = profile.level  || "Level 6";
     const gender  = profile.gender === "female" ? "Women's" : "Men's";
-    const rawEvent = uploadData?.event || "Floor Exercise";
-    const isAutoDetect = rawEvent === "Auto-detect";
-    const event   = isAutoDetect ? "Auto-detect" : rawEvent;
     const cat     = profile.levelCategory || "optional";
-    const isXcel  = cat === "xcel";
-    const isComp  = cat === "compulsory";
-    const isElite = level === "Elite";
-
-    // ── Split angle minimum by level ────────────────────────────────
-    const splitMin = isXcel
-      ? (level.includes("Bronze") || level.includes("Silver") ? 90
-        : level.includes("Gold") ? 120
-        : level.includes("Platinum") ? 150 : 180)
-      : (["Level 1","Level 2","Level 3","Level 4"].includes(level) ? 90
-        : level === "Level 5" ? 120
-        : (level === "Level 6" || level === "Level 7") ? 150 : 180);
-
-    const splitDed = splitMin <= 90 ? "0.10" : splitMin <= 120 ? "0.10–0.20" : "0.20";
-
-    // ── Score benchmark for this level ─────────────────────────────
-    const bench = SCORE_BENCHMARKS[level];
-    const benchLine = bench
-      ? `Typical ${level} ${event} scores: avg ${bench.avg}, top 10% at ${bench.top10}, range ${bench.low}–${bench.high}.`
-      : "";
-
-    // ── Required skills for this level and event ────────────────────
-    const eventKey = String(event || '').toLowerCase().replace("floor exercise","floor").replace("balance beam","beam")
-      .replace("uneven bars","bars").replace("still rings","bars")
-      .replace("parallel bars","bars").replace("high bar","bars")
-      .replace("pommel horse","vault");
-    const levelSkills = LEVEL_SKILLS[level];
-    const skillsLine = levelSkills?.[eventKey]
-      ? `Required/expected skills at ${level} ${event}: ${levelSkills[eventKey]}.`
-      : "";
-
-    // ── Program context ─────────────────────────────────────────────
-    const programContext = isComp
-      ? `COMPULSORY ROUTINE (${level}): Every gymnast performs the identical prescribed choreography. Deduct for ANY deviation from the required choreography, timing, or element order — in addition to all execution faults.`
-      : isXcel
-      ? `XCEL ${level} ROUTINE: Athlete selects their own skills within Xcel program parameters. Verify all 4 Special Requirements are present (−0.50 each if missing). Split leap/jump minimum is ${splitMin}°.`
-      : isElite
-      ? `ELITE ROUTINE (FIG Code of Points): Judge execution from 10.0 E-score base. D-score is separate. Apply FIG deduction standards strictly.`
-      : `${level} OPTIONAL ROUTINE: Athlete selects their own skills. Split leap/jump minimum is ${splitMin}°. ${level === "Level 5" ? "Round-off BHS back tuck is required." : ""}`;
-
-    // ── Execution deduction standards (from USA Gymnastics code) ────
-    const executionStandards = `
-EXECUTION FAULTS — USA Gymnastics official deduction scale (0.05 increments only):
-  Bent arms:                  slight=0.05  noticeable=0.10  significant=0.20  severe=0.30
-  Bent knees / legs:          slight=0.05  noticeable=0.10  significant=0.20  severe=0.30
-  Leg separation (cowboy):    visible=0.10  wide=0.20
-  Flexed / sickled feet:      0.05 per occurrence
-  Insufficient height/amplitude: 0.05–0.30
-  Body alignment (pike/arch): 0.05–0.30
-  Incomplete rotation/twist:  0.05–0.30
-  Head position error:        0.05–0.10`;
-
-    const landingStandards = `
-LANDING FAULTS — judge every landing separately:
-  Small step:                 0.05
-  Medium step:                0.10
-  Large step / lunge:         0.20–0.30
-  Squat (above 90° knee):     0.10–0.20
-  Deep squat (below 90° knee):0.30
-  Hands on floor (no fall):   0.30
-  Fall:                       0.50
-  Chest drop / posture:       0.05–0.20`;
-
-    const artistryStandards = `
-ARTISTRY & COMPOSITION FAULTS — use "Global" timestamp. These are MANDATORY to evaluate:
-  Hollow hands / limp wrists / poor finger lines:  0.05 per occurrence
-  No eye contact with judges / lack of presentation: 0.05–0.10
-  Lack of confidence / hesitation before skills:    0.05–0.10
-  Poor musicality / rhythm (Floor):                 0.05–0.20
-  Flat footwork / no relevé in dance elements:      0.05–0.10
-  Insufficient use of floor space:                  0.05–0.10
-  Arms "tossed" rather than placed with intention:  0.05
-  Energy drops between skills:                      0.05–0.10
-  Flexed feet/toes throughout (cumulative):         0.05 per occurrence (count each)
-  Lack of finger-tip to toe-tip engagement:         0.05–0.15
-  Rushed choreography / no performance quality:     0.10–0.20
-  NOTE: Artistry deductions typically total 0.15–0.40 for youth routines. If you have 0.00 artistry deductions, you are WRONG — re-evaluate.`;
-
-    const splitStandard = `
-SPLIT LEAP/JUMP REQUIREMENT at ${level}: minimum ${splitMin}°
-  ${splitMin - 15}°–${splitMin - 1}° (close): −0.05–0.10
-  ${splitMin - 30}°–${splitMin - 16}° (short): −${splitDed}
-  Below ${splitMin - 30}° (very short): −0.20–0.30`;
-
+    const categoryLabel = cat === "xcel" ? "Xcel" : cat === "compulsory" ? "Compulsory" : "Optional";
     const athleteName = profile.name || "the gymnast";
 
-    // ── Enhanced event deductions from eventDeductions.js ──────────────
-    const detailedEventDeductions = !isAutoDetect ? getEventDeductions(event) : "";
-    const strictnessGuidance = !isAutoDetect ? getEventStrictnessGuidance(event) : "";
+    return `Role: Act as a Brevet-level USAG "${gender} ${categoryLabel} ${level}" lead Judge. Your goal is to provide a "Zero-Lenience" technical audit with biomechanical analysis. Focus ONLY on observation and scoring — do not generate training plans.
 
-    // ── Code of Points deduction reference ─────────────────────────────
-    const copBlock = !isAutoDetect
-      ? buildDeductionPromptBlock(profile.gender || "female", level, event)
-      : "";
+ATHLETE: ${athleteName} | ${gender} ${categoryLabel} ${level}
 
-    const autoDetectLine = isAutoDetect
-      ? `\nEVENT AUTO-DETECTION: Identify the gymnastics event/apparatus from the video content. Look for: balance beam (narrow beam, 4 inches wide), uneven bars (two horizontal bars at different heights), vault (running approach + springboard), floor exercise (spring floor, no apparatus). Include the detected event as "detectedEvent" in your JSON response.\n`
-      : "";
+I. Operational Protocol: The Professional Audit
+1. Double-Pass Scrub: * Pass 1 (The Skills): Analyze primary flight elements, handstands, and saltos.
+   * Pass 2 (Connective Tissue): Scrub the 1.5s between skills (Kips, Squat-ons, Taps).
+2. Frame-by-Frame Apex Scrub: Manually identify and analyze the "Apex Frame" of every flight element and the "Contact Frame" of every landing or bar transition. Document any form breaks (TPM/KTM) that exist even for a single frame.
+3. The "Monitors": Activate Toe Point Monitor (TPM) and Knee Tension Monitor (KTM) for every frame.
+4. Zero Lenience: Strictly forbidden from giving "benefit of the doubt." If a toe isn't pointed or a knee isn't locked, it is a deduction (0.05 - 0.10).
+5. The "Zero-Variance" Audit Upgrade
+* The 30-Degree Penalty: Any cast failing to reach the required horizontal/vertical line (based on the specified level) is an automatic 0.30 deduction. No "marginal" passes.
+* The "Compounder" Rule: If a form break (KTM/TPM) occurs during a technical error (e.g., bent arms during a Kip), the deduction is doubled. (0.10 for form + 0.10 for technique).
+* The 1.5-Second Rhythm Clock: Any pause, hesitation, or "adjustment" of hands on the bar lasting longer than 1.5 seconds is an automatic 0.10 rhythm break.
+* The "Early Pike" Logic: Any salto (dismount) that begins to pike/tuck before reaching the apex of flight loses 0.20 for "Poor Body Position in Flight."
+* The "Heavy Bar" Audit: Any "stumble" or "clunky" foot contact during a Squat-on or transition is a 0.10 deduction for lack of control.
 
-    // ── Event-specific "Pessimistic Judge" rules ───────────────────────
-    // These inject apparatus-specific compound deductions, hidden faults,
-    // perspective warnings, and rhythm rules that close the scoring gap.
-    const eventRules = !isAutoDetect ? EVENT_JUDGING_RULES[event] : null;
-    const eventSRs = eventRules?.specialRequirements?.[level] || [];
+II. Output Format: The Scorecard
+* Timestamped Deduction Table: List every skill AND transition. Identify micro-deductions (0.05, 0.1, 0.2).
+* The "Missed Transition" Check: Explicitly confirm if "cowboy knees," "staggered feet," or "flexed feet" occurred during transitions.
+* Final Justified Score: Calculated from a 10.0 Start Value.
 
-    let eventSpecificBlock = "";
-    if (eventRules) {
-      const parts = [];
+III. Biomechanical Overlay & Kinetic Audit
+1. The "Swing/Flight Radius" Analysis: Deconstruct the Hollow-Arch-Hollow sequence. Identify the exact frame of the "Toe Beat." State if the momentum generation is Early, Late, or Optimal.
+2. The "Width of Mass" Audit: Measure lateral deviation (e.g., Cowboy Knees). Explain the Conservation of Angular Momentum impact: How did this mass displacement affect the Angular Velocity (rotation speed)?
+3. The Landing Vector: Provide a 'Torso-to-Vertical' angle measurement at impact. Determine if the Center of Mass (CoM) was leading, trailing, or stacked over the base of support.
 
-      // Strictness directive
-      if (eventRules.strictnessBias > 1.0) {
-        parts.push(`STRICTNESS DIRECTIVE (${event}): This apparatus requires STRICTER judging than floor. AI models consistently under-deduct on ${event} by ${((eventRules.strictnessBias - 1) * 100).toFixed(0)}%. When in doubt, ALWAYS take the deduction. Look for reasons to DEDUCT, not reasons to give credit.`);
-      }
-
-      // Perspective warning
-      if (eventRules.perspectiveBias) {
-        parts.push(`PERSPECTIVE ${eventRules.perspectiveBias}`);
-      }
-
-      // Compound rules
-      if (eventRules.compoundRules?.length) {
-        parts.push(`${event.toUpperCase()} COMPOUND DEDUCTION RULES — apply ALL of these:\n${eventRules.compoundRules.join("\n")}`);
-      }
-
-      // Hidden deductions checklist
-      if (eventRules.hiddenDeductions?.length) {
-        parts.push(`${event.toUpperCase()} COMMONLY MISSED DEDUCTIONS — check EVERY skill for these:\n${eventRules.hiddenDeductions.join("\n")}`);
-      }
-
-      // Rhythm/flow rules
-      if (eventRules.rhythmJudging) {
-        parts.push(`RHYTHM/FLOW: ${eventRules.rhythmJudging}`);
-      }
-
-      // Special requirements for this level
-      if (eventSRs.length) {
-        parts.push(`SPECIAL REQUIREMENTS for ${level} ${event} — verify ALL are present:\n${eventSRs.map((sr, i) => `  ${i + 1}. ${sr}`).join("\n")}\nMissing any Special Requirement = -0.50 from Start Value.`);
-      }
-
-      // Skill counting guidance per event
-      if (event === "Uneven Bars" || event === "High Bar") {
-        parts.push(`SKILL COUNTING (${event}): A typical ${level} ${event} routine has 5-8 DISTINCT SKILLS, NOT 15-20.
-On bars, casts are CONNECTING ELEMENTS, not separate skills. Do NOT create separate entries for each cast.
-Instead, evaluate cast height as part of the FOLLOWING skill's faults.
-Example: If cast is low before a back hip circle, add "Low cast preceding circle (-0.10)" to the back hip circle's faults.
-Skills to identify: kip, circling skills (back hip circle, clear hip, giant), transitions between bars, release moves, dismount.`);
-      } else if (event === "Floor Exercise") {
-        parts.push(`SKILL COUNTING (Floor): Identify tumbling passes as INDIVIDUAL ELEMENTS within the pass. A round-off + back handspring + back tuck = THREE entries. Also identify: leaps, jumps, turns, and dance passages as individual entries. Typical floor routine has 10-15 skill entries.`);
-      } else if (event === "Balance Beam") {
-        parts.push(`SKILL COUNTING (Beam): Identify each acro skill, dance element, turn, and dismount as individual entries. Include mount. Typical beam routine has 8-12 skill entries.`);
-      } else if (event === "Vault") {
-        parts.push(`SKILL COUNTING (Vault): Vault is ONE skill with multiple phases. Create 1 entry with faults from each phase (run, hurdle, board, pre-flight, table, post-flight, landing).`);
-      }
-
-      // Typical deduction range override
-      if (eventRules.typicalDeductionRange) {
-        const dr = eventRules.typicalDeductionRange;
-        parts.push(`CALIBRATION OVERRIDE (${event}): Expected deduction range for ${level} ${event}: ${dr.min}–${dr.max}. ${dr.note}`);
-      }
-
-      eventSpecificBlock = "\n═══ EVENT-SPECIFIC JUDGING RULES ═══\n" + parts.join("\n\n") + "\n═══ END EVENT-SPECIFIC RULES ═══\n";
-    }
-
-    return `You are a Brevet-certified USA Gymnastics judge at a State Championship. You give NO benefit of the doubt. When in doubt, take the HIGHER deduction. Your job is to find EVERY fault so the athlete can improve. You are a PESSIMISTIC judge — you look for reasons to DEDUCT, not reasons to celebrate.
-
-ATHLETE: ${athleteName} | ${gender} ${level} | EVENT: ${isAutoDetect ? "DETECT FROM VIDEO" : event}
-${autoDetectLine}
-${programContext}
-${skillsLine}
-${benchLine}
-${eventSpecificBlock}
-${detailedEventDeductions ? `\n═══ DETAILED APPARATUS DEDUCTION TABLE ═══\n${detailedEventDeductions}\n═══ END APPARATUS DEDUCTIONS ═══\n` : ""}
-${strictnessGuidance}
-${copBlock ? `\n${copBlock}\n` : ""}
-KEY RULES:
-1. INDIVIDUAL ELEMENTS: Break every skill apart for FEEDBACK purposes. A Round-off, Back Handspring, and Back Tuck in one tumbling pass = THREE separate entries. HOWEVER, connecting elements within a pass share momentum — only deduct faults you can CLEARLY SEE on each individual element. Do not assume faults on connecting elements. If a round-off looks clean, score it clean (0.00 deduction). Most elements in a competent routine have 0-1 visible faults.
-2. MICRO-DEDUCTIONS: Flexed feet, soft knees, micro-bends — deduct 0.05 each, but ONLY when clearly visible. Do not guess or assume. A typical skill has 0-2 micro-faults, not 3-4.
-3. LANDINGS: Only the FINAL landing of a tumbling pass gets full landing deductions. Intermediate landings (between RO and BHS, between BHS and tuck) are transitional and only deducted if there's a clear error (stumble, extra step, loss of momentum). Final landing: step = 0.05-0.10, squat = 0.10-0.20, deep squat = 0.20-0.30.
-4. ARTISTRY — THE HIDDEN DEDUCTIONS (typically 0.15-0.35 total for youth):
-   - Finger-tip to toe-tip engagement, arms tossed vs placed (0.05-0.10)
-   - Hesitations before passes (0.05-0.10)
-   - Flexed feet in dance/transitions — cumulative (0.05-0.15)
-   - Composition: floor space, transitions, variety (0.05-0.10)
-5. SPLIT LEAPS: ${level} requires ${splitMin}°. Short = 0.10-0.20 deduction.
-6. CALIBRATION — THIS IS CRITICAL:
-   - Target range for total deductions: ${eventRules?.typicalDeductionRange?.min || 0.80}–${eventRules?.typicalDeductionRange?.max || 1.30} for most ${level} ${event} routines.
-   - A score of 8.7–9.2 is typical at State Championships for ${level}.
-   - If your total deductions are below ${eventRules?.typicalDeductionRange?.min || 0.80}, you are too LENIENT — find more faults.
-   - If your total deductions are above ${eventRules?.typicalDeductionRange?.max || 1.50}, you are too HARSH — you are likely double-counting faults across connected elements or deducting faults you cannot clearly see. Remove uncertain deductions.
-   - The sum of all individual skill deductions (execution) should typically be 0.50–0.90. Artistry + composition add another 0.20–0.40.
-
-${executionStandards}
-${landingStandards}
-${splitStandard}
-
-DEDUCTION VALUES: 0.00, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.50 ONLY.
-Timestamps: M:SS format from video start (0:00).
-
-Respond with ONLY a JSON object. No markdown, no backticks, no text outside the JSON.
-Every element gets its own entry. Severity: "small"/"medium"/"large"/"veryLarge"/"fall".
-Skills in chronological order. qualityScore = 10.0 minus that skill's total deduction.
-
-{
-  "skills": [
-    {
-      "timestamp": "0:05",
-      "name": "Round-off",
-      "type": "acro",
-      "qualityScore": 9.75,
-      "deduction": 0.25,
-      "faults": [
-        {"fault": "Legs apart during inversion", "deduction": 0.10, "severity": "medium"},
-        {"fault": "Slight bent arms on floor contact", "deduction": 0.10, "severity": "medium"},
-        {"fault": "Feet not together on snap-down", "deduction": 0.05, "severity": "small"}
-      ],
-      "strengthNote": "Strong power generation into the pass",
-      "bodyMechanics": {"kneeAngle": "Slight bend at snap-down", "hipAlignment": "Good extension", "shoulderPosition": "Adequate block", "toePoint": "Pointed in flight"},
-      "injuryRisk": null,
-      "drillRecommendation": "T-handstand snap-downs against wall — focus on tight legs throughout."
-    },
-    {
-      "timestamp": "0:06",
-      "name": "Back Handspring",
-      "type": "acro",
-      "qualityScore": 9.70,
-      "deduction": 0.30,
-      "faults": [
-        {"fault": "Bent arms in support phase", "deduction": 0.10, "severity": "medium"},
-        {"fault": "Knees bent in flight", "deduction": 0.10, "severity": "medium"},
-        {"fault": "Feet sickled", "deduction": 0.05, "severity": "small"},
-        {"fault": "Slight leg separation", "deduction": 0.05, "severity": "small"}
-      ],
-      "strengthNote": "Good rebound height into next skill",
-      "bodyMechanics": {"kneeAngle": "Bent through flight phase", "hipAlignment": "Slight arch", "shoulderPosition": "Arms bent at push-off", "toePoint": "Sickled"},
-      "injuryRisk": "Bent arms increase wrist strain. Strengthen with handstand push-ups.",
-      "drillRecommendation": "BHS over barrel — focus on straight arms and tight body."
-    }
-  ],
-  "artistry": {
-    "totalDeduction": 0.30,
-    "details": [
-      {"fault": "Hollow hands — fingers not engaged throughout", "deduction": 0.05},
-      {"fault": "Flat feet in dance transitions — no relevé", "deduction": 0.10},
-      {"fault": "Limited projection/eye contact with judges", "deduction": 0.05},
-      {"fault": "Flexed toes during leaps and jumps (cumulative)", "deduction": 0.10}
-    ]
-  },
-  "composition": {
-    "totalDeduction": 0.15,
-    "details": [
-      {"fault": "Limited use of floor space — stayed center", "deduction": 0.05},
-      {"fault": "Rushed transitions between passes", "deduction": 0.05},
-      {"fault": "Energy drops between skill sequences", "deduction": 0.05}
-    ]
-  },
-  "summary": {
-    "overallScore": 8.85,
-    "startValue": 10.0,
-    "totalDeductions": 1.15,
-    "executionDeductions": 0.70,
-    "artistryDeductions": 0.30,
-    "compositionDeductions": 0.15,
-    "whyThisScore": "Accumulated micro-deductions across 12 individual elements (0.70 execution) combined with artistry gaps (0.30) and composition issues (0.15) produce 1.15 total deductions. The largest single deductions came from landing errors and bent arms in tumbling.",
-    "celebrations": [
-      "Strong tumbling power — excellent height on back tuck",
-      "Full turn executed with stable balance and control",
-      "Confident final pose with maturity"
-    ],
-    "topImprovements": [
-      {"fix": "Stick landings — chest up, absorb through legs", "pointsGained": 0.20},
-      {"fix": "Point toes hard through every skill — cumulative 0.15 gain", "pointsGained": 0.15},
-      {"fix": "Dance presentation — relevé, finger engagement, eye contact", "pointsGained": 0.15}
-    ]
-  }
-}
-
-JSON RULES:
-- Output ONLY the JSON. No text before or after. No markdown fences.
-- Every individual element in the routine gets its own entry — do NOT combine connected skills.
-- Fault deductions for a skill must sum to match its "deduction" field.
-- Artistry/composition faults go in their own sections, NOT in skills array.
-- Each deduction exactly two decimal places. Only values: 0.00, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.50.
-- Chronological order by timestamp.
-- If total deductions < 0.80, you are too lenient. Re-evaluate.
-- If total deductions > 1.50, you are too harsh — remove uncertain deductions. Target: 0.90–1.20 total.
-
-SECOND-PASS CHECK (do this AFTER your initial assessment):
-Re-watch the routine focusing ONLY on these commonly missed items:
-1. Feet — were there flexed feet you missed? Count them.
-2. Pauses — any hesitations or rhythm breaks between skills?
-3. Landings — did you deduct for every step, hop, or squat?
-4. Split leaps — is the angle truly at or above ${splitMin}°?
-5. Arms — any bent arm moments in support or flight?
-Add any missed deductions to your final JSON.`;
-  }, [profile, uploadData]);
+Identify the detected event/apparatus from the video and include it as "detectedEvent".`;
+  }, [profile]);
 
   // ── Main analysis orchestrator — single pass ─────────────────────
   const analyzeWithAI = useCallback(async (extractedFrames) => {
@@ -4504,7 +4351,7 @@ Add any missed deductions to your final JSON.`;
 
     // ── Score caching — return cached result for duplicate submissions ──
     // Fingerprint: file name + size + lastModified + athlete name + level + event
-    const PROMPT_VERSION = "v7_full_pessimistic"; // Bump this when prompt changes to invalidate cache
+    const PROMPT_VERSION = "v9_handshake"; // Bump this when prompt changes to invalidate cache
     const fingerprintParts = [
       PROMPT_VERSION,
       uploadData.video.name || "video",
@@ -4604,6 +4451,10 @@ Add any missed deductions to your final JSON.`;
       let parsedTopImprovements = [];
       let isRichJSON = false;
       let detectedEvent = uploadData.event;
+      let parsedBiomechanicalOverlay = null;
+      let parsedPrescriptiveTraining = null;
+      let parsedPowerLeakCircuit = null;
+      let parsedFourWeekTracker = null;
 
       // ── Primary: Parse JSON response (new rich format) ──────────
       try {
@@ -4667,7 +4518,21 @@ Add any missed deductions to your final JSON.`;
               }));
             }
 
-            log.info("parse", `Parsed rich JSON: ${parsedSkills.length} skills, artistry=${parsedArtistry?.totalDeduction || 0}, composition=${parsedComposition?.totalDeduction || 0}`);
+            // BHPA sections
+            if (parsed.biomechanicalOverlay) {
+              parsedBiomechanicalOverlay = parsed.biomechanicalOverlay;
+            }
+            if (parsed.prescriptiveTraining) {
+              parsedPrescriptiveTraining = parsed.prescriptiveTraining;
+            }
+            if (parsed.powerLeakCircuit) {
+              parsedPowerLeakCircuit = parsed.powerLeakCircuit;
+            }
+            if (parsed.fourWeekTracker) {
+              parsedFourWeekTracker = parsed.fourWeekTracker;
+            }
+
+            log.info("parse", `Parsed rich JSON: ${parsedSkills.length} skills, artistry=${parsedArtistry?.totalDeduction || 0}, composition=${parsedComposition?.totalDeduction || 0}, bhpa=${!!parsedBiomechanicalOverlay}`);
           }
         }
       } catch (e) {
@@ -4894,6 +4759,47 @@ Add any missed deductions to your final JSON.`;
 
       log.info("score", `FINAL: ${finalScore} | Deductions: ${totalDed} (raw: ${(execTotalRaw + richArtTotal + compTotalRaw).toFixed(3)}, USAG-rounded) | Exec: ${execTotal} | Artistry: ${artTotal} | Composition: ${compTotal} | Skills: ${processedSkills.length} | Level: ${profile.level}`);
 
+      // ── Claude Coaching Refinement (The "Brain") ──────────────────
+      // Send Gemini's cold audit to Claude for training intelligence
+      setStatus("Building coaching plan...");
+      setProgress(92);
+      let coachingData = null;
+      try {
+        const auditPayload = {
+          skills: parsedSkills.map(s => ({ skill: s.skill, timestamp: s.timestamp, deduction: s.deduction, reason: s.reason, faults: s.faults })),
+          artistry: parsedArtistry,
+          composition: parsedComposition,
+          biomechanicalOverlay: parsedBiomechanicalOverlay,
+          finalScore: finalScore,
+          totalDeductions: totalDed,
+          detectedEvent,
+        };
+        const coachRes = await fetch("/api/coach", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-Strive-Token": "strive-2026-launch" },
+          body: JSON.stringify({
+            auditData: auditPayload,
+            athleteLevel: profile.level,
+            athleteGender: profile.gender,
+          }),
+        });
+        if (coachRes.ok) {
+          coachingData = await coachRes.json();
+          log.info("coach", `Claude coaching received: rootCause=${coachingData?.prescriptiveTraining?.rootCause || "none"}`);
+          // Merge per-skill drill recommendations back into processedSkills
+          if (coachingData?.drillRecommendations) {
+            for (const dr of coachingData.drillRecommendations) {
+              const match = processedSkills.find(s => s.skill.toLowerCase().includes(dr.skillName.toLowerCase()));
+              if (match) match.drillRecommendation = dr.drill;
+            }
+          }
+        } else {
+          log.warn("coach", `Claude coaching failed (${coachRes.status}) — continuing without coaching data`);
+        }
+      } catch (e) {
+        log.warn("coach", `Claude coaching error: ${e.message} — continuing without coaching data`);
+      }
+
       // Top issues and strengths
       const withDeds   = [...processedSkills].filter(s => s.deduction > 0).sort((a,b) => b.deduction - a.deduction);
       const cleanSkills = processedSkills.filter(s => s.deduction === 0);
@@ -4939,6 +4845,12 @@ Add any missed deductions to your final JSON.`;
         // ── Rich analysis sections (from JSON format) ──
         artistry:    parsedArtistry,
         composition: parsedComposition,
+
+        // ── BHPA sections — Gemini (biomechanics) + Claude (coaching) ──
+        biomechanicalOverlay: parsedBiomechanicalOverlay,
+        prescriptiveTraining: coachingData?.prescriptiveTraining || null,
+        powerLeakCircuit:     coachingData?.powerLeakCircuit || null,
+        fourWeekTracker:      coachingData?.fourWeekTracker || null,
 
         // ── Full report — everything Gemini gave us ──
         overallAssessment: whyThisScore || `${profile.level} ${detectedEvent} — ${processedSkills.length} skills judged. ${benchContext}`,

@@ -1,390 +1,43 @@
 {
-  "scorecard": {
-    "start_value": 10,
-    "final_score": 8.75,
-    "deduction_log": [
-      {
-        "skill_name": "Initial Dance Sequence",
-        "skill_order": 1,
-        "timestamp_start": 0,
-        "timestamp_end": 6,
-        "executed_successfully": true,
-        "difficulty_value": 0,
-        "total_deduction": 0.05,
-        "deductions": [
-          {
-            "type": "Execution",
-            "body_part": "Knees",
-            "description": "Soft knees during floor work",
-            "point_value": 0.05
-          }
-        ],
-        "quality_grade": 9.95,
-        "reason": "Minor form break.",
-        "is_celebration": false
-      },
-      {
-        "skill_name": "Floor Roll to Seated",
-        "skill_order": 2,
-        "timestamp_start": 6,
-        "timestamp_end": 10,
-        "executed_successfully": true,
-        "difficulty_value": 0,
-        "total_deduction": 0.1,
-        "deductions": [
-          {
-            "type": "Execution",
-            "body_part": "Feet",
-            "description": "Flexed feet during roll",
-            "point_value": 0.05
-          },
-          {
-            "type": "Execution",
-            "body_part": "Body",
-            "description": "Slight arch in back during transition",
-            "point_value": 0.05
-          }
-        ],
-        "quality_grade": 9.9,
-        "reason": "Minor form breaks.",
-        "is_celebration": false
-      },
-      {
-        "skill_name": "Arm Waves & Leg Extension",
-        "skill_order": 3,
-        "timestamp_start": 10,
-        "timestamp_end": 20,
-        "executed_successfully": true,
-        "difficulty_value": 0,
-        "total_deduction": 0.15,
-        "deductions": [
-          {
-            "type": "Execution",
-            "body_part": "Hands",
-            "description": "Limp wrists",
-            "point_value": 0.05
-          },
-          {
-            "type": "Execution",
-            "body_part": "Feet",
-            "description": "Flexed foot during leg extension",
-            "point_value": 0.05
-          },
-          {
-            "type": "Execution",
-            "body_part": "Knees",
-            "description": "Soft knee on supporting leg",
-            "point_value": 0.05
-          }
-        ],
-        "quality_grade": 9.85,
-        "reason": "Lack of tension in feet, wrists, and knees.",
-        "is_celebration": false
-      },
-      {
-        "skill_name": "Stand Up & Walk",
-        "skill_order": 4,
-        "timestamp_start": 20,
-        "timestamp_end": 28,
-        "executed_successfully": true,
-        "difficulty_value": 0,
-        "total_deduction": 0.05,
-        "deductions": [
-          {
-            "type": "Execution",
-            "body_part": "Feet",
-            "description": "Flat footwork",
-            "point_value": 0.05
-          }
-        ],
-        "quality_grade": 9.95,
-        "reason": "Basic footwork error.",
-        "is_celebration": false
-      },
-      {
-        "skill_name": "Jump to Pose",
-        "skill_order": 5,
-        "timestamp_start": 28,
-        "timestamp_end": 30,
-        "executed_successfully": true,
-        "difficulty_value": 0,
-        "total_deduction": 0.1,
-        "deductions": [
-          {
-            "type": "Execution",
-            "body_part": "Body",
-            "description": "Slight pike in jump",
-            "point_value": 0.05
-          },
-          {
-            "type": "Execution",
-            "body_part": "Landing",
-            "description": "Slight chest drop on landing",
-            "point_value": 0.05
-          }
-        ],
-        "quality_grade": 9.9,
-        "reason": "Minor form breaks.",
-        "is_celebration": false
-      },
-      {
-        "skill_name": "Round-off Back Handspring Back Tuck",
-        "skill_order": 6,
-        "timestamp_start": 32,
-        "timestamp_end": 37,
-        "executed_successfully": true,
-        "difficulty_value": 0.2,
-        "total_deduction": 0.6,
-        "deductions": [
-          {
-            "type": "Execution",
-            "body_part": "Legs",
-            "description": "Bent knees in round-off",
-            "point_value": 0.1
-          },
-          {
-            "type": "Execution",
-            "body_part": "Legs",
-            "description": "Bent knees in back handspring",
-            "point_value": 0.1
-          },
-          {
-            "type": "Execution",
-            "body_part": "Legs",
-            "description": "Leg separation (cowboy) in back tuck",
-            "point_value": 0.1
-          },
-          {
-            "type": "Execution",
-            "body_part": "Height",
-            "description": "Low salto height",
-            "point_value": 0.1
-          },
-          {
-            "type": "Execution",
-            "body_part": "Landing",
-            "description": "Deep squat on landing",
-            "point_value": 0.1
-          },
-          {
-            "type": "Execution",
-            "body_part": "Landing",
-            "description": "Small step on landing",
-            "point_value": 0.05
-          },
-          {
-            "type": "Execution",
-            "body_part": "Arms",
-            "description": "Arm circle on landing",
-            "point_value": 0.05
-          }
-        ],
-        "quality_grade": 9.4,
-        "reason": "Multiple form breaks throughout the pass, low height, and landing control issues.",
-        "is_celebration": false
-      },
-      {
-        "skill_name": "Dance/Floor Work",
-        "skill_order": 7,
-        "timestamp_start": 37,
-        "timestamp_end": 44,
-        "executed_successfully": true,
-        "difficulty_value": 0,
-        "total_deduction": 0.1,
-        "deductions": [
-          {
-            "type": "Execution",
-            "body_part": "Feet",
-            "description": "Flexed feet during floor work",
-            "point_value": 0.05
-          },
-          {
-            "type": "Execution",
-            "body_part": "Knees",
-            "description": "Soft knees during floor work",
-            "point_value": 0.05
-          }
-        ],
-        "quality_grade": 9.9,
-        "reason": "Lack of tension in feet and knees.",
-        "is_celebration": false
-      },
-      {
-        "skill_name": "Full Turn",
-        "skill_order": 8,
-        "timestamp_start": 44,
-        "timestamp_end": 48,
-        "executed_successfully": true,
-        "difficulty_value": 0.1,
-        "total_deduction": 0.2,
-        "deductions": [
-          {
-            "type": "Execution",
-            "body_part": "Feet",
-            "description": "Heel drop before 360 completion",
-            "point_value": 0.1
-          },
-          {
-            "type": "Execution",
-            "body_part": "Legs",
-            "description": "Loose free leg",
-            "point_value": 0.05
-          },
-          {
-            "type": "Execution",
-            "body_part": "Body",
-            "description": "Slight wobble on finish",
-            "point_value": 0.05
-          }
-        ],
-        "quality_grade": 9.8,
-        "reason": "Control and form issues.",
-        "is_celebration": false
-      },
-      {
-        "skill_name": "Split Leap",
-        "skill_order": 9,
-        "timestamp_start": 50,
-        "timestamp_end": 54,
-        "executed_successfully": true,
-        "difficulty_value": 0.1,
-        "total_deduction": 0.2,
-        "deductions": [
-          {
-            "type": "Execution",
-            "body_part": "Legs",
-            "description": "Insufficient split (approx 130-140 degrees)",
-            "point_value": 0.1
-          },
-          {
-            "type": "Execution",
-            "body_part": "Feet",
-            "description": "Flexed feet in flight",
-            "point_value": 0.05
-          },
-          {
-            "type": "Execution",
-            "body_part": "Landing",
-            "description": "Slight chest drop on landing",
-            "point_value": 0.05
-          }
-        ],
-        "quality_grade": 9.8,
-        "reason": "Split angle not meeting 150 degree requirement, minor form breaks.",
-        "is_celebration": false
-      },
-      {
-        "skill_name": "Round-off Back Handspring Back Tuck",
-        "skill_order": 10,
-        "timestamp_start": 58,
-        "timestamp_end": 102,
-        "executed_successfully": true,
-        "difficulty_value": 0.2,
-        "total_deduction": 0.6,
-        "deductions": [
-          {
-            "type": "Execution",
-            "body_part": "Legs",
-            "description": "Bent knees in round-off",
-            "point_value": 0.1
-          },
-          {
-            "type": "Execution",
-            "body_part": "Legs",
-            "description": "Bent knees in back handspring",
-            "point_value": 0.1
-          },
-          {
-            "type": "Execution",
-            "body_part": "Legs",
-            "description": "Leg separation (cowboy) in back tuck",
-            "point_value": 0.1
-          },
-          {
-            "type": "Execution",
-            "body_part": "Height",
-            "description": "Low salto height",
-            "point_value": 0.1
-          },
-          {
-            "type": "Execution",
-            "body_part": "Landing",
-            "description": "Deep squat on landing",
-            "point_value": 0.1
-          },
-          {
-            "type": "Execution",
-            "body_part": "Landing",
-            "description": "Small step on landing",
-            "point_value": 0.05
-          },
-          {
-            "type": "Execution",
-            "body_part": "Arms",
-            "description": "Arm circle on landing",
-            "point_value": 0.05
-          }
-        ],
-        "quality_grade": 9.4,
-        "reason": "Consistent form breaks as in the first pass, low height, and landing control issues.",
-        "is_celebration": false
-      },
-      {
-        "skill_name": "Final Split Pose",
-        "skill_order": 11,
-        "timestamp_start": 106,
-        "timestamp_end": 110,
-        "executed_successfully": true,
-        "difficulty_value": 0,
-        "total_deduction": 0.05,
-        "deductions": [
-          {
-            "type": "Execution",
-            "body_part": "Feet",
-            "description": "Flexed foot",
-            "point_value": 0.05
-          }
-        ],
-        "quality_grade": 9.95,
-        "reason": "Minor form issue.",
-        "is_celebration": false
-      }
-    ],
-    "artistry": {
-      "total_artistry_deduction": 0.3,
-      "choreography_variety_deduction": 0.05,
-      "expression_deduction": 0.1,
-      "musicality_deduction": 0.05,
-      "notes": "Gymnast displayed a generally neutral facial expression throughout the routine. Transitions were often functional rather than expressive. Some flat footwork and lack of relevé were observed. Musicality was present but not always fully embodied.",
-      "quality_of_movement_deduction": 0.1
+  "start_value": 10,
+  "final_score": 9.15,
+  "skills": [
+    {
+      "timestamp": "0:32",
+      "skill_name": "Round-off Back Handspring Back Tuck",
+      "quality_grade": 9.8,
+      "primary_deduction": "Slight pike in round-off, legs slightly apart in BHS, slight pike in tuck, small hop on landing.",
+      "is_celebration": false
     },
-    "coaching_summary": "This Level 6 floor routine demonstrates a solid foundation of skills, but significant execution deductions accumulated, particularly in tumbling and dance elements. The two identical acro passes resulted in a special requirement penalty. Focus on refining body tension, amplitude, and landing control will be crucial for higher scores. Artistry also needs development to elevate the overall presentation.",
-    "top_3_fixes": [
-      "Improve body tension and toe point throughout all dance and acro elements to eliminate micro-deductions (flexed feet, soft knees, limp wrists).",
-      "Increase height and amplitude in tumbling passes, specifically the back tucks, and work on cleaner landings with minimal steps or squats.",
-      "Develop more varied and expressive choreography, ensuring two *different* acro passes are performed to meet special requirements, and enhance facial expression and musicality."
-    ],
-    "celebrations": [],
-    "confidence": "High",
-    "duration_seconds": 110,
-    "special_requirements": [
-      {
-        "penalty": 0.5,
-        "requirement": "Two different acro passes, salto required in both.",
-        "status": "Not Met - Two identical acro passes were performed."
-      }
-    ],
-    "total_execution_deductions": 2
-  },
-  "computed": {
-    "executionTotal": 2.2,
-    "artistryTotal": 0.3,
-    "srTotal": 0.5,
-    "totalDeductions": 3,
-    "codeScore": 7,
-    "aiScore": 8.75,
-    "finalScore": 7,
-    "delta": 1.9250000000000007,
-    "deductionCount": 32
-  }
+    {
+      "timestamp": "0:53",
+      "skill_name": "Switch Leap",
+      "quality_grade": 9.8,
+      "primary_deduction": "Insufficient split amplitude (below 150 degrees), slight bend in back knee.",
+      "is_celebration": false
+    },
+    {
+      "timestamp": "0:59",
+      "skill_name": "Round-off Back Handspring Back Layout",
+      "quality_grade": 9.8,
+      "primary_deduction": "Slight pike in round-off, legs slightly apart in BHS, slight arch/loose body in layout, small hop on landing.",
+      "is_celebration": false
+    },
+    {
+      "timestamp": "1:05",
+      "skill_name": "Split",
+      "quality_grade": 9.95,
+      "primary_deduction": "Hips not perfectly square/flat.",
+      "is_celebration": false
+    }
+  ],
+  "total_execution_deductions": 0.65,
+  "coaching_summary": "This routine demonstrates foundational tumbling skills with good height. However, consistent attention to detail in body lines, achieving full amplitude on leaps, and sticking landings without hops are critical areas for improvement. The artistry could benefit from more dynamic changes and stronger facial expression to truly captivate the judges.",
+  "celebrations": [],
+  "top_3_fixes": [
+    "Maintain tight body lines (straight legs, pointed toes) throughout all tumbling passes to eliminate form deductions.",
+    "Achieve full 180-degree split amplitude on all leaps, ensuring straight legs and pointed toes.",
+    "Focus on sticking all landings cleanly without hops or steps, and enhance artistry with varied dynamics and expression."
+  ],
+  "total_artistry_deductions": 0.2
 }
