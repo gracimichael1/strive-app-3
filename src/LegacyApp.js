@@ -4725,38 +4725,47 @@ IMPORTANT: The deduction_log must contain ONE entry per distinct skill or transi
         }
       }
 
-      // ── Merge combination tumbling passes within 2 seconds ────────
+      // ── Merge combination tumbling passes (up to 4 seconds) ─────
+      // Pass STARTER: skills that begin or continue an acro pass
+      const PASS_STARTER = /back\s*handspring|bhs|round[\s-]*off|front\s*handspring|back\s*walkover|front\s*walkover|cartwheel|aerial/i;
+      // Any acro element including TERMINAL skills (tuck/layout/pike/full)
+      const PASS_ANY_ACRO = /back\s*handspring|bhs|round[\s-]*off|front\s*handspring|back\s*walkover|front\s*walkover|cartwheel|aerial|back\s*tuck|layout|pike|full\s*(?:twist|in|out)?|salto|flyaway|dismount/i;
+
       const merged = [];
       for (let i = 0; i < parsedSkills.length; i++) {
         const s = parsedSkills[i];
         const sec = parseTimestampToSec(s.timestamp);
-        // Check if this skill should merge into the previous one
         if (merged.length > 0) {
           const prev = merged[merged.length - 1];
-          const prevSec = parseTimestampToSec(prev.timestamp);
-          const timeDiff = Math.abs(sec - prevSec);
-          const isCombo = timeDiff <= 2
+          // Compare against the LAST merged skill's timestamp, not the first
+          const prevLastSec = prev._lastSec !== undefined ? prev._lastSec : parseTimestampToSec(prev.timestamp);
+          const timeDiff = Math.abs(sec - prevLastSec);
+          // Merge when: within 4s window, prev contains a pass starter, current is any acro element
+          const isCombo = timeDiff <= 4
             && prev.type !== "artistry" && s.type !== "artistry"
             && !/global/i.test(s.timestamp) && !/global/i.test(prev.timestamp)
-            && (/back\s*handspring|bhs|round[\s-]*off|front\s*handspring|front\s*walkover/i.test(s.skill)
-              || /back\s*handspring|bhs|round[\s-]*off|front\s*handspring|front\s*walkover/i.test(prev.skill));
+            && PASS_STARTER.test(prev.skill)
+            && PASS_ANY_ACRO.test(s.skill);
           if (isCombo) {
-            // Merge into previous
             prev.skill = prev.skill + " " + s.skill;
             prev.deduction = Math.min(0.50, Math.round((prev.deduction + s.deduction) * 100) / 100);
             if (s.reason) prev.reason = [prev.reason, s.reason].filter(Boolean).join("; ");
+            if (s.faults && s.faults.length > 0) prev.faults = [...(prev.faults || []), ...s.faults];
             if (s.strength && !prev.strength) prev.strength = s.strength;
+            prev._lastSec = sec; // track latest timestamp for next chain comparison
             continue;
           }
         }
-        merged.push({ ...s });
+        merged.push({ ...s, _lastSec: sec });
       }
+      // Remove internal tracking field
+      merged.forEach(s => delete s._lastSec);
       parsedSkills = merged;
 
-      // ── Hard cap: max 10 skills, keep highest deductions ──────────
-      if (parsedSkills.length > 10) {
-        parsedSkills = [...parsedSkills].sort((a, b) => b.deduction - a.deduction).slice(0, 10);
-        log.info("parse", `Capped to 10 skills (was ${merged.length})`);
+      // ── Hard cap: max 12 skills, keep highest deductions ──────────
+      if (parsedSkills.length > 12) {
+        parsedSkills = [...parsedSkills].sort((a, b) => b.deduction - a.deduction).slice(0, 12);
+        log.info("parse", `Capped to 12 skills (was ${merged.length})`);
       }
 
       log.info("parse", `Parsed ${parsedSkills.length} skills (format: ${isRichJSON ? "rich JSON" : "pipe-delimited legacy"})`);
