@@ -4131,122 +4131,6 @@ const AnalyzingScreen = React.memo(function AnalyzingScreen({ uploadData, profil
           maxOutputTokens: 16384,
           seed: 42,
           responseMimeType: "application/json",
-          responseSchema: {
-            type: "object",
-            properties: {
-              skills: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    timestamp:           { type: "string" },
-                    name:                { type: "string" },
-                    type:                { type: "string" },
-                    qualityScore:        { type: "number" },
-                    deduction:           { type: "number" },
-                    faults: {
-                      type: "array",
-                      items: {
-                        type: "object",
-                        properties: {
-                          fault:     { type: "string" },
-                          deduction: { type: "number" },
-                          severity:  { type: "string" },
-                        },
-                        required: ["fault", "deduction", "severity"],
-                      },
-                    },
-                    strengthNote:        { type: "string" },
-                    bodyMechanics: {
-                      type: "object",
-                      properties: {
-                        kneeAngle:        { type: "string" },
-                        hipAlignment:     { type: "string" },
-                        shoulderPosition: { type: "string" },
-                        toePoint:         { type: "string" },
-                      },
-                    },
-                    injuryRisk:          { type: "string" },
-                  },
-                  required: ["timestamp", "name", "type", "qualityScore", "deduction", "faults"],
-                },
-              },
-              detectedEvent: { type: "string" },
-              artistry: {
-                type: "object",
-                properties: {
-                  totalDeduction: { type: "number" },
-                  details: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        fault:     { type: "string" },
-                        deduction: { type: "number" },
-                      },
-                      required: ["fault", "deduction"],
-                    },
-                  },
-                },
-                required: ["totalDeduction", "details"],
-              },
-              composition: {
-                type: "object",
-                properties: {
-                  totalDeduction: { type: "number" },
-                  details: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        fault:     { type: "string" },
-                        deduction: { type: "number" },
-                      },
-                      required: ["fault", "deduction"],
-                    },
-                  },
-                },
-                required: ["totalDeduction", "details"],
-              },
-              biomechanicalOverlay: {
-                type: "object",
-                properties: {
-                  swingFlightRadius: { type: "string" },
-                  widthOfMassAudit:  { type: "string" },
-                  landingVector:     { type: "string" },
-                },
-              },
-              summary: {
-                type: "object",
-                properties: {
-                  overallScore:          { type: "number" },
-                  startValue:            { type: "number" },
-                  totalDeductions:       { type: "number" },
-                  executionDeductions:   { type: "number" },
-                  artistryDeductions:    { type: "number" },
-                  compositionDeductions: { type: "number" },
-                  whyThisScore:          { type: "string" },
-                  celebrations: {
-                    type: "array",
-                    items: { type: "string" },
-                  },
-                  topImprovements: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        fix:          { type: "string" },
-                        pointsGained: { type: "number" },
-                      },
-                      required: ["fix", "pointsGained"],
-                    },
-                  },
-                },
-                required: ["overallScore", "startValue", "totalDeductions", "whyThisScore"],
-              },
-            },
-            required: ["skills", "detectedEvent", "summary"],
-          },
         },
       }),
     });
@@ -4299,34 +4183,39 @@ const AnalyzingScreen = React.memo(function AnalyzingScreen({ uploadData, profil
     const categoryLabel = cat === "xcel" ? "Xcel" : cat === "compulsory" ? "Compulsory" : "Optional";
     const athleteName = profile.name || "the gymnast";
 
-    return `Role: Act as a Brevet-level USAG "${gender} ${categoryLabel} ${level}" lead Judge. Your goal is to provide a "Zero-Lenience" technical audit with biomechanical analysis. Focus ONLY on observation and scoring — do not generate training plans.
+    return `The BHPA Master System Instruction: "The Eyes"
+Role: Act as a Brevet-level USAG "${gender} ${categoryLabel} ${level}" Lead Judge and Biomechanical Analyst. Your goal is to provide a "Zero-Lenience" technical audit and raw kinetic data for downstream coaching logic.
 
 ATHLETE: ${athleteName} | ${gender} ${categoryLabel} ${level}
 
 I. Operational Protocol: The Professional Audit
-1. Double-Pass Scrub: * Pass 1 (The Skills): Analyze primary flight elements, handstands, and saltos.
+* Double-Pass Scrub: * Pass 1 (The Skills): Analyze primary flight elements, handstands, and saltos.
    * Pass 2 (Connective Tissue): Scrub the 1.5s between skills (Kips, Squat-ons, Taps).
-2. Frame-by-Frame Apex Scrub: Manually identify and analyze the "Apex Frame" of every flight element and the "Contact Frame" of every landing or bar transition. Document any form breaks (TPM/KTM) that exist even for a single frame.
-3. The "Monitors": Activate Toe Point Monitor (TPM) and Knee Tension Monitor (KTM) for every frame.
-4. Zero Lenience: Strictly forbidden from giving "benefit of the doubt." If a toe isn't pointed or a knee isn't locked, it is a deduction (0.05 - 0.10).
-5. The "Zero-Variance" Audit Upgrade
-* The 30-Degree Penalty: Any cast failing to reach the required horizontal/vertical line (based on the specified level) is an automatic 0.30 deduction. No "marginal" passes.
-* The "Compounder" Rule: If a form break (KTM/TPM) occurs during a technical error (e.g., bent arms during a Kip), the deduction is doubled. (0.10 for form + 0.10 for technique).
-* The 1.5-Second Rhythm Clock: Any pause, hesitation, or "adjustment" of hands on the bar lasting longer than 1.5 seconds is an automatic 0.10 rhythm break.
-* The "Early Pike" Logic: Any salto (dismount) that begins to pike/tuck before reaching the apex of flight loses 0.20 for "Poor Body Position in Flight."
-* The "Heavy Bar" Audit: Any "stumble" or "clunky" foot contact during a Squat-on or transition is a 0.10 deduction for lack of control.
+* Frame-by-Frame Apex Scrub: Manually identify the "Apex Frame" of every flight element and the "Contact Frame" of every landing or bar transition. Document form breaks (TPM/KTM) existing for even a single frame.
+* The "Monitors": Activate Toe Point Monitor (TPM) and Knee Tension Monitor (KTM) for every frame.
+* Zero Lenience: No "benefit of the doubt." If a toe isn't pointed or a knee isn't locked, it is a deduction (0.05 - 0.10).
 
-II. Output Format: The Scorecard
-* Timestamped Deduction Table: List every skill AND transition. Identify micro-deductions (0.05, 0.1, 0.2).
-* The "Missed Transition" Check: Explicitly confirm if "cowboy knees," "staggered feet," or "flexed feet" occurred during transitions.
-* Final Justified Score: Calculated from a 10.0 Start Value.
+II. The "Zero-Variance" Audit Rules
+* The 30-Degree Penalty: Any cast failing to reach the required horizontal/vertical line (per level) is an automatic 0.30 deduction.
+* The "Compounder" Rule: If a form break (KTM/TPM) occurs during a technical error (e.g., bent arms during a Kip), the deduction is doubled.
+* The 1.5-Second Rhythm Clock: Any pause or adjustment of hands on the bar >1.5s is an automatic 0.10 rhythm break.
+* The "Early Pike" Logic: Any salto beginning to pike/tuck before the apex of flight loses 0.20 for "Poor Body Position."
+* The "Heavy Bar" Audit: Any "stumble" or "clunky" foot contact during a transition is a 0.10 deduction.
 
 III. Biomechanical Overlay & Kinetic Audit
-1. The "Swing/Flight Radius" Analysis: Deconstruct the Hollow-Arch-Hollow sequence. Identify the exact frame of the "Toe Beat." State if the momentum generation is Early, Late, or Optimal.
-2. The "Width of Mass" Audit: Measure lateral deviation (e.g., Cowboy Knees). Explain the Conservation of Angular Momentum impact: How did this mass displacement affect the Angular Velocity (rotation speed)?
-3. The Landing Vector: Provide a 'Torso-to-Vertical' angle measurement at impact. Determine if the Center of Mass (CoM) was leading, trailing, or stacked over the base of support.
+* Swing/Flight Radius: Deconstruct the Hollow-Arch-Hollow sequence. Identify the exact frame of the "Toe Beat." State if momentum generation is Early, Late, or Optimal.
+* Width of Mass: Measure lateral deviation (e.g., Cowboy Knees). Quantify mass displacement and its impact on Angular Velocity.
+* The Landing Vector: Provide a 'Torso-to-Vertical' angle measurement at impact. Determine if the Center of Mass (CoM) was Leading, Trailing, or Stacked.
 
-Identify the detected event/apparatus from the video and include it as "detectedEvent".`;
+IV. Level-Up Gap Analysis
+* Requirement Shift: Identify which skills fail the "Special Requirements" of the next level up.
+* The "Angle" Tax: Recalculate the score using the next level's requirements.
+* Technical Anchor: Identify the single habit that will be the biggest liability at the next level.
+
+V. Output Format: Strict JSON Schema
+Important: You must output only valid JSON. Do not include conversational text, markdown outside of the JSON block, or training advice.
+{ "audit_meta": { "level": "${level}", "event": "detected from video", "start_value": 10.0 }, "scorecard": [ { "timestamp": "0:00", "element": "string", "deduction": 0.0, "reason": "string", "fault_type": "KTM/TPM/Technical" } ], "final_score": 0.0, "kinetics": { "toe_beat_frame": 0, "momentum_timing": "Early/Late/Optimal", "landing_vector_deg": 0, "com_status": "Leading/Trailing/Stacked" }, "level_up_gap": { "projected_score": 0.0, "technical_anchor": "string", "requirement_fails": ["string"] } }`;
+
   }, [profile]);
 
   // ── Main analysis orchestrator — single pass ─────────────────────
@@ -4351,7 +4240,7 @@ Identify the detected event/apparatus from the video and include it as "detected
 
     // ── Score caching — return cached result for duplicate submissions ──
     // Fingerprint: file name + size + lastModified + athlete name + level + event
-    const PROMPT_VERSION = "v9_handshake"; // Bump this when prompt changes to invalidate cache
+    const PROMPT_VERSION = "v10_bhpa_eyes"; // Bump this when prompt changes to invalidate cache
     const fingerprintParts = [
       PROMPT_VERSION,
       uploadData.video.name || "video",
@@ -4461,30 +4350,29 @@ Identify the detected event/apparatus from the video and include it as "detected
         const jsonMatch = rawResponse.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
           const parsed = JSON.parse(jsonMatch[0]);
-          if (parsed.skills && Array.isArray(parsed.skills) && parsed.skills.length > 0) {
+          const skillsArray = parsed.scorecard || parsed.skills || [];
+          if (Array.isArray(skillsArray) && skillsArray.length > 0) {
             isRichJSON = true;
-            // Capture auto-detected event if Gemini identified it
-            if (parsed.detectedEvent) {
-              detectedEvent = parsed.detectedEvent;
-              log.info("parse", `Gemini auto-detected event: ${detectedEvent}`);
+            if (parsed.audit_meta?.event) {
+              detectedEvent = parsed.audit_meta.event;
+              log.info("parse", `Gemini detected event: ${detectedEvent}`);
             }
-            parsedSkills = parsed.skills.map(s => ({
-              timestamp: s.timestamp || "0:00",
-              skill: s.name || s.skill || "Unknown",
-              type: (s.type || "acro").toLowerCase(),
-              deduction: roundToUSAG(s.deduction),
-              qualityScore: parseFloat(s.qualityScore) || (10.0 - roundToUSAG(s.deduction)),
-              reason: safeArray(s.faults).map(f => f.fault).filter(Boolean).join("; ") || null,
-              faults: safeArray(s.faults).map(f => ({
-                fault: safeStr(f.fault),
-                deduction: roundToUSAG(f.deduction),
-                severity: safeStr(f.severity || "small"),
-              })),
-              strength: safeStr(s.strengthNote || s.strength),
-              bodyMechanics: s.bodyMechanics || null,
-              injuryRisk: safeStr(s.injuryRisk),
-              drillRecommendation: safeStr(s.drillRecommendation),
-            }));
+            parsedSkills = skillsArray.map(s => {
+              const ded = roundToUSAG(s.deduction || 0);
+              return {
+                timestamp: s.timestamp || "0:00",
+                skill: s.element || s.name || "Unknown",
+                type: "acro",
+                deduction: ded,
+                qualityScore: 10.0 - ded,
+                reason: s.reason || null,
+                faults: s.reason ? [{ fault: safeStr(s.reason), deduction: ded, severity: ded >= 0.30 ? "veryLarge" : ded >= 0.20 ? "large" : ded >= 0.10 ? "medium" : "small" }] : [],
+                strength: null,
+                bodyMechanics: null,
+                injuryRisk: null,
+                drillRecommendation: null,
+              };
+            });
 
             // Artistry section
             if (parsed.artistry) {
@@ -4510,15 +4398,18 @@ Identify the detected event/apparatus from the video and include it as "detected
 
             // Summary section
             if (parsed.summary) {
-              whyThisScore = safeStr(parsed.summary.whyThisScore);
-              parsedCelebrations = safeArray(parsed.summary.celebrations);
-              parsedTopImprovements = safeArray(parsed.summary.topImprovements).map(imp => ({
+              whyThisScore = safeStr(parsed.summary.whyThisScore || "");
+              parsedCelebrations = safeArray(parsed.summary.celebrations || []);
+              parsedTopImprovements = safeArray(parsed.summary.topImprovements || []).map(imp => ({
                 fix: safeStr(imp.fix),
                 pointsGained: parseFloat(imp.pointsGained) || 0,
               }));
             }
 
-            // BHPA sections
+            // BHPA sections — kinetics and level-up from Gemini
+            if (parsed.kinetics) {
+              parsedBiomechanicalOverlay = parsed.kinetics;
+            }
             if (parsed.biomechanicalOverlay) {
               parsedBiomechanicalOverlay = parsed.biomechanicalOverlay;
             }
