@@ -1,0 +1,558 @@
+{
+  "scorecard": {
+    "start_value": 10,
+    "final_score": 8.75,
+    "deduction_log": [
+      {
+        "skill_name": "Jump to Low Bar",
+        "skill_order": 1,
+        "timestamp_start": 1,
+        "timestamp_end": 2,
+        "executed_successfully": true,
+        "difficulty_value": 0,
+        "total_deduction": 0,
+        "deductions": [],
+        "quality_grade": 10,
+        "reason": "Clean entry to the low bar.",
+        "is_celebration": false
+      },
+      {
+        "skill_name": "Kip",
+        "skill_order": 2,
+        "timestamp_start": 2,
+        "timestamp_end": 3,
+        "executed_successfully": true,
+        "difficulty_value": 0.1,
+        "total_deduction": 0.15,
+        "deductions": [
+          {
+            "type": "Execution",
+            "body_part": "Hips",
+            "description": "Slight pike in hips during kip.",
+            "point_value": 0.05
+          },
+          {
+            "type": "Execution",
+            "body_part": "Knees",
+            "description": "Soft knees on catch.",
+            "point_value": 0.05
+          },
+          {
+            "type": "Execution",
+            "body_part": "Legs",
+            "description": "Slight leg separation on catch.",
+            "point_value": 0.05
+          }
+        ],
+        "quality_grade": 9.85,
+        "reason": "Minor form breaks in body line and leg tension during the kip.",
+        "is_celebration": false
+      },
+      {
+        "skill_name": "Back Hip Circle",
+        "skill_order": 3,
+        "timestamp_start": 3,
+        "timestamp_end": 4,
+        "executed_successfully": true,
+        "difficulty_value": 0.1,
+        "total_deduction": 0.1,
+        "deductions": [
+          {
+            "type": "Execution",
+            "body_part": "Hips",
+            "description": "Slight pike in hips during rotation.",
+            "point_value": 0.05
+          },
+          {
+            "type": "Execution",
+            "body_part": "Hips",
+            "description": "Hips slightly off bar at finish.",
+            "point_value": 0.05
+          }
+        ],
+        "quality_grade": 9.9,
+        "reason": "Minor pike and slight loss of contact with the bar.",
+        "is_celebration": false
+      },
+      {
+        "skill_name": "Cast",
+        "skill_order": 4,
+        "timestamp_start": 4,
+        "timestamp_end": 5,
+        "executed_successfully": true,
+        "difficulty_value": 0.1,
+        "total_deduction": 0.2,
+        "deductions": [
+          {
+            "type": "Amplitude",
+            "body_part": "Body",
+            "description": "Cast significantly below horizontal (hips/feet clearly below bar height).",
+            "point_value": 0.2
+          }
+        ],
+        "quality_grade": 9.8,
+        "reason": "Significant lack of amplitude, not reaching horizontal.",
+        "is_celebration": false
+      },
+      {
+        "skill_name": "Squat-on",
+        "skill_order": 5,
+        "timestamp_start": 5,
+        "timestamp_end": 6,
+        "executed_successfully": true,
+        "difficulty_value": 0.2,
+        "total_deduction": 0.3,
+        "deductions": [
+          {
+            "type": "Execution",
+            "body_part": "Feet",
+            "description": "Heavy feet on bar.",
+            "point_value": 0.1
+          },
+          {
+            "type": "Execution",
+            "body_part": "Knees",
+            "description": "Bent knees during squat-on.",
+            "point_value": 0.1
+          },
+          {
+            "type": "Rhythm/Flow",
+            "body_part": "Routine",
+            "description": "Rhythm deduction due to preceding low cast.",
+            "point_value": 0.1
+          }
+        ],
+        "quality_grade": 9.7,
+        "reason": "Heavy contact with the bar, bent knees, and a break in rhythm from the previous skill.",
+        "is_celebration": false
+      },
+      {
+        "skill_name": "Kip",
+        "skill_order": 6,
+        "timestamp_start": 6,
+        "timestamp_end": 7,
+        "executed_successfully": true,
+        "difficulty_value": 0.1,
+        "total_deduction": 0.15,
+        "deductions": [
+          {
+            "type": "Execution",
+            "body_part": "Hips",
+            "description": "Slight pike in hips during kip.",
+            "point_value": 0.05
+          },
+          {
+            "type": "Execution",
+            "body_part": "Knees",
+            "description": "Soft knees on catch.",
+            "point_value": 0.05
+          },
+          {
+            "type": "Execution",
+            "body_part": "Legs",
+            "description": "Slight leg separation on catch.",
+            "point_value": 0.05
+          }
+        ],
+        "quality_grade": 9.85,
+        "reason": "Minor form breaks in body line and leg tension during the kip.",
+        "is_celebration": false
+      },
+      {
+        "skill_name": "Cast",
+        "skill_order": 7,
+        "timestamp_start": 7,
+        "timestamp_end": 8,
+        "executed_successfully": true,
+        "difficulty_value": 0.1,
+        "total_deduction": 0.2,
+        "deductions": [
+          {
+            "type": "Amplitude",
+            "body_part": "Body",
+            "description": "Cast significantly below horizontal (hips/feet clearly below bar height).",
+            "point_value": 0.2
+          }
+        ],
+        "quality_grade": 9.8,
+        "reason": "Significant lack of amplitude, not reaching horizontal.",
+        "is_celebration": false
+      },
+      {
+        "skill_name": "Back Hip Circle",
+        "skill_order": 8,
+        "timestamp_start": 8,
+        "timestamp_end": 9,
+        "executed_successfully": true,
+        "difficulty_value": 0.1,
+        "total_deduction": 0.15,
+        "deductions": [
+          {
+            "type": "Execution",
+            "body_part": "Hips",
+            "description": "Slight pike in hips during rotation.",
+            "point_value": 0.05
+          },
+          {
+            "type": "Execution",
+            "body_part": "Hips",
+            "description": "Hips slightly off bar at finish.",
+            "point_value": 0.05
+          },
+          {
+            "type": "Rhythm/Flow",
+            "body_part": "Routine",
+            "description": "Rhythm deduction due to preceding low cast.",
+            "point_value": 0.05
+          }
+        ],
+        "quality_grade": 9.85,
+        "reason": "Minor pike, slight loss of contact, and a minor rhythm break.",
+        "is_celebration": false
+      },
+      {
+        "skill_name": "Cast",
+        "skill_order": 9,
+        "timestamp_start": 9,
+        "timestamp_end": 10,
+        "executed_successfully": true,
+        "difficulty_value": 0.1,
+        "total_deduction": 0.2,
+        "deductions": [
+          {
+            "type": "Amplitude",
+            "body_part": "Body",
+            "description": "Cast significantly below horizontal (hips/feet clearly below bar height).",
+            "point_value": 0.2
+          }
+        ],
+        "quality_grade": 9.8,
+        "reason": "Significant lack of amplitude, not reaching horizontal.",
+        "is_celebration": false
+      },
+      {
+        "skill_name": "Underswing",
+        "skill_order": 10,
+        "timestamp_start": 10,
+        "timestamp_end": 11,
+        "executed_successfully": true,
+        "difficulty_value": 0.1,
+        "total_deduction": 0.05,
+        "deductions": [
+          {
+            "type": "Rhythm/Flow",
+            "body_part": "Routine",
+            "description": "Rhythm deduction due to preceding low cast.",
+            "point_value": 0.05
+          }
+        ],
+        "quality_grade": 9.95,
+        "reason": "Minor rhythm break.",
+        "is_celebration": false
+      },
+      {
+        "skill_name": "Kip",
+        "skill_order": 11,
+        "timestamp_start": 11,
+        "timestamp_end": 12,
+        "executed_successfully": true,
+        "difficulty_value": 0.1,
+        "total_deduction": 0.15,
+        "deductions": [
+          {
+            "type": "Execution",
+            "body_part": "Hips",
+            "description": "Slight pike in hips during kip.",
+            "point_value": 0.05
+          },
+          {
+            "type": "Execution",
+            "body_part": "Knees",
+            "description": "Soft knees on catch.",
+            "point_value": 0.05
+          },
+          {
+            "type": "Execution",
+            "body_part": "Legs",
+            "description": "Slight leg separation on catch.",
+            "point_value": 0.05
+          }
+        ],
+        "quality_grade": 9.85,
+        "reason": "Minor form breaks in body line and leg tension during the kip.",
+        "is_celebration": false
+      },
+      {
+        "skill_name": "Cast",
+        "skill_order": 12,
+        "timestamp_start": 12,
+        "timestamp_end": 13,
+        "executed_successfully": true,
+        "difficulty_value": 0.1,
+        "total_deduction": 0.2,
+        "deductions": [
+          {
+            "type": "Amplitude",
+            "body_part": "Body",
+            "description": "Cast significantly below horizontal (hips/feet clearly below bar height).",
+            "point_value": 0.2
+          }
+        ],
+        "quality_grade": 9.8,
+        "reason": "Significant lack of amplitude, not reaching horizontal.",
+        "is_celebration": false
+      },
+      {
+        "skill_name": "Back Hip Circle",
+        "skill_order": 13,
+        "timestamp_start": 13,
+        "timestamp_end": 14,
+        "executed_successfully": true,
+        "difficulty_value": 0.1,
+        "total_deduction": 0.15,
+        "deductions": [
+          {
+            "type": "Execution",
+            "body_part": "Hips",
+            "description": "Slight pike in hips during rotation.",
+            "point_value": 0.05
+          },
+          {
+            "type": "Execution",
+            "body_part": "Hips",
+            "description": "Hips slightly off bar at finish.",
+            "point_value": 0.05
+          },
+          {
+            "type": "Rhythm/Flow",
+            "body_part": "Routine",
+            "description": "Rhythm deduction due to preceding low cast.",
+            "point_value": 0.05
+          }
+        ],
+        "quality_grade": 9.85,
+        "reason": "Minor pike, slight loss of contact, and a minor rhythm break.",
+        "is_celebration": false
+      },
+      {
+        "skill_name": "Cast",
+        "skill_order": 14,
+        "timestamp_start": 14,
+        "timestamp_end": 15,
+        "executed_successfully": true,
+        "difficulty_value": 0.1,
+        "total_deduction": 0.2,
+        "deductions": [
+          {
+            "type": "Amplitude",
+            "body_part": "Body",
+            "description": "Cast significantly below horizontal (hips/feet clearly below bar height).",
+            "point_value": 0.2
+          }
+        ],
+        "quality_grade": 9.8,
+        "reason": "Significant lack of amplitude, not reaching horizontal.",
+        "is_celebration": false
+      },
+      {
+        "skill_name": "Front Hip Circle",
+        "skill_order": 15,
+        "timestamp_start": 15,
+        "timestamp_end": 16,
+        "executed_successfully": true,
+        "difficulty_value": 0.1,
+        "total_deduction": 0.15,
+        "deductions": [
+          {
+            "type": "Execution",
+            "body_part": "Hips",
+            "description": "Slight pike in hips during rotation.",
+            "point_value": 0.05
+          },
+          {
+            "type": "Execution",
+            "body_part": "Hips",
+            "description": "Hips slightly off bar at finish.",
+            "point_value": 0.05
+          },
+          {
+            "type": "Rhythm/Flow",
+            "body_part": "Routine",
+            "description": "Rhythm deduction due to preceding low cast.",
+            "point_value": 0.05
+          }
+        ],
+        "quality_grade": 9.85,
+        "reason": "Minor pike, slight loss of contact, and a minor rhythm break.",
+        "is_celebration": false
+      },
+      {
+        "skill_name": "Cast",
+        "skill_order": 16,
+        "timestamp_start": 16,
+        "timestamp_end": 17,
+        "executed_successfully": true,
+        "difficulty_value": 0.1,
+        "total_deduction": 0.2,
+        "deductions": [
+          {
+            "type": "Amplitude",
+            "body_part": "Body",
+            "description": "Cast significantly below horizontal (hips/feet clearly below bar height).",
+            "point_value": 0.2
+          }
+        ],
+        "quality_grade": 9.8,
+        "reason": "Significant lack of amplitude, not reaching horizontal.",
+        "is_celebration": false
+      },
+      {
+        "skill_name": "Underswing",
+        "skill_order": 17,
+        "timestamp_start": 17,
+        "timestamp_end": 18,
+        "executed_successfully": true,
+        "difficulty_value": 0.1,
+        "total_deduction": 0.05,
+        "deductions": [
+          {
+            "type": "Rhythm/Flow",
+            "body_part": "Routine",
+            "description": "Rhythm deduction due to preceding low cast.",
+            "point_value": 0.05
+          }
+        ],
+        "quality_grade": 9.95,
+        "reason": "Minor rhythm break.",
+        "is_celebration": false
+      },
+      {
+        "skill_name": "Kip",
+        "skill_order": 18,
+        "timestamp_start": 18,
+        "timestamp_end": 19,
+        "executed_successfully": true,
+        "difficulty_value": 0.1,
+        "total_deduction": 0.15,
+        "deductions": [
+          {
+            "type": "Execution",
+            "body_part": "Hips",
+            "description": "Slight pike in hips during kip.",
+            "point_value": 0.05
+          },
+          {
+            "type": "Execution",
+            "body_part": "Knees",
+            "description": "Soft knees on catch.",
+            "point_value": 0.05
+          },
+          {
+            "type": "Execution",
+            "body_part": "Legs",
+            "description": "Slight leg separation on catch.",
+            "point_value": 0.05
+          }
+        ],
+        "quality_grade": 9.85,
+        "reason": "Minor form breaks in body line and leg tension during the kip.",
+        "is_celebration": false
+      },
+      {
+        "skill_name": "Cast",
+        "skill_order": 19,
+        "timestamp_start": 19,
+        "timestamp_end": 20,
+        "executed_successfully": true,
+        "difficulty_value": 0.1,
+        "total_deduction": 0.2,
+        "deductions": [
+          {
+            "type": "Amplitude",
+            "body_part": "Body",
+            "description": "Cast significantly below horizontal (hips/feet clearly below bar height).",
+            "point_value": 0.2
+          }
+        ],
+        "quality_grade": 9.8,
+        "reason": "Significant lack of amplitude, not reaching horizontal.",
+        "is_celebration": false
+      },
+      {
+        "skill_name": "Flyaway Dismount",
+        "skill_order": 20,
+        "timestamp_start": 20,
+        "timestamp_end": 21,
+        "executed_successfully": true,
+        "difficulty_value": 0.2,
+        "total_deduction": 0.35,
+        "deductions": [
+          {
+            "type": "Execution",
+            "body_part": "Legs",
+            "description": "Slight leg separation in tuck.",
+            "point_value": 0.1
+          },
+          {
+            "type": "Landing",
+            "body_part": "Chest",
+            "description": "Chest down on landing.",
+            "point_value": 0.1
+          },
+          {
+            "type": "Landing",
+            "body_part": "Feet",
+            "description": "Small step on landing.",
+            "point_value": 0.05
+          },
+          {
+            "type": "Rhythm/Flow",
+            "body_part": "Routine",
+            "description": "Rhythm deduction due to preceding low cast.",
+            "point_value": 0.1
+          }
+        ],
+        "quality_grade": 9.65,
+        "reason": "Leg separation in the air, poor posture on landing, and a small step.",
+        "is_celebration": false
+      }
+    ],
+    "artistry": {
+      "total_artistry_deduction": 0,
+      "notes": "Artistry deductions are not typically applied to Uneven Bars routines in this context."
+    },
+    "coaching_summary": "This routine demonstrates a solid foundation of Level 6 skills, but consistent execution errors, particularly in cast amplitude and leg tension, are significantly impacting the score. The routine has a good flow, but the lack of height on casts creates a ripple effect of minor rhythm deductions. Addressing these fundamental issues will yield the greatest score improvement.",
+    "top_3_fixes": [
+      "**Cast Amplitude:** Focus on achieving true horizontal (hips/feet at bar height) on ALL casts. This is the single largest deduction point in the routine.",
+      "**Leg Tension & Pointed Toes:** Maintain locked knees and pointed toes throughout all skills, especially during kips, hip circles, and the dismount. These micro-deductions accumulate quickly.",
+      "**Landing Control:** Work on sticking the dismount with a strong, upright chest position to eliminate steps and chest-down deductions."
+    ],
+    "celebrations": [],
+    "confidence": "High",
+    "duration_seconds": 21,
+    "special_requirements": [
+      {
+        "penalty": 0,
+        "requirement": "Cast to horizontal",
+        "status": "Met (though with significant execution deductions)"
+      },
+      {
+        "penalty": 0,
+        "requirement": "B-value element",
+        "status": "Met (Squat-on, Flyaway Dismount)"
+      }
+    ],
+    "total_execution_deductions": 1.25
+  },
+  "computed": {
+    "executionTotal": 3.3,
+    "artistryTotal": 0,
+    "srTotal": 0,
+    "totalDeductions": 3.3,
+    "codeScore": 6.7,
+    "aiScore": 8.75,
+    "finalScore": 6.7,
+    "delta": 1.8250000000000002,
+    "deductionCount": 40
+  }
+}

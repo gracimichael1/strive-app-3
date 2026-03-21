@@ -2,19 +2,26 @@
  * scoring.js — Score computation layer.
  *
  * ALL score math happens here. Not in Gemini. Not in the UI.
- * Gemini observes faults. This module computes the numbers.
+ * Gemini observes faults and deductions. This module computes the numbers.
  *
  * ═══════════════════════════════════════════════════════════════════════════════
+ * RULE: SEPARATE AI output from score math entirely.
+ * - AI identifies skills and deductions (with point values)
+ * - Code computes the final score — never trust AI-estimated final scores
+ * - D-score: sum difficulty values from skills array
+ * - E-score: 10.0 minus sum of all deduction point_values
+ * - Final score: D-score + E-score (for Elite) or Start Value - deductions
+ * - Validation: if computed score differs from AI-estimated by > 0.3, log warning
+ *
  * USAG Scoring Model:
+ *   Levels 1-10 + Xcel (Standard):
+ *     Start Value = 10.0 (if all Special Requirements met, else -0.50 each)
+ *     Final Score = Start Value - Execution Deductions - Artistry - Neutral
  *
- * Levels 1-10 + Xcel (Standard):
- *   Start Value = 10.0 (if all Special Requirements met, else -0.50 each)
- *   Final Score = Start Value - Execution Deductions - Artistry - Neutral
- *
- * Elite / FIG:
- *   D-Score = Sum of difficulty values + connection bonuses
- *   E-Score = 10.0 - Execution Deductions
- *   Final Score = D-Score + E-Score - Neutral Deductions
+ *   Elite / FIG:
+ *     D-Score = Sum of difficulty values + connection bonuses
+ *     E-Score = 10.0 - Execution Deductions
+ *     Final Score = D-Score + E-Score - Neutral Deductions
  * ═══════════════════════════════════════════════════════════════════════════════
  */
 
@@ -26,35 +33,91 @@ export { gradeSkill } from "./schema";
 // ─── Main scoring function ──────────────────────────────────────────────────
 
 /**
- * Compute and validate the final score from a scorecard.
- * Called by the pipeline to cross-check Gemini's reported score.
+ * Compute and validate the final score from a scorecard (Pass 1 output).
+ * This is the primary scoring function used by the pipeline.
  *
- * @param {Object} scorecard - Pass 1 Gemini output (deduction_log, artistry, special_requirements)
+ * NEVER trusts AI-estimated final scores. Always computes from deductions.
+ *
+ * @param {Object} scorecard - Pass 1 Gemini output
  * @param {number} [startValue=10.0] - Start value
- * @returns {{ final_score: number, execution_total: number, artistry_total: number, sr_total: number, total: number }}
+ * @param {Object} [options] - { level, isElite }
+ * @returns {Object} Score breakdown
  */
-export function computeScoreFromScorecard(scorecard, startValue = 10.0) {
-  const executionTotal = (scorecard.deduction_log || []).reduce(
-    (sum, e) => sum + snapToUSAG(Math.abs(e.deduction_value || 0)), 0
+export function computeScoreFromScorecard(scorecard, startValue = 10.0, options = {}) {
+  const isElite = options.isElite || false;
+  const deductionLog = scorecard.deduction_log || [];
+
+  // ── Sum execution deductions from per-skill deduction sub-arrays ────────
+  // Prefer granular deductions array; fall back to total_deduction field
+  let executionTotal = 0;
+  for (const entry of deductionLog) {
+    if (Array.isArray(entry.deductions) && entry.deductions.length > 0) {
+      for (const d of entry.deductions) {
+        executionTotal += snapToUSAG(Math.abs(d.point_value || 0));
+      }
+    } else {
+      executionTotal += snapToUSAG(Math.abs(entry.total_deduction || entry.deduction_value || 0));
+    }
+  }
+
+  // ── Sum D-score from difficulty values (for Elite) ──────────────────────
+  const dScoreFromSkills = deductionLog.reduce(
+    (sum, e) => sum + Math.abs(e.difficulty_value || 0), 0
   );
 
+  // ── Special requirements penalties ──────────────────────────────────────
   const srTotal = (scorecard.special_requirements || []).reduce(
     (sum, sr) => sum + Math.abs(sr.penalty || 0), 0
   );
 
+  // ── Artistry deductions ─────────────────────────────────────────────────
   const artistryTotal = Math.abs(scorecard.artistry?.total_artistry_deduction || 0);
 
+  // ── Total deductions ────────────────────────────────────────────────────
   const totalDeductions = executionTotal + srTotal + artistryTotal;
-  const final_score = Math.max(0, roundTo3(startValue - totalDeductions));
+
+  // ── Compute scores ──────────────────────────────────────────────────────
+  let d_score, e_score, final_score;
+
+  if (isElite && dScoreFromSkills > 0) {
+    // Elite: D-Score + E-Score model
+    d_score = roundTo3(dScoreFromSkills);
+    e_score = Math.max(0, roundTo3(10.0 - executionTotal - artistryTotal));
+    final_score = Math.max(0, roundTo3(d_score + e_score - srTotal));
+  } else {
+    // Standard JO/Xcel: Start Value - deductions
+    d_score = startValue;
+    e_score = Math.max(0, roundTo3(10.0 - totalDeductions));
+    final_score = Math.max(0, roundTo3(startValue - totalDeductions));
+  }
+
+  // ── Validate against AI estimate ────────────────────────────────────────
+  const aiScore = scorecard.final_score;
+  const scoreDiff = typeof aiScore === "number" ? Math.abs(final_score - aiScore) : 0;
+  let warning = null;
+
+  if (scoreDiff > 0.30) {
+    warning = `SCORE VALIDATION WARNING: Code-computed ${final_score} differs from AI-estimated ${aiScore} by ${scoreDiff.toFixed(2)} (>0.30 threshold). Using code-computed score.`;
+    console.warn(`[scoring] ${warning}`);
+  } else if (scoreDiff > 0.10) {
+    console.warn(`[scoring] Minor score diff: code ${final_score} vs AI ${aiScore} (delta: ${scoreDiff.toFixed(2)}). Using code-computed score.`);
+  }
 
   return {
+    d_score,
+    e_score,
     final_score,
     execution_total: roundTo3(executionTotal),
     artistry_total: roundTo3(artistryTotal),
     sr_total: roundTo3(srTotal),
     total: roundTo3(totalDeductions),
+    d_score_from_skills: roundTo3(dScoreFromSkills),
+    warning,
+    ai_score: aiScore,
+    score_diff: roundTo3(scoreDiff),
   };
 }
+
 
 /**
  * Legacy-compatible computeScore function.
@@ -66,20 +129,18 @@ export function computeScore(skills, neutralDeductions = 0, level = "Level 6", l
 
   let d_score = 10.0;
   if (isElite) {
-    // For Elite, d_score would be sum of difficulty values
-    // For now, keep at 10.0 — Elite D-score computation is a future enhancement
-    d_score = 10.0;
+    d_score = skills.reduce((sum, s) => sum + Math.abs(s.difficulty_value || 0), 0) || 10.0;
   }
 
-  // Sum all deductions — handle both new shape (deduction_value) and old shape (deductions array)
+  // Sum all deductions — handle both new shape (deductions array) and old shape
   let totalDeductions = 0;
   for (const skill of skills) {
-    if (typeof skill.deduction_value === "number") {
-      totalDeductions += Math.abs(skill.deduction_value);
-    } else if (Array.isArray(skill.deductions)) {
+    if (Array.isArray(skill.deductions) && skill.deductions.length > 0) {
       for (const ded of skill.deductions) {
         totalDeductions += snapToUSAG(Math.abs(ded.point_value || 0));
       }
+    } else if (typeof skill.deduction_value === "number") {
+      totalDeductions += Math.abs(skill.deduction_value);
     }
   }
 
@@ -97,9 +158,13 @@ export function computeScore(skills, neutralDeductions = 0, level = "Level 6", l
       composition_deductions: 0,
       total_deductions: roundTo3(totalDeductions),
       neutral_deductions: neutral,
-      deduction_count: skills.length,
+      deduction_count: skills.reduce((n, s) =>
+        n + (Array.isArray(s.deductions) ? s.deductions.length : (s.deduction_value > 0 ? 1 : 0)), 0),
       skill_count: skills.length,
-      clean_skill_count: skills.filter(s => Math.abs(s.deduction_value || 0) === 0).length,
+      clean_skill_count: skills.filter(s => {
+        if (Array.isArray(s.deductions)) return s.deductions.length === 0;
+        return Math.abs(s.deduction_value || 0) === 0;
+      }).length,
     },
   };
 }
@@ -109,7 +174,6 @@ export function computeScore(skills, neutralDeductions = 0, level = "Level 6", l
 
 /**
  * Run built-in scoring test cases to validate the math.
- * Returns array of { name, pass, delta, expected, actual }.
  */
 export function runScoringTests() {
   const results = [];
@@ -122,8 +186,8 @@ export function runScoringTests() {
 
   function makeSkill(deductions) {
     return {
-      id: "s", skill_name: "Skill", executed_successfully: true, skill_code: "A", difficulty_value: 0.10,
-      deductions: deductions.map(pv => ({ type: "execution", description: "", point_value: pv, body_part: "", severity: "medium" })),
+      id: "s", skill_name: "Skill", executed_successfully: true, difficulty_value: 0.10,
+      deductions: deductions.map(pv => ({ type: "execution", description: "", point_value: pv, body_part: "" })),
     };
   }
 
@@ -147,6 +211,27 @@ export function runScoringTests() {
     makeSkill([0.20, 0.10]), makeSkill([0.10]),
     makeSkill([0.10, 0.05]), makeSkill([0.50]),
   ], 0.10, 8.50);
+
+  // Test 4: Scorecard-based test
+  const testScorecard = {
+    deduction_log: [
+      { deductions: [{ point_value: 0.10 }, { point_value: 0.05 }], difficulty_value: 0.10 },
+      { deductions: [{ point_value: 0.05 }], difficulty_value: 0.20 },
+      { deductions: [], difficulty_value: 0.30 },
+    ],
+    special_requirements: [{ penalty: 0 }],
+    artistry: { total_artistry_deduction: 0.20 },
+    final_score: 9.60,
+  };
+  const scorecardResult = computeScoreFromScorecard(testScorecard, 10.0);
+  const scorecardDelta = Math.abs(scorecardResult.final_score - 9.60);
+  results.push({
+    name: "Scorecard computation (0.20 exec + 0.20 art = 0.40 total, expect 9.60)",
+    pass: scorecardDelta <= 0.01,
+    delta: scorecardDelta,
+    expected: 9.60,
+    actual: scorecardResult.final_score,
+  });
 
   return results;
 }

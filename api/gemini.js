@@ -138,6 +138,9 @@ async function handleGenerate(req, res, apiKey) {
     return res.status(400).json({ error: 'fileUri and userPrompt required' });
   }
 
+  // Separate thinkingConfig from generationConfig (Gemini API expects them as siblings)
+  const { thinkingConfig, ...generationConfig } = config || {};
+
   const body = {
     contents: [{
       parts: [
@@ -145,8 +148,13 @@ async function handleGenerate(req, res, apiKey) {
         { text: userPrompt },
       ],
     }],
-    generationConfig: config || {},
+    generationConfig,
   };
+
+  // Add thinking config if provided (Gemini 2.5+ feature)
+  if (thinkingConfig) {
+    body.generationConfig.thinkingConfig = thinkingConfig;
+  }
 
   // Add system instruction if provided
   if (systemPrompt) {

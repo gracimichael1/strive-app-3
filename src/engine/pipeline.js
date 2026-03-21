@@ -1,12 +1,17 @@
 /**
  * pipeline.js — 2-Pass Gemini analysis orchestrator.
  *
- * Pass 1: JUDGING — Brevet judge watches video, identifies skills,
- *   grades each one, logs deductions, celebrates excellence.
- * Pass 2: BIOMECHANICS — Enriches each skill with joint angles,
- *   injury awareness, drills, correct form, gain-if-fixed.
+ * Pass 1: JUDGING — Certified USAG judge watches video, identifies skills,
+ *   grades each one, logs per-skill deductions with body part detail,
+ *   timestamps, difficulty values, celebrations, coaching summary.
  *
- * Score: Code-validated from Pass 1 deductions (corrected if off by >0.10).
+ * Pass 2: DEEP ANALYSIS — Team of specialists enriches each skill with
+ *   biomechanics (joint angles, body line, efficiency), injury risk,
+ *   elite comparison, corrective drill, plus routine-level training plan,
+ *   mental performance assessment, and nutrition note.
+ *
+ * Score: Code-computed from Pass 1 deductions (Deliverable 3).
+ *   AI identifies faults. Code computes the math. Never trust AI final scores.
  *
  * SECURITY: All Gemini API calls route through /api/gemini server proxy.
  * The API key NEVER reaches the browser.
@@ -18,7 +23,8 @@
  */
 
 import { buildPass1Prompt, buildPass2Prompt, PASS1_CONFIG, PASS2_CONFIG, PROMPT_VERSION } from "./prompts";
-import { validatePipelineResult, snapToUSAG, gradeFromQuality, parseTimestamp } from "./schema";
+import { validatePipelineResult, snapToUSAG, gradeFromQuality, parseTimestamp, formatTimestamp, emptyBiomechanics, emptyInjuryRisk, emptyCorrectiveDrill } from "./schema";
+import { computeScoreFromScorecard } from "./scoring";
 import { transformForUI } from "./transform";
 
 // ─── Structured logging ─────────────────────────────────────────────────────
@@ -101,7 +107,7 @@ export async function runAnalysisPipeline({ videoFile, profile, event, onProgres
   });
 
   // ══════════════════════════════════════════════════════════════════════════
-  // PASS 1: JUDGING — Skills, deductions, grades, celebrations, coaching
+  // PASS 1: JUDGING — Skills, deductions (per-skill), grades, celebrations
   // ══════════════════════════════════════════════════════════════════════════
   onProgress({ stage: "pass1", pct: 40, label: "Judging routine — identifying skills and deductions..." });
   const { system: sys1, user: usr1 } = buildPass1Prompt(profile, event);
@@ -137,7 +143,7 @@ export async function runAnalysisPipeline({ videoFile, profile, event, onProgres
   onProgress({ stage: "pass1", pct: 60, label: `Found ${scorecard.deduction_log.length} skills — analyzing biomechanics...` });
 
   // ══════════════════════════════════════════════════════════════════════════
-  // PASS 2: BIOMECHANICS — Joint angles, drills, injury, correct form
+  // PASS 2: DEEP ANALYSIS — Biomechanics, injury, drills, mental, nutrition
   // ══════════════════════════════════════════════════════════════════════════
   onProgress({ stage: "pass2", pct: 65, label: "Analyzing biomechanics and building training plan..." });
   const { system: sys2, user: usr2 } = buildPass2Prompt(scorecard, profile, event);
@@ -155,41 +161,39 @@ export async function runAnalysisPipeline({ videoFile, profile, event, onProgres
 
   onProgress({ stage: "scoring", pct: 85, label: "Computing score..." });
 
+  // ══════════════════════════════════════════════════════════════════════════
+  // SCORE COMPUTATION — Code computes, never trust AI (Deliverable 3)
+  // ══════════════════════════════════════════════════════════════════════════
+  const isElite = /elite/i.test(profile.level || "");
+  const startValue = scorecard.start_value || 10.0;
+  const scoring = computeScoreFromScorecard(scorecard, startValue, { isElite });
+
+  if (scoring.warning) {
+    log.warn("score", scoring.warning);
+  }
+
+  const finalScore = scoring.final_score;
+  const detectedEvent = scorecard.event || event;
+
+  log.info("score", `FINAL: ${finalScore} | D: ${scoring.d_score} | E: ${scoring.e_score} | ` +
+    `Exec: -${scoring.execution_total} | Art: -${scoring.artistry_total} | SR: -${scoring.sr_total} | ` +
+    `Skills: ${scorecard.deduction_log.length} | AI said: ${scorecard.final_score} (diff: ${scoring.score_diff})`);
+
   // ── Merge Pass 1 + Pass 2 ────────────────────────────────────────────────
   const mergedSkills = mergeSkills(scorecard, pass2Result);
 
-  // ── Validate score (code-computed vs Gemini) ──────────────────────────────
-  const executionDeductions = scorecard.deduction_log.reduce(
-    (sum, e) => sum + Math.abs(e.deduction_value || 0), 0
-  );
-  const srPenalties = (scorecard.special_requirements || []).reduce(
-    (sum, sr) => sum + Math.abs(sr.penalty || 0), 0
-  );
-  const artDeductions = Math.abs(scorecard.artistry?.total_artistry_deduction || 0);
-  const totalDeductions = executionDeductions + srPenalties + artDeductions;
-  const startValue = scorecard.start_value || 10.0;
-  const codeComputedScore = Math.max(0, Math.round((startValue - totalDeductions) * 100) / 100);
-
-  let finalScore = scorecard.final_score;
-  if (Math.abs(finalScore - codeComputedScore) > 0.10) {
-    log.warn("score", `Correcting Gemini score ${finalScore} → ${codeComputedScore} (diff: ${Math.abs(finalScore - codeComputedScore).toFixed(2)})`);
-    finalScore = codeComputedScore;
-  }
-
-  const detectedEvent = scorecard.event || event;
-
-  log.info("score", `FINAL: ${finalScore} | SV: ${startValue} | Exec: -${executionDeductions.toFixed(2)} | Art: -${artDeductions.toFixed(2)} | SR: -${srPenalties.toFixed(2)} | Skills: ${mergedSkills.length}`);
-
-  // ── Assemble pipeline result ────────────────────────────────────────────
+  // ── Assemble pipeline result (canonical schema) ─────────────────────────
   const pipelineResult = {
     routine_summary: {
       apparatus: detectedEvent,
-      duration_seconds: 0,
-      d_score: startValue,
-      e_score: Math.max(0, 10.0 - totalDeductions),
+      duration_seconds: scorecard.duration_seconds || 0,
+      d_score: scoring.d_score,
+      e_score: scoring.e_score,
       final_score: finalScore,
+      total_deductions: scoring.total,
       neutral_deductions: 0,
       level: profile.level || "",
+      level_estimated: scorecard.level || "",
       athlete_name: profile.name || "",
       coaching_summary: scorecard.coaching_summary || "",
       celebrations: scorecard.celebrations || [],
@@ -201,9 +205,13 @@ export async function runAnalysisPipeline({ videoFile, profile, event, onProgres
     },
     skills: mergedSkills,
     special_requirements: scorecard.special_requirements || [],
-    training_plan: [],
-    mental_performance: { consistency_score: 0, focus_indicators: "", patterns_observed: "", recommendations: "" },
-    nutrition_recovery: { training_load_assessment: "", nutrition_note: "", recovery_priority: "" },
+    training_plan: pass2Result?.training_plan || [],
+    mental_performance: pass2Result?.mental_performance || {
+      focus_indicators: "",
+      consistency_patterns: "",
+      athlete_recommendations: "",
+    },
+    nutrition_note: pass2Result?.nutrition_note || "",
     _meta: {
       prompt_version: PROMPT_VERSION,
       timestamp: Date.now(),
@@ -213,13 +221,18 @@ export async function runAnalysisPipeline({ videoFile, profile, event, onProgres
       pass2_success: !!pass2Result,
       score_breakdown: {
         start_value: startValue,
-        execution_deductions: executionDeductions,
-        artistry_deductions: artDeductions,
-        sr_penalties: srPenalties,
-        total_deductions: totalDeductions,
+        d_score: scoring.d_score,
+        e_score: scoring.e_score,
+        execution_deductions: scoring.execution_total,
+        artistry_deductions: scoring.artistry_total,
+        sr_penalties: scoring.sr_total,
+        total_deductions: scoring.total,
+        d_score_from_skills: scoring.d_score_from_skills,
         gemini_score: scorecard.final_score,
-        code_computed_score: codeComputedScore,
+        code_computed_score: finalScore,
         final_score: finalScore,
+        score_diff: scoring.score_diff,
+        warning: scoring.warning,
       },
     },
   };
@@ -260,7 +273,6 @@ async function uploadVideo(videoFile, onProgress) {
   });
 
   // Step 2: Upload bytes via /goog-upload proxy to avoid CORS
-  // Both dev (setupProxy.js) and production (vercel.json rewrite) handle this proxy
   const finalUploadUrl = uploadUrl.includes("generativelanguage.googleapis.com")
     ? uploadUrl.replace("https://generativelanguage.googleapis.com", "/goog-upload")
     : uploadUrl;
@@ -325,7 +337,7 @@ async function callGemini(fileRef, systemPrompt, userPrompt, config, label) {
 }
 
 
-// ─── Merge Pass 1 (Scorecard) + Pass 2 (Biomechanics) ──────────────────────
+// ─── Merge Pass 1 (Scorecard) + Pass 2 (Deep Analysis) ─────────────────────
 
 function mergeSkills(scorecard, pass2Result) {
   const skillDetails = pass2Result?.skill_details || [];
@@ -333,39 +345,67 @@ function mergeSkills(scorecard, pass2Result) {
   return (scorecard.deduction_log || []).map((entry, i) => {
     // Find matching Pass 2 enrichment by skill name or timestamp
     const enrichment = skillDetails.find(sd =>
+      sd.skill_name === entry.skill_name ||
       sd.skill_name === entry.skill ||
-      sd.timestamp === entry.timestamp
+      (typeof sd.timestamp_start === "number" && sd.timestamp_start === entry.timestamp_start)
     ) || {};
 
-    const deductionValue = snapToUSAG(Math.abs(entry.deduction_value || 0));
-    const qualityGrade = typeof entry.quality_grade === "number" ? entry.quality_grade : (10.0 - deductionValue);
+    // Per-skill deductions array (new canonical shape)
+    const deductions = Array.isArray(entry.deductions) ? entry.deductions.map(d => ({
+      type: d.type || "execution",
+      body_part: d.body_part || "",
+      description: d.description || "",
+      point_value: snapToUSAG(Math.abs(d.point_value || 0)),
+    })) : [];
+
+    const totalDeduction = deductions.length > 0
+      ? deductions.reduce((sum, d) => sum + d.point_value, 0)
+      : snapToUSAG(Math.abs(entry.total_deduction || entry.deduction_value || 0));
+
+    const qualityGrade = typeof entry.quality_grade === "number"
+      ? entry.quality_grade
+      : (10.0 - totalDeduction);
+
     const gradeInfo = gradeFromQuality(qualityGrade);
 
     return {
       id: `skill_${i + 1}`,
-      skill_name: entry.skill || "Unknown",
-      timestamp: entry.timestamp || "0:00",
-      timestamp_end: enrichment.timestamp_end || null,
-      timestamp_seconds: parseTimestamp(entry.timestamp),
+      skill_name: entry.skill_name || entry.skill || "Unknown",
+      skill_order: entry.skill_order || i + 1,
+      timestamp: formatTimestamp(entry.timestamp_start) || entry.timestamp || "0:00",
+      timestamp_start: entry.timestamp_start || parseTimestamp(entry.timestamp) || 0,
+      timestamp_end: entry.timestamp_end || 0,
+      executed_successfully: entry.executed_successfully !== false,
+      difficulty_value: entry.difficulty_value || 0.10,
+      deduction_value: totalDeduction,
+      deductions,
       quality_grade: qualityGrade,
-      deduction_value: deductionValue,
       reason: entry.reason || "",
       rule_reference: entry.rule_reference || "",
       is_celebration: !!entry.is_celebration,
+      strength_note: entry.strength_note || "",
       // Grade (computed from quality_grade)
       grade_letter: gradeInfo.grade,
       grade_label: gradeInfo.label,
       grade_color: gradeInfo.color,
       // Category from Pass 2 or inferred
-      category: enrichment.category || inferCategory(entry.skill),
-      // Pass 2 enrichment
-      biomechanics: enrichment.biomechanics || [],
-      fault_observed: enrichment.fault_observed || (deductionValue > 0 ? entry.reason : null),
-      strength: enrichment.strength || (entry.is_celebration ? "Clean, well-executed skill" : null),
+      category: enrichment.category || inferCategory(entry.skill_name || entry.skill),
+      // Pass 2 enrichment — canonical shapes
+      biomechanics: enrichment.biomechanics || emptyBiomechanics(),
+      injury_risk: enrichment.injury_risk || emptyInjuryRisk(),
+      elite_comparison: enrichment.elite_comparison || "",
+      corrective_drill: enrichment.corrective_drill || emptyCorrectiveDrill(),
+      // Legacy compat fields
+      fault_observed: deductions.length > 0 ? deductions.map(d => d.description).join("; ") : (entry.reason || null),
+      strength: entry.strength_note || (entry.is_celebration ? "Clean, well-executed skill" : null),
       correct_form: enrichment.correct_form || null,
-      injury_awareness: enrichment.injury_awareness || [],
-      targeted_drills: enrichment.targeted_drills || [],
-      gain_if_fixed: enrichment.gain_if_fixed || (deductionValue > 0 ? deductionValue : 0),
+      injury_awareness: enrichment.injury_risk?.description
+        ? [enrichment.injury_risk.description + (enrichment.injury_risk.prevention_note ? ` (${enrichment.injury_risk.prevention_note})` : "")]
+        : [],
+      targeted_drills: enrichment.corrective_drill?.name
+        ? [`${enrichment.corrective_drill.name}: ${enrichment.corrective_drill.description} (${enrichment.corrective_drill.sets_reps})`]
+        : [],
+      gain_if_fixed: totalDeduction > 0 ? totalDeduction : 0,
     };
   });
 }

@@ -1,0 +1,275 @@
+{
+  "scorecard": {
+    "start_value": 10,
+    "final_score": 8.5,
+    "deduction_log": [
+      {
+        "skill_name": "Split Jump",
+        "skill_order": 1,
+        "timestamp_start": 28,
+        "timestamp_end": 30,
+        "executed_successfully": true,
+        "difficulty_value": 0.1,
+        "total_deduction": 0.05,
+        "deductions": [
+          {
+            "type": "Landing Fault",
+            "body_part": "Feet",
+            "description": "Small hop on landing",
+            "point_value": 0.05
+          }
+        ],
+        "quality_grade": 0.95,
+        "reason": "Executed with good height, but a small hop on landing.",
+        "is_celebration": false
+      },
+      {
+        "skill_name": "Round-off Back Handspring Back Tuck",
+        "skill_order": 2,
+        "timestamp_start": 32,
+        "timestamp_end": 36,
+        "executed_successfully": true,
+        "difficulty_value": 0.2,
+        "total_deduction": 0.25,
+        "deductions": [
+          {
+            "type": "Execution Fault",
+            "body_part": "Arms",
+            "description": "Slight bent arms in back handspring",
+            "point_value": 0.05
+          },
+          {
+            "type": "Execution Fault",
+            "body_part": "Knees",
+            "description": "Slight bent knees in back handspring",
+            "point_value": 0.05
+          },
+          {
+            "type": "Execution Fault",
+            "body_part": "Body Alignment",
+            "description": "Slight pike in back tuck",
+            "point_value": 0.05
+          },
+          {
+            "type": "Landing Fault",
+            "body_part": "Feet",
+            "description": "Small step back on landing",
+            "point_value": 0.05
+          },
+          {
+            "type": "Landing Fault",
+            "body_part": "Body Posture",
+            "description": "Chest slightly down on landing",
+            "point_value": 0.05
+          }
+        ],
+        "quality_grade": 0.75,
+        "reason": "Completed the pass, but with several form breaks and a landing adjustment.",
+        "is_celebration": false,
+        "strength_note": "Successfully completed the required salto pass."
+      },
+      {
+        "skill_name": "Full Turn",
+        "skill_order": 3,
+        "timestamp_start": 36,
+        "timestamp_end": 39,
+        "executed_successfully": true,
+        "difficulty_value": 0.1,
+        "total_deduction": 0.1,
+        "deductions": [
+          {
+            "type": "Execution Fault",
+            "body_part": "Feet",
+            "description": "Heel drop before 360 degrees",
+            "point_value": 0.1
+          }
+        ],
+        "quality_grade": 0.9,
+        "reason": "Turn completed, but with an early heel drop.",
+        "is_celebration": false
+      },
+      {
+        "skill_name": "Switch Leap",
+        "skill_order": 4,
+        "timestamp_start": 44,
+        "timestamp_end": 47,
+        "executed_successfully": true,
+        "difficulty_value": 0.1,
+        "total_deduction": 0.15,
+        "deductions": [
+          {
+            "type": "Execution Fault",
+            "body_part": "Legs",
+            "description": "Insufficient 180 degree split (noticeable)",
+            "point_value": 0.1
+          },
+          {
+            "type": "Execution Fault",
+            "body_part": "Feet",
+            "description": "Slight flexed foot",
+            "point_value": 0.05
+          }
+        ],
+        "quality_grade": 0.85,
+        "reason": "Leap performed, but split position was noticeably short of 180 degrees.",
+        "is_celebration": false
+      },
+      {
+        "skill_name": "Sissone",
+        "skill_order": 5,
+        "timestamp_start": 50,
+        "timestamp_end": 53,
+        "executed_successfully": true,
+        "difficulty_value": 0.1,
+        "total_deduction": 0.05,
+        "deductions": [
+          {
+            "type": "Execution Fault",
+            "body_part": "Feet",
+            "description": "Slight flexed foot",
+            "point_value": 0.05
+          }
+        ],
+        "quality_grade": 0.95,
+        "reason": "Jump completed with good form, minor foot error.",
+        "is_celebration": false
+      },
+      {
+        "skill_name": "Front Handspring Front Tuck",
+        "skill_order": 6,
+        "timestamp_start": 56,
+        "timestamp_end": 62,
+        "executed_successfully": true,
+        "difficulty_value": 0.2,
+        "total_deduction": 0.35,
+        "deductions": [
+          {
+            "type": "Execution Fault",
+            "body_part": "Arms",
+            "description": "Slight bent arms in front handspring",
+            "point_value": 0.05
+          },
+          {
+            "type": "Execution Fault",
+            "body_part": "Knees",
+            "description": "Slight bent knees in front handspring",
+            "point_value": 0.05
+          },
+          {
+            "type": "Execution Fault",
+            "body_part": "Body Alignment",
+            "description": "Slight pike in front tuck",
+            "point_value": 0.05
+          },
+          {
+            "type": "Landing Fault",
+            "body_part": "Feet",
+            "description": "Medium step forward on landing",
+            "point_value": 0.1
+          },
+          {
+            "type": "Landing Fault",
+            "body_part": "Body Posture",
+            "description": "Chest down on landing",
+            "point_value": 0.1
+          }
+        ],
+        "quality_grade": 0.65,
+        "reason": "Completed the second salto pass, but with noticeable form breaks and a larger landing adjustment.",
+        "is_celebration": false,
+        "strength_note": "Successfully completed the second required salto pass."
+      },
+      {
+        "skill_name": "Back Walkover",
+        "skill_order": 7,
+        "timestamp_start": 62,
+        "timestamp_end": 66,
+        "executed_successfully": true,
+        "difficulty_value": 0.1,
+        "total_deduction": 0.15,
+        "deductions": [
+          {
+            "type": "Execution Fault",
+            "body_part": "Knees",
+            "description": "Noticeable bent knees",
+            "point_value": 0.1
+          },
+          {
+            "type": "Execution Fault",
+            "body_part": "Feet",
+            "description": "Slight flexed feet",
+            "point_value": 0.05
+          }
+        ],
+        "quality_grade": 0.85,
+        "reason": "Skill completed, but with noticeable bent knees and flexed feet.",
+        "is_celebration": false
+      },
+      {
+        "skill_name": "Split",
+        "skill_order": 8,
+        "timestamp_start": 66,
+        "timestamp_end": 69,
+        "executed_successfully": true,
+        "difficulty_value": 0.1,
+        "total_deduction": 0.1,
+        "deductions": [
+          {
+            "type": "Execution Fault",
+            "body_part": "Legs",
+            "description": "Not a full 180 degree split (noticeable)",
+            "point_value": 0.1
+          }
+        ],
+        "quality_grade": 0.9,
+        "reason": "Held the split, but it was noticeably short of 180 degrees.",
+        "is_celebration": false
+      }
+    ],
+    "artistry": {
+      "total_artistry_deduction": 0.3,
+      "choreography_variety_deduction": 0,
+      "expression_deduction": 0.1,
+      "musicality_deduction": 0.05,
+      "notes": "Gymnast showed some good moments of expression, but overall presentation could be more dynamic. Chin was down frequently during non-tumbling sections, and some arm/hand positions lacked crispness. Musicality was generally present but could be more impactful with the dramatic sections of the music.",
+      "quality_of_movement_deduction": 0.15
+    },
+    "coaching_summary": "This was a solid Level 6 routine with all special requirements met. The gymnast demonstrated good effort and completed all skills. To improve scores, focus on refining body lines and control, especially during tumbling and leaps. Artistry can also be enhanced with more consistent facial expression and precise hand/arm movements.",
+    "top_3_fixes": [
+      "Improve landing control on all tumbling passes to eliminate steps and hops.",
+      "Focus on maintaining straight arms and legs, and a tight body shape in all acro skills to reduce bent limb deductions.",
+      "Increase flexibility and extension in leaps and holds to achieve a full 180-degree split."
+    ],
+    "celebrations": [
+      "Successfully completed two different acro passes, both with a salto, meeting Level 6 requirements.",
+      "Demonstrated good control and balance throughout the routine, despite minor form breaks.",
+      "The overall flow and presentation of the routine were commendable."
+    ],
+    "confidence": "High",
+    "duration_seconds": 70,
+    "special_requirements": [
+      {
+        "penalty": 0,
+        "requirement": "Two different acro passes",
+        "status": "Met"
+      },
+      {
+        "penalty": 0,
+        "requirement": "Salto required in both acro passes",
+        "status": "Met"
+      }
+    ],
+    "total_execution_deductions": 1.2
+  },
+  "computed": {
+    "executionTotal": 1.2000000000000004,
+    "artistryTotal": 0.3,
+    "srTotal": 0,
+    "totalDeductions": 1.5000000000000004,
+    "codeScore": 8.5,
+    "aiScore": 8.5,
+    "finalScore": 8.5,
+    "delta": 0.4250000000000007,
+    "deductionCount": 18
+  }
+}

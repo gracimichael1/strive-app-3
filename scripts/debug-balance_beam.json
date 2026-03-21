@@ -1,0 +1,348 @@
+{
+  "scorecard": {
+    "start_value": 10,
+    "final_score": 8.85,
+    "deduction_log": [
+      {
+        "skill_name": "Mount (Jump to Straddle Sit)",
+        "skill_order": 1,
+        "timestamp_start": 4,
+        "timestamp_end": 6,
+        "executed_successfully": true,
+        "difficulty_value": 0.1,
+        "total_deduction": 0.2,
+        "deductions": [
+          {
+            "type": "Execution",
+            "body_part": "Feet",
+            "description": "Flexed feet on jump",
+            "point_value": 0.05
+          },
+          {
+            "type": "Execution",
+            "body_part": "Knees",
+            "description": "Bent knees on landing to straddle",
+            "point_value": 0.05
+          },
+          {
+            "type": "Balance",
+            "body_part": "Arms",
+            "description": "Balance check (slight arm movement)",
+            "point_value": 0.1
+          }
+        ],
+        "quality_grade": 0.8,
+        "reason": "Small form errors and a balance check on landing.",
+        "is_celebration": false
+      },
+      {
+        "skill_name": "Full Turn (on one foot)",
+        "skill_order": 2,
+        "timestamp_start": 6,
+        "timestamp_end": 8,
+        "executed_successfully": true,
+        "difficulty_value": 0.1,
+        "total_deduction": 0.2,
+        "deductions": [
+          {
+            "type": "Execution",
+            "body_part": "Leg",
+            "description": "Free leg slightly bent/loose",
+            "point_value": 0.05
+          },
+          {
+            "type": "Execution",
+            "body_part": "Foot",
+            "description": "Heel drop before completion",
+            "point_value": 0.1
+          },
+          {
+            "type": "Balance",
+            "body_part": "Arms",
+            "description": "Balance check (slight arm movement)",
+            "point_value": 0.05
+          }
+        ],
+        "quality_grade": 0.8,
+        "reason": "Clear heel drop and minor balance check.",
+        "is_celebration": false
+      },
+      {
+        "skill_name": "Back Walkover",
+        "skill_order": 3,
+        "timestamp_start": 10,
+        "timestamp_end": 12,
+        "executed_successfully": true,
+        "difficulty_value": 0.1,
+        "total_deduction": 0.15,
+        "deductions": [
+          {
+            "type": "Execution",
+            "body_part": "Knees",
+            "description": "Bent knees during kick-over",
+            "point_value": 0.05
+          },
+          {
+            "type": "Execution",
+            "body_part": "Feet",
+            "description": "Flexed feet during kick-over",
+            "point_value": 0.05
+          },
+          {
+            "type": "Balance",
+            "body_part": "Arms",
+            "description": "Balance check (slight arm movement)",
+            "point_value": 0.05
+          }
+        ],
+        "quality_grade": 0.85,
+        "reason": "Minor form breaks and a small balance check.",
+        "is_celebration": false
+      },
+      {
+        "skill_name": "Split Leap",
+        "skill_order": 4,
+        "timestamp_start": 14,
+        "timestamp_end": 16,
+        "executed_successfully": true,
+        "difficulty_value": 0.1,
+        "total_deduction": 0.25,
+        "deductions": [
+          {
+            "type": "Execution",
+            "body_part": "Legs",
+            "description": "Insufficient split (120-149 degrees)",
+            "point_value": 0.1
+          },
+          {
+            "type": "Execution",
+            "body_part": "Feet",
+            "description": "Flexed feet",
+            "point_value": 0.05
+          },
+          {
+            "type": "Execution",
+            "body_part": "Knees",
+            "description": "Bent knees",
+            "point_value": 0.05
+          },
+          {
+            "type": "Balance",
+            "body_part": "Arms",
+            "description": "Balance check (slight arm movement)",
+            "point_value": 0.05
+          }
+        ],
+        "quality_grade": 0.75,
+        "reason": "Significant split angle deduction and multiple small form errors.",
+        "is_celebration": false
+      },
+      {
+        "skill_name": "Cartwheel",
+        "skill_order": 5,
+        "timestamp_start": 18,
+        "timestamp_end": 20,
+        "executed_successfully": true,
+        "difficulty_value": 0.1,
+        "total_deduction": 0.15,
+        "deductions": [
+          {
+            "type": "Execution",
+            "body_part": "Knees",
+            "description": "Bent knees during cartwheel",
+            "point_value": 0.05
+          },
+          {
+            "type": "Execution",
+            "body_part": "Feet",
+            "description": "Flexed feet during cartwheel",
+            "point_value": 0.05
+          },
+          {
+            "type": "Balance",
+            "body_part": "Arms",
+            "description": "Balance check (slight arm movement)",
+            "point_value": 0.05
+          }
+        ],
+        "quality_grade": 0.85,
+        "reason": "Minor form breaks and a small balance check.",
+        "is_celebration": false
+      },
+      {
+        "skill_name": "Back Handspring",
+        "skill_order": 6,
+        "timestamp_start": 22,
+        "timestamp_end": 24,
+        "executed_successfully": true,
+        "difficulty_value": 0.2,
+        "total_deduction": 0.35,
+        "deductions": [
+          {
+            "type": "Execution",
+            "body_part": "Arms",
+            "description": "Bent arms on hand placement",
+            "point_value": 0.05
+          },
+          {
+            "type": "Execution",
+            "body_part": "Knees",
+            "description": "Bent knees in flight",
+            "point_value": 0.1
+          },
+          {
+            "type": "Execution",
+            "body_part": "Feet",
+            "description": "Flexed feet in flight",
+            "point_value": 0.05
+          },
+          {
+            "type": "Balance",
+            "body_part": "Body",
+            "description": "Balance check (large arm swing/wobble)",
+            "point_value": 0.1
+          },
+          {
+            "type": "Landing",
+            "body_part": "Feet",
+            "description": "Small step on landing",
+            "point_value": 0.05
+          }
+        ],
+        "quality_grade": 0.65,
+        "reason": "Noticeable bent knees, a significant wobble, and a step on landing.",
+        "is_celebration": false
+      },
+      {
+        "skill_name": "Side Handstand 1/4 turn to side stand",
+        "skill_order": 7,
+        "timestamp_start": 26,
+        "timestamp_end": 28,
+        "executed_successfully": true,
+        "difficulty_value": 0.1,
+        "total_deduction": 0.2,
+        "deductions": [
+          {
+            "type": "Execution",
+            "body_part": "Knees",
+            "description": "Bent knees in handstand",
+            "point_value": 0.05
+          },
+          {
+            "type": "Execution",
+            "body_part": "Feet",
+            "description": "Flexed feet in handstand",
+            "point_value": 0.05
+          },
+          {
+            "type": "Execution",
+            "body_part": "Hold",
+            "description": "Insufficient hold (not a clear 2-second hold)",
+            "point_value": 0.1
+          }
+        ],
+        "quality_grade": 0.8,
+        "reason": "Short hold and minor form breaks.",
+        "is_celebration": false
+      },
+      {
+        "skill_name": "Back Tuck Dismount",
+        "skill_order": 8,
+        "timestamp_start": 34,
+        "timestamp_end": 36,
+        "executed_successfully": true,
+        "difficulty_value": 0.2,
+        "total_deduction": 0.4,
+        "deductions": [
+          {
+            "type": "Execution",
+            "body_part": "Height",
+            "description": "Insufficient height",
+            "point_value": 0.1
+          },
+          {
+            "type": "Execution",
+            "body_part": "Knees",
+            "description": "Bent knees in tuck",
+            "point_value": 0.1
+          },
+          {
+            "type": "Execution",
+            "body_part": "Feet",
+            "description": "Flexed feet in tuck",
+            "point_value": 0.05
+          },
+          {
+            "type": "Landing",
+            "body_part": "Feet",
+            "description": "Large step on landing",
+            "point_value": 0.1
+          },
+          {
+            "type": "Landing",
+            "body_part": "Chest",
+            "description": "Chest low on landing",
+            "point_value": 0.05
+          }
+        ],
+        "quality_grade": 0.6,
+        "reason": "Low height, bent knees, and a large step with low chest on landing.",
+        "is_celebration": false
+      }
+    ],
+    "artistry": {
+      "total_artistry_deduction": 0.25,
+      "choreography_variety_deduction": 0,
+      "expression_deduction": 0.1,
+      "musicality_deduction": 0,
+      "notes": "Gymnast frequently looks down at the beam, showing a lack of confidence and engagement. There are also slight hesitations between skills that break the flow.",
+      "quality_of_movement_deduction": 0.15
+    },
+    "coaching_summary": "This routine shows potential but is plagued by numerous small execution errors and a lack of consistent confidence. The acro series and dismount are the highest-deducted skills, indicating a need for more precise technique and control. The overall presentation could be significantly improved with better eye contact and fluidity between elements.",
+    "top_3_fixes": [
+      "Improve split angle on leaps/jumps to meet the 150° requirement, focusing on active flexibility and proper technique.",
+      "Refine acro series (Back Handspring) for straighter legs, pointed feet, and a more controlled landing to minimize wobbles and steps.",
+      "Enhance dismount height and form, ensuring a tight tuck and a stuck landing with an upright chest. This is a high-value skill with significant deduction potential."
+    ],
+    "celebrations": [
+      "The gymnast successfully completed all required elements for Level 6.",
+      "The routine demonstrated good rhythm in the acro series connection (Cartwheel-BHS)."
+    ],
+    "confidence": "Medium",
+    "duration_seconds": 36,
+    "special_requirements": [
+      {
+        "penalty": 0,
+        "requirement": "Acro series (Cartwheel-BHS)",
+        "status": "Met"
+      },
+      {
+        "penalty": 0,
+        "requirement": "One 360° turn on one foot",
+        "status": "Met"
+      },
+      {
+        "penalty": 0,
+        "requirement": "One leap or jump with 150° split",
+        "status": "Met (but with deduction for angle)"
+      },
+      {
+        "penalty": 0,
+        "requirement": "Dismount (minimum B value)",
+        "status": "Met"
+      }
+    ],
+    "total_execution_deductions": 1.95
+  },
+  "computed": {
+    "executionTotal": 1.900000000000001,
+    "artistryTotal": 0.25,
+    "srTotal": 0,
+    "totalDeductions": 2.1500000000000012,
+    "codeScore": 7.85,
+    "aiScore": 8.85,
+    "finalScore": 7.85,
+    "delta": 1,
+    "deductionCount": 29
+  }
+}

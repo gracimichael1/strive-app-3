@@ -1,0 +1,131 @@
+{
+  "scorecard": {
+    "start_value": 10,
+    "final_score": 8.85,
+    "deduction_log": [
+      {
+        "skill_name": "Handspring Vault",
+        "skill_order": 1,
+        "timestamp_start": 7.5,
+        "timestamp_end": 10,
+        "executed_successfully": true,
+        "difficulty_value": 0.2,
+        "total_deduction": 1.15,
+        "deductions": [
+          {
+            "type": "Execution",
+            "body_part": "Arms",
+            "description": "Poor hurdle mechanics, arms not fully up and tight.",
+            "point_value": 0.05
+          },
+          {
+            "type": "Execution",
+            "body_part": "Body",
+            "description": "Insufficient pre-flight height.",
+            "point_value": 0.1
+          },
+          {
+            "type": "Execution",
+            "body_part": "Body",
+            "description": "Slight pike in pre-flight body position.",
+            "point_value": 0.1
+          },
+          {
+            "type": "Execution",
+            "body_part": "Arms",
+            "description": "Bent arms at table contact.",
+            "point_value": 0.1
+          },
+          {
+            "type": "Execution",
+            "body_part": "Shoulders",
+            "description": "Shoulder angle not fully open during block.",
+            "point_value": 0.1
+          },
+          {
+            "type": "Execution",
+            "body_part": "Body",
+            "description": "Insufficient post-flight height.",
+            "point_value": 0.15
+          },
+          {
+            "type": "Execution",
+            "body_part": "Body",
+            "description": "Slight arch in post-flight body position.",
+            "point_value": 0.1
+          },
+          {
+            "type": "Execution",
+            "body_part": "Legs",
+            "description": "Slight bent knees in post-flight.",
+            "point_value": 0.05
+          },
+          {
+            "type": "Execution",
+            "body_part": "Feet",
+            "description": "Flexed feet in post-flight.",
+            "point_value": 0.05
+          },
+          {
+            "type": "Landing",
+            "body_part": "Feet",
+            "description": "Small hop forward on landing.",
+            "point_value": 0.1
+          },
+          {
+            "type": "Landing",
+            "body_part": "Body",
+            "description": "Chest drops slightly below horizontal on landing.",
+            "point_value": 0.05
+          },
+          {
+            "type": "Landing",
+            "body_part": "Legs",
+            "description": "Slight squat on landing (above 90 degrees).",
+            "point_value": 0.1
+          }
+        ],
+        "quality_grade": 8.85,
+        "reason": "Numerous execution errors across all phases of the vault, including body shape, arm position, and landing control.",
+        "is_celebration": false,
+        "strength_note": "Good run speed and effort into the board."
+      }
+    ],
+    "artistry": {
+      "total_artistry_deduction": 0,
+      "choreography_variety_deduction": 0,
+      "expression_deduction": 0,
+      "musicality_deduction": 0,
+      "notes": "Artistry not applicable for vault.",
+      "quality_of_movement_deduction": 0
+    },
+    "coaching_summary": "This Handspring vault showed good initial drive, but the execution suffered from consistent form breaks. The gymnast needs to focus on maintaining a tight, straight body line throughout the pre-flight and post-flight, ensuring a powerful and open-shouldered block, and controlling the landing to eliminate hops and squats. These accumulated micro-deductions significantly impacted the final score.",
+    "top_3_fixes": [
+      "Tighten body in pre-flight to eliminate pike and bent arms for a cleaner entry to the table.",
+      "Improve block by driving through the shoulders more aggressively to gain greater height and distance in post-flight.",
+      "Focus on a controlled, static landing to avoid hops and squats, and maintain an upright chest position."
+    ],
+    "celebrations": [],
+    "confidence": "Highly skeptical, detail-oriented, hunting for deductions.",
+    "duration_seconds": 11,
+    "special_requirements": [
+      {
+        "penalty": 0,
+        "requirement": "Perform a vault",
+        "status": "Met"
+      }
+    ],
+    "total_execution_deductions": 1.15
+  },
+  "computed": {
+    "executionTotal": 1.05,
+    "artistryTotal": 0,
+    "srTotal": 0,
+    "totalDeductions": 1.05,
+    "codeScore": 8.95,
+    "aiScore": 8.85,
+    "finalScore": 8.95,
+    "delta": 0.09999999999999964,
+    "deductionCount": 12
+  }
+}

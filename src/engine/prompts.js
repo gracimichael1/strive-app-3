@@ -1,12 +1,13 @@
 /**
  * prompts.js — Gemini judging prompt system for Strive.
  *
- * Pass 1 (JUDGING): Brevet-level USAG official watches video,
- *   identifies every skill, grades each one, logs all deductions,
- *   celebrates clean execution, provides coaching summary.
+ * Pass 1 (JUDGING): Certified USAG judge watches video,
+ *   identifies every skill, timestamps, deductions with body-part detail,
+ *   difficulty values, celebrations, coaching summary.
  *
- * Pass 2 (BIOMECHANICS): Takes Pass 1 skill list, enriches each
- *   with joint angles, injury awareness, targeted drills, correct form.
+ * Pass 2 (DEEP ANALYSIS): Team of specialists enriches each skill
+ *   with biomechanics, injury risk, elite comparison, corrective drills,
+ *   plus routine-level training plan, mental performance, nutrition note.
  *
  * DESIGN PRINCIPLE: Keep prompts natural and focused.
  * The Gemini web UI produces excellent results with a clear, human-readable
@@ -17,13 +18,11 @@
  * ═══════════════════════════════════════════════════════════════════════════════
  */
 
-export const PROMPT_VERSION = "v11_natural";
+export const PROMPT_VERSION = "v12_2pass_engine";
 
 // ─── Core Judge Instruction ─────────────────────────────────────────────────
-// This is the "brain" — a strict, pessimistic Brevet judge persona.
-// Derived from the exact prompt that scored within 0.075 of real judges.
 
-const CORE_JUDGE_INSTRUCTION = `You are a Brevet-level USAG Official judging at a State Championship.
+const CORE_JUDGE_INSTRUCTION = `You are a certified USAG judge with 20 years of competitive experience judging JO Levels 1-10, Optional, Elite, and Xcel. Watch this gymnastics routine from start to finish.
 
 A "skill" is a complete, named element or connected sequence — NOT individual components. Examples:
 - BARS: "Low Bar Kip", "Cast", "Back Hip Circle", "Cast to Squat On", "Jump to High Bar", "Long Hang Kip", "Tuck Flyaway" — each is ONE skill. A typical bars routine has 7-10 skills.
@@ -31,11 +30,20 @@ A "skill" is a complete, named element or connected sequence — NOT individual 
 - BEAM: "Back Walkover", "Split Leap", "Cartwheel Back Handspring" (series) — each named sequence is ONE skill.
 Do NOT break a named skill into sub-movements. Do NOT count swings, grips, or transitions as skills.
 
-Respond ONLY in the JSON schema provided.`;
+Your task:
+1. Identify every skill performed, in order
+2. Note the exact timestamp (in seconds) when each skill begins and ends
+3. For each skill: was it executed successfully? (yes/no)
+4. For each skill: list every deduction you observe with:
+   - Deduction type (e.g., bent knees, flexed feet, hop on landing)
+   - Severity: per USAG execution standards (0.05 increments)
+   - Specific body part and position description
+5. Note the apparatus (vault, bars, beam, floor) or men's apparatus
+6. Estimate difficulty value (D-score contribution) based on skills performed
+
+Respond ONLY in the JSON schema provided. No prose. No markdown.`;
 
 // ─── Level-Specific Rules ───────────────────────────────────────────────────
-// Each level has specific special requirements, amplitude standards,
-// and judging expectations. These are injected into the system instruction.
 
 const LEVEL_RULES = {
   // ── XCEL Program ──
@@ -188,7 +196,7 @@ const EVENT_RULES = {
 - Jump from LB to HB: Piked hips or bent knees = -0.10 to -0.20.
 - Long hang kip: hesitation at top before cast = -0.10.
 - Flyaway: knees apart in tuck = -0.10; chest down on landing = -0.10 to -0.20.
-- Compounding rule: low cast → automatic -0.10 rhythm on subsequent circle.
+- Compounding rule: low cast -> automatic -0.10 rhythm on subsequent circle.
 `,
   BEAM: `
 ## EVENT SPECIFICS: BALANCE BEAM
@@ -232,31 +240,25 @@ const EVENT_RULES = {
 };
 
 // ─── Level Key Mapping ──────────────────────────────────────────────────────
-// Maps the profile.level string to LEVEL_RULES keys
 
 function getLevelKey(level, levelCategory) {
   if (!level) return "XCEL_GOLD";
 
   const normalized = level.toUpperCase().replace(/\s+/g, "_");
-
-  // Direct match
   if (LEVEL_RULES[normalized]) return normalized;
 
-  // Xcel variants
   if (/XCEL.*BRONZE/i.test(level) || /BRONZE/i.test(level)) return "XCEL_BRONZE";
   if (/XCEL.*SILVER/i.test(level) || /SILVER/i.test(level)) return "XCEL_SILVER";
   if (/XCEL.*GOLD/i.test(level) || (levelCategory === "xcel" && /GOLD/i.test(level))) return "XCEL_GOLD";
   if (/XCEL.*PLAT/i.test(level) || /PLATINUM/i.test(level)) return "XCEL_PLATINUM";
   if (/XCEL.*DIAMOND/i.test(level) || /DIAMOND/i.test(level)) return "XCEL_DIAMOND";
 
-  // JO Levels
   const levelNum = parseInt(level.replace(/\D/g, ""), 10);
   if (levelNum >= 3 && levelNum <= 10) return `JO_LEVEL_${levelNum}`;
 
-  // Elite
   if (/ELITE/i.test(level)) return "ELITE";
 
-  return "XCEL_GOLD"; // safe default
+  return "XCEL_GOLD";
 }
 
 // ─── Event Key Mapping ──────────────────────────────────────────────────────
@@ -281,9 +283,7 @@ function getEventKey(event) {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 /**
- * Build the Pass 1 prompt — the Brevet judge watches the video.
- * This is the critical prompt. It must match the quality of
- * typing directly into Gemini's web UI.
+ * Build the Pass 1 prompt — the certified USAG judge watches the video.
  *
  * @param {Object} profile - { name, gender, level, levelCategory }
  * @param {string} event - Event name or "Auto-detect"
@@ -309,26 +309,53 @@ export function buildPass1Prompt(profile, event) {
     parts.push(EVENT_RULES[eventKey]);
   }
 
+  // Calibration block
+  parts.push(`
+## CALIBRATION — CRITICAL
+- Target range for total deductions: 0.80-1.30 for most routines.
+- A score of 8.7-9.2 is typical at State Championships.
+- If total deductions < 0.80: you are too LENIENT — find more faults.
+- If total deductions > 1.50: you are too HARSH — remove uncertain deductions.
+- Execution deductions typically 0.50-0.90; artistry + composition add 0.20-0.40.
+- Deduction values: 0.00, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.50 ONLY.
+- If you find fewer than 5 deductions total, you are MISSING deductions.
+
+## SECOND-PASS CHECK
+After initial assessment, re-watch focusing ONLY on:
+1. Feet — were there flexed feet you missed? Count them.
+2. Pauses — any hesitations or rhythm breaks between skills?
+3. Landings — did you deduct for every step, hop, or squat?
+4. Split leaps — is the angle truly at or above the minimum?
+5. Arms — any bent arm moments in support or flight?
+Add any missed deductions to your final JSON.
+`);
+
   const system = parts.join("\n");
 
-  // Build user prompt — natural language, like what works in the web UI
+  // Build user prompt
   const athleteName = profile.name || "the gymnast";
   const eventName = event === "Auto-detect" ? "the event shown" : event;
   const levelDisplay = profile.level || levelKey.replace(/_/g, " ");
 
-  const user = `Analyze this ${levelDisplay}${eventName !== "the event shown" ? " " + eventName : ""} routine. Athlete: ${athleteName}, ${gender}. You are strictly forbidden from giving "benefit of the doubt." Focus on micro-deductions: toe point, knee tension, chest placement on landings, and artistry. If the form is not "picture perfect," the deduction must be taken. For every skill, name it, timestamp it, and grade it. We need to celebrate the good and perfect skills as well. Provide a coaching summary with the top 3 fixes.
-${event === "Auto-detect" ? "Auto-detect which apparatus/event this is from the video." : ""}`;
+  const user = `Analyze this ${levelDisplay}${eventName !== "the event shown" ? " " + eventName : ""} routine. Athlete: ${athleteName}, ${gender}.
+
+You are strictly forbidden from giving "benefit of the doubt." Focus on micro-deductions: toe point, knee tension, chest placement on landings, and artistry. If the form is not "picture perfect," the deduction must be taken.
+
+For every skill: name it, note the exact timestamp when it begins and ends (in seconds from video start), list every deduction with the specific body part and position, and estimate its difficulty value.
+
+Celebrate the good and perfect skills as well. Provide a coaching summary with the top 3 fixes.
+${event === "Auto-detect" ? "\nAuto-detect which apparatus/event this is from the video." : ""}`;
 
   return { system, user };
 }
 
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// PASS 2: BIOMECHANICS — Per-skill enrichment with angles, drills, injury data
+// PASS 2: DEEP ANALYSIS — Team of specialists
 // ═══════════════════════════════════════════════════════════════════════════════
 
 /**
- * Build the Pass 2 prompt — biomechanics expert enriches each skill.
+ * Build the Pass 2 prompt — team of specialists enriches each skill.
  * Takes the Pass 1 skill list so it knows what to analyze.
  *
  * @param {Object} pass1Result - Parsed Pass 1 output
@@ -339,35 +366,47 @@ ${event === "Auto-detect" ? "Auto-detect which apparatus/event this is from the 
 export function buildPass2Prompt(pass1Result, profile, event) {
   const gender = (profile.gender || "female").toLowerCase() === "male" ? "MAG" : "WAG";
   const levelDisplay = profile.level || "Level 6";
+  const athleteName = profile.name || "the gymnast";
 
-  const system = `You are an Elite FIG/USAG Brevet-level judge AND biomechanics expert analyzing a ${gender} gymnast competing at ${levelDisplay} ${event || "gymnastics"}.
+  const system = `You are now acting as a team of specialists analyzing a gymnastics routine for a young athlete and their parent:
+- USAG judge (you have the deduction list from the initial judging pass)
+- Sports biomechanics expert (joint angles, body alignment, efficiency)
+- Physical therapist (injury risk identification)
+- Strength and conditioning coach (corrective drills)
+- Sports psychologist (mental performance indicators)
+- Performance nutritionist (recovery and training load guidance)
 
-Your task is to provide BIOMECHANICS ENRICHMENT for each skill already identified.
-Be precise, pessimistic, and specific about body angles and positions.
+Athlete: ${athleteName}, ${gender}, ${levelDisplay}, ${event || "gymnastics"}.
 
-For each skill, provide:
-1. BIOMECHANICS: For each relevant joint (KNEE, HIP, ELBOW, SHOULDER, SPLIT, ANKLE), estimate actual degrees, ideal degrees, and gap status.
-   "good" = within 5° of ideal. "needs_work" = 6-15° off. "significant_gap" = >15° off.
-2. FAULT OBSERVED: Plain language primary fault (or null if clean).
-3. STRENGTH: What was done well on this specific skill.
-4. CORRECT FORM: What perfect execution looks like for this specific skill at this level.
-5. INJURY AWARENESS: 1-3 injury risk notes if the form shown creates physical risk.
-6. TARGETED DRILLS: 2-3 specific drills to fix the faults observed.
-7. GAIN IF FIXED: How many score points would be recovered if this skill is cleaned up.
+For each skill identified in the initial judging pass, analyze:
+1. BIOMECHANICS: key joint angles at peak execution (estimate degrees for hips, knees, shoulders), body line score (1-10), efficiency rating (1-10)
+2. INJURY RISK: risk level (low/medium/high), body part at risk, specific concern, prevention note
+3. ELITE COMPARISON: one sentence describing how this skill looks vs elite execution
+4. CORRECTIVE DRILL: the single most impactful drill for the primary deduction on this skill, with sets/reps
 
+Also provide routine-level analysis:
+5. MENTAL PERFORMANCE: focus consistency patterns, notes for athlete psychology, specific recommendations
+6. TRAINING PLAN: top 3 priority drills for this session based on deductions found, with frequency and expected improvement
+7. NUTRITION NOTE: one performance nutrition note relevant to this athlete's training load
+
+Be precise, specific, and constructive. This data goes directly to the athlete's parent.
 Respond ONLY in the JSON schema provided. No conversational text.`;
 
   // Build skill list for context
-  const skillList = (pass1Result.deduction_log || []).map(s =>
-    `- "${s.skill}" at ${s.timestamp} (deduction: ${s.deduction_value})`
-  ).join("\n");
+  const skillList = (pass1Result.deduction_log || []).map(s => {
+    const dedList = (s.deductions || []).map(d => `${d.type} (${d.body_part}): -${d.point_value}`).join(", ");
+    return `- "${s.skill_name}" at ${s.timestamp_start}s-${s.timestamp_end}s (total deduction: ${s.total_deduction}, faults: ${dedList || s.reason || "none"})`;
+  }).join("\n");
 
   const user = `Re-watch the attached video. The following skills were identified in the initial judging pass:
 
 ${skillList}
 
-For EACH skill listed above, provide the biomechanics enrichment data.
+For EACH skill listed above, provide the full specialist analysis.
 Match skills by name and timestamp.
+
+Then provide the routine-level training plan (top 3 drills), mental performance assessment, and nutrition note.
+
 Respond ONLY in the JSON schema provided.`;
 
   return { system, user };
@@ -379,13 +418,18 @@ Respond ONLY in the JSON schema provided.`;
 // ═══════════════════════════════════════════════════════════════════════════════
 
 /**
- * Pass 1 config: Force structured JSON, low temperature for consistency.
+ * Pass 1 config: Deterministic scoring with structured JSON.
+ * Temperature 0.1 — scoring, not creative writing.
+ * Thinking budget: medium — prompt quality drives accuracy more than max thinking.
  */
 export const PASS1_CONFIG = {
   temperature: 0.1,
   topP: 0.8,
-  maxOutputTokens: 8192,
+  maxOutputTokens: 16384,
   responseMimeType: "application/json",
+  thinkingConfig: {
+    thinkingBudget: 8192,
+  },
   responseSchema: {
     type: "object",
     properties: {
@@ -394,6 +438,7 @@ export const PASS1_CONFIG = {
       event: { type: "string" },
       gender: { type: "string" },
       start_value: { type: "number" },
+      duration_seconds: { type: "number" },
       special_requirements: {
         type: "array",
         items: {
@@ -412,15 +457,37 @@ export const PASS1_CONFIG = {
         items: {
           type: "object",
           properties: {
-            timestamp: { type: "string" },
-            skill: { type: "string" },
+            skill_name: { type: "string" },
+            skill_order: { type: "number" },
+            timestamp_start: { type: "number" },
+            timestamp_end: { type: "number" },
+            executed_successfully: { type: "boolean" },
+            difficulty_value: { type: "number" },
+            total_deduction: { type: "number" },
+            deductions: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  type: { type: "string" },
+                  body_part: { type: "string" },
+                  description: { type: "string" },
+                  point_value: { type: "number" },
+                },
+                required: ["type", "body_part", "description", "point_value"],
+              },
+            },
             quality_grade: { type: "number" },
-            deduction_value: { type: "number" },
             reason: { type: "string" },
             rule_reference: { type: "string" },
             is_celebration: { type: "boolean" },
+            strength_note: { type: "string" },
           },
-          required: ["timestamp", "skill", "quality_grade", "deduction_value", "reason", "rule_reference", "is_celebration"],
+          required: [
+            "skill_name", "skill_order", "timestamp_start", "timestamp_end",
+            "executed_successfully", "difficulty_value", "total_deduction",
+            "deductions", "quality_grade", "reason", "is_celebration",
+          ],
         },
       },
       artistry: {
@@ -433,7 +500,11 @@ export const PASS1_CONFIG = {
           total_artistry_deduction: { type: "number" },
           notes: { type: "string" },
         },
-        required: ["expression_deduction", "quality_of_movement_deduction", "choreography_variety_deduction", "musicality_deduction", "total_artistry_deduction", "notes"],
+        required: [
+          "expression_deduction", "quality_of_movement_deduction",
+          "choreography_variety_deduction", "musicality_deduction",
+          "total_artistry_deduction", "notes",
+        ],
       },
       total_execution_deductions: { type: "number" },
       total_artistry_deductions: { type: "number" },
@@ -457,12 +528,17 @@ export const PASS1_CONFIG = {
 };
 
 /**
- * Pass 2 config: Biomechanics enrichment.
+ * Pass 2 config: Deep analysis with team of specialists.
+ * Same temperature for consistency.
+ * Thinking budget: medium.
  */
 export const PASS2_CONFIG = {
   temperature: 0.1,
-  maxOutputTokens: 8192,
+  maxOutputTokens: 16384,
   responseMimeType: "application/json",
+  thinkingConfig: {
+    thinkingBudget: 8192,
+  },
   responseSchema: {
     type: "object",
     properties: {
@@ -472,32 +548,82 @@ export const PASS2_CONFIG = {
           type: "object",
           properties: {
             skill_name: { type: "string" },
-            timestamp: { type: "string" },
+            timestamp_start: { type: "number" },
             category: { type: "string", enum: ["ACRO", "DANCE", "TURN", "LEAP", "DISMOUNT", "MOUNT", "SERIES", "TRANSITION"] },
             biomechanics: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  label: { type: "string" },
-                  actual_degrees: { type: "number" },
-                  ideal_degrees: { type: "number" },
-                  status: { type: "string", enum: ["good", "needs_work", "significant_gap"] },
+              type: "object",
+              properties: {
+                peak_joint_angles: {
+                  type: "object",
+                  properties: {
+                    hips: { type: "number" },
+                    knees: { type: "number" },
+                    shoulders: { type: "number" },
+                  },
+                  required: ["hips", "knees", "shoulders"],
                 },
-                required: ["label", "actual_degrees", "ideal_degrees", "status"],
+                body_line_score: { type: "number" },
+                efficiency_rating: { type: "number" },
+                notes: { type: "string" },
               },
+              required: ["peak_joint_angles", "body_line_score", "efficiency_rating", "notes"],
             },
-            fault_observed: { type: "string" },
-            strength: { type: "string" },
-            correct_form: { type: "string" },
-            injury_awareness: { type: "array", items: { type: "string" } },
-            targeted_drills: { type: "array", items: { type: "string" } },
-            gain_if_fixed: { type: "number" },
+            injury_risk: {
+              type: "object",
+              properties: {
+                level: { type: "string", enum: ["low", "medium", "high"] },
+                body_part: { type: "string" },
+                description: { type: "string" },
+                prevention_note: { type: "string" },
+              },
+              required: ["level", "body_part", "description", "prevention_note"],
+            },
+            elite_comparison: { type: "string" },
+            corrective_drill: {
+              type: "object",
+              properties: {
+                name: { type: "string" },
+                description: { type: "string" },
+                sets_reps: { type: "string" },
+              },
+              required: ["name", "description", "sets_reps"],
+            },
           },
-          required: ["skill_name", "timestamp", "category", "biomechanics", "correct_form", "gain_if_fixed"],
+          required: [
+            "skill_name", "timestamp_start", "category", "biomechanics",
+            "injury_risk", "elite_comparison", "corrective_drill",
+          ],
         },
       },
+      training_plan: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            priority: { type: "number" },
+            deduction_targeted: { type: "string" },
+            drill_name: { type: "string" },
+            drill_description: { type: "string" },
+            frequency: { type: "string" },
+            expected_improvement: { type: "string" },
+          },
+          required: [
+            "priority", "deduction_targeted", "drill_name",
+            "drill_description", "frequency", "expected_improvement",
+          ],
+        },
+      },
+      mental_performance: {
+        type: "object",
+        properties: {
+          focus_indicators: { type: "string" },
+          consistency_patterns: { type: "string" },
+          athlete_recommendations: { type: "string" },
+        },
+        required: ["focus_indicators", "consistency_patterns", "athlete_recommendations"],
+      },
+      nutrition_note: { type: "string" },
     },
-    required: ["skill_details"],
+    required: ["skill_details", "training_plan", "mental_performance", "nutrition_note"],
   },
 };
