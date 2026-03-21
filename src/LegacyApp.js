@@ -4131,6 +4131,58 @@ const AnalyzingScreen = React.memo(function AnalyzingScreen({ uploadData, profil
           maxOutputTokens: 16384,
           seed: 42,
           responseMimeType: "application/json",
+          responseSchema: {
+            type: "object",
+            properties: {
+              scorecard: {
+                type: "object",
+                properties: {
+                  finalScore:       { type: "number" },
+                  totalDeductions:  { type: "number" },
+                  deductions: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        timestamp: { type: "string" },
+                        element:   { type: "string" },
+                        deduction: { type: "number" },
+                        notes:     { type: "string" },
+                      },
+                      required: ["timestamp", "element", "deduction", "notes"],
+                    },
+                  },
+                  missedTransitions: { type: "array", items: { type: "string" } },
+                },
+                required: ["finalScore", "totalDeductions", "deductions"],
+              },
+              biomechanicalAudit: {
+                type: "object",
+                properties: {
+                  swingFlightRadius: { type: "string" },
+                  widthOfMass:       { type: "string" },
+                  landingVector:     { type: "string" },
+                },
+              },
+              levelUpAnalysis: {
+                type: "object",
+                properties: {
+                  requirementShift: { type: "array", items: { type: "string" } },
+                  angleTax:         { type: "string" },
+                  projectedScore:   { type: "number" },
+                },
+              },
+              trainingRoadmap: {
+                type: "object",
+                properties: {
+                  technicalAnchor: { type: "string" },
+                  drill:           { type: "string" },
+                },
+              },
+              detectedEvent: { type: "string" },
+            },
+            required: ["scorecard"],
+          },
         },
       }),
     });
@@ -4184,38 +4236,77 @@ const AnalyzingScreen = React.memo(function AnalyzingScreen({ uploadData, profil
     const levelDisplay = cat === "xcel" ? level : `${cat === "compulsory" ? "Compulsory" : "Optional"} ${level}`;
     const athleteName = profile.name || "the gymnast";
 
-    return `The BHPA Master System Instruction: "The Eyes"
-Role: Act as a Brevet-level USAG "${gender} ${levelDisplay}" Lead Judge and Biomechanical Analyst. Your goal is to provide a "Zero-Lenience" technical audit and raw kinetic data for downstream coaching logic.
+    return `The BHPA Master System Instruction
+Role: Act as a Brevet-level USAG ${gender} ${levelDisplay} Lead Judge and High-Performance Technical Coach. Your goal is to provide a "Zero-Lenience" score followed by a "Physics-Based" training roadmap.
 
 ATHLETE: ${athleteName} | ${gender} ${levelDisplay}
 
 I. Operational Protocol: The Professional Audit
-* Double-Pass Scrub: * Pass 1 (The Skills): Analyze primary flight elements, handstands, and saltos.
+1. Double-Pass Scrub:
+   * Pass 1 (The Skills): Analyze primary flight elements, handstands, and saltos.
    * Pass 2 (Connective Tissue): Scrub the 1.5s between skills (Kips, Squat-ons, Taps).
-* Frame-by-Frame Apex Scrub: Manually identify the "Apex Frame" of every flight element and the "Contact Frame" of every landing or bar transition. Document form breaks (TPM/KTM) existing for even a single frame.
-* The "Monitors": Activate Toe Point Monitor (TPM) and Knee Tension Monitor (KTM) for every frame.
-* Zero Lenience: No "benefit of the doubt." If a toe isn't pointed or a knee isn't locked, it is a deduction (0.05 - 0.10).
+2. Frame-by-Frame Apex Scrub: Manually identify and analyze the "Apex Frame" of every flight element and the "Contact Frame" of every landing or bar transition. Document any form breaks (TPM/KTM) that exist even for a single frame.
+3. The "Monitors": Activate Toe Point Monitor (TPM) and Knee Tension Monitor (KTM) for every frame.
+4. Zero Lenience: Strictly forbidden from giving "benefit of the doubt." If a toe isn't pointed or a knee isn't locked, it is a deduction (0.05 - 0.10).
+5. The "Zero-Variance" Audit Upgrade:
+   * The 30-Degree Penalty: Any cast failing to reach the required horizontal/vertical line (based on the specified level) is an automatic 0.30 deduction. No "marginal" passes.
+   * The "Compounder" Rule: If a form break (KTM/TPM) occurs during a technical error (e.g., bent arms during a Kip), the deduction is doubled. (0.10 for form + 0.10 for technique).
+   * The 1.5-Second Rhythm Clock: Any pause, hesitation, or "adjustment" of hands on the bar lasting longer than 1.5 seconds is an automatic 0.10 rhythm break.
+   * The "Early Pike" Logic: Any salto (dismount) that begins to pike/tuck before reaching the apex of flight loses 0.20 for "Poor Body Position in Flight."
+   * The "Heavy Bar" Audit: Any "stumble" or "clunky" foot contact during a Squat-on or transition is a 0.10 deduction for lack of control.
 
-II. The "Zero-Variance" Audit Rules
-* The 30-Degree Penalty: Any cast failing to reach the required horizontal/vertical line (per level) is an automatic 0.30 deduction.
-* The "Compounder" Rule: If a form break (KTM/TPM) occurs during a technical error (e.g., bent arms during a Kip), the deduction is doubled.
-* The 1.5-Second Rhythm Clock: Any pause or adjustment of hands on the bar >1.5s is an automatic 0.10 rhythm break.
-* The "Early Pike" Logic: Any salto beginning to pike/tuck before the apex of flight loses 0.20 for "Poor Body Position."
-* The "Heavy Bar" Audit: Any "stumble" or "clunky" foot contact during a transition is a 0.10 deduction.
+II. Scorecard Rules
+* Timestamped Deduction Table: List every skill AND transition. Identify micro-deductions (0.05, 0.1, 0.2).
+* The "Missed Transition" Check: Explicitly confirm if "cowboy knees," "staggered feet," or "flexed feet" occurred during transitions.
+* Final Justified Score: Calculated from a 10.0 Start Value.
 
 III. Biomechanical Overlay & Kinetic Audit
-* Swing/Flight Radius: Deconstruct the Hollow-Arch-Hollow sequence. Identify the exact frame of the "Toe Beat." State if momentum generation is Early, Late, or Optimal.
-* Width of Mass: Measure lateral deviation (e.g., Cowboy Knees). Quantify mass displacement and its impact on Angular Velocity.
-* The Landing Vector: Provide a 'Torso-to-Vertical' angle measurement at impact. Determine if the Center of Mass (CoM) was Leading, Trailing, or Stacked.
+1. The "Swing/Flight Radius" Analysis: Deconstruct the Hollow-Arch-Hollow sequence. Identify the exact frame of the "Toe Beat." State if the momentum generation is Early, Late, or Optimal.
+2. The "Width of Mass" Audit: Measure lateral deviation (e.g., Cowboy Knees). Explain the Conservation of Angular Momentum impact on Angular Velocity.
+3. The Landing Vector: Provide a Torso-to-Vertical angle measurement at impact. Determine if the Center of Mass (CoM) was Leading, Trailing, or Stacked over the base of support.
 
-IV. Level-Up Gap Analysis
-* Requirement Shift: Identify which skills fail the "Special Requirements" of the next level up.
-* The "Angle" Tax: Recalculate the score using the next level's requirements.
-* Technical Anchor: Identify the single habit that will be the biggest liability at the next level.
+V.2 — The Master Level-Up Prompt (Multi-Phase Analysis)
+Objective: Analyze this ${gender} ${levelDisplay} routine as a Brevet-level USAG Lead Judge. Following execution analysis, provide a "Transition Audit" for the next competitive level.
 
-V. Output Format: Strict JSON Schema
-Important: You must output only valid JSON. Do not include conversational text, markdown outside of the JSON block, or training advice.
-{ "audit_meta": { "level": "${level}", "event": "detected from video", "start_value": 10.0 }, "scorecard": [ { "timestamp": "0:00", "element": "string", "deduction": 0.0, "reason": "string", "fault_type": "KTM/TPM/Technical" } ], "final_score": 0.0, "kinetics": { "toe_beat_frame": 0, "momentum_timing": "Early/Late/Optimal", "landing_vector_deg": 0, "com_status": "Leading/Trailing/Stacked" }, "level_up_gap": { "projected_score": 0.0, "technical_anchor": "string", "requirement_fails": ["string"] } }`;
+Phase 1: Championship Strictness (Current Level)
+1. No Benefit of the Doubt: If a form break is visible, it is a deduction.
+2. Active Monitors: Run TPM and KTM.
+3. The Audit: Timestamped table of every skill/transition with micro-deductions (0.05–0.10) and structural deductions (0.20+).
+4. Current Justified Score from a 10.0 Start Value.
+
+Phase 2: The Level-Up Comparison (Gap Analysis)
+1. Requirement Shift: Identify which skills would fail "Special Requirements" or "Value Parts" of the next level up.
+2. The "Angle" Tax: Recalculate the score using the next level's angle requirements.
+3. Transition Score: "Projected Score" — what this exact performance would earn judged at the higher level today.
+
+Phase 3: The Unbiased Push
+* Identify the "Technical Anchor" — the one habit that will be the biggest liability at the next level. Provide one high-level drill to break it.
+
+OUTPUT: Respond ONLY with valid JSON in exactly this structure — no markdown, no text outside the JSON.
+IMPORTANT: The deduction_log must contain ONE entry per distinct skill or transition element — do NOT list the same element multiple times. Maximum 10 entries total. Group minor form breaks (flexed feet, soft knees) INTO the skill they occurred on as a combined deduction rather than separate entries. Only log elements that actually received a deduction > 0.
+{
+  "metadata": { "routine_type": "detected from video", "level": "${levelDisplay}", "audit_protocol": "BHPA Master System / Zero-Lenience" },
+  "scorecard": {
+    "start_value": 10.0,
+    "total_deductions": 0.0,
+    "final_score": 0.0,
+    "deduction_log": [
+      { "timestamp": "0:00", "element": "string", "deduction": 0.0, "notes": "string" }
+    ]
+  },
+  "biomechanical_analysis": {
+    "swing_radius": "Shallow/Optimal/Deep",
+    "toe_beat": "Early/Late/Optimal (timestamp)",
+    "landing_vector": "X° Trailing/Leading/Stacked Torso-to-Vertical",
+    "angular_velocity_impact": "string"
+  },
+  "level_up_gap": {
+    "target": "next level name",
+    "technical_anchor": "string",
+    "projected_score_at_next_level": 0.0,
+    "missing_requirements": ["string"]
+  }
+}`;
 
   }, [profile]);
 
@@ -4241,7 +4332,7 @@ Important: You must output only valid JSON. Do not include conversational text, 
 
     // ── Score caching — return cached result for duplicate submissions ──
     // Fingerprint: file name + size + lastModified + athlete name + level + event
-    const PROMPT_VERSION = "v11_bhpa_eyes"; // Bump this when prompt changes to invalidate cache
+    const PROMPT_VERSION = "v14_schema_restored"; // Bump this when prompt changes to invalidate cache
     const fingerprintParts = [
       PROMPT_VERSION,
       uploadData.video.name || "video",
@@ -4353,9 +4444,12 @@ Important: You must output only valid JSON. Do not include conversational text, 
         if (jsonMatch) {
           const parsed = JSON.parse(jsonMatch[0]);
           // Accept any field name Gemini chooses for the skills array
-          const skillsArray = parsed.scorecard || parsed.skills || parsed.deduction_log || parsed.elements || parsed.skill_log || [];
+          // Also handle nested BHPA format: parsed.scorecard.deduction_log
+          const scorecardObj = parsed.scorecard && !Array.isArray(parsed.scorecard) ? parsed.scorecard : null;
+          // Schema-enforced field is scorecard.deductions — also accept legacy field names
+          const skillsArray = (scorecardObj?.deductions) || (scorecardObj?.deduction_log) || parsed.scorecard || parsed.skills || parsed.deduction_log || parsed.elements || parsed.skill_log || [];
           // Capture Gemini's reported final score — use it directly instead of recomputing
-          geminiFinalScore = parsed.final_score || parsed.summary?.overallScore || null;
+          geminiFinalScore = scorecardObj?.finalScore || scorecardObj?.final_score || parsed.final_score || parsed.summary?.overallScore || null;
           if (geminiFinalScore) log.info("parse", `Gemini final_score: ${geminiFinalScore}`);
 
           if (Array.isArray(skillsArray) && skillsArray.length > 0) {
@@ -4391,7 +4485,7 @@ Important: You must output only valid JSON. Do not include conversational text, 
               // Normalize skill name
               const skillName = s.element || s.name || s.skill_name || s.skill || "Unknown";
               // Normalize reason/deduction text
-              const primaryDeductionText = s.primary_deduction || s.reason || s.technical_flaw || s.fault_description || null;
+              const primaryDeductionText = s.notes || s.primary_deduction || s.reason || s.technical_flaw || s.fault_description || null;
               // Numeric deduction: explicit field → quality_grade fallback → parse from text
               let ded;
               if (s.deduction != null && !isNaN(Number(s.deduction))) {
@@ -4490,6 +4584,9 @@ Important: You must output only valid JSON. Do not include conversational text, 
             if (parsed.kinetics) {
               parsedBiomechanicalOverlay = parsed.kinetics;
             }
+            if (parsed.biomechanical_analysis) {
+              parsedBiomechanicalOverlay = parsed.biomechanical_analysis;
+            }
             if (parsed.biomechanicalOverlay) {
               parsedBiomechanicalOverlay = parsed.biomechanicalOverlay;
             }
@@ -4510,24 +4607,35 @@ Important: You must output only valid JSON. Do not include conversational text, 
         log.warn("parse", `JSON parse failed: ${e.message} — trying pipe-delimited fallback`);
       }
 
-      // ── Fallback: Parse pipe-delimited table (legacy cached responses) ──
+      // ── Fallback: Parse pipe-delimited table (BHPA markdown and legacy responses) ──
       if (parsedSkills.length === 0) {
-        const lines = rawResponse.split("\n").map(l => l.trim()).filter(l => l.includes(" | "));
-        const dataLines = lines.filter(l => !/^timestamp\s*\|/i.test(l) && !/^-+\s*\|/.test(l));
+        const lines = rawResponse.split("\n").map(l => l.trim()).filter(l => l.includes("|"));
+        const dataLines = lines.filter(l => !/^timestamp\s*\|/i.test(l) && !/^-+\s*\|/.test(l) && !/^\|?\s*timestamp/i.test(l));
 
         for (const line of dataLines) {
-          const parts = line.split("|").map(p => p.trim());
-          if (parts.length < 5) continue;
-          const [timestamp, skillName, skillType, dedStr, faultDesc, strengthNote] = parts;
-          const deduction = roundToUSAG(dedStr);
-          if (!deduction && deduction !== 0) continue;
-          if (!skillName) continue;
+          // Filter empty segments from leading/trailing pipes
+          const parts = line.split("|").map(p => p.trim()).filter(p => p.length > 0);
+          if (parts.length < 3) continue;
+
+          // Detect deduction column by finding a numeric value (0.XX)
+          const dedIdx = parts.findIndex(p => /^-?\s*\d*\.\d+$/.test(p.replace(/\s/g, "")));
+          if (dedIdx < 1) continue;
+
+          const timestamp = parts[0];
+          const skillName = parts[dedIdx - 1];
+          const dedStr    = parts[dedIdx];
+          const faultDesc = parts[dedIdx + 1] || null;
+          const strengthNote = parts[dedIdx + 2] || null;
+
+          const deduction = roundToUSAG(parseFloat(dedStr) || 0);
+          if (!skillName || skillName.toLowerCase().includes("skill") || skillName.toLowerCase().includes("phase")) continue;
+
           parsedSkills.push({
             timestamp: timestamp || "0:00",
             skill: skillName,
-            type: (skillType || "acro").toLowerCase(),
-            deduction: Math.min(deduction, 0.50),
-            qualityScore: 10.0 - Math.min(deduction, 0.50),
+            type: "acro",
+            deduction: Math.min(Math.abs(deduction), 0.50),
+            qualityScore: 10.0 - Math.min(Math.abs(deduction), 0.50),
             reason: (!faultDesc || faultDesc.toLowerCase() === "clean") ? null : faultDesc,
             faults: [],
             strength: (strengthNote && strengthNote.length > 1) ? strengthNote : null,
@@ -4537,7 +4645,16 @@ Important: You must output only valid JSON. Do not include conversational text, 
           });
         }
         if (parsedSkills.length > 0) {
-          log.info("parse", `Parsed ${parsedSkills.length} skills from pipe-delimited (legacy) response`);
+          log.info("parse", `Parsed ${parsedSkills.length} skills from pipe-delimited response`);
+        }
+
+        // Extract final score from BHPA prose: "Current Justified Score (10.0 SV): 8.50"
+        if (!geminiFinalScore) {
+          const scoreMatch = rawResponse.match(/(?:justified\s*score|final\s*score)[^:]*:\s*(\d+\.\d+)/i);
+          if (scoreMatch) {
+            geminiFinalScore = parseFloat(scoreMatch[1]);
+            log.info("parse", `Extracted prose final score: ${geminiFinalScore}`);
+          }
         }
       }
 
@@ -4637,6 +4754,12 @@ Important: You must output only valid JSON. Do not include conversational text, 
         merged.push({ ...s });
       }
       parsedSkills = merged;
+
+      // ── Hard cap: max 10 skills, keep highest deductions ──────────
+      if (parsedSkills.length > 10) {
+        parsedSkills = [...parsedSkills].sort((a, b) => b.deduction - a.deduction).slice(0, 10);
+        log.info("parse", `Capped to 10 skills (was ${merged.length})`);
+      }
 
       log.info("parse", `Parsed ${parsedSkills.length} skills (format: ${isRichJSON ? "rich JSON" : "pipe-delimited legacy"})`);
 
@@ -6886,195 +7009,119 @@ const ResultsScreen = React.memo(function ResultsScreen({ result, profile, histo
         <StriveErrorBoundary name="Overview">
         <div style={{ animation: "fadeIn 0.4s ease-out" }}>
 
-          {/* ── SCORE BOX: Ring + Judge's Perspective + Artistry ── */}
-          <div style={{ marginBottom: 24, padding: "24px 16px", background: "linear-gradient(135deg, rgba(232,150,42,0.06), rgba(232,150,42,0.02))", borderRadius: 20, border: `1px solid ${scoreColor}25`, position: "relative", overflow: "hidden" }}>
-
-            {/* Hero Score Ring */}
-            {(() => {
-              const scorePct = Math.min(100, (safeNum(result.finalScore, 0) / 10) * 100);
-              const radius = 54;
-              const circumference = 2 * Math.PI * radius;
-              const strokeDashoffset = circumference - (scorePct / 100) * circumference;
-              const gradeLabel = result.finalScore >= 9.5 ? "Elite" : result.finalScore >= 9.0 ? "Excellent" : result.finalScore >= 8.5 ? "Strong" : result.finalScore >= 8.0 ? "Good" : result.finalScore >= 7.5 ? "Building" : "Developing";
-              return (
-                <div style={{ textAlign: "center", marginBottom: 20 }}>
-                  <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 200, height: 200, borderRadius: "50%", background: `radial-gradient(circle, ${scoreColor}10 0%, transparent 70%)`, pointerEvents: "none" }} />
-                  <div style={{ position: "relative", display: "inline-block", marginBottom: 12 }}>
-                    <svg width="140" height="140" viewBox="0 0 140 140" style={{ transform: "rotate(-90deg)" }}>
-                      <circle cx="70" cy="70" r={radius} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="8" />
-                      <circle cx="70" cy="70" r={radius} fill="none" stroke={scoreColor} strokeWidth="8" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={strokeDashoffset} style={{ transition: "stroke-dashoffset 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)" }} />
-                    </svg>
-                    <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", textAlign: "center" }}>
-                      <div style={{ fontSize: 28, fontWeight: 900, fontFamily: "'Space Mono', monospace", color: scoreColor, lineHeight: 1 }}>
-                        {safeNum(result.finalScore, 0, 0, 10).toFixed(3)}
-                      </div>
-                      <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: 1, textTransform: "uppercase", marginTop: 2 }}>
-                        {gradeLabel}
-                      </div>
-                    </div>
-                  </div>
-                  <div style={{ display: "flex", justifyContent: "center", gap: 20, marginTop: 8 }}>
-                    <div style={{ textAlign: "center" }}>
-                      <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", letterSpacing: 0.5, textTransform: "uppercase" }}>D-Score</div>
-                      <div style={{ fontSize: 18, fontWeight: 700, fontFamily: "'Space Mono', monospace", color: "#e2e8f0" }}>{safeNum(result.startValue, 10).toFixed(1)}</div>
-                    </div>
-                    <div style={{ width: 1, background: "rgba(255,255,255,0.07)" }} />
-                    <div style={{ textAlign: "center" }}>
-                      <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", letterSpacing: 0.5, textTransform: "uppercase" }}>E-Score</div>
-                      <div style={{ fontSize: 18, fontWeight: 700, fontFamily: "'Space Mono', monospace", color: "#dc2626" }}>-{safeNum(result.totalDeductions, 0).toFixed(2)}</div>
-                    </div>
-                    <div style={{ width: 1, background: "rgba(255,255,255,0.07)" }} />
-                    <div style={{ textAlign: "center" }}>
-                      <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", letterSpacing: 0.5, textTransform: "uppercase" }}>Neutral</div>
-                      <div style={{ fontSize: 18, fontWeight: 700, fontFamily: "'Space Mono', monospace", color: "rgba(255,255,255,0.4)" }}>0.00</div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })()}
-
-            {/* Judge's Perspective */}
-            {result.overallAssessment && (
-              <div style={{ marginBottom: 16, padding: "16px 18px", borderRadius: 14, background: "rgba(232,150,42,0.04)", border: "1px solid rgba(232,150,42,0.12)", borderLeft: "3px solid #e8962a" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="#e8962a" strokeWidth="1.2"/><path d="M5 8h6M8 5v6" stroke="#e8962a" strokeWidth="1.2" strokeLinecap="round"/></svg>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: "#e8962a", letterSpacing: 1, textTransform: "uppercase" }}>Judge's Perspective</div>
-                </div>
-                <p style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", lineHeight: 1.75, margin: 0, fontStyle: "italic" }}>
-                  "{safeStr(result.overallAssessment)}"
-                </p>
-              </div>
-            )}
-
-          </div>
-
-          {/* ── SUB-TABS: Artistry | Video ── */}
+          {/* ── SCORE BOX ── */}
           {(() => {
-            const hasArtistry = !!result.artistry;
-            const hasVideo = !!(videoUrl || result.videoUrl);
-            const subTabs = [];
-            if (hasArtistry) subTabs.push({ id: "artistry", label: "Artistry" });
-            if (hasVideo) subTabs.push({ id: "video", label: "Video" });
-            if (subTabs.length === 0) return null;
+            const gradeLabel = result.finalScore >= 9.5 ? "Elite" : result.finalScore >= 9.0 ? "Excellent" : result.finalScore >= 8.5 ? "Strong" : result.finalScore >= 8.0 ? "Good" : result.finalScore >= 7.5 ? "Building" : "Developing";
             return (
-              <div style={{ marginBottom: 20 }}>
-                {/* Tab buttons */}
-                <div style={{ display: "flex", gap: 2, marginBottom: 14, background: "rgba(255,255,255,0.02)", borderRadius: 10, padding: 2 }}>
-                  {subTabs.map(t => (
-                    <button
-                      key={t.id}
-                      onClick={() => setDetailTab(t.id)}
-                      style={{
-                        flex: 1, padding: "8px 4px", borderRadius: 8, fontSize: 11, fontWeight: 700,
-                        letterSpacing: 0.8, textTransform: "uppercase", cursor: "pointer", border: "none",
-                        background: detailTab === t.id ? "rgba(232,150,42,0.12)" : "transparent",
-                        color: detailTab === t.id ? "#e8962a" : "rgba(255,255,255,0.35)",
-                        transition: "all 0.2s",
-                      }}
-                    >
-                      {t.label}
-                    </button>
-                  ))}
+              <div style={{ marginBottom: 16, background: "#141414", border: "1px solid #141414", borderRadius: 4, padding: "20px 20px 16px", display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+                <div>
+                  <div style={{ fontSize: 9, fontFamily: "'Space Mono', monospace", color: "rgba(255,255,255,0.4)", letterSpacing: 2, textTransform: "uppercase", marginBottom: 4 }}>Final Justified Score</div>
+                  <div style={{ fontSize: 52, fontWeight: 500, fontFamily: "Georgia, serif", color: "#F5F5F3", lineHeight: 1 }}>{safeNum(result.finalScore, 0, 0, 10).toFixed(3)}</div>
+                  <div style={{ fontSize: 11, fontFamily: "'Space Mono', monospace", color: "rgba(255,255,255,0.4)", letterSpacing: 1, textTransform: "uppercase", marginTop: 4 }}>{gradeLabel}</div>
                 </div>
-
-                {/* Artistry tab content */}
-                {detailTab === "artistry" && result.artistry && (
-                  <div style={{ padding: "16px 18px", borderRadius: 14, background: "rgba(139,114,212,0.04)", border: "1px solid rgba(139,114,212,0.12)" }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: "#8b72d4", letterSpacing: 1, textTransform: "uppercase", marginBottom: 14 }}>
-                      Artistry Breakdown
-                    </div>
-                    {(() => {
-                      const art = result.artistry;
-                      const artFields = [
-                        { key: "expression_deduction", label: "Expression / Projection" },
-                        { key: "quality_of_movement_deduction", label: "Quality of Movement" },
-                        { key: "choreography_variety_deduction", label: "Choreography Variety" },
-                        { key: "musicality_deduction", label: "Musicality" },
-                      ];
-                      return artFields.map(({ key, label }) => {
-                        const detail = (art.details || []).find(d => d.fault && d.fault.toLowerCase().includes(label.split(" ")[0].toLowerCase()));
-                        const ded = detail ? safeNum(detail.deduction, 0) : 0;
-                        const score = Math.max(0, Math.min(10, 10 - ded * 20));
-                        const pct = (score / 10) * 100;
-                        return (
-                          <div key={key} style={{ marginBottom: 10 }}>
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-                              <span style={{ fontSize: 12, fontWeight: 500, color: "rgba(255,255,255,0.6)" }}>{label}</span>
-                              <span style={{ fontSize: 12, fontWeight: 700, fontFamily: "'Space Mono', monospace", color: "#8b72d4" }}>-{ded.toFixed(2)}</span>
-                            </div>
-                            <div style={{ height: 6, background: "rgba(255,255,255,0.06)", borderRadius: 3, overflow: "hidden" }}>
-                              <div style={{ height: "100%", width: `${pct}%`, background: "linear-gradient(90deg, #8b72d4, #a990e8)", borderRadius: 3, transition: "width 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94)" }} />
-                            </div>
-                          </div>
-                        );
-                      });
-                    })()}
-                    {result.artistry.notes && (
-                      <div style={{ marginTop: 8, fontSize: 11, color: "rgba(255,255,255,0.4)", fontStyle: "italic", lineHeight: 1.5 }}>
-                        {result.artistry.notes}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Video tab content */}
-                {detailTab === "video" && (() => {
-                  const vUrl = videoUrl || result.videoUrl;
-                  if (!vUrl) return null;
-                  return (
-                    <div style={{ borderRadius: 16, overflow: "hidden", background: "#0d1422", border: "1px solid rgba(255,255,255,0.08)" }}>
-                      <video
-                        src={vUrl}
-                        controls
-                        controlsList="nodownload"
-                        playsInline
-                        webkit-playsinline=""
-                        preload="metadata"
-                        style={{ width: "100%", display: "block", maxHeight: 280 }}
-                        ref={(el) => { if (el) el._striveVideoRef = el; }}
-                      />
-                      <div style={{ display: "flex", gap: 6, padding: "8px 12px", background: "#121b2d" }}>
-                        {[0.25, 0.5, 1].map(rate => (
-                          <button
-                            key={rate}
-                            onClick={(e) => {
-                              const video = e.target.closest("div[style]")?.previousElementSibling;
-                              if (video && video.tagName === "VIDEO") video.playbackRate = rate;
-                            }}
-                            style={{
-                              padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: 700,
-                              fontFamily: "'Space Mono', monospace", cursor: "pointer",
-                              background: rate === 1 ? "#e8962a" : "rgba(255,255,255,0.06)",
-                              color: rate === 1 ? "#070c16" : "rgba(255,255,255,0.5)",
-                              border: rate === 1 ? "1px solid #e8962a" : "1px solid rgba(255,255,255,0.1)",
-                            }}
-                          >
-                            {rate}x
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })()}
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontSize: 9, fontFamily: "'Space Mono', monospace", color: "rgba(255,255,255,0.4)", letterSpacing: 2, textTransform: "uppercase", marginBottom: 4 }}>Start Value</div>
+                  <div style={{ fontSize: 22, fontFamily: "'Space Mono', monospace", color: "rgba(255,255,255,0.7)" }}>{safeNum(result.startValue, 10).toFixed(1)}</div>
+                </div>
               </div>
             );
           })()}
 
-          {/* ── SKILL-BY-SKILL BREAKDOWN ── */}
-          {(result.gradedSkills || []).length > 0 && (
-            <div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.3)", letterSpacing: 1, textTransform: "uppercase", marginBottom: 12 }}>
-                Skill-by-Skill Breakdown
+          {/* ── D / E / N LINE ── */}
+          <div style={{ marginBottom: 16, padding: "10px 14px", background: "#fff", border: "1px solid #141414", borderRadius: 4, display: "flex", gap: 24, alignItems: "center" }}>
+            <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, color: "#141414" }}>D:{safeNum(result.startValue, 10).toFixed(1)}</span>
+            <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, color: "#dc2626" }}>E:-{safeNum(result.totalDeductions, 0).toFixed(2)}</span>
+            <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, color: "#141414", opacity: 0.4 }}>N:0</span>
+          </div>
+
+          {/* ── JUDGE'S PERSPECTIVE ── */}
+          {result.overallAssessment && (
+            <div style={{ marginBottom: 16, padding: "14px 16px", background: "#fff", border: "1px solid #141414", borderRadius: 4, borderLeft: "3px solid #141414" }}>
+              <div style={{ fontSize: 9, fontFamily: "'Space Mono', monospace", color: "#141414", letterSpacing: 2, textTransform: "uppercase", marginBottom: 8, opacity: 0.5 }}>Judge's Perspective</div>
+              <p style={{ fontSize: 13, color: "#141414", lineHeight: 1.7, margin: 0, fontStyle: "italic", opacity: 0.8 }}>"{safeStr(result.overallAssessment)}"</p>
+            </div>
+          )}
+
+          {/* ── VIDEO PLAYER ── */}
+          {(videoUrl || result.videoUrl) && (() => {
+            const vUrl = videoUrl || result.videoUrl;
+            const videoRef = React.createRef();
+            return (
+              <div style={{ marginBottom: 16, background: "#fff", border: "1px solid #141414", borderRadius: 4, overflow: "hidden" }}>
+                <div style={{ padding: "8px 14px", borderBottom: "1px solid #141414", display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 9, fontFamily: "'Space Mono', monospace", color: "#141414", letterSpacing: 2, textTransform: "uppercase", opacity: 0.5 }}>Full Routine Video</span>
+                </div>
+                <video
+                  ref={videoRef}
+                  src={vUrl}
+                  controls
+                  controlsList="nodownload"
+                  playsInline
+                  webkit-playsinline=""
+                  preload="metadata"
+                  style={{ width: "100%", display: "block", maxHeight: 260, background: "#000" }}
+                />
+                <div style={{ display: "flex", gap: 1, padding: "8px 12px", borderTop: "1px solid #e5e5e5" }}>
+                  {[0.25, 0.5, 1].map(rate => (
+                    <button
+                      key={rate}
+                      onClick={(e) => {
+                        const video = e.target.closest("div")?.parentElement?.querySelector("video");
+                        if (video) video.playbackRate = rate;
+                      }}
+                      style={{
+                        padding: "5px 12px", fontSize: 10, fontWeight: 700,
+                        fontFamily: "'Space Mono', monospace", cursor: "pointer",
+                        background: "transparent", color: "#141414", border: "1px solid #141414",
+                        marginRight: 6, borderRadius: 2,
+                      }}
+                    >
+                      {rate}x
+                    </button>
+                  ))}
+                </div>
               </div>
-              {(result.gradedSkills || []).map((skill, idx) => (
-                <StriveErrorBoundary key={skill.id || idx} name="Skill Card">
-                  <SkillCard
-                    skill={skill}
-                    index={skill.index || idx + 1}
-                    videoFile={videoFile}
-                  />
-                </StriveErrorBoundary>
-              ))}
+            );
+          })()}
+
+          {/* ── SKILL-BY-SKILL BREAKDOWN TABLE ── */}
+          {(result.gradedSkills || []).length > 0 && (
+            <div style={{ background: "#fff", border: "1px solid #141414", borderRadius: 4, overflow: "hidden" }}>
+              {/* Table header */}
+              <div style={{ background: "#141414", padding: "8px 14px", display: "grid", gridTemplateColumns: "52px 1fr 52px", gap: 8, alignItems: "center" }}>
+                <span style={{ fontSize: 9, fontFamily: "'Space Mono', monospace", color: "rgba(255,255,255,0.5)", letterSpacing: 1, textTransform: "uppercase" }}>Time</span>
+                <span style={{ fontSize: 9, fontFamily: "'Space Mono', monospace", color: "rgba(255,255,255,0.5)", letterSpacing: 1, textTransform: "uppercase" }}>Element</span>
+                <span style={{ fontSize: 9, fontFamily: "'Space Mono', monospace", color: "rgba(255,255,255,0.5)", letterSpacing: 1, textTransform: "uppercase", textAlign: "right" }}>Ded.</span>
+              </div>
+              {/* Skill rows */}
+              {(result.gradedSkills || []).map((skill, idx) => {
+                const ded = safeNum(skill.deduction, 0);
+                const dedColor = ded >= 0.20 ? "#dc2626" : ded >= 0.10 ? "#e06820" : "#141414";
+                return (
+                  <div
+                    key={skill.id || idx}
+                    style={{
+                      borderBottom: idx < (result.gradedSkills.length - 1) ? "1px solid #e5e5e5" : "none",
+                      padding: "12px 14px",
+                    }}
+                  >
+                    {/* Top row: timestamp | element name | deduction */}
+                    <div style={{ display: "grid", gridTemplateColumns: "52px 1fr 52px", gap: 8, alignItems: "baseline", marginBottom: skill.reason ? 6 : 0 }}>
+                      <span style={{ fontSize: 11, fontFamily: "'Space Mono', monospace", color: "#141414", opacity: 0.4 }}>{skill.timestamp || "—"}</span>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: "#141414", fontFamily: "'Space Mono', monospace", textTransform: "uppercase", letterSpacing: 0.5 }}>{safeStr(skill.skill)}</span>
+                      <span style={{ fontSize: 13, fontWeight: 700, fontFamily: "'Space Mono', monospace", color: dedColor, textAlign: "right" }}>
+                        {ded > 0 ? `-${ded.toFixed(2)}` : "—"}
+                      </span>
+                    </div>
+                    {/* Notes/reason below */}
+                    {skill.reason && (
+                      <div style={{ paddingLeft: 60, fontSize: 11, color: "#141414", opacity: 0.6, lineHeight: 1.6, fontStyle: "italic" }}>
+                        {safeStr(skill.reason)}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
 
