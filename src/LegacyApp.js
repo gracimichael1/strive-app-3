@@ -4406,8 +4406,9 @@ IMPORTANT: The deduction_log must contain ONE entry per distinct skill or transi
               name: profile.name,
               gender: profile.gender,
               level: profile.level,
+              levelCategory: profile.levelCategory,
             },
-            skillAnalysis: extractedFrames || [],
+            frames: (extractedFrames || []).map(f => ({ base64: f.base64, timestamp: f.timestamp, mimeType: "image/jpeg" })),
             event: uploadData.event || "floor",
           }),
         });
