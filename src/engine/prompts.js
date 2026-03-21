@@ -349,18 +349,20 @@ export function buildPass1Prompt(profile, event) {
   // Calibration block
   parts.push(`
 ## CALIBRATION — CRITICAL (THIS OVERRIDES ALL OTHER DEDUCTION LOGIC)
-- FINAL SCORE MUST equal start_value minus total_execution_deductions minus total_artistry_deductions. Compute it mechanically. Do NOT round up or adjust.
-- Target range for total deductions: 1.00-1.50 for most completed routines (no falls).
-- State Championship scores range from 8.2-9.3. A score of 8.5-8.9 is the most common range. Do NOT bias toward 9.0+.
-- If your final_score is below 7.5 for a completed routine (no falls): you are OVER-DEDUCTING. Step back and recalibrate.
-- If total deductions < 0.80: you are too LENIENT — find more faults.
-- If total deductions > 2.00: you are too HARSH — remove the least certain deductions until you are in range.
-- Execution deductions typically 0.70-1.10 for an average routine.
+- FINAL SCORE is your holistic State Championship estimate — what a real panel of judges at a State Championship would award this routine. It is your professional judgment call, NOT a mechanical sum of all micro-deductions.
+- State Championship scores typically range 8.4-9.3 for completed routines (no falls).
+- If your final_score is below 8.0 for a completed routine with no falls: you are OVER-DEDUCTING. Recalibrate by removing the least certain deductions.
+- total_execution_deductions and total_artistry_deductions should APPROXIMATE (10.0 - final_score), but the final_score takes priority as the holistic estimate.
 - ARTISTRY IS NEVER ZERO: Even on bars, quality of movement, rhythm, and body tension contribute 0.10-0.30 in artistry deductions. Always assess artistry.
 - Deduction values: 0.00, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.50 ONLY.
-- If you find fewer than 8 deductions total, you are MISSING deductions. Re-watch transitions and landings.
+- If you find fewer than 5 deductions total, you are MISSING deductions. Re-watch transitions and landings.
 - If you find more than 20 deductions total, you are likely over-counting — merge related micro-faults on the same skill.
 - Apply TPM/KTM deductions only when the form break is clearly visible. Most skills will have at least one micro-deduction (0.05) — do not skip deductions to inflate the score.
+- PER-SKILL DEDUCTION RULES:
+  * Each skill should have 1-4 deductions maximum. Do NOT list more than 4 deductions for any single skill.
+  * Per-skill total deductions should be 0.00-0.30 for most skills. Only a fall = 0.50.
+  * Each deduction must be for a DISTINCT fault. "bent knees" is ONE deduction per skill, not one per frame.
+  * Vault is ONE skill — total vault deductions should be 0.30-0.80 for a completed vault without falls.
 
 ## SKILL COUNT CHECK
 - BARS: A typical routine has 7-10 skills. If you have more than 12, you are splitting skills that should be combined.
@@ -379,8 +381,8 @@ Add any missed deductions to your final JSON.
 
 ## FINAL SANITY CHECK
 Before outputting, verify:
-- final_score = start_value - total_execution_deductions - total_artistry_deductions. If they don't match, fix the final_score.
-- Your final_score is between 7.5 and 9.5 for a completed routine with no falls. Scores of 8.3-8.8 are the most common — do not bias toward 9.0+.
+- total_execution_deductions + total_artistry_deductions should approximately equal (10.0 - final_score). If they diverge by more than 0.30, adjust the deduction totals to match your final_score.
+- Your final_score is between 8.0 and 9.5 for a completed routine with no falls.
 - If it is not, adjust your deductions to match what a real judge panel would award.
 `);
 

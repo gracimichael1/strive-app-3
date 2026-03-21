@@ -15,7 +15,10 @@ const PROXY = "http://localhost:3000/api/gemini";
 const TOKEN = "strive-2026-launch";
 
 const VIDEOS = [
+  { file: "differentvaultcomp.mov", event: "Vault", realScore: 8.85, level: "JO Level 6" },
   { file: "IMG_4061.MOV", event: "Uneven Bars", realScore: 8.525, level: "JO Level 6" },
+  { file: "IMG_9884.MOV", event: "Balance Beam", realScore: 8.85, level: "JO Level 6" },
+  { file: "IMG_5178 3.mov", event: "Floor Exercise", realScore: 8.925, level: "JO Level 6" },
 ];
 
 async function api(body) {
@@ -289,11 +292,36 @@ async function run(v) {
 }
 
 async function main() {
-  console.log("STRIVE — v13 BHPA Prompt Test\n");
+  console.log("STRIVE — v13 BHPA Prompt Test (All 4 Events)\n");
+  const results = [];
   for (const v of VIDEOS) {
-    try { await run(v); }
-    catch (e) { console.error(`  ❌ ${v.event}: ${e.message}`); }
+    try {
+      const r = await run(v);
+      if (r) results.push(r);
+    } catch (e) {
+      console.error(`  ❌ ${v.event}: ${e.message}`);
+      results.push({ event: v.event, ai: null, real: v.realScore, delta: null, pass: false });
+    }
   }
+
+  // Summary table
+  console.log(`\n\n${"═".repeat(60)}`);
+  console.log("SUMMARY — v13 BHPA Prompt");
+  console.log("═".repeat(60));
+  console.log(`${"Event".padEnd(18)} ${"AI".padEnd(8)} ${"Judge".padEnd(8)} ${"Delta".padEnd(8)} Result`);
+  console.log("-".repeat(50));
+  let passCount = 0;
+  for (const r of results) {
+    const ai = r.ai != null ? r.ai.toFixed(2) : "ERR";
+    const d = r.delta != null ? r.delta.toFixed(3) : "N/A";
+    console.log(`${r.event.padEnd(18)} ${ai.padEnd(8)} ${r.real.toFixed(3).padEnd(8)} ${d.padEnd(8)} ${r.pass ? "✅" : "❌"}`);
+    if (r.pass) passCount++;
+  }
+  const valid = results.filter(r => r.delta != null);
+  const avgDelta = valid.length > 0 ? (valid.reduce((s, r) => s + r.delta, 0) / valid.length) : 0;
+  console.log("-".repeat(50));
+  console.log(`${passCount}/${results.length} pass | avg Δ ${avgDelta.toFixed(3)}`);
+  console.log("═".repeat(60));
 }
 
 main().catch(e => { console.error(e); process.exit(1); });
