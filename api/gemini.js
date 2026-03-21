@@ -151,15 +151,27 @@ async function handleGenerate(req, res, apiKey) {
     generationConfig,
   };
 
-  // Add thinking config if provided (Gemini 2.5+ feature)
+  // Add thinking config as a TOP-LEVEL sibling (NOT nested inside generationConfig)
   if (thinkingConfig) {
-    body.generationConfig.thinkingConfig = thinkingConfig;
+    body.thinkingConfig = thinkingConfig;
   }
 
   // Add system instruction if provided
   if (systemPrompt) {
     body.systemInstruction = { parts: [{ text: systemPrompt }] };
   }
+
+  // ── DEBUG: Log full payload for diagnostic verification ──
+  console.log('[gemini-proxy] FULL PAYLOAD:', JSON.stringify({
+    model: 'gemini-2.5-flash',
+    hasSystemInstruction: !!body.systemInstruction,
+    systemInstructionLength: body.systemInstruction?.parts?.[0]?.text?.length || 0,
+    userPromptLength: body.contents?.[0]?.parts?.[1]?.text?.length || 0,
+    generationConfig: body.generationConfig,
+    thinkingConfig: body.thinkingConfig || 'NONE',
+    hasFileData: !!body.contents?.[0]?.parts?.[0]?.file_data,
+    fileUri: body.contents?.[0]?.parts?.[0]?.file_data?.file_uri || 'NONE',
+  }, null, 2));
 
   const genRes = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
