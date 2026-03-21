@@ -1,275 +1,390 @@
 {
   "scorecard": {
     "start_value": 10,
-    "final_score": 8.5,
+    "final_score": 8.75,
     "deduction_log": [
       {
-        "skill_name": "Split Jump",
+        "skill_name": "Initial Dance Sequence",
         "skill_order": 1,
-        "timestamp_start": 28,
-        "timestamp_end": 30,
+        "timestamp_start": 0,
+        "timestamp_end": 6,
         "executed_successfully": true,
-        "difficulty_value": 0.1,
+        "difficulty_value": 0,
         "total_deduction": 0.05,
         "deductions": [
           {
-            "type": "Landing Fault",
-            "body_part": "Feet",
-            "description": "Small hop on landing",
+            "type": "Execution",
+            "body_part": "Knees",
+            "description": "Soft knees during floor work",
             "point_value": 0.05
           }
         ],
-        "quality_grade": 0.95,
-        "reason": "Executed with good height, but a small hop on landing.",
+        "quality_grade": 9.95,
+        "reason": "Minor form break.",
+        "is_celebration": false
+      },
+      {
+        "skill_name": "Floor Roll to Seated",
+        "skill_order": 2,
+        "timestamp_start": 6,
+        "timestamp_end": 10,
+        "executed_successfully": true,
+        "difficulty_value": 0,
+        "total_deduction": 0.1,
+        "deductions": [
+          {
+            "type": "Execution",
+            "body_part": "Feet",
+            "description": "Flexed feet during roll",
+            "point_value": 0.05
+          },
+          {
+            "type": "Execution",
+            "body_part": "Body",
+            "description": "Slight arch in back during transition",
+            "point_value": 0.05
+          }
+        ],
+        "quality_grade": 9.9,
+        "reason": "Minor form breaks.",
+        "is_celebration": false
+      },
+      {
+        "skill_name": "Arm Waves & Leg Extension",
+        "skill_order": 3,
+        "timestamp_start": 10,
+        "timestamp_end": 20,
+        "executed_successfully": true,
+        "difficulty_value": 0,
+        "total_deduction": 0.15,
+        "deductions": [
+          {
+            "type": "Execution",
+            "body_part": "Hands",
+            "description": "Limp wrists",
+            "point_value": 0.05
+          },
+          {
+            "type": "Execution",
+            "body_part": "Feet",
+            "description": "Flexed foot during leg extension",
+            "point_value": 0.05
+          },
+          {
+            "type": "Execution",
+            "body_part": "Knees",
+            "description": "Soft knee on supporting leg",
+            "point_value": 0.05
+          }
+        ],
+        "quality_grade": 9.85,
+        "reason": "Lack of tension in feet, wrists, and knees.",
+        "is_celebration": false
+      },
+      {
+        "skill_name": "Stand Up & Walk",
+        "skill_order": 4,
+        "timestamp_start": 20,
+        "timestamp_end": 28,
+        "executed_successfully": true,
+        "difficulty_value": 0,
+        "total_deduction": 0.05,
+        "deductions": [
+          {
+            "type": "Execution",
+            "body_part": "Feet",
+            "description": "Flat footwork",
+            "point_value": 0.05
+          }
+        ],
+        "quality_grade": 9.95,
+        "reason": "Basic footwork error.",
+        "is_celebration": false
+      },
+      {
+        "skill_name": "Jump to Pose",
+        "skill_order": 5,
+        "timestamp_start": 28,
+        "timestamp_end": 30,
+        "executed_successfully": true,
+        "difficulty_value": 0,
+        "total_deduction": 0.1,
+        "deductions": [
+          {
+            "type": "Execution",
+            "body_part": "Body",
+            "description": "Slight pike in jump",
+            "point_value": 0.05
+          },
+          {
+            "type": "Execution",
+            "body_part": "Landing",
+            "description": "Slight chest drop on landing",
+            "point_value": 0.05
+          }
+        ],
+        "quality_grade": 9.9,
+        "reason": "Minor form breaks.",
         "is_celebration": false
       },
       {
         "skill_name": "Round-off Back Handspring Back Tuck",
-        "skill_order": 2,
+        "skill_order": 6,
         "timestamp_start": 32,
-        "timestamp_end": 36,
+        "timestamp_end": 37,
         "executed_successfully": true,
         "difficulty_value": 0.2,
-        "total_deduction": 0.25,
+        "total_deduction": 0.6,
         "deductions": [
           {
-            "type": "Execution Fault",
+            "type": "Execution",
+            "body_part": "Legs",
+            "description": "Bent knees in round-off",
+            "point_value": 0.1
+          },
+          {
+            "type": "Execution",
+            "body_part": "Legs",
+            "description": "Bent knees in back handspring",
+            "point_value": 0.1
+          },
+          {
+            "type": "Execution",
+            "body_part": "Legs",
+            "description": "Leg separation (cowboy) in back tuck",
+            "point_value": 0.1
+          },
+          {
+            "type": "Execution",
+            "body_part": "Height",
+            "description": "Low salto height",
+            "point_value": 0.1
+          },
+          {
+            "type": "Execution",
+            "body_part": "Landing",
+            "description": "Deep squat on landing",
+            "point_value": 0.1
+          },
+          {
+            "type": "Execution",
+            "body_part": "Landing",
+            "description": "Small step on landing",
+            "point_value": 0.05
+          },
+          {
+            "type": "Execution",
             "body_part": "Arms",
-            "description": "Slight bent arms in back handspring",
-            "point_value": 0.05
-          },
-          {
-            "type": "Execution Fault",
-            "body_part": "Knees",
-            "description": "Slight bent knees in back handspring",
-            "point_value": 0.05
-          },
-          {
-            "type": "Execution Fault",
-            "body_part": "Body Alignment",
-            "description": "Slight pike in back tuck",
-            "point_value": 0.05
-          },
-          {
-            "type": "Landing Fault",
-            "body_part": "Feet",
-            "description": "Small step back on landing",
-            "point_value": 0.05
-          },
-          {
-            "type": "Landing Fault",
-            "body_part": "Body Posture",
-            "description": "Chest slightly down on landing",
+            "description": "Arm circle on landing",
             "point_value": 0.05
           }
         ],
-        "quality_grade": 0.75,
-        "reason": "Completed the pass, but with several form breaks and a landing adjustment.",
-        "is_celebration": false,
-        "strength_note": "Successfully completed the required salto pass."
+        "quality_grade": 9.4,
+        "reason": "Multiple form breaks throughout the pass, low height, and landing control issues.",
+        "is_celebration": false
+      },
+      {
+        "skill_name": "Dance/Floor Work",
+        "skill_order": 7,
+        "timestamp_start": 37,
+        "timestamp_end": 44,
+        "executed_successfully": true,
+        "difficulty_value": 0,
+        "total_deduction": 0.1,
+        "deductions": [
+          {
+            "type": "Execution",
+            "body_part": "Feet",
+            "description": "Flexed feet during floor work",
+            "point_value": 0.05
+          },
+          {
+            "type": "Execution",
+            "body_part": "Knees",
+            "description": "Soft knees during floor work",
+            "point_value": 0.05
+          }
+        ],
+        "quality_grade": 9.9,
+        "reason": "Lack of tension in feet and knees.",
+        "is_celebration": false
       },
       {
         "skill_name": "Full Turn",
-        "skill_order": 3,
-        "timestamp_start": 36,
-        "timestamp_end": 39,
-        "executed_successfully": true,
-        "difficulty_value": 0.1,
-        "total_deduction": 0.1,
-        "deductions": [
-          {
-            "type": "Execution Fault",
-            "body_part": "Feet",
-            "description": "Heel drop before 360 degrees",
-            "point_value": 0.1
-          }
-        ],
-        "quality_grade": 0.9,
-        "reason": "Turn completed, but with an early heel drop.",
-        "is_celebration": false
-      },
-      {
-        "skill_name": "Switch Leap",
-        "skill_order": 4,
+        "skill_order": 8,
         "timestamp_start": 44,
-        "timestamp_end": 47,
+        "timestamp_end": 48,
         "executed_successfully": true,
         "difficulty_value": 0.1,
-        "total_deduction": 0.15,
+        "total_deduction": 0.2,
         "deductions": [
           {
-            "type": "Execution Fault",
-            "body_part": "Legs",
-            "description": "Insufficient 180 degree split (noticeable)",
+            "type": "Execution",
+            "body_part": "Feet",
+            "description": "Heel drop before 360 completion",
             "point_value": 0.1
           },
           {
-            "type": "Execution Fault",
-            "body_part": "Feet",
-            "description": "Slight flexed foot",
+            "type": "Execution",
+            "body_part": "Legs",
+            "description": "Loose free leg",
+            "point_value": 0.05
+          },
+          {
+            "type": "Execution",
+            "body_part": "Body",
+            "description": "Slight wobble on finish",
             "point_value": 0.05
           }
         ],
-        "quality_grade": 0.85,
-        "reason": "Leap performed, but split position was noticeably short of 180 degrees.",
+        "quality_grade": 9.8,
+        "reason": "Control and form issues.",
         "is_celebration": false
       },
       {
-        "skill_name": "Sissone",
-        "skill_order": 5,
+        "skill_name": "Split Leap",
+        "skill_order": 9,
         "timestamp_start": 50,
-        "timestamp_end": 53,
+        "timestamp_end": 54,
         "executed_successfully": true,
         "difficulty_value": 0.1,
+        "total_deduction": 0.2,
+        "deductions": [
+          {
+            "type": "Execution",
+            "body_part": "Legs",
+            "description": "Insufficient split (approx 130-140 degrees)",
+            "point_value": 0.1
+          },
+          {
+            "type": "Execution",
+            "body_part": "Feet",
+            "description": "Flexed feet in flight",
+            "point_value": 0.05
+          },
+          {
+            "type": "Execution",
+            "body_part": "Landing",
+            "description": "Slight chest drop on landing",
+            "point_value": 0.05
+          }
+        ],
+        "quality_grade": 9.8,
+        "reason": "Split angle not meeting 150 degree requirement, minor form breaks.",
+        "is_celebration": false
+      },
+      {
+        "skill_name": "Round-off Back Handspring Back Tuck",
+        "skill_order": 10,
+        "timestamp_start": 58,
+        "timestamp_end": 102,
+        "executed_successfully": true,
+        "difficulty_value": 0.2,
+        "total_deduction": 0.6,
+        "deductions": [
+          {
+            "type": "Execution",
+            "body_part": "Legs",
+            "description": "Bent knees in round-off",
+            "point_value": 0.1
+          },
+          {
+            "type": "Execution",
+            "body_part": "Legs",
+            "description": "Bent knees in back handspring",
+            "point_value": 0.1
+          },
+          {
+            "type": "Execution",
+            "body_part": "Legs",
+            "description": "Leg separation (cowboy) in back tuck",
+            "point_value": 0.1
+          },
+          {
+            "type": "Execution",
+            "body_part": "Height",
+            "description": "Low salto height",
+            "point_value": 0.1
+          },
+          {
+            "type": "Execution",
+            "body_part": "Landing",
+            "description": "Deep squat on landing",
+            "point_value": 0.1
+          },
+          {
+            "type": "Execution",
+            "body_part": "Landing",
+            "description": "Small step on landing",
+            "point_value": 0.05
+          },
+          {
+            "type": "Execution",
+            "body_part": "Arms",
+            "description": "Arm circle on landing",
+            "point_value": 0.05
+          }
+        ],
+        "quality_grade": 9.4,
+        "reason": "Consistent form breaks as in the first pass, low height, and landing control issues.",
+        "is_celebration": false
+      },
+      {
+        "skill_name": "Final Split Pose",
+        "skill_order": 11,
+        "timestamp_start": 106,
+        "timestamp_end": 110,
+        "executed_successfully": true,
+        "difficulty_value": 0,
         "total_deduction": 0.05,
         "deductions": [
           {
-            "type": "Execution Fault",
+            "type": "Execution",
             "body_part": "Feet",
-            "description": "Slight flexed foot",
+            "description": "Flexed foot",
             "point_value": 0.05
           }
         ],
-        "quality_grade": 0.95,
-        "reason": "Jump completed with good form, minor foot error.",
-        "is_celebration": false
-      },
-      {
-        "skill_name": "Front Handspring Front Tuck",
-        "skill_order": 6,
-        "timestamp_start": 56,
-        "timestamp_end": 62,
-        "executed_successfully": true,
-        "difficulty_value": 0.2,
-        "total_deduction": 0.35,
-        "deductions": [
-          {
-            "type": "Execution Fault",
-            "body_part": "Arms",
-            "description": "Slight bent arms in front handspring",
-            "point_value": 0.05
-          },
-          {
-            "type": "Execution Fault",
-            "body_part": "Knees",
-            "description": "Slight bent knees in front handspring",
-            "point_value": 0.05
-          },
-          {
-            "type": "Execution Fault",
-            "body_part": "Body Alignment",
-            "description": "Slight pike in front tuck",
-            "point_value": 0.05
-          },
-          {
-            "type": "Landing Fault",
-            "body_part": "Feet",
-            "description": "Medium step forward on landing",
-            "point_value": 0.1
-          },
-          {
-            "type": "Landing Fault",
-            "body_part": "Body Posture",
-            "description": "Chest down on landing",
-            "point_value": 0.1
-          }
-        ],
-        "quality_grade": 0.65,
-        "reason": "Completed the second salto pass, but with noticeable form breaks and a larger landing adjustment.",
-        "is_celebration": false,
-        "strength_note": "Successfully completed the second required salto pass."
-      },
-      {
-        "skill_name": "Back Walkover",
-        "skill_order": 7,
-        "timestamp_start": 62,
-        "timestamp_end": 66,
-        "executed_successfully": true,
-        "difficulty_value": 0.1,
-        "total_deduction": 0.15,
-        "deductions": [
-          {
-            "type": "Execution Fault",
-            "body_part": "Knees",
-            "description": "Noticeable bent knees",
-            "point_value": 0.1
-          },
-          {
-            "type": "Execution Fault",
-            "body_part": "Feet",
-            "description": "Slight flexed feet",
-            "point_value": 0.05
-          }
-        ],
-        "quality_grade": 0.85,
-        "reason": "Skill completed, but with noticeable bent knees and flexed feet.",
-        "is_celebration": false
-      },
-      {
-        "skill_name": "Split",
-        "skill_order": 8,
-        "timestamp_start": 66,
-        "timestamp_end": 69,
-        "executed_successfully": true,
-        "difficulty_value": 0.1,
-        "total_deduction": 0.1,
-        "deductions": [
-          {
-            "type": "Execution Fault",
-            "body_part": "Legs",
-            "description": "Not a full 180 degree split (noticeable)",
-            "point_value": 0.1
-          }
-        ],
-        "quality_grade": 0.9,
-        "reason": "Held the split, but it was noticeably short of 180 degrees.",
+        "quality_grade": 9.95,
+        "reason": "Minor form issue.",
         "is_celebration": false
       }
     ],
     "artistry": {
       "total_artistry_deduction": 0.3,
-      "choreography_variety_deduction": 0,
+      "choreography_variety_deduction": 0.05,
       "expression_deduction": 0.1,
       "musicality_deduction": 0.05,
-      "notes": "Gymnast showed some good moments of expression, but overall presentation could be more dynamic. Chin was down frequently during non-tumbling sections, and some arm/hand positions lacked crispness. Musicality was generally present but could be more impactful with the dramatic sections of the music.",
-      "quality_of_movement_deduction": 0.15
+      "notes": "Gymnast displayed a generally neutral facial expression throughout the routine. Transitions were often functional rather than expressive. Some flat footwork and lack of relevé were observed. Musicality was present but not always fully embodied.",
+      "quality_of_movement_deduction": 0.1
     },
-    "coaching_summary": "This was a solid Level 6 routine with all special requirements met. The gymnast demonstrated good effort and completed all skills. To improve scores, focus on refining body lines and control, especially during tumbling and leaps. Artistry can also be enhanced with more consistent facial expression and precise hand/arm movements.",
+    "coaching_summary": "This Level 6 floor routine demonstrates a solid foundation of skills, but significant execution deductions accumulated, particularly in tumbling and dance elements. The two identical acro passes resulted in a special requirement penalty. Focus on refining body tension, amplitude, and landing control will be crucial for higher scores. Artistry also needs development to elevate the overall presentation.",
     "top_3_fixes": [
-      "Improve landing control on all tumbling passes to eliminate steps and hops.",
-      "Focus on maintaining straight arms and legs, and a tight body shape in all acro skills to reduce bent limb deductions.",
-      "Increase flexibility and extension in leaps and holds to achieve a full 180-degree split."
+      "Improve body tension and toe point throughout all dance and acro elements to eliminate micro-deductions (flexed feet, soft knees, limp wrists).",
+      "Increase height and amplitude in tumbling passes, specifically the back tucks, and work on cleaner landings with minimal steps or squats.",
+      "Develop more varied and expressive choreography, ensuring two *different* acro passes are performed to meet special requirements, and enhance facial expression and musicality."
     ],
-    "celebrations": [
-      "Successfully completed two different acro passes, both with a salto, meeting Level 6 requirements.",
-      "Demonstrated good control and balance throughout the routine, despite minor form breaks.",
-      "The overall flow and presentation of the routine were commendable."
-    ],
+    "celebrations": [],
     "confidence": "High",
-    "duration_seconds": 70,
+    "duration_seconds": 110,
     "special_requirements": [
       {
-        "penalty": 0,
-        "requirement": "Two different acro passes",
-        "status": "Met"
-      },
-      {
-        "penalty": 0,
-        "requirement": "Salto required in both acro passes",
-        "status": "Met"
+        "penalty": 0.5,
+        "requirement": "Two different acro passes, salto required in both.",
+        "status": "Not Met - Two identical acro passes were performed."
       }
     ],
-    "total_execution_deductions": 1.2
+    "total_execution_deductions": 2
   },
   "computed": {
-    "executionTotal": 1.2000000000000004,
+    "executionTotal": 2.2,
     "artistryTotal": 0.3,
-    "srTotal": 0,
-    "totalDeductions": 1.5000000000000004,
-    "codeScore": 8.5,
-    "aiScore": 8.5,
-    "finalScore": 8.5,
-    "delta": 0.4250000000000007,
-    "deductionCount": 18
+    "srTotal": 0.5,
+    "totalDeductions": 3,
+    "codeScore": 7,
+    "aiScore": 8.75,
+    "finalScore": 7,
+    "delta": 1.9250000000000007,
+    "deductionCount": 32
   }
 }
