@@ -259,9 +259,41 @@ async function run(v) {
     else { console.error("JSON parse failed. Raw:", text.substring(0, 500)); return null; }
   }
 
+  // ── Code-computed calibrated score (replicates scoring.js logic) ────────
+  const EVENT_CALIBRATION = {
+    VAULT: 1.35, BARS: 0.85, BEAM: 0.70, FLOOR: 0.70,
+  };
+  function getCalFactor(evt) {
+    const e = (evt || "").toUpperCase();
+    if (/VAULT/.test(e)) return EVENT_CALIBRATION.VAULT;
+    if (/BAR/.test(e)) return EVENT_CALIBRATION.BARS;
+    if (/BEAM/.test(e)) return EVENT_CALIBRATION.BEAM;
+    if (/FLOOR/.test(e)) return EVENT_CALIBRATION.FLOOR;
+    return 0.80;
+  }
+  function snapUSAG(n) {
+    return Math.round(Math.abs(n) * 20) / 20;
+  }
+
+  const calFactor = getCalFactor(v.event);
+  let rawExec = 0;
+  for (const entry of (sc.deduction_log || [])) {
+    if (Array.isArray(entry.deductions) && entry.deductions.length > 0) {
+      for (const d of entry.deductions) rawExec += snapUSAG(d.point_value || 0);
+    } else {
+      rawExec += snapUSAG(entry.total_deduction || 0);
+    }
+  }
+  const rawArt = Math.abs(sc.artistry?.total_artistry_deduction || 0);
+  const srPenalty = (sc.special_requirements || []).reduce((s, r) => s + Math.abs(r.penalty || 0), 0);
+  const scaledExec = Math.round(rawExec * calFactor * 1000) / 1000;
+  const scaledArt = Math.round(rawArt * calFactor * 1000) / 1000;
+  const codeScore = Math.round((10.0 - scaledExec - scaledArt - srPenalty) * 1000) / 1000;
+
   const ai = sc.final_score;
-  const delta = Math.abs(ai - v.realScore);
-  const pass = delta <= 0.10;
+  const aiDelta = Math.abs(ai - v.realScore);
+  const codeDelta = Math.abs(codeScore - v.realScore);
+  const pass = codeDelta <= 0.10;
   const elapsed = ((Date.now() - t0) / 1000).toFixed(0);
 
   console.log("SKILLS:");
@@ -273,22 +305,22 @@ async function run(v) {
     if (s.strength_note) console.log(`     ✦ ${s.strength_note}`);
   }
 
-  console.log(`\nExec: -${sc.total_execution_deductions} | Art: -${sc.total_artistry_deductions}`);
+  console.log(`\nRaw Exec: -${rawExec.toFixed(3)} | Raw Art: -${rawArt} | SR: -${srPenalty}`);
+  console.log(`Calibration: ×${calFactor} → Scaled Exec: -${scaledExec.toFixed(3)} | Scaled Art: -${scaledArt.toFixed(3)}`);
   console.log(`Score range: ${sc.score_range?.low} - ${sc.score_range?.high}`);
-  console.log(`Coaching: ${sc.coaching_summary?.substring(0, 200)}`);
-  console.log(`Top 3: ${(sc.top_3_fixes || []).join(" | ")}`);
 
   console.log(`\n${"═".repeat(60)}`);
-  console.log(`  AI: ${ai}  |  Judge: ${v.realScore}  |  Δ ${delta.toFixed(3)} ${pass ? "✅ PASS" : "❌ FAIL"}  |  ${elapsed}s`);
-  console.log(`  Skills: ${sc.deduction_log?.length}  |  Confidence: ${sc.confidence}`);
+  console.log(`  AI raw:  ${ai}     |  Judge: ${v.realScore}  |  Δ ${aiDelta.toFixed(3)}`);
+  console.log(`  Code:    ${codeScore.toFixed(2)}   |  Judge: ${v.realScore}  |  Δ ${codeDelta.toFixed(3)} ${pass ? "✅ PASS" : "❌ FAIL"}`);
+  console.log(`  Cal: ×${calFactor}  |  Skills: ${sc.deduction_log?.length}  |  ${elapsed}s`);
   console.log("═".repeat(60));
 
   try { await api({ action: "deleteFile", fileName: f.fileName }); } catch {}
   const outPath = path.join(process.env.HOME, "Desktop/StriveGymnastics/scripts", `debug-v13-${v.event.replace(/\s/g, "_").toLowerCase()}.json`);
-  fs.writeFileSync(outPath, JSON.stringify(sc, null, 2));
+  fs.writeFileSync(outPath, JSON.stringify({ ...sc, _code_score: codeScore, _cal_factor: calFactor, _raw_exec: rawExec, _scaled_exec: scaledExec }, null, 2));
   console.log(`Full JSON: ${outPath}`);
 
-  return { event: v.event, ai, real: v.realScore, delta, pass };
+  return { event: v.event, ai, code: codeScore, real: v.realScore, aiDelta, codeDelta, pass };
 }
 
 async function main() {
@@ -308,20 +340,23 @@ async function main() {
   console.log(`\n\n${"═".repeat(60)}`);
   console.log("SUMMARY — v13 BHPA Prompt");
   console.log("═".repeat(60));
-  console.log(`${"Event".padEnd(18)} ${"AI".padEnd(8)} ${"Judge".padEnd(8)} ${"Delta".padEnd(8)} Result`);
-  console.log("-".repeat(50));
+  console.log(`${"Event".padEnd(18)} ${"AI Raw".padEnd(8)} ${"Code".padEnd(8)} ${"Judge".padEnd(8)} ${"AI Δ".padEnd(8)} ${"Code Δ".padEnd(8)} Result`);
+  console.log("-".repeat(70));
   let passCount = 0;
   for (const r of results) {
     const ai = r.ai != null ? r.ai.toFixed(2) : "ERR";
-    const d = r.delta != null ? r.delta.toFixed(3) : "N/A";
-    console.log(`${r.event.padEnd(18)} ${ai.padEnd(8)} ${r.real.toFixed(3).padEnd(8)} ${d.padEnd(8)} ${r.pass ? "✅" : "❌"}`);
+    const code = r.code != null ? r.code.toFixed(2) : "ERR";
+    const ad = r.aiDelta != null ? r.aiDelta.toFixed(3) : "N/A";
+    const cd = r.codeDelta != null ? r.codeDelta.toFixed(3) : "N/A";
+    console.log(`${r.event.padEnd(18)} ${ai.padEnd(8)} ${code.padEnd(8)} ${r.real.toFixed(3).padEnd(8)} ${ad.padEnd(8)} ${cd.padEnd(8)} ${r.pass ? "✅" : "❌"}`);
     if (r.pass) passCount++;
   }
-  const valid = results.filter(r => r.delta != null);
-  const avgDelta = valid.length > 0 ? (valid.reduce((s, r) => s + r.delta, 0) / valid.length) : 0;
-  console.log("-".repeat(50));
-  console.log(`${passCount}/${results.length} pass | avg Δ ${avgDelta.toFixed(3)}`);
-  console.log("═".repeat(60));
+  const valid = results.filter(r => r.codeDelta != null);
+  const avgAiDelta = valid.length > 0 ? (valid.reduce((s, r) => s + r.aiDelta, 0) / valid.length) : 0;
+  const avgCodeDelta = valid.length > 0 ? (valid.reduce((s, r) => s + r.codeDelta, 0) / valid.length) : 0;
+  console.log("-".repeat(70));
+  console.log(`${passCount}/${results.length} pass | avg AI Δ ${avgAiDelta.toFixed(3)} | avg Code Δ ${avgCodeDelta.toFixed(3)}`);
+  console.log("═".repeat(70));
 }
 
 main().catch(e => { console.error(e); process.exit(1); });

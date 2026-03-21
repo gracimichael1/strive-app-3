@@ -166,17 +166,18 @@ export async function runAnalysisPipeline({ videoFile, profile, event, onProgres
   // ══════════════════════════════════════════════════════════════════════════
   const isElite = /elite/i.test(profile.level || "");
   const startValue = scorecard.start_value || 10.0;
-  const scoring = computeScoreFromScorecard(scorecard, startValue, { isElite });
+  const detectedEvent = scorecard.event || event;
+  const scoring = computeScoreFromScorecard(scorecard, startValue, { isElite, event: detectedEvent });
 
   if (scoring.warning) {
     log.warn("score", scoring.warning);
   }
 
   const finalScore = scoring.final_score;
-  const detectedEvent = scorecard.event || event;
 
   log.info("score", `FINAL: ${finalScore} | D: ${scoring.d_score} | E: ${scoring.e_score} | ` +
-    `Exec: -${scoring.execution_total} | Art: -${scoring.artistry_total} | SR: -${scoring.sr_total} | ` +
+    `Exec: -${scoring.execution_total} (raw: ${scoring.calibration.raw_execution}, factor: ${scoring.calibration.factor}) | ` +
+    `Art: -${scoring.artistry_total} | SR: -${scoring.sr_total} | ` +
     `Skills: ${scorecard.deduction_log.length} | AI said: ${scorecard.final_score} (diff: ${scoring.score_diff})`);
 
   // ── Merge Pass 1 + Pass 2 ────────────────────────────────────────────────
@@ -253,6 +254,23 @@ export async function runAnalysisPipeline({ videoFile, profile, event, onProgres
   try {
     geminiProxy({ action: "deleteFile", fileName: fileRef.fileName });
   } catch {}
+
+  // ── Log training data (fire and forget) ────────────────────────────────
+  try {
+    logTrainingData({
+      videoId: videoFile.name || "unknown",
+      event: detectedEvent,
+      level: profile.level || "",
+      aiScore: finalScore,
+      promptVersion: PROMPT_VERSION,
+      calibrationFactor: scoring.calibration?.factor,
+      rawExecution: scoring.calibration?.raw_execution,
+      scaledExecution: scoring.calibration?.scaled_execution,
+      skillCount: scorecard.deduction_log?.length || 0,
+    });
+  } catch (e) {
+    log.warn("training", `Training data log failed: ${e.message}`);
+  }
 
   onProgress({ stage: "complete", pct: 100, label: "Analysis complete!" });
   return uiResult;
@@ -464,6 +482,20 @@ function writeCache(key, result) {
   } catch (e) {
     log.warn("cache", `Cache write failed: ${e.message}`);
   }
+}
+
+
+// ─── Training data logging ──────────────────────────────────────────────────
+
+function logTrainingData(data) {
+  fetch("/api/scores", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Strive-Token": STRIVE_TOKEN,
+    },
+    body: JSON.stringify(data),
+  }).catch(() => {}); // Fire and forget
 }
 
 

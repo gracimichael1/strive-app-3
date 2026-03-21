@@ -123,6 +123,53 @@ module.exports = function (app) {
     });
   });
 
+  // ── Training data collection endpoint ──────────────────────────────────
+  const fs = require('fs');
+  const logPath = require('path');
+  const LOG_DIR = logPath.join(process.cwd(), 'logs');
+  const LOG_FILE = logPath.join(LOG_DIR, 'training-data.jsonl');
+
+  app.post('/api/scores', (req, res) => {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => {
+      try {
+        const data = JSON.parse(body);
+        const record = {
+          videoId: data.videoId || 'unknown',
+          event: data.event || '',
+          level: data.level || '',
+          aiScore: data.aiScore ?? null,
+          judgeScore: data.judgeScore ?? null,
+          videoQualityRating: data.videoQualityRating ?? null,
+          timestamp: new Date().toISOString(),
+          promptVersion: data.promptVersion || null,
+          calibrationFactor: data.calibrationFactor || null,
+          rawExecution: data.rawExecution || null,
+          scaledExecution: data.scaledExecution || null,
+          skillCount: data.skillCount || null,
+        };
+        if (!fs.existsSync(LOG_DIR)) fs.mkdirSync(LOG_DIR, { recursive: true });
+        fs.appendFileSync(LOG_FILE, JSON.stringify(record) + '\n', 'utf-8');
+        console.log(`[scores] Recorded: ${record.event} | AI: ${record.aiScore} | Judge: ${record.judgeScore}`);
+        res.json({ ok: true, record });
+      } catch (e) {
+        res.status(400).json({ error: e.message });
+      }
+    });
+  });
+
+  app.get('/api/scores', (req, res) => {
+    try {
+      if (!fs.existsSync(LOG_FILE)) return res.json({ records: [], count: 0 });
+      const raw = fs.readFileSync(LOG_FILE, 'utf-8');
+      const records = raw.split('\n').filter(l => l.trim()).map(l => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean);
+      res.json({ records, count: records.length });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
   // Deprecate old endpoint
   app.get('/api/gemini-key', (req, res) => {
     res.status(410).json({ error: 'Retired. Use /api/gemini proxy.', available: false });
