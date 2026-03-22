@@ -3181,7 +3181,7 @@ const UploadScreen = React.memo(function UploadScreen({ profile, onBack, onAnaly
   const [compressing, setCompressing] = useState(false);
   const [compressProgress, setCompressProgress] = useState(0);
   const [originalSize, setOriginalSize] = useState(0);
-  const [event, setEvent] = useState("Auto-detect");
+  const [event, setEvent] = useState("");
   const [notes, setNotes] = useState("");
   const [meetName, setMeetName] = useState("");
   const [meetLocation, setMeetLocation] = useState("");
@@ -3562,23 +3562,10 @@ const UploadScreen = React.memo(function UploadScreen({ profile, onBack, onAnaly
 
       {/* Event Selection */}
       <div style={{ marginBottom: 20 }}>
-        <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, display: "block", color: "rgba(255,255,255,0.6)" }}>
-          EVENT
+        <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, display: "block", color: "rgba(255,255,255,0.85)" }}>
+          EVENT (required)
         </label>
-        <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(events.length + 1, 5)}, 1fr)`, gap: 8 }}>
-          <button
-            key="auto"
-            onClick={() => setEvent("Auto-detect")}
-            style={{
-              padding: "12px 8px", borderRadius: 10, border: "none", cursor: "pointer",
-              fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 11,
-              background: event === "Auto-detect" ? "linear-gradient(135deg, #22c55e, #4ade80)" : "rgba(255,255,255,0.06)",
-              color: event === "Auto-detect" ? "#070c16" : "rgba(255,255,255,0.5)",
-              transition: "all 0.2s",
-            }}
-          >
-            Auto
-          </button>
+        <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(events.length, 5)}, 1fr)`, gap: 8 }}>
           {events.map(e => (
             <button
               key={e}
@@ -3595,11 +3582,16 @@ const UploadScreen = React.memo(function UploadScreen({ profile, onBack, onAnaly
             </button>
           ))}
         </div>
+        {/* Helper text when no event selected */}
+        {!event && (
+          <div style={{ marginTop: 8, fontSize: 12, color: "rgba(232,150,42,0.8)", padding: "8px 12px", background: "rgba(232,150,42,0.06)", borderRadius: 8 }}>
+            Select an event to enable analysis
+          </div>
+        )}
         {/* Event-specific filming tip */}
         {event && (
           <div style={{ marginTop: 8, padding: "8px 12px", borderRadius: 8, background: "rgba(232,150,42,0.04)", fontSize: 11, color: "rgba(255,255,255,0.4)", lineHeight: 1.5 }}>
             {{
-              "Auto-detect": "We'll identify the event automatically. Film from the SIDE at apparatus height — this is critical for scoring accuracy.",
               "Vault": "Side view capturing full run → board → table → landing. This lets us measure pre-flight and post-flight angles accurately.",
               "Uneven Bars": "Side view from the LOW BAR side at bar height. This is the #1 factor for accurate cast and circle scoring on bars.",
               "Balance Beam": "Side view showing full beam length. This captures balance checks, foot placement, and acro form that we can't see from the end.",
@@ -5132,7 +5124,7 @@ IMPORTANT: The deduction_log must contain ONE entry per distinct skill or transi
             level: profile.level || "Level 6",
             levelCategory: profile.levelCategory || "optional",
           },
-          event: uploadData.event || "Auto-detect",
+          event: uploadData.event || "Floor Exercise",
           onProgress: ({ pct, label }) => {
             setProgress(pct);
             setStatus(label);
