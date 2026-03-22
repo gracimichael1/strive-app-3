@@ -235,6 +235,7 @@ export async function runAnalysisPipeline({ videoFile, profile, event, onProgres
       athlete_recommendations: "",
     },
     nutrition_note: pass2Result?.nutrition_note || "",
+    levelProgressionAnalysis: scorecard.levelProgressionAnalysis || null,
     _meta: {
       prompt_version: PROMPT_VERSION,
       timestamp: Date.now(),

@@ -59,7 +59,7 @@ const PLACEHOLDER = "—";
  * @returns {Object} - Shape compatible with existing ResultsScreen / SkillCard props
  */
 export function transformForUI(pipelineResult, extras = {}) {
-  const { routine_summary, skills, special_requirements, training_plan, mental_performance, nutrition_note, _meta } = pipelineResult;
+  const { routine_summary, skills, special_requirements, training_plan, mental_performance, nutrition_note, levelProgressionAnalysis, _meta } = pipelineResult;
 
   // ── Transform skills to SkillCard-compatible shape ────────────────────────
   const gradedSkills = skills.map((skill, idx) => transformSkill(skill, idx));
@@ -263,6 +263,9 @@ export function transformForUI(pipelineResult, extras = {}) {
     level: routine_summary.level,
     videoUrl: extras.videoUrl || null,
     rawResponse: routine_summary.raw_gemini_response || null,
+
+    // ── Level progression (Section IV) ──
+    levelProgressionAnalysis: levelProgressionAnalysis || null,
   };
 }
 
