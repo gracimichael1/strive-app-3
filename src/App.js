@@ -1,5 +1,6 @@
 import React, { Suspense } from 'react';
 import { TierProvider } from './context/TierContext';
+import './utils/monitoring'; // Initialize Sentry + PostHog on app load
 import './styles/global.css';
 
 const LegacyApp = React.lazy(() => import('./LegacyApp'));

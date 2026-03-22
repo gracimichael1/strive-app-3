@@ -1470,6 +1470,12 @@ export default function LegacyApp() {
       }
       data.count++;
       localStorage.setItem(countKey, JSON.stringify(data));
+      // Track analysis events
+      try {
+        const { trackEvent } = require("./utils/monitoring");
+        trackEvent(data.count === 1 ? "first_analysis" : "analysis_completed", { event: uploadData?.event, count: data.count });
+        if (data.count >= 3) trackEvent("analysis_limit_hit", { count: data.count, tier: userTier });
+      } catch {}
     } catch {}
 
     setScreen("results");
@@ -1514,7 +1520,10 @@ export default function LegacyApp() {
       }} />
 
       {screen === "splash" && <SplashScreen onStart={() => setScreen("onboarding")} />}
-      {screen === "onboarding" && <OnboardingScreen onComplete={(p) => { saveProfile(p); setScreen("dashboard"); }} />}
+      {screen === "onboarding" && <OnboardingScreen onComplete={(p) => {
+        saveProfile(p); setScreen("dashboard");
+        try { const { trackEvent } = require("./utils/monitoring"); trackEvent("signup_completed", { level: p.level, role: p.role }); } catch {}
+      }} />}
       {screen === "dashboard" && (
         <StriveErrorBoundary name="Dashboard">
         {useNewDashboard ? (

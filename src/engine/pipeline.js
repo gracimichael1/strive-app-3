@@ -58,7 +58,9 @@ async function geminiProxy(body) {
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
-    throw new Error(err.error || `Server error (${res.status})`);
+    const error = new Error(err.error || `Server error (${res.status})`);
+    try { const { captureGeminiError } = require("../utils/monitoring"); captureGeminiError(error, body.action); } catch {}
+    throw error;
   }
 
   return res.json();
