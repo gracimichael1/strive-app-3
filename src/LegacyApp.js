@@ -2013,7 +2013,7 @@ function SplashScreen({ onStart }) {
         display: "flex", justifyContent: "center", gap: 20,
         opacity: entered ? 1 : 0, transition: "opacity 1s 1.2s",
       }}>
-        {["USAG Levels 1–10", "Xcel Bronze–Sapphire", "MAG & WAG"].map((badge, i) => (
+        {["USAG Levels 1–8", "Xcel Bronze–Gold", "WAG & MAG Beta"].map((badge, i) => (
           <span key={i} style={{
             fontSize: 8, fontWeight: 600, letterSpacing: 1.5,
             color: "rgba(232,150,42,0.25)", textTransform: "uppercase",
@@ -2187,24 +2187,58 @@ function OnboardingScreen({ onComplete }) {
           </button>
         ))}
       </div>
-      {levelOptions.length > 0 && (
+      {levelOptions.length > 0 && (() => {
+        const COMING_SOON_LEVELS = ["Level 9", "Level 10", "Elite", "Xcel Platinum", "Xcel Diamond", "Xcel Sapphire"];
+        return (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          {levelOptions.map(l => (
-            <button
-              key={l}
-              onClick={() => setLevel(l)}
-              style={{
-                padding: "14px 16px", borderRadius: 10, border: "none", cursor: "pointer",
-                fontFamily: "'Outfit', sans-serif", fontWeight: 500, fontSize: 14, textAlign: "left",
-                background: level === l ? "rgba(232,150,42,0.15)" : "rgba(255,255,255,0.04)",
-                color: level === l ? "#e8962a" : "rgba(255,255,255,0.6)",
-                border: `1.5px solid ${level === l ? "rgba(232,150,42,0.4)" : "rgba(255,255,255,0.06)"}`,
-                transition: "all 0.3s",
-              }}
-            >
-              {l}
-            </button>
-          ))}
+          {levelOptions.map(l => {
+            const isComingSoon = COMING_SOON_LEVELS.includes(l);
+            return (
+              <div key={l} style={{ position: "relative" }}>
+                <button
+                  onClick={() => !isComingSoon && setLevel(l)}
+                  style={{
+                    width: "100%", padding: "14px 16px", borderRadius: 10,
+                    cursor: isComingSoon ? "not-allowed" : "pointer",
+                    fontFamily: "'Outfit', sans-serif", fontWeight: 500, fontSize: 14, textAlign: "left",
+                    background: isComingSoon ? "rgba(255,255,255,0.02)" : level === l ? "rgba(232,150,42,0.15)" : "rgba(255,255,255,0.04)",
+                    color: isComingSoon ? "rgba(255,255,255,0.2)" : level === l ? "#e8962a" : "rgba(255,255,255,0.6)",
+                    border: `1.5px solid ${isComingSoon ? "rgba(255,255,255,0.04)" : level === l ? "rgba(232,150,42,0.4)" : "rgba(255,255,255,0.06)"}`,
+                    transition: "all 0.3s", opacity: isComingSoon ? 0.5 : 1,
+                  }}
+                >
+                  {l}
+                </button>
+                {isComingSoon && (
+                  <span style={{
+                    position: "absolute", top: 8, right: 8, fontSize: 9, fontWeight: 700, letterSpacing: 0.5,
+                    color: "rgba(232,150,42,0.6)", background: "rgba(232,150,42,0.08)",
+                    padding: "2px 7px", borderRadius: 99, border: "1px solid rgba(232,150,42,0.15)",
+                    textTransform: "uppercase", pointerEvents: "none",
+                  }}>Soon</span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        );
+      })()}
+      {levelCategory === "optional" && (
+        <div style={{ marginTop: 14, padding: "11px 14px", borderRadius: 10, background: "rgba(232,150,42,0.06)", border: "1px solid rgba(232,150,42,0.16)", display: "flex", gap: 10, alignItems: "flex-start" }}>
+          <span style={{ fontSize: 15, flexShrink: 0 }}>⭐</span>
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(232,150,42,0.9)", marginBottom: 3 }}>Beta covers Levels 1–8</div>
+            <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.4)", lineHeight: 1.55 }}>Levels 9, 10, and Elite are in development and coming soon. STRIVE is currently optimized for Levels 1–8 and Xcel Bronze–Gold.</div>
+          </div>
+        </div>
+      )}
+      {levelCategory === "xcel" && (
+        <div style={{ marginTop: 14, padding: "11px 14px", borderRadius: 10, background: "rgba(232,150,42,0.06)", border: "1px solid rgba(232,150,42,0.16)", display: "flex", gap: 10, alignItems: "flex-start" }}>
+          <span style={{ fontSize: 15, flexShrink: 0 }}>⭐</span>
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(232,150,42,0.9)", marginBottom: 3 }}>Beta covers Xcel Bronze through Gold</div>
+            <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.4)", lineHeight: 1.55 }}>Platinum, Diamond, and Sapphire are coming soon. STRIVE is currently optimized for Bronze, Silver, and Gold divisions.</div>
+          </div>
         </div>
       )}
     </div>,
