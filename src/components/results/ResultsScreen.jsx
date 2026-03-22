@@ -356,119 +356,182 @@ function SkillCard({ skill, index, isFree, freeDeductionLimit, globalDeductionIn
     if (!canvas || !video) return;
 
     let running = true;
+    let lastSendTime = 0;
+    console.log('[skeleton] Starting detection loop, video readyState:', video.readyState);
 
-    const loadCDN = () => new Promise((resolve) => {
-      if (window.Pose) return resolve();
-      // Load MediaPipe Pose + drawing utils from CDN
+    // Sync canvas size to video display size
+    const syncCanvasSize = () => {
+      const vRect = video.getBoundingClientRect();
+      if (vRect.width > 0 && vRect.height > 0) {
+        if (canvas.width !== vRect.width || canvas.height !== vRect.height) {
+          canvas.width = vRect.width;
+          canvas.height = vRect.height;
+        }
+        return true;
+      }
+      return false;
+    };
+
+    const loadCDN = () => new Promise((resolve, reject) => {
+      if (window.Pose) { console.log('[skeleton] Pose already loaded'); return resolve(); }
+      console.log('[skeleton] Loading MediaPipe CDN...');
+      // Check if scripts already in DOM
+      if (document.querySelector('script[src*="mediapipe/pose"]')) {
+        // Scripts exist but may still be loading — poll for window.Pose
+        const poll = setInterval(() => {
+          if (window.Pose) { clearInterval(poll); resolve(); }
+        }, 200);
+        setTimeout(() => { clearInterval(poll); reject(new Error('Pose CDN timeout')); }, 15000);
+        return;
+      }
       const s1 = document.createElement('script');
       s1.src = 'https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5/pose.js';
       s1.crossOrigin = 'anonymous';
+      s1.onerror = () => reject(new Error('Failed to load Pose CDN'));
       s1.onload = () => {
+        console.log('[skeleton] pose.js loaded');
         const s2 = document.createElement('script');
         s2.src = 'https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.3/drawing_utils.js';
         s2.crossOrigin = 'anonymous';
-        s2.onload = resolve;
+        s2.onerror = () => reject(new Error('Failed to load drawing_utils CDN'));
+        s2.onload = () => { console.log('[skeleton] drawing_utils loaded'); resolve(); };
         document.head.appendChild(s2);
       };
       document.head.appendChild(s1);
     });
 
+    const drawResults = (results) => {
+      if (!running) return;
+      if (!syncCanvasSize()) return;
+      const ctx = canvas.getContext('2d');
+      const cw = canvas.width;
+      const ch = canvas.height;
+      ctx.clearRect(0, 0, cw, ch);
+      const isPaused = video.paused;
+
+      if (results.poseLandmarks) {
+        const lm = results.poseLandmarks;
+        // Draw connectors (white lines between joints)
+        if (window.drawConnectors && window.POSE_CONNECTIONS) {
+          window.drawConnectors(ctx, lm, window.POSE_CONNECTIONS, { color: 'rgba(255,255,255,0.4)', lineWidth: 2 });
+        }
+        // Key joints with ideal angles
+        const keyJoints = {
+          25: { a: 23, c: 27, ideal: 180, label: 'L Knee' },
+          26: { a: 24, c: 28, ideal: 180, label: 'R Knee' },
+          13: { a: 11, c: 15, ideal: 180, label: 'L Elbow' },
+          14: { a: 12, c: 16, ideal: 180, label: 'R Elbow' },
+          23: { a: 11, c: 25, ideal: 180, label: 'L Hip' },
+          24: { a: 12, c: 26, ideal: 180, label: 'R Hip' },
+        };
+        const angles = {};
+        lm.forEach((pt, idx) => {
+          if ((pt.visibility || 0) < 0.5) return;
+          let color = 'rgba(255,255,255,0.7)';
+          const joint = keyJoints[idx];
+          let angle = null;
+          if (joint && lm[joint.a] && lm[joint.c]) {
+            angle = calcAngle(
+              { x: lm[joint.a].x * cw, y: lm[joint.a].y * ch },
+              { x: pt.x * cw, y: pt.y * ch },
+              { x: lm[joint.c].x * cw, y: lm[joint.c].y * ch }
+            );
+            color = jointColor(angle, joint.ideal);
+            angles[joint.label] = angle;
+          }
+          // Draw joint dot — larger when paused for inspection
+          ctx.beginPath();
+          ctx.arc(pt.x * cw, pt.y * ch, isPaused ? 7 : 5, 0, 2 * Math.PI);
+          ctx.fillStyle = color;
+          ctx.fill();
+          ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+          // Draw angle label when paused (key joints only)
+          if (isPaused && joint && angle !== null) {
+            ctx.font = 'bold 12px sans-serif';
+            ctx.strokeStyle = 'rgba(0,0,0,0.8)';
+            ctx.lineWidth = 3;
+            const lbl = `${angle}°`;
+            ctx.strokeText(lbl, pt.x * cw + 10, pt.y * ch - 8);
+            ctx.fillStyle = color;
+            ctx.fillText(lbl, pt.x * cw + 10, pt.y * ch - 8);
+          }
+        });
+        setLiveAngles(Object.keys(angles).length > 0 ? angles : null);
+      }
+    };
+
     const initPose = async () => {
       await loadCDN();
       if (!poseRef.current && window.Pose) {
+        console.log('[skeleton] Initializing Pose...');
         const pose = new window.Pose({ locateFile: (file) =>
           `https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5/${file}`
         });
         pose.setOptions({
           modelComplexity: 1,
           smoothLandmarks: true,
-          minDetectionConfidence: 0.7,
+          minDetectionConfidence: 0.5,
           minTrackingConfidence: 0.5,
         });
-        pose.onResults((results) => {
-          if (!running) return;
-          const ctx = canvas.getContext('2d');
-          const cw = canvas.width;
-          const ch = canvas.height;
-          ctx.clearRect(0, 0, cw, ch);
-          const isPaused = video.paused;
-
-          if (results.poseLandmarks) {
-            const lm = results.poseLandmarks;
-            // Draw connectors
-            if (window.drawConnectors && window.POSE_CONNECTIONS) {
-              window.drawConnectors(ctx, lm, window.POSE_CONNECTIONS, { color: 'rgba(255,255,255,0.3)', lineWidth: 2 });
-            }
-            // Key joints with ideal angles
-            const keyJoints = {
-              25: { a: 23, c: 27, ideal: 180, label: 'L Knee' },
-              26: { a: 24, c: 28, ideal: 180, label: 'R Knee' },
-              13: { a: 11, c: 15, ideal: 180, label: 'L Elbow' },
-              14: { a: 12, c: 16, ideal: 180, label: 'R Elbow' },
-              23: { a: 11, c: 25, ideal: 180, label: 'L Hip' },
-              24: { a: 12, c: 26, ideal: 180, label: 'R Hip' },
-            };
-            const angles = {};
-            lm.forEach((pt, idx) => {
-              if ((pt.visibility || 0) < 0.5) return;
-              let color = 'rgba(255,255,255,0.7)';
-              const joint = keyJoints[idx];
-              let angle = null;
-              if (joint && lm[joint.a] && lm[joint.c]) {
-                angle = calcAngle(
-                  { x: lm[joint.a].x * cw, y: lm[joint.a].y * ch },
-                  { x: pt.x * cw, y: pt.y * ch },
-                  { x: lm[joint.c].x * cw, y: lm[joint.c].y * ch }
-                );
-                color = jointColor(angle, joint.ideal);
-                angles[joint.label] = angle;
-              }
-              // Draw joint dot
-              ctx.beginPath();
-              ctx.arc(pt.x * cw, pt.y * ch, isPaused ? 6 : 4, 0, 2 * Math.PI);
-              ctx.fillStyle = color;
-              ctx.fill();
-              // Draw angle label when paused (key joints only)
-              if (isPaused && joint && angle !== null) {
-                ctx.font = 'bold 11px sans-serif';
-                ctx.fillStyle = color;
-                ctx.strokeStyle = 'rgba(0,0,0,0.7)';
-                ctx.lineWidth = 3;
-                const label = `${angle}°`;
-                ctx.strokeText(label, pt.x * cw + 8, pt.y * ch - 6);
-                ctx.fillText(label, pt.x * cw + 8, pt.y * ch - 6);
-              }
-            });
-            // Store live angles for the Judge's Analysis panel
-            setLiveAngles(Object.keys(angles).length > 0 ? angles : null);
-          }
-        });
+        pose.onResults(drawResults);
         await pose.initialize();
         poseRef.current = pose;
+        console.log('[skeleton] Pose initialized successfully');
       }
 
-      // Detection loop — runs at display framerate (works in slow motion)
+      // Send one frame immediately (even if paused) so user sees skeleton on toggle
+      syncCanvasSize();
+      if (poseRef.current && video.readyState >= 2) {
+        console.log('[skeleton] Sending initial frame');
+        try { await poseRef.current.send({ image: video }); } catch (e) {
+          console.warn('[skeleton] Initial frame send failed:', e.message);
+        }
+      }
+
+      // Detection loop — runs during playback AND sends frames when paused (on seek)
       const detectLoop = async () => {
-        if (!running || !poseRef.current || video.paused || video.ended) {
-          if (running) rafRef.current = requestAnimationFrame(detectLoop);
-          return;
+        if (!running || !poseRef.current) return;
+        const now = Date.now();
+        // Throttle: max ~15fps during playback, 1fps when paused
+        const interval = video.paused ? 1000 : 66;
+        if (now - lastSendTime >= interval && video.readyState >= 2) {
+          syncCanvasSize();
+          lastSendTime = now;
+          try { await poseRef.current.send({ image: video }); } catch {}
         }
-        const vRect = video.getBoundingClientRect();
-        if (canvas.width !== vRect.width || canvas.height !== vRect.height) {
-          canvas.width = vRect.width;
-          canvas.height = vRect.height;
-        }
-        try { await poseRef.current.send({ image: video }); } catch {}
-        rafRef.current = requestAnimationFrame(detectLoop);
+        if (running) rafRef.current = requestAnimationFrame(detectLoop);
       };
       rafRef.current = requestAnimationFrame(detectLoop);
     };
 
-    initPose().catch(e => console.warn('[skeleton] init failed:', e.message));
+    // Wait for video to have data before starting
+    const startWhenReady = () => {
+      if (video.readyState >= 2) {
+        initPose().catch(e => console.warn('[skeleton] init failed:', e.message));
+      } else {
+        console.log('[skeleton] Waiting for video data...');
+        video.addEventListener('loadeddata', () => {
+          initPose().catch(e => console.warn('[skeleton] init failed:', e.message));
+        }, { once: true });
+      }
+    };
+    startWhenReady();
+
+    // Also re-send on seek (user scrubs to different time while paused)
+    const onSeeked = () => {
+      if (poseRef.current && video.readyState >= 2) {
+        syncCanvasSize();
+        poseRef.current.send({ image: video }).catch(() => {});
+      }
+    };
+    video.addEventListener('seeked', onSeeked);
 
     return () => {
       running = false;
       if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
+      video.removeEventListener('seeked', onSeeked);
     };
   }, [showSkeleton, open, tab, videoUrl]);
 
@@ -820,6 +883,7 @@ function SkillCard({ skill, index, isFree, freeDeductionLimit, globalDeductionIn
                       position: 'absolute', top: 0, left: 0,
                       width: '100%', height: '100%',
                       pointerEvents: 'none',
+                      zIndex: 10,
                       opacity: showSkeleton ? 1 : 0,
                       transition: 'opacity 0.3s',
                     }}
