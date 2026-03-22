@@ -1,6 +1,7 @@
 import React from 'react';
 import ScoreHero from './ScoreHero';
 import JudgeScoreInput from '../../components/ui/JudgeScoreInput';
+import YourDataCard from '../../components/ui/YourDataCard';
 import { safeStr, safeArray } from '../../utils/helpers';
 
 const COLORS = {
@@ -81,6 +82,7 @@ function Layer1Free({ result, profile, previousResult, onUpgrade }) {
       />
 
       <JudgeScoreInput result={result} profile={profile} />
+      <YourDataCard athleteNickname={profile?.name} />
 
       {/* Summary cards */}
       <div style={{ padding: '0 20px', marginTop: 20 }}>

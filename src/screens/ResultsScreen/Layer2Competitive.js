@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import ScoreHero from './ScoreHero';
 import JudgeScoreInput from '../../components/ui/JudgeScoreInput';
+import YourDataCard from '../../components/ui/YourDataCard';
 import SkillCard from '../../components/ui/SkillCard';
 import VideoReviewPlayer from '../../components/video/VideoReviewPlayer';
 import { safeStr, safeArray, safeNum } from '../../utils/helpers';
@@ -87,6 +88,7 @@ function Layer2Competitive({ result, profile, previousResult, onSeek, videoUrl }
       />
 
       <JudgeScoreInput result={result} profile={profile} />
+      <YourDataCard athleteNickname={profile?.name} />
 
       {/* Video Review Player — slow-mo, seek-to-skill, skeleton overlay */}
       <VideoReviewPlayer videoUrl={videoUrl} result={result} />

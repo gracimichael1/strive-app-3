@@ -1349,6 +1349,20 @@ export default function LegacyApp() {
   // eslint-disable-next-line no-unused-vars
   const [useNewDashboard, setUseNewDashboard] = useState(true);
 
+  // ── COPPA: Handle consent confirmation from email link ──
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('consent') === 'confirmed') {
+        sessionStorage.setItem('strive-consent-status', 'confirmed');
+        // Clean URL
+        const url = new URL(window.location);
+        url.searchParams.delete('consent');
+        window.history.replaceState({}, '', url.pathname + url.search);
+      }
+    } catch {}
+  }, []);
+
   // ── Agent Epsilon: Offline detection ──
   useEffect(() => {
     const goOffline = () => setIsOffline(true);
@@ -2232,10 +2246,13 @@ function OnboardingScreen({ onComplete }) {
     return (
       <ParentalConsent
         athleteName={name}
+        accountEmail="" /* No account email yet pre-Supabase */
         onConsent={(record) => {
           setParentalConsentRecord(record);
+          // Set consent status to pending — blocks analysis until confirmed
+          try { sessionStorage.setItem('strive-consent-status', 'pending'); } catch {}
           setLegalScreen(null);
-          setStep(2); // proceed to gender
+          setStep(2); // proceed to gender (analysis blocked until email confirmed)
         }}
         onDecline={() => {
           // Stay on declined screen (ParentalConsent handles the declined UI)
@@ -4334,6 +4351,16 @@ IMPORTANT: The deduction_log must contain ONE entry per distinct skill or transi
 
   // ── Main analysis orchestrator — single pass ─────────────────────
   const analyzeWithAI = useCallback(async (extractedFrames) => {
+    // COPPA: Block analysis if under-13 consent is pending
+    try {
+      const consentStatus = sessionStorage.getItem('strive-consent-status');
+      if (consentStatus === 'pending') {
+        setStatus("Parental consent required — check your parent's email for the confirmation link.");
+        setProgress(0);
+        return;
+      }
+    } catch {}
+
     setStatus("Preparing analysis...");
     setProgress(35);
 

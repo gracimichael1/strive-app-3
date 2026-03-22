@@ -205,38 +205,65 @@ const styles = {
 
 const ParentalConsent = React.memo(function ParentalConsent({
   athleteName,
+  accountEmail,
   onConsent,
   onDecline,
   onBack,
 }) {
-  const [parentName, setParentName] = useState('');
   const [parentEmail, setParentEmail] = useState('');
   const [isGuardian, setIsGuardian] = useState(false);
   const [thirdPartyConsent, setThirdPartyConsent] = useState(false);
   const [declined, setDeclined] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
 
   const displayName = athleteName || 'your child';
 
   const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(parentEmail);
-  const isFormValid = parentName.trim() && isEmailValid && isGuardian && thirdPartyConsent;
+  const emailMatchesAccount = accountEmail && parentEmail.trim().toLowerCase() === accountEmail.trim().toLowerCase();
+  const isFormValid = isEmailValid && !emailMatchesAccount && isGuardian && thirdPartyConsent;
 
-  const handleSubmit = useCallback(() => {
+  const handleSubmit = useCallback(async () => {
     if (!isFormValid) return;
 
-    if (!isEmailValid) {
-      setError('Please enter a valid email address.');
+    if (emailMatchesAccount) {
+      setError('Parent email must be different from the account email.');
       return;
     }
 
     setError('');
-    onConsent({
-      parentName: parentName.trim(),
-      parentEmail: parentEmail.trim(),
-      consentTimestamp: new Date().toISOString(),
-      thirdPartyConsent,
-    });
-  }, [isFormValid, isEmailValid, parentName, parentEmail, thirdPartyConsent, onConsent]);
+    setSending(true);
+
+    try {
+      const res = await fetch('/api/consent/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          parentEmail: parentEmail.trim(),
+          athleteNickname: displayName,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to send consent email');
+      }
+
+      setSent(true);
+      // Set consent status to pending
+      try { sessionStorage.setItem('strive-consent-status', 'pending'); } catch {}
+
+      onConsent({
+        parentEmail: parentEmail.trim(),
+        consentTimestamp: new Date().toISOString(),
+        status: 'pending',
+      });
+    } catch (e) {
+      setError(e.message || 'Failed to send email. Please try again.');
+    }
+    setSending(false);
+  }, [isFormValid, emailMatchesAccount, parentEmail, displayName, onConsent]);
 
   const handleDecline = useCallback(() => {
     setDeclined(true);
@@ -270,49 +297,46 @@ const ParentalConsent = React.memo(function ParentalConsent({
   return (
     <div style={styles.container}>
       <div style={styles.card}>
-        <h1 style={styles.title}>Parental Consent</h1>
+        <h1 style={styles.title}>Parental Consent Required</h1>
         <p style={styles.subtitle}>
-          Because {displayName} is under 13, a parent or legal guardian must provide
-          consent before using Strive.
+          A parent or guardian must approve {displayName}'s account before any data is collected.
         </p>
+
+        <div style={{ background: '#121b2d', borderRadius: 12, padding: '16px 20px', marginBottom: 20, border: '1px solid rgba(232, 150, 42, 0.08)' }}>
+          <p style={{ ...styles.text, color: '#E2E8F0', fontWeight: 600, marginBottom: 12 }}>
+            Videos you submit are analyzed by Google Gemini (Google's AI service). STRIVE does not store your videos. Google deletes uploaded content within 48 hours. We collect: your child's gymnastics level, performance scores, and training notes.
+          </p>
+        </div>
 
         <h3 style={styles.sectionTitle}>What We Collect</h3>
         <ul style={styles.list}>
-          <li style={styles.listItem}>Athlete profile (name, age, level, events)</li>
-          <li style={styles.listItem}>Uploaded gymnastics videos</li>
+          <li style={styles.listItem}>Your child's gymnastics level and competitive division</li>
           <li style={styles.listItem}>Performance scores and analysis history</li>
+          <li style={styles.listItem}>Training notes added by you or your child</li>
         </ul>
 
-        <h3 style={styles.sectionTitle}>How It's Used</h3>
-        <p style={styles.text}>
-          Videos and profile data are used to generate skill-by-skill scoring
-          analysis, track progress over time, and recommend training drills.
-        </p>
+        <h3 style={styles.sectionTitle}>Third-Party Services</h3>
+        <ul style={styles.list}>
+          <li style={styles.listItem}><strong>Videos</strong> → Google Gemini for scoring analysis, deleted within 48 hours</li>
+          <li style={styles.listItem}><strong>Scores</strong> → Supabase (SOC 2 Type 2 certified) for secure storage</li>
+          <li style={styles.listItem}><strong>Payments</strong> → Stripe (PCI DSS Level 1) for billing</li>
+        </ul>
 
-        <h3 style={styles.sectionTitle}>Third-Party Video Analysis</h3>
-        <p style={styles.text}>
-          Uploaded videos are sent to an external analysis service to generate
-          scoring feedback. Videos are processed and not stored permanently by the
-          analysis provider.
-        </p>
+        <h3 style={styles.sectionTitle}>Your Rights</h3>
+        <ul style={styles.list}>
+          <li style={styles.listItem}>Review all data collected about your child at any time</li>
+          <li style={styles.listItem}>Delete all of your child's data permanently</li>
+          <li style={styles.listItem}>Revoke consent at any time (Settings → Account)</li>
+        </ul>
 
         <hr style={styles.divider} />
 
         {error && <p style={{ ...styles.text, color: '#dc2626' }} role="alert">{error}</p>}
-
-        <div style={styles.inputGroup}>
-          <label style={styles.label} htmlFor="parent-name">Parent / Guardian Name</label>
-          <input
-            id="parent-name"
-            type="text"
-            aria-label="Parent or guardian full name"
-            placeholder="Full name"
-            style={styles.input}
-            value={parentName}
-            onChange={(e) => setParentName(e.target.value)}
-            autoComplete="name"
-          />
-        </div>
+        {emailMatchesAccount && parentEmail && (
+          <p style={{ ...styles.text, color: '#dc2626' }} role="alert">
+            Parent email must be different from the account email.
+          </p>
+        )}
 
         <div style={styles.inputGroup}>
           <label style={styles.label} htmlFor="parent-email">Parent / Guardian Email</label>
@@ -326,6 +350,9 @@ const ParentalConsent = React.memo(function ParentalConsent({
             onChange={(e) => setParentEmail(e.target.value)}
             autoComplete="email"
           />
+          <p style={{ fontSize: 12, color: '#8890AB', marginTop: 6 }}>
+            We'll send a confirmation link to this address. The parent must click it to activate the account.
+          </p>
         </div>
 
         <hr style={styles.divider} />
@@ -368,13 +395,13 @@ const ParentalConsent = React.memo(function ParentalConsent({
         <button
           style={{
             ...styles.button,
-            ...(isFormValid ? {} : styles.buttonDisabled),
+            ...((isFormValid && !sending) ? {} : styles.buttonDisabled),
           }}
           onClick={handleSubmit}
-          disabled={!isFormValid}
-          aria-label="Provide consent"
+          disabled={!isFormValid || sending}
+          aria-label="Send consent email"
         >
-          I Consent
+          {sending ? 'Sending...' : 'Send Consent Email to Parent'}
         </button>
 
         <button

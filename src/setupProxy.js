@@ -170,6 +170,71 @@ module.exports = function (app) {
     }
   });
 
+  // ── COPPA consent endpoints ──────────────────────────────────────────
+  const crypto = require('crypto');
+  const CONSENT_LOG = logPath.join(LOG_DIR, 'coppa-consent.jsonl');
+  const RESEND_KEY = process.env.RESEND_API_KEY;
+
+  function sha256(str) { return crypto.createHash('sha256').update(str).digest('hex'); }
+  function getConsentSecret() { return process.env.STRIVE_CONSENT_SECRET || sha256(RESEND_KEY || 'strive-fallback-secret'); }
+
+  app.post('/api/consent/send', async (req, res) => {
+    let body = '';
+    req.on('data', c => { body += c; });
+    req.on('end', async () => {
+      try {
+        const { parentEmail, athleteNickname } = JSON.parse(body);
+        if (!parentEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(parentEmail)) {
+          return res.status(400).json({ error: 'Valid parentEmail required' });
+        }
+        if (!RESEND_KEY) return res.status(500).json({ error: 'RESEND_API_KEY not configured' });
+
+        // Generate HMAC-signed token
+        const payload = JSON.stringify({ email_hash: sha256(parentEmail.toLowerCase().trim()), exp: Date.now() + 48*60*60*1000, v: '1.0', nonce: crypto.randomUUID() });
+        const payloadB64 = Buffer.from(payload).toString('base64url');
+        const sig = crypto.createHmac('sha256', getConsentSecret()).update(payloadB64).digest('base64url');
+        const token = `${payloadB64}.${sig}`;
+        const confirmUrl = `http://localhost:3000/api/consent/confirm?token=${encodeURIComponent(token)}`;
+        const displayName = athleteNickname || 'your child';
+
+        // Log pending consent
+        if (!fs.existsSync(LOG_DIR)) fs.mkdirSync(LOG_DIR, { recursive: true });
+        fs.appendFileSync(CONSENT_LOG, JSON.stringify({ timestamp: new Date().toISOString(), parent_email_hash: sha256(parentEmail.toLowerCase().trim()), token_hash: sha256(token), consent_version: '1.0', status: 'pending', ip_hash: sha256(req.ip || 'unknown') }) + '\n');
+
+        // Send via Resend
+        const sendRes = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${RESEND_KEY}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            from: 'STRIVE Gymnastics <onboarding@resend.dev>',
+            to: [parentEmail.trim()],
+            subject: "Action required: Approve your child's STRIVE account",
+            html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;color:#333"><h1 style="color:#e8962a">STRIVE Gymnastics</h1><h2>Parental Consent Required</h2><p>Someone created a STRIVE account for ${displayName} and listed you as parent/guardian.</p><h3 style="color:#e8962a">What we collect</h3><ul><li>Gymnastics level and division</li><li>Performance scores and analysis history</li><li>Training notes</li></ul><h3 style="color:#e8962a">Third-party services</h3><ul><li><b>Videos → Google Gemini</b> — deleted within 48hrs</li><li><b>Scores → Supabase</b> (SOC 2 Type 2)</li><li><b>Payments → Stripe</b> (PCI DSS Level 1)</li></ul><h3 style="color:#e8962a">Your rights</h3><ul><li>Review all data about your child</li><li>Delete all data permanently</li><li>Revoke consent anytime (Settings → Account)</li></ul><p>Reply to this email or visit /account to exercise these rights.</p><div style="text-align:center;margin:32px 0"><a href="${confirmUrl}" style="display:inline-block;background:#e8962a;color:#fff;text-decoration:none;padding:16px 40px;border-radius:12px;font-size:16px;font-weight:700">I Approve — Activate Account</a></div><p style="color:#888;font-size:13px">Link expires in 48 hours. If you did not request this, ignore this email.</p></div>`,
+          }),
+        });
+        if (!sendRes.ok) { const e = await sendRes.text(); return res.status(502).json({ error: 'Resend failed: ' + e }); }
+        const sendData = await sendRes.json();
+        res.json({ ok: true, emailId: sendData.id });
+      } catch (e) { res.status(500).json({ error: e.message }); }
+    });
+  });
+
+  app.get('/api/consent/confirm', (req, res) => {
+    const { token } = req.query;
+    if (!token || !token.includes('.')) return res.status(400).send('Invalid token');
+    const [payloadB64, sig] = token.split('.');
+    const expectedSig = crypto.createHmac('sha256', getConsentSecret()).update(payloadB64).digest('base64url');
+    if (sig !== expectedSig) return res.status(400).send('Invalid token signature');
+    try {
+      const payload = JSON.parse(Buffer.from(payloadB64, 'base64url').toString('utf-8'));
+      if (!payload.exp || Date.now() > payload.exp) return res.status(400).send('Token expired');
+      // Log confirmed
+      if (!fs.existsSync(LOG_DIR)) fs.mkdirSync(LOG_DIR, { recursive: true });
+      fs.appendFileSync(CONSENT_LOG, JSON.stringify({ timestamp: new Date().toISOString(), parent_email_hash: payload.email_hash, token_hash: sha256(token), consent_version: payload.v || '1.0', status: 'confirmed', confirmed_at: new Date().toISOString(), ip_hash: sha256(req.ip || 'unknown') }) + '\n');
+      res.redirect('/?consent=confirmed');
+    } catch { res.status(400).send('Invalid token'); }
+  });
+
   // Deprecate old endpoint
   app.get('/api/gemini-key', (req, res) => {
     res.status(410).json({ error: 'Retired. Use /api/gemini proxy.', available: false });
