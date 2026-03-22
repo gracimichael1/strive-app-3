@@ -3,6 +3,7 @@
  *
  * ALL Gemini API calls route through this endpoint.
  * The GEMINI_API_KEY never leaves the server.
+ * Rate limited: 5 req/min and 20 req/hr per user (in-memory, Redis at Phase 3-A).
  *
  * Actions:
  *   initUpload  — Start resumable video upload, return upload URL
@@ -40,6 +41,42 @@ function validateAppToken(req) {
   return token === expected;
 }
 
+// ── Rate Limiting (in-memory, Redis at Phase 3-A) ─────────────────────────
+import crypto from 'crypto';
+
+const rateLimitMap = new Map(); // key → [{ timestamp }]
+const RATE_LIMITS = [
+  { window: 60 * 1000, max: 5, label: '1min' },    // 5 per minute
+  { window: 60 * 60 * 1000, max: 20, label: '1hr' }, // 20 per hour
+];
+
+function getRateLimitKey(req) {
+  const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || 'unknown';
+  return crypto.createHash('sha256').update(ip).digest('hex').substring(0, 16);
+}
+
+function checkRateLimit(key) {
+  const now = Date.now();
+  let hits = rateLimitMap.get(key) || [];
+  // Prune old entries (older than largest window)
+  hits = hits.filter(t => now - t < 60 * 60 * 1000);
+  rateLimitMap.set(key, hits);
+
+  for (const rule of RATE_LIMITS) {
+    const windowHits = hits.filter(t => now - t < rule.window);
+    if (windowHits.length >= rule.max) {
+      return { limited: true, retryAfter: Math.ceil(rule.window / 1000), window: rule.label };
+    }
+  }
+  return { limited: false };
+}
+
+function recordHit(key) {
+  const hits = rateLimitMap.get(key) || [];
+  hits.push(Date.now());
+  rateLimitMap.set(key, hits);
+}
+
 export default async function handler(req, res) {
   setCorsHeaders(req, res);
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -54,12 +91,26 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  // Rate limit on 'generate' action only (actual analysis calls)
+  const { action } = req.body || {};
+  if (action === 'generate') {
+    const rlKey = getRateLimitKey(req);
+    const rl = checkRateLimit(rlKey);
+    if (rl.limited) {
+      console.warn(`[gemini-proxy] Rate limited: ${rlKey} (${rl.window})`);
+      return res.status(429).json({
+        error: 'rate_limit',
+        retryAfter: rl.retryAfter,
+        message: `Maximum analyses per ${rl.window === '1min' ? 'minute' : 'hour'} reached. Please wait.`,
+      });
+    }
+    recordHit(rlKey);
+  }
+
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     return res.status(500).json({ error: 'GEMINI_API_KEY not configured on server' });
   }
-
-  const { action } = req.body || {};
 
   try {
     switch (action) {
