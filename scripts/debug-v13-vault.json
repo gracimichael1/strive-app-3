@@ -1,99 +1,63 @@
 {
   "start_value": 10,
-  "final_score": 9.1,
+  "final_score": 9.3,
   "deduction_log": [
     {
       "skill_name": "Handspring Vault",
       "skill_order": 1,
       "timestamp_start": 7.5,
-      "timestamp_end": 9.5,
+      "timestamp_end": 9.7,
       "executed_successfully": true,
       "difficulty_value": 1,
-      "total_deduction": 0.8,
+      "total_deduction": 0.6,
       "deductions": [
         {
           "type": "Execution",
-          "body_part": "Body Shape",
-          "description": "Slight arch in pre-flight, not a tight hollow",
-          "point_value": 0.05
-        },
-        {
-          "type": "Execution",
-          "body_part": "Knees",
-          "description": "Slight knee bend in pre-flight",
-          "point_value": 0.05
-        },
-        {
-          "type": "Execution",
-          "body_part": "Feet",
-          "description": "Flexed feet/loss of toe point in pre-flight",
-          "point_value": 0.05
+          "body_part": "Arms",
+          "description": "Bent arms during block phase on table (KTM)",
+          "point_value": 0.1
         },
         {
           "type": "Execution",
           "body_part": "Hips",
-          "description": "Slight pike at hips on table contact",
-          "point_value": 0.05
-        },
-        {
-          "type": "Execution",
-          "body_part": "Arms",
-          "description": "Slight bent arms during block",
-          "point_value": 0.05
-        },
-        {
-          "type": "Execution",
-          "body_part": "Block Timing",
-          "description": "Hips pass vertical before hands fully leave table (late block)",
+          "description": "Lack of full hip extension/low hips at block, reducing vertical drive",
           "point_value": 0.1
         },
         {
           "type": "Execution",
-          "body_part": "Body Shape",
-          "description": "Slight arch in post-flight",
-          "point_value": 0.05
-        },
-        {
-          "type": "Execution",
-          "body_part": "Knees",
-          "description": "Slight knee bend in post-flight",
-          "point_value": 0.05
-        },
-        {
-          "type": "Execution",
-          "body_part": "Feet",
-          "description": "Flexed feet/loss of toe point in post-flight",
-          "point_value": 0.05
-        },
-        {
-          "type": "Execution",
-          "body_part": "Chest",
-          "description": "Low chest position on landing",
+          "body_part": "Body Position",
+          "description": "Slight pike in post-flight, not a clean flat body line",
           "point_value": 0.1
         },
         {
           "type": "Execution",
-          "body_part": "Knees",
-          "description": "Deep knee bend on landing",
+          "body_part": "Legs",
+          "description": "Leg separation and slight knee bend in post-flight (KTM)",
           "point_value": 0.1
         },
         {
           "type": "Execution",
           "body_part": "Landing",
-          "description": "Small step forward on landing",
+          "description": "Deep squat on landing to absorb impact",
+          "point_value": 0.1
+        },
+        {
+          "type": "Execution",
+          "body_part": "Landing",
+          "description": "Small hop forward and arm circle for balance on landing",
           "point_value": 0.1
         }
       ],
-      "quality_grade": 8,
-      "reason": "Multiple form breaks in pre-flight, block, and post-flight, leading to a forward-leaning landing with a step.",
+      "quality_grade": 9.4,
+      "reason": "The Handspring Vault demonstrated good power and height, but execution suffered from several form breaks during the block and post-flight, as well as a deep squat and hop on landing.",
       "is_celebration": false
     }
   ],
   "special_requirements": [
     {
-      "requirement": "B-value vault",
+      "requirement": "A-level vault",
       "status": "MET",
-      "comment": "Gymnast performed a Handspring Vault, which is a B-value element.",
+      "comment": "A Handspring Vault is an A-level vault and fulfills the requirement.",
       "penalty": 0
     }
   ],
@@ -103,35 +67,33 @@
     "choreography_variety_deduction": 0,
     "musicality_deduction": 0,
     "total_artistry_deduction": 0.1,
-    "notes": "General lack of consistent body tension and pointed toes throughout the vault sequence contributes to a minor artistry deduction."
+    "notes": "General body tension and tightness could be improved throughout the vault, particularly in the post-flight and landing. While vault has less artistry than other events, clean lines and controlled movement contribute to overall presentation."
   },
-  "total_execution_deductions": 0.8,
+  "total_execution_deductions": 0.6,
   "total_artistry_deductions": 0.1,
   "score_range": {
-    "low": 9,
-    "high": 9.2
+    "low": 8.4,
+    "high": 9.3
   },
   "confidence": "HIGH",
-  "coaching_summary": "The gymnast executed a Handspring Vault with good aggression in the run-up and sufficient height in the post-flight. However, there were consistent form breaks in body shape (slight arch/pike), knee tension, and toe point throughout the pre-flight, block, and post-flight phases. The block off the table was slightly late with bent arms, leading to a forward-leaning landing that required a deep squat and a step to control. Focus on refining fundamental body shapes and active blocking mechanics will significantly improve future vault performances.",
+  "coaching_summary": "The gymnast performed a Handspring Vault with commendable power and height, which is a strong foundation for Xcel Gold. However, the routine was marred by several technical imperfections. The block phase showed bent arms and insufficient hip drive, leading to a less-than-ideal body shape in the post-flight (slight pike, leg separation, and knee bend). The landing required a deep squat and a hop with arm adjustments, indicating a lack of control and stacked CoM. Addressing these foundational issues will significantly improve execution and readiness for higher levels.",
   "top_3_fixes": [
-    "Develop a tight hollow body position from the springboard contact through the pre-flight, maintaining locked knees and pointed toes to maximize block efficiency.",
-    "Execute a powerful, active block off the table with fully locked arms and an aggressive shoulder push, ensuring hips do not pass vertical before hands leave the table.",
-    "Improve landing control by focusing on a higher chest position and absorbing impact through the legs with a controlled, shallow knee bend, aiming to stick the landing without steps or hops."
+    "Strengthen the block by focusing on locked arms and active shoulder push, driving hips vertically for a tight hollow shape off the table.",
+    "Maintain a rigid, hollow body position throughout the post-flight to eliminate pike, knee bend, and leg separation.",
+    "Improve landing control by practicing drills that emphasize a stacked center of mass over the base of support, aiming for a soft, controlled landing with minimal squat and no steps/hops."
   ],
   "celebrations": [
-    "Good aggression and speed in the run-up to the vault.",
-    "Successfully completed the Handspring Vault without a fall.",
-    "Achieved good height in the post-flight phase of the vault."
+    "Excellent power and height achieved in the vault, demonstrating good athleticism."
   ],
   "athlete_name": "the gymnast",
-  "duration_seconds": 9.5,
-  "event": "Vault",
+  "duration_seconds": 10,
+  "event": "VAULT",
   "gender": "WAG",
-  "level": "JO LEVEL 6",
-  "_code_score": 8.785,
-  "_blended": 9.1,
-  "_source": "ai!",
+  "level": "XCEL GOLD",
+  "_code_score": 9.055,
+  "_blended": 9.3,
+  "_source": "ai",
   "_cal_factor": 1.35,
-  "_raw_exec": 0.7999999999999999,
-  "_scaled_exec": 1.08
+  "_raw_exec": 0.6,
+  "_scaled_exec": 0.81
 }

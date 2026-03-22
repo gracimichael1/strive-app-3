@@ -1,156 +1,276 @@
 {
   "start_value": 10,
-  "final_score": 8.35,
+  "final_score": 8.15,
   "deduction_log": [
     {
-      "skill_name": "Mount (Jump to sitting)",
+      "skill_name": "Jump to Straddle Stand Mount",
       "skill_order": 1,
-      "timestamp_start": 4.2,
+      "timestamp_start": 4,
       "timestamp_end": 5,
       "executed_successfully": true,
-      "difficulty_value": 0,
-      "total_deduction": 0,
-      "deductions": [],
-      "quality_grade": 1,
-      "reason": "Clean execution with no visible form breaks or balance checks.",
-      "is_celebration": true,
-      "strength_note": "Good control and stability on the mount."
-    },
-    {
-      "skill_name": "Forward Roll",
-      "skill_order": 2,
-      "timestamp_start": 6,
-      "timestamp_end": 8,
-      "executed_successfully": true,
-      "difficulty_value": 0,
-      "total_deduction": 0.15,
+      "difficulty_value": 0.1,
+      "total_deduction": 0.1,
       "deductions": [
         {
           "type": "execution",
           "body_part": "knees",
-          "description": "Slight knee bend during the roll (KTM).",
+          "description": "Slightly bent knees on landing, not fully locked (KTM).",
+          "point_value": 0.05
+        },
+        {
+          "type": "execution",
+          "body_part": "feet",
+          "description": "Feet not fully pointed during flight (TPM).",
+          "point_value": 0.05
+        }
+      ],
+      "quality_grade": 0.9,
+      "reason": "Minor form breaks in flight and landing.",
+      "is_celebration": false
+    },
+    {
+      "skill_name": "Full Turn (Standing)",
+      "skill_order": 2,
+      "timestamp_start": 5,
+      "timestamp_end": 6,
+      "executed_successfully": true,
+      "difficulty_value": 0.1,
+      "total_deduction": 0.05,
+      "deductions": [
+        {
+          "type": "execution",
+          "body_part": "body",
+          "description": "Slight balance check/wobble at the end of the turn.",
+          "point_value": 0.05
+        }
+      ],
+      "quality_grade": 0.95,
+      "reason": "Minor balance check.",
+      "is_celebration": false
+    },
+    {
+      "skill_name": "Split Jump",
+      "skill_order": 3,
+      "timestamp_start": 7,
+      "timestamp_end": 8,
+      "executed_successfully": true,
+      "difficulty_value": 0.1,
+      "total_deduction": 0.2,
+      "deductions": [
+        {
+          "type": "execution",
+          "body_part": "legs",
+          "description": "Split angle slightly under 120 degrees at apex.",
+          "point_value": 0.1
+        },
+        {
+          "type": "execution",
+          "body_part": "knees",
+          "description": "Knees slightly soft in flight (KTM).",
           "point_value": 0.05
         },
         {
           "type": "execution",
           "body_part": "body",
-          "description": "Slight balance check on landing (arms move from body).",
-          "point_value": 0.1
+          "description": "Small balance check on landing.",
+          "point_value": 0.05
         }
       ],
-      "quality_grade": 0.85,
-      "reason": "Minor form break in the knees and a slight balance check on completion.",
-      "is_celebration": false
-    },
-    {
-      "skill_name": "Split Leap",
-      "skill_order": 3,
-      "timestamp_start": 10,
-      "timestamp_end": 12,
-      "executed_successfully": true,
-      "difficulty_value": 0,
-      "total_deduction": 0.3,
-      "deductions": [
-        {
-          "type": "execution",
-          "body_part": "legs",
-          "description": "Split angle clearly less than 150 degrees.",
-          "point_value": 0.2
-        },
-        {
-          "type": "execution",
-          "body_part": "body",
-          "description": "Slight balance check on landing (arms move from body).",
-          "point_value": 0.1
-        }
-      ],
-      "quality_grade": 0.7,
-      "reason": "Significant deduction for insufficient split angle, compounded by a balance check.",
+      "quality_grade": 0.8,
+      "reason": "Insufficient split amplitude and minor form breaks.",
       "is_celebration": false
     },
     {
       "skill_name": "Back Walkover",
       "skill_order": 4,
-      "timestamp_start": 13,
-      "timestamp_end": 15,
+      "timestamp_start": 9,
+      "timestamp_end": 10,
       "executed_successfully": true,
       "difficulty_value": 0.1,
       "total_deduction": 0.15,
       "deductions": [
         {
           "type": "execution",
-          "body_part": "knees",
-          "description": "Slight knee bend during the handstand phase (KTM).",
+          "body_part": "legs",
+          "description": "Legs not fully together in handstand phase.",
+          "point_value": 0.05
+        },
+        {
+          "type": "execution",
+          "body_part": "back",
+          "description": "Slight arch in back upon return to standing.",
           "point_value": 0.05
         },
         {
           "type": "execution",
           "body_part": "body",
-          "description": "Slight balance check on landing (arms move from body).",
-          "point_value": 0.1
+          "description": "Small balance check on landing.",
+          "point_value": 0.05
         }
       ],
       "quality_grade": 0.85,
-      "reason": "Minor knee bend in the handstand and a small balance adjustment on landing.",
+      "reason": "Minor leg separation, body arch, and balance check.",
       "is_celebration": false
     },
     {
-      "skill_name": "Full Turn",
+      "skill_name": "Scale",
       "skill_order": 5,
-      "timestamp_start": 16,
-      "timestamp_end": 18,
+      "timestamp_start": 12,
+      "timestamp_end": 14,
       "executed_successfully": true,
-      "difficulty_value": 0,
-      "total_deduction": 0.15,
+      "difficulty_value": 0.1,
+      "total_deduction": 0.2,
       "deductions": [
         {
           "type": "execution",
-          "body_part": "body",
-          "description": "Slight wobble during the turn.",
+          "body_part": "knee",
+          "description": "Support leg knee slightly soft (KTM).",
           "point_value": 0.05
         },
         {
           "type": "execution",
-          "body_part": "body",
-          "description": "Slight balance check at the completion of the turn (arms move from body).",
+          "body_part": "arms",
+          "description": "Balance check with arm movement.",
           "point_value": 0.1
+        },
+        {
+          "type": "execution",
+          "body_part": "torso",
+          "description": "Upper body not fully upright during hold.",
+          "point_value": 0.05
         }
       ],
-      "quality_grade": 0.85,
-      "reason": "Loss of control during the turn and a subsequent balance check.",
+      "quality_grade": 0.8,
+      "reason": "Soft support knee, arm balance check, and body alignment.",
       "is_celebration": false
     },
     {
-      "skill_name": "Straight Jump",
+      "skill_name": "Side Handstand",
       "skill_order": 6,
-      "timestamp_start": 20,
-      "timestamp_end": 22,
+      "timestamp_start": 15,
+      "timestamp_end": 16,
       "executed_successfully": true,
-      "difficulty_value": 0,
-      "total_deduction": 0.15,
+      "difficulty_value": 0.1,
+      "total_deduction": 0.1,
       "deductions": [
         {
           "type": "execution",
-          "body_part": "knees",
-          "description": "Slight knee bend in the air (KTM).",
+          "body_part": "legs",
+          "description": "Legs not fully together in handstand.",
           "point_value": 0.05
         },
         {
           "type": "execution",
           "body_part": "body",
-          "description": "Slight balance check on landing (arms move from body).",
-          "point_value": 0.1
+          "description": "Slight balance check on landing.",
+          "point_value": 0.05
         }
       ],
-      "quality_grade": 0.85,
-      "reason": "Minor knee bend during flight and a slight balance check on landing.",
+      "quality_grade": 0.9,
+      "reason": "Minor leg separation and balance check.",
       "is_celebration": false
     },
     {
       "skill_name": "Back Handspring Series (3 BHS)",
       "skill_order": 7,
-      "timestamp_start": 23,
+      "timestamp_start": 19,
+      "timestamp_end": 22,
+      "executed_successfully": true,
+      "difficulty_value": 0.3,
+      "total_deduction": 0.25,
+      "deductions": [
+        {
+          "type": "execution",
+          "body_part": "legs",
+          "description": "Slight leg separation in flight (BHS 1).",
+          "point_value": 0.05
+        },
+        {
+          "type": "execution",
+          "body_part": "knees",
+          "description": "Slight knee bend on rebound (BHS 2) (KTM).",
+          "point_value": 0.05
+        },
+        {
+          "type": "execution",
+          "body_part": "legs",
+          "description": "Slight leg separation in flight (BHS 3).",
+          "point_value": 0.05
+        },
+        {
+          "type": "execution",
+          "body_part": "body",
+          "description": "Small balance check with arms out on final landing.",
+          "point_value": 0.1
+        }
+      ],
+      "quality_grade": 0.75,
+      "reason": "Recurring leg separation and knee bend, with a balance check on landing.",
+      "is_celebration": false
+    },
+    {
+      "skill_name": "Split Leap",
+      "skill_order": 8,
+      "timestamp_start": 25,
+      "timestamp_end": 26,
+      "executed_successfully": true,
+      "difficulty_value": 0.1,
+      "total_deduction": 0.2,
+      "deductions": [
+        {
+          "type": "execution",
+          "body_part": "legs",
+          "description": "Split angle slightly under 120 degrees at apex.",
+          "point_value": 0.1
+        },
+        {
+          "type": "execution",
+          "body_part": "knees",
+          "description": "Knees slightly soft in flight (KTM).",
+          "point_value": 0.05
+        },
+        {
+          "type": "execution",
+          "body_part": "body",
+          "description": "Small balance check on landing.",
+          "point_value": 0.05
+        }
+      ],
+      "quality_grade": 0.8,
+      "reason": "Insufficient split amplitude and minor form breaks.",
+      "is_celebration": false
+    },
+    {
+      "skill_name": "Back Handspring (Single)",
+      "skill_order": 9,
+      "timestamp_start": 29,
       "timestamp_end": 30,
+      "executed_successfully": true,
+      "difficulty_value": 0.1,
+      "total_deduction": 0.1,
+      "deductions": [
+        {
+          "type": "execution",
+          "body_part": "legs",
+          "description": "Slight leg separation in flight.",
+          "point_value": 0.05
+        },
+        {
+          "type": "execution",
+          "body_part": "body",
+          "description": "Small balance check on landing.",
+          "point_value": 0.05
+        }
+      ],
+      "quality_grade": 0.9,
+      "reason": "Minor leg separation and balance check.",
+      "is_celebration": false
+    },
+    {
+      "skill_name": "Cartwheel to Back Tuck Dismount",
+      "skill_order": 10,
+      "timestamp_start": 31,
+      "timestamp_end": 33,
       "executed_successfully": true,
       "difficulty_value": 0.2,
       "total_deduction": 0.3,
@@ -158,76 +278,56 @@
         {
           "type": "execution",
           "body_part": "knees",
-          "description": "Recurring slight knee bend during the handstand phases of the series (KTM).",
-          "point_value": 0.1
-        },
-        {
-          "type": "execution",
-          "body_part": "body",
-          "description": "Recurring slight balance checks after each handspring (arms move from body).",
-          "point_value": 0.2
-        }
-      ],
-      "quality_grade": 0.7,
-      "reason": "Consistent minor form breaks with knee tension and repeated balance adjustments throughout the series.",
-      "is_celebration": false
-    },
-    {
-      "skill_name": "Back Tuck Dismount",
-      "skill_order": 8,
-      "timestamp_start": 31,
-      "timestamp_end": 33,
-      "executed_successfully": true,
-      "difficulty_value": 0.2,
-      "total_deduction": 0.25,
-      "deductions": [
-        {
-          "type": "execution",
-          "body_part": "knees",
-          "description": "Slight knee bend in the air during the tuck (KTM).",
+          "description": "Slight knee bend during cartwheel (KTM).",
           "point_value": 0.05
         },
         {
           "type": "execution",
-          "body_part": "feet",
+          "body_part": "body position",
+          "description": "Slight pike in tuck position during flight.",
+          "point_value": 0.1
+        },
+        {
+          "type": "execution",
+          "body_part": "landing",
           "description": "Large step back on landing.",
           "point_value": 0.1
         },
         {
           "type": "execution",
           "body_part": "torso",
-          "description": "Low chest on landing (torso-to-vertical angle > 30 degrees).",
-          "point_value": 0.1
+          "description": "Chest slightly down on landing.",
+          "point_value": 0.05
         }
       ],
-      "quality_grade": 0.75,
-      "reason": "Minor form break in the air and a significant landing deduction for the step and low chest.",
+      "quality_grade": 0.7,
+      "reason": "Form breaks in cartwheel, piked tuck, and large landing adjustment.",
       "is_celebration": false
     }
   ],
   "special_requirements": [
     {
-      "requirement": "Acro element",
+      "requirement": "Two acro elements (one series)",
       "status": "MET",
-      "comment": "Back Walkover and Back Handspring Series fulfill this requirement.",
+      "comment": "Routine included a Back Walkover, a 3 Back Handspring series, and a single Back Handspring.",
       "penalty": 0
     },
     {
-      "requirement": "Dance element",
+      "requirement": "Dance passage (split 120°+)",
       "status": "MET",
-      "comment": "Split Leap, Full Turn, and Straight Jump fulfill this requirement.",
+      "comment": "Routine included a Split Jump and a Split Leap, fulfilling the requirement for dance elements, despite slight amplitude deductions.",
+      "penalty": 0
+    },
+    {
+      "requirement": "Full turn",
+      "status": "MET",
+      "comment": "A standing full turn was performed.",
       "penalty": 0
     },
     {
       "requirement": "Dismount",
       "status": "MET",
-      "comment": "Back Tuck Dismount fulfills this requirement.",
-      "penalty": 0
-    },
-    {
-      "requirement": "B-value element",
-      "status": "MET",
-      "comment": "Back Walkover, Back Handsprings (within series), and Back Tuck Dismount (C-value) fulfill this requirement.",
+      "comment": "A Cartwheel to Back Tuck dismount was performed.",
       "penalty": 0
     }
   ],
@@ -237,35 +337,35 @@
     "choreography_variety_deduction": 0.05,
     "musicality_deduction": 0,
     "total_artistry_deduction": 0.2,
-    "notes": "The routine lacked consistent fluidity and dynamic expression. Transitions were functional but not always seamless, contributing to a slightly stiff quality of movement. Choreography was typical for the level but did not showcase unique variety."
+    "notes": "The gymnast maintained focus but lacked dynamic expression. Quality of movement showed some stiffness, impacting flow. Choreography was standard for the level."
   },
-  "total_execution_deductions": 1.45,
+  "total_execution_deductions": 1.65,
   "total_artistry_deductions": 0.2,
   "score_range": {
-    "low": 8.2,
-    "high": 8.5
+    "low": 8,
+    "high": 9.5
   },
   "confidence": "HIGH",
-  "coaching_summary": "The gymnast completed a full JO Level 6 Balance Beam routine, demonstrating proficiency in all required elements. The mount was executed cleanly, and the Back Tuck dismount showed good height. However, the routine accumulated numerous small deductions primarily due to inconsistent body tension (especially in the knees and toes), insufficient split angle on the leap, and frequent balance checks. Landings, particularly the dismount, also require more control to minimize steps and maintain an upright body position. Focusing on these areas will significantly improve the overall score and readiness for higher levels.",
+  "coaching_summary": "This Xcel Gold beam routine demonstrates a solid foundation of skills, including a three-element acro series and a B-value dismount. The gymnast successfully completed all required elements. However, consistent micro-form breaks, particularly in leg tension (soft knees, lack of full toe point) and minor balance checks, accumulated throughout the routine. Improving body tension and precision in flight and landings will significantly elevate the score. The split amplitude in dance elements also needs attention.",
   "top_3_fixes": [
-    "Maintain Leg Tension: Actively lock knees and point toes throughout all skills, especially during flight, handstand phases (e.g., Back Walkover, Back Handsprings), and jumps. Implement drills like handstand holds with resistance bands around ankles and straight leg lifts with active toe point.",
-    "Improve Split Angle: Focus on dynamic flexibility and active hip flexor engagement to achieve the required 150-degree split for dance elements. Incorporate oversplit stretches and dynamic leg swings.",
-    "Refine Landings: Practice controlled, stuck landings for all skills, particularly the dismount. Emphasize landing with the chest up, knees slightly bent, and feet together. Utilize dismounts to a firm surface focusing on holding a perfectly stacked, hollow-body position for 3 seconds post-landing."
+    "Develop consistent full body tension: Focus on actively locking knees and pointing toes in all phases of skills (take-off, flight, landing, holds).",
+    "Improve split amplitude: Dedicate specific drills to oversplit training and dynamic flexibility to achieve 120+ degrees in leaps and jumps.",
+    "Strengthen core and landing mechanics: Work on 'sticky' landings with a stacked center of mass to eliminate steps and balance checks, especially on dismounts and acro series."
   ],
   "celebrations": [
-    "The mount was executed with excellent control and no deductions.",
-    "The gymnast successfully completed all required elements for a Level 6 routine.",
-    "The Back Tuck dismount showed good height and rotation."
+    "The 3 Back Handspring series was performed with good rhythm and connection.",
+    "The Back Tuck dismount was completed successfully.",
+    "The routine demonstrated good confidence and no major falls or breaks."
   ],
-  "athlete_name": "Gymnast",
-  "duration_seconds": 59,
-  "event": "BALANCE_BEAM",
+  "athlete_name": "the gymnast",
+  "duration_seconds": 33,
+  "event": "Balance Beam",
   "gender": "WAG",
-  "level": "JO LEVEL 6",
-  "_code_score": 8.845,
-  "_blended": 8.35,
+  "level": "XCEL GOLD",
+  "_code_score": 8.705,
+  "_blended": 8.15,
   "_source": "ai!",
   "_cal_factor": 0.7,
-  "_raw_exec": 1.4500000000000004,
-  "_scaled_exec": 1.015
+  "_raw_exec": 1.6500000000000008,
+  "_scaled_exec": 1.155
 }
