@@ -84,6 +84,18 @@ export async function runAnalysisPipeline({ videoFile, profile, event, onProgres
 
   if (!videoFile) throw new Error("No video file provided.");
 
+  // ── Mobile diagnostics ─────────────────────────────────────────────────
+  const isMobile = typeof navigator !== 'undefined' && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+  console.log('[mobile-diag] userAgent:', typeof navigator !== 'undefined' ? navigator.userAgent : 'N/A');
+  console.log('[mobile-diag] video file:', { name: videoFile.name, size: videoFile.size, type: videoFile.type, lastModified: videoFile.lastModified });
+  console.log('[mobile-diag] isMobile:', isMobile);
+  console.log('[mobile-diag] online:', typeof navigator !== 'undefined' ? navigator.onLine : 'N/A');
+
+  // ── Mobile file size guard — 300MB limit ───────────────────────────────
+  if (isMobile && videoFile.size > 300 * 1024 * 1024) {
+    throw new Error("This video is too large for mobile analysis. Please trim it to under 3 minutes in your Photos app and try again.");
+  }
+
   // ── Video length gate: reject videos > 5 minutes ──────────────────────
   try {
     const duration = await getVideoDuration(videoFile);
@@ -323,8 +335,10 @@ async function uploadVideo(videoFile, onProgress) {
 
   log.info("upload", `Uploaded: ${fileName} (${(videoFile.size / 1024 / 1024).toFixed(1)}MB)`);
 
-  // Step 3: Poll until ACTIVE
-  for (let i = 0; i < 40; i++) {
+  // Step 3: Poll until ACTIVE (longer timeout on mobile networks)
+  const isMobilePoll = typeof navigator !== 'undefined' && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+  const maxPolls = isMobilePoll ? 60 : 40; // 120s mobile, 80s desktop
+  for (let i = 0; i < maxPolls; i++) {
     await delay(2000);
     try {
       const { state } = await geminiProxy({ action: "pollFile", fileName });
@@ -334,7 +348,7 @@ async function uploadVideo(videoFile, onProgress) {
       if (e.message.includes("failed")) throw e;
     }
     onProgress(Math.min(1, (i + 1) / 30));
-    if (i === 39) throw new Error("Video processing timed out (80s)");
+    if (i === maxPolls - 1) throw new Error(`Video processing timed out (${isMobilePoll ? '120' : '80'}s)`);
   }
 
   return { fileUri, fileName, mimeType };

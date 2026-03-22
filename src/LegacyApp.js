@@ -3372,6 +3372,13 @@ const UploadScreen = React.memo(function UploadScreen({ profile, onBack, onAnaly
       console.warn("File may not be video:", file.type, file.name);
     }
 
+    // Mobile file size guard
+    const isMobileDevice = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+    if (isMobileDevice && file.size > 300 * 1024 * 1024) {
+      setVideoError("This video is too large for mobile analysis. Please trim it to under 3 minutes in your Photos app and try again.");
+      return;
+    }
+
     setVideoError(null);
     let processedFile = file;
 
