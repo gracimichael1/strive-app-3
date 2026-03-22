@@ -174,9 +174,10 @@ export function computeScoreFromScorecard(scorecard, startValue = 10.0, options 
   const codeScore = final_score;
   let warning = null;
   let scoreSource = "code";
+  let scoreDiff = 0;
 
   if (typeof aiScore === "number" && aiScore > 0) {
-    const scoreDiff = Math.abs(codeScore - aiScore);
+    scoreDiff = Math.abs(codeScore - aiScore);
 
     if (scoreDiff <= 0.30) {
       // Within bounds — AI has seen the video, trust its judgment
