@@ -81,6 +81,8 @@ module.exports = function (app) {
           const { fileUri, mimeType, systemPrompt, userPrompt, config } = parsed;
           if (!fileUri || !userPrompt) return res.status(400).json({ error: 'fileUri and userPrompt required' });
 
+          // Separate thinkingConfig from generationConfig (same as api/gemini.js)
+          const { thinkingConfig: tc, ...genConfig } = config || {};
           const reqBody = {
             contents: [{
               parts: [
@@ -88,16 +90,28 @@ module.exports = function (app) {
                 { text: userPrompt },
               ],
             }],
-            generationConfig: config || {},
+            generationConfig: genConfig,
           };
+          if (tc) reqBody.thinkingConfig = tc;
           if (systemPrompt) {
             reqBody.systemInstruction = { parts: [{ text: systemPrompt }] };
           }
 
-          const genRes = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-            { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(reqBody) }
-          );
+          const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+          let genRes = await fetch(geminiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(reqBody) });
+
+          // Graceful fallback: if thinkingConfig causes 400, retry without
+          if (!genRes.ok && reqBody.thinkingConfig) {
+            const errText = await genRes.text().catch(() => '');
+            if (genRes.status === 400 && (errText.includes('thinkingConfig') || errText.includes('Unknown name'))) {
+              console.warn('[setupProxy] thinkingConfig not supported, retrying without');
+              delete reqBody.thinkingConfig;
+              genRes = await fetch(geminiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(reqBody) });
+            } else {
+              return res.status(502).json({ error: `Gemini failed (${genRes.status}): ${errText.substring(0, 300)}` });
+            }
+          }
+
           if (!genRes.ok) {
             const errText = await genRes.text().catch(() => '');
             return res.status(502).json({ error: `Gemini failed (${genRes.status}): ${errText.substring(0, 300)}` });

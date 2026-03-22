@@ -3814,11 +3814,12 @@ const UploadScreen = React.memo(function UploadScreen({ profile, onBack, onAnaly
       {/* Sticky analyze button */}
       <div style={{
         position: "fixed", bottom: 0, left: 0, right: 0,
+        zIndex: 100, display: "flex", justifyContent: "center",
+        background: "linear-gradient(to top, #0d1117 60%, transparent)",
         padding: "12px 16px",
         paddingBottom: "calc(12px + env(safe-area-inset-bottom))",
-        background: "linear-gradient(to top, #0d1117 60%, transparent)",
-        zIndex: 100,
       }}>
+      <div style={{ width: "100%", maxWidth: 430 }}>
         <button
           className="btn-gold"
           onClick={() => onAnalyze({ video, videoUrl, event, notes, meetName, meetLocation, meetDate })}
@@ -3832,6 +3833,7 @@ const UploadScreen = React.memo(function UploadScreen({ profile, onBack, onAnaly
         >
           <Icon name="eye" /> Analyze Routine
         </button>
+      </div>
       </div>
     </div>
   );
