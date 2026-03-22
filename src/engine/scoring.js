@@ -86,17 +86,39 @@ export function computeScoreFromScorecard(scorecard, startValue = 10.0, options 
   const calibrationFactor = getCalibrationFactor(event);
   const deductionLog = scorecard.deduction_log || [];
 
+  // ── Per-skill deduction cap: 0.30 max per skill (falls exempt) ──────────
+  const SKILL_CAP = 0.30;
+  let capFiredCount = 0;
+
   // ── Sum execution deductions from per-skill deduction sub-arrays ────────
   // Prefer granular deductions array; fall back to total_deduction field
   let executionTotal = 0;
   for (const entry of deductionLog) {
+    let skillTotal = 0;
     if (Array.isArray(entry.deductions) && entry.deductions.length > 0) {
       for (const d of entry.deductions) {
-        executionTotal += snapToUSAG(Math.abs(d.point_value || 0));
+        skillTotal += snapToUSAG(Math.abs(d.point_value || 0));
       }
     } else {
-      executionTotal += snapToUSAG(Math.abs(entry.total_deduction || entry.deduction_value || 0));
+      skillTotal = snapToUSAG(Math.abs(entry.total_deduction || entry.deduction_value || 0));
     }
+
+    // Apply cap — falls (0.50 deduction) are exempt
+    const hasFall = skillTotal >= 0.50 ||
+      (entry.deductions || []).some(d => /fall/i.test(d.type || '') || /fall/i.test(d.description || ''));
+    if (skillTotal > SKILL_CAP && !hasFall) {
+      const scale = SKILL_CAP / skillTotal;
+      // Scale individual deductions proportionally
+      if (Array.isArray(entry.deductions)) {
+        for (const d of entry.deductions) {
+          d.point_value = parseFloat((Math.abs(d.point_value || 0) * scale).toFixed(3));
+        }
+      }
+      entry.cappedAt = SKILL_CAP;
+      capFiredCount++;
+      skillTotal = SKILL_CAP;
+    }
+    executionTotal += skillTotal;
   }
 
   // ── Sum D-score from difficulty values (for Elite) ──────────────────────
@@ -182,6 +204,7 @@ export function computeScoreFromScorecard(scorecard, startValue = 10.0, options 
       raw_artistry: roundTo3(rawArtistryTotal),
       scaled_execution: roundTo3(executionTotal),
       scaled_artistry: roundTo3(calibratedArtistry),
+      cap_fired: capFiredCount,
     },
   };
 }
