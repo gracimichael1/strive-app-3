@@ -7766,59 +7766,21 @@ const SettingsScreen = React.memo(function SettingsScreen({ profile, onSave, onB
         <Icon name="save" /> Save Changes
       </button>
 
-      {/* API Configuration */}
+      {/* Analysis engine status — server-side only, no user key needed */}
       <div style={{ marginTop: 32, paddingTop: 24, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
         <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>
           Video Analysis Engine
         </h3>
-        {geminiKey ? (
-          <div style={{
-            display: "flex", alignItems: "center", gap: 8,
-            padding: "10px 14px", borderRadius: 10, marginBottom: 12,
-            background: "rgba(34,197,94,0.04)", border: "1px solid rgba(34,197,94,0.08)",
-          }}>
-            <span style={{ color: "#22c55e", fontSize: 14 }}>✓</span>
-            <div>
-              <span style={{ fontSize: 12, color: "rgba(34,197,94,0.8)" }}>API key configured</span>
-              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", marginTop: 2 }}>2-Pass Engine: Detect → Analyze</div>
-            </div>
+        <div style={{
+          display: "flex", alignItems: "center", gap: 8,
+          padding: "10px 14px", borderRadius: 10,
+          background: "rgba(34,197,94,0.04)", border: "1px solid rgba(34,197,94,0.08)",
+        }}>
+          <span style={{ color: "#22c55e", fontSize: 14 }}>✓</span>
+          <div>
+            <span style={{ fontSize: 12, color: "rgba(34,197,94,0.8)" }}>Analysis engine active</span>
+            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", marginTop: 2 }}>2-Pass BHPA Engine · Server-side processing</div>
           </div>
-        ) : (
-          <div style={{
-            display: "flex", alignItems: "center", gap: 8,
-            padding: "10px 14px", borderRadius: 10, marginBottom: 12,
-            background: "rgba(255,193,90,0.04)", border: "1px solid rgba(255,193,90,0.1)",
-          }}>
-            <span style={{ color: "#ffc15a", fontSize: 14 }}>!</span>
-            <span style={{ fontSize: 12, color: "rgba(255,193,90,0.8)" }}>No API key — add one below to enable analysis</span>
-          </div>
-        )}
-        <p style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginBottom: 10, lineHeight: 1.5 }}>
-          Get a free API key at <span style={{ color: "#e8962a", cursor: "pointer" }} onClick={() => window.open("https://aistudio.google.com/apikey", "_blank")}>aistudio.google.com/apikey</span>. Create one, copy it, paste below.
-        </p>
-        <div style={{ display: "flex", gap: 8 }}>
-          <input
-            className="input-field"
-            type="password"
-            placeholder="Paste your analysis API key (AIza...)"
-            value={geminiKey}
-            onChange={e => setGeminiKey(e.target.value)}
-            style={{ fontSize: 12, flex: 1 }}
-          />
-          <button className="btn-outline" onClick={async () => {
-            try {
-              if (geminiKey) {
-                await storage.set("strive-gemini-key", geminiKey);
-                setKeySaved(true);
-              } else {
-                await storage.delete("strive-gemini-key");
-                setKeySaved(true);
-              }
-              setTimeout(() => setKeySaved(false), 3000);
-            } catch (e) { alert("Error: " + e.message); }
-          }} style={{ padding: "10px 16px", fontSize: 12, whiteSpace: "nowrap" }}>
-            {keySaved ? "✓ Saved" : "Save"}
-          </button>
         </div>
       </div>
 
