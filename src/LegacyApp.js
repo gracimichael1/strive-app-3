@@ -1369,6 +1369,24 @@ export default function LegacyApp() {
     }
   }, []);
 
+  // ── Stripe: Handle checkout success return ──
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('checkout') === 'success') {
+        localStorage.setItem('strive-tier', 'competitive');
+        setUserTier('competitive');
+        // Clean URL
+        const url = new URL(window.location);
+        url.searchParams.delete('checkout');
+        url.searchParams.delete('session_id');
+        window.history.replaceState({}, '', url.pathname + url.search);
+        // Show a brief welcome toast (using alert for now — replace with toast component)
+        setTimeout(() => alert('Welcome to Competitive! Unlimited analyses unlocked.'), 500);
+      }
+    } catch {}
+  }, []);
+
   // ── COPPA: Handle consent confirmation from email link ──
   useEffect(() => {
     try {
