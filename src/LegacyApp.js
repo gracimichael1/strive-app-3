@@ -3563,9 +3563,11 @@ const UploadScreen = React.memo(function UploadScreen({ profile, onBack, onAnaly
       {/* Event Selection */}
       <div style={{ marginBottom: 20 }}>
         <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, display: "block", color: "rgba(255,255,255,0.85)" }}>
-          EVENT (required)
+          <span>EVENT</span>
+          <span style={{ color: "#ef4444", marginLeft: 4 }}>*</span>
+          <span style={{ marginLeft: 8, fontSize: 10, fontWeight: 600, color: "rgba(239,68,68,0.7)", textTransform: "none", letterSpacing: 0 }}>required</span>
         </label>
-        <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(events.length, 5)}, 1fr)`, gap: 8 }}>
+        <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(events.length, 5)}, 1fr)`, gap: 8, border: !event ? "1.5px solid rgba(239,68,68,0.35)" : "1.5px solid transparent", borderRadius: 12, padding: !event ? 6 : 0, transition: "border 0.2s, padding 0.2s" }}>
           {events.map(e => (
             <button
               key={e}
@@ -3586,6 +3588,13 @@ const UploadScreen = React.memo(function UploadScreen({ profile, onBack, onAnaly
         {!event && (
           <div style={{ marginTop: 8, fontSize: 12, color: "rgba(232,150,42,0.8)", padding: "8px 12px", background: "rgba(232,150,42,0.06)", borderRadius: 8 }}>
             Select an event to enable analysis
+          </div>
+        )}
+        {/* MAG beta notice */}
+        {profile.gender === "male" && (
+          <div style={{ marginTop: 10, padding: "10px 13px", borderRadius: 8, background: "rgba(96,165,250,0.07)", border: "1px solid rgba(96,165,250,0.18)", fontSize: 11.5, color: "rgba(255,255,255,0.5)", lineHeight: 1.55 }}>
+            <span style={{ color: "rgba(96,165,250,0.9)", fontWeight: 700 }}>MAG coming soon —</span>{" "}
+            Men's gymnastics scoring is in development. Results may be less accurate than WAG events during this beta period.
           </div>
         )}
         {/* Event-specific filming tip */}
