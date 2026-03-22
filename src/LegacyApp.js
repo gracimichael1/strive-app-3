@@ -3808,18 +3808,31 @@ const UploadScreen = React.memo(function UploadScreen({ profile, onBack, onAnaly
         </div>
       )}
 
-      <button
-        className="btn-gold"
-        onClick={() => onAnalyze({ video, videoUrl, event, notes, meetName, meetLocation, meetDate })}
-        disabled={!video || !event || compressing}
-        style={{
-          width: "100%", fontSize: 17, padding: 18,
-          opacity: (!video || !event) ? 0.4 : 1,
-          pointerEvents: (!video || !event) ? "none" : "auto",
-        }}
-      >
-        <Icon name="eye" /> Analyze Routine
-      </button>
+      {/* Spacer so content doesn't hide behind sticky footer */}
+      <div style={{ height: 100 }} />
+
+      {/* Sticky analyze button */}
+      <div style={{
+        position: "fixed", bottom: 0, left: 0, right: 0,
+        padding: "12px 16px",
+        paddingBottom: "calc(12px + env(safe-area-inset-bottom))",
+        background: "linear-gradient(to top, #0d1117 60%, transparent)",
+        zIndex: 100,
+      }}>
+        <button
+          className="btn-gold"
+          onClick={() => onAnalyze({ video, videoUrl, event, notes, meetName, meetLocation, meetDate })}
+          disabled={!video || !event || compressing}
+          style={{
+            width: "100%", fontSize: 17, padding: 18, height: 56,
+            borderRadius: 12, fontWeight: 700,
+            opacity: (!video || !event) ? 0.4 : 1,
+            pointerEvents: (!video || !event) ? "none" : "auto",
+          }}
+        >
+          <Icon name="eye" /> Analyze Routine
+        </button>
+      </div>
     </div>
   );
 });
@@ -5124,6 +5137,8 @@ IMPORTANT: The deduction_log must contain ONE entry per distinct skill or transi
           },
         });
 
+        console.log('[pipeline] result:', result);
+
         // Attach video URL for VideoReviewPlayer
         result.videoUrl = uploadData.videoUrl;
         setProgress(100);
@@ -5131,12 +5146,9 @@ IMPORTANT: The deduction_log must contain ONE entry per distinct skill or transi
         setTimeout(() => onComplete(result), 800);
       } catch (err) {
         console.error("Analysis pipeline failed:", err);
-        const demoResult = generateDemoResult(uploadData.event, profile, []);
-        demoResult.videoUrl = uploadData.videoUrl;
-        demoResult.failureReason = err.message || "Unknown error";
-        setProgress(100);
-        setStatus("Analysis complete (demo mode)");
-        setTimeout(() => onComplete(demoResult), 800);
+        setProgress(0);
+        setStatus(`Analysis didn't complete — ${err.message || 'please try again.'}`);
+        // Do NOT show demo data as if it were a real result
       }
     })();
   }, [uploadData, profile, onComplete]);

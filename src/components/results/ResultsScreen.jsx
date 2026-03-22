@@ -37,13 +37,13 @@ const GRADE_LABELS = {
 };
 
 const EVENT_OPENERS = {
-  Vault:            "Great vault \u2014 here's what the judges saw:",
-  'Uneven Bars':    "Solid bars \u2014 here's what the judges saw:",
-  'Balance Beam':   "She stayed on \u2014 here's the full picture:",
-  'Floor Exercise': "Strong routine \u2014 here's what the judges saw:",
+  Vault:            "Great vault — here's what the judges saw:",
+  'Uneven Bars':    "Solid bars — here's what the judges saw:",
+  'Balance Beam':   "She stayed on — here's the full picture:",
+  'Floor Exercise': "Strong routine — here's what the judges saw:",
 };
 
-const DEG = '\u00B0';
+const DEG = '°';
 
 function parseTs(ts) {
   if (typeof ts === 'number') return ts;
@@ -62,7 +62,10 @@ export default function ResultsScreen({ result, profile, previousResult, onBack,
 
   if (!result) return <div style={{ minHeight: '100vh', background: T.bg }} />;
 
-  const skills = result.gradedSkills || [];
+  // Diagnostic — remove after confirming field names
+  console.log('[ResultsScreen] result:', result);
+
+  const skills = result.gradedSkills ?? result.skills ?? result.skillBreakdown ?? [];
   const event = result.event || '';
   const finalScore = result.finalScore || 0;
   const startValue = result.startValue || 10.0;
@@ -149,13 +152,13 @@ export default function ResultsScreen({ result, profile, previousResult, onBack,
             color: copied ? T.green : T.text, fontSize: 12, fontWeight: 600,
             fontFamily: T.sans, minHeight: 36,
           }}>
-            {copied ? '\u2713 Copied' : 'Share with Coach'}
+            {copied ? '✓ Copied' : 'Share with Coach'}
           </button>
         </div>
 
         {/* Confidence range — MANDATORY */}
         <div style={{ fontSize: 13, color: 'rgba(230,237,243,0.7)', fontFamily: T.sans, marginTop: 4 }}>
-          range {rangeLow}\u2013{rangeHigh} &middot; {confidence} confidence
+          range {rangeLow}–{rangeHigh} · {confidence} confidence
         </div>
 
         {/* Stat bar */}
@@ -164,7 +167,7 @@ export default function ResultsScreen({ result, profile, previousResult, onBack,
           <span>Ded -{totalDed.toFixed(2)}</span>
           {scoreDelta !== null && (
             <span style={{ color: scoreDelta >= 0 ? T.green : T.red }}>
-              {scoreDelta >= 0 ? '\u25B2' : '\u25BC'}{Math.abs(scoreDelta).toFixed(2)} vs last
+              {scoreDelta >= 0 ? '▲' : '▼'}{Math.abs(scoreDelta).toFixed(2)} vs last
             </span>
           )}
         </div>
@@ -179,7 +182,7 @@ export default function ResultsScreen({ result, profile, previousResult, onBack,
             background: T.goldBg, border: '1px solid rgba(240,160,48,0.18)',
           }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: T.gold, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 6, fontFamily: T.sans }}>
-              \u2B50 TODAY'S FIX
+              ⭐ TODAY'S FIX
             </div>
             <div style={{ fontSize: 14, fontWeight: 700, color: T.text, fontFamily: T.sans, marginBottom: 4 }}>
               {todaysFixName}
@@ -481,11 +484,11 @@ function SkillCard({ skill, index, isFree, freeDeductionLimit, globalDeductionIn
                     <div key={a.joint} style={{ padding: 10, background: T.cardInner, borderRadius: 10 }}>
                       <div style={{ fontSize: 10, color: T.textMuted, textTransform: 'uppercase', letterSpacing: 0.5, fontFamily: T.sans, marginBottom: 4 }}>{a.joint}</div>
                       <div style={{ fontSize: 18, fontWeight: 700, color: ok ? T.green : T.orange, fontFamily: T.mono }}>
-                        {!isNaN(val) ? `${val}${DEG}` : '\u2014'}
+                        {!isNaN(val) ? `${val}${DEG}` : '—'}
                       </div>
                       <div style={{ fontSize: 10, color: T.textMuted, fontFamily: T.sans }}>Ideal: {a.ideal}{DEG}</div>
                       <div style={{ fontSize: 10, color: ok ? T.green : T.orange, fontWeight: 600, fontFamily: T.sans, marginTop: 2 }}>
-                        {!isNaN(val) ? (ok ? 'On target' : 'Needs work') : '\u2014'}
+                        {!isNaN(val) ? (ok ? 'On target' : 'Needs work') : '—'}
                       </div>
                     </div>
                   );
@@ -494,7 +497,7 @@ function SkillCard({ skill, index, isFree, freeDeductionLimit, globalDeductionIn
                   <div style={{ padding: 10, background: T.cardInner, borderRadius: 10 }}>
                     <div style={{ fontSize: 10, color: T.textMuted, textTransform: 'uppercase', letterSpacing: 0.5, fontFamily: T.sans, marginBottom: 4 }}>Body Line</div>
                     <div style={{ fontSize: 18, fontWeight: 700, color: T.text, fontFamily: T.mono }}>{bio.bodyLineScore}/10</div>
-                    <div style={{ fontSize: 10, color: T.textMuted, fontFamily: T.sans }}>Efficiency: {bio.efficiency || '\u2014'}/10</div>
+                    <div style={{ fontSize: 10, color: T.textMuted, fontFamily: T.sans }}>Efficiency: {bio.efficiency || '—'}/10</div>
                   </div>
                 )}
               </div>
@@ -506,7 +509,7 @@ function SkillCard({ skill, index, isFree, freeDeductionLimit, globalDeductionIn
                 {injury ? (
                   <div style={{ padding: 12, background: 'rgba(249,115,22,0.06)', borderRadius: 10, border: '1px solid rgba(249,115,22,0.12)' }}>
                     <div style={{ fontSize: 10, fontWeight: 700, color: T.orange, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6, fontFamily: T.sans }}>
-                      {injuryLevel} risk {skill.injuryBodyPart ? `\u2014 ${skill.injuryBodyPart}` : ''}
+                      {injuryLevel} risk {skill.injuryBodyPart ? `— ${skill.injuryBodyPart}` : ''}
                     </div>
                     <div style={{ fontSize: 13, color: T.text, fontFamily: T.sans, lineHeight: 1.5 }}>{injury}</div>
                     {skill.injuryNote && (
