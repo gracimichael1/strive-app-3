@@ -11,7 +11,8 @@ import fs from "fs";
 import path from "path";
 import { Readable } from "stream";
 
-const PROXY = "http://localhost:3000/api/gemini";
+// Use production endpoint directly for validation (rate limiter resets per cold start)
+const PROXY = process.env.TEST_PROXY || "https://strive-app-amber.vercel.app/api/gemini";
 const TOKEN = "strive-2026-launch";
 
 const VIDEOS = [
