@@ -1318,7 +1318,15 @@ function MeetDayChecklist({ gender }) {
 
 // ─── MAIN APP ───────────────────────────────────────────────────────
 export default function LegacyApp() {
-  const [screen, setScreenRaw] = useState("splash");
+  const [screen, setScreenRaw] = useState(() => {
+    // Returning users with a profile bypass the beta gate
+    try {
+      const hasProfile = !!localStorage.getItem('strive-profile');
+      const hasBetaAccess = localStorage.getItem('strive-beta-access') === 'true';
+      if (hasProfile || hasBetaAccess) return "splash";
+    } catch {}
+    return "beta-gate";
+  });
   // Auto-scroll to top on screen changes
   const setScreen = useCallback((s) => {
     setScreenRaw(s);
@@ -1532,6 +1540,7 @@ export default function LegacyApp() {
       }} />
 
       {screen === "share" && <ShareScreen token={shareToken} />}
+      {screen === "beta-gate" && <BetaCodeScreen onSuccess={() => setScreen("splash")} />}
       {screen === "splash" && <SplashScreen onStart={() => setScreen("onboarding")} />}
       {screen === "onboarding" && <OnboardingScreen onComplete={(p) => {
         saveProfile(p); setScreen("dashboard");
@@ -1891,6 +1900,68 @@ export default function LegacyApp() {
     </div>
   );
 }
+// ─── BETA CODE GATE ─────────────────────────────────────────────────
+function BetaCodeScreen({ onSuccess }) {
+  const [code, setCode] = useState("");
+  const [error, setError] = useState(false);
+  const VALID_CODES = ["STRIVE2026", "GYMNAST", "COACH2026", "XCELGOLD", "BETAFAM", "GYMFAM"];
+
+  const handleSubmit = () => {
+    const trimmed = code.trim().toUpperCase();
+    if (VALID_CODES.includes(trimmed)) {
+      try { localStorage.setItem("strive-beta-access", "true"); } catch {}
+      onSuccess();
+    } else {
+      setError(true);
+      setTimeout(() => setError(false), 800);
+    }
+  };
+
+  return (
+    <div style={{ minHeight: "100vh", background: "#0d1117", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24 }}>
+      <div style={{ width: "100%", maxWidth: 400, textAlign: "center" }}>
+        <div style={{ fontSize: 32, fontWeight: 800, color: "#f0a030", fontFamily: "'Outfit', sans-serif", marginBottom: 8, letterSpacing: -0.5 }}>STRIVE</div>
+        <div style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", fontFamily: "'Outfit', sans-serif", marginBottom: 32 }}>Private beta — by invitation only</div>
+        <input
+          className="input-field"
+          type="text"
+          placeholder="Enter invite code"
+          value={code}
+          onChange={(e) => setCode(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+          style={{
+            width: "100%", fontSize: 16, textAlign: "center", marginBottom: 12,
+            borderColor: error ? "#ef4444" : undefined,
+            transition: "border-color 0.3s",
+          }}
+        />
+        {error && (
+          <div style={{ fontSize: 13, color: "#ef4444", fontFamily: "'Outfit', sans-serif", marginBottom: 12 }}>
+            That code isn't valid — check your invite email.
+          </div>
+        )}
+        <button
+          onClick={handleSubmit}
+          className="btn-gold"
+          style={{ width: "100%", height: 56, fontSize: 16, fontWeight: 700, borderRadius: 12 }}
+        >
+          Get Access
+        </button>
+        <div style={{ marginTop: 20 }}>
+          <a
+            href="https://forms.gle/PLACEHOLDER"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", fontFamily: "'Outfit', sans-serif", textDecoration: "none" }}
+          >
+            Don't have a code? <span style={{ color: "#f0a030", textDecoration: "underline" }}>Join the waitlist →</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SplashScreen({ onStart }) {
   const [entered, setEntered] = useState(false);
   useEffect(() => { setTimeout(() => setEntered(true), 100); }, []);
