@@ -161,11 +161,22 @@ export default function ResultsScreen({ result, profile, previousResult, onBack,
           range {rangeLow}–{rangeHigh} · {confidence} confidence
         </div>
 
+        {/* Judging standard badge */}
+        <div style={{
+          display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 5,
+          padding: '3px 9px', borderRadius: 99,
+          background: 'rgba(232,150,42,0.08)', border: '1px solid rgba(232,150,42,0.18)',
+          fontSize: 10.5, fontWeight: 600, color: 'rgba(232,150,42,0.8)',
+          letterSpacing: 0.3, fontFamily: T.sans,
+        }}>
+          ⚖️ Scored at State Championship competitive standard
+        </div>
+
         {/* Stat bar */}
         <div style={{ display: 'flex', gap: 12, marginTop: 10, fontSize: 12, color: T.textSec, fontFamily: T.mono }}>
           <span>SV {startValue.toFixed(1)}</span>
           <span>Ded -{totalDed.toFixed(2)}</span>
-          {scoreDelta !== null && (
+          {scoreDelta !== null && Math.abs(scoreDelta) > 0.001 && (
             <span style={{ color: scoreDelta >= 0 ? T.green : T.red }}>
               {scoreDelta >= 0 ? '▲' : '▼'}{Math.abs(scoreDelta).toFixed(2)} vs last
             </span>
