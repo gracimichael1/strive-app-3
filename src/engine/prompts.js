@@ -48,6 +48,29 @@ A "skill" is a complete, named element or connected sequence — NOT individual 
 Do NOT break a named skill into sub-movements. Do NOT count swings, grips, or transitions as skills.
 CRITICAL: Each skill appears ONCE in your output. Do NOT list the same skill multiple times. A bars routine has 7-10 skills total, floor has 6-10, beam has 8-12. If your list exceeds these counts, you are duplicating skills — remove duplicates.
 
+STRICT OBSERVATION RULE — applies to every event and level:
+Only report skills you can clearly see performed in the video. Never infer or assume a skill is present because the level requires it. If a required skill is absent, mark it NOT_MET in special_requirements. Do not add it to deduction_log. The only question is: did I SEE this skill performed?
+
+BARS — commonly confused skills:
+  KIP: Hips must reach bar height. If hips stay below bar throughout: it is a glide swing or tap swing.
+  GLIDE SWING: Body swings forward under the bar, feet sweep low, hips never reach bar. Not a kip.
+  TAP SWING: Hollow-arch-hollow rhythm building swing. No hip contact. Not a kip or long hang kip.
+  LONG HANG KIP: Same as kip but from long hang. Hips must still reach bar. If not: tap swing.
+  FLYAWAY / DISMOUNT: Gymnast fully releases the bar and lands on the mat. A swing returning to the bar is not a flyaway.
+
+BEAM — commonly confused skills:
+  BACK WALKOVER vs BACK HANDSPRING: Walkover is one leg at a time through vertical. Handspring is two feet pushing off simultaneously. Do not label one as the other based on level expectations.
+  SERIES vs SINGLE SKILL: Two connected acro elements (e.g. back walkover + back handspring) is a series — one entry in deduction_log. Do not split into two.
+
+FLOOR — commonly confused skills:
+  TUMBLING PASS: The entire connected sequence (e.g. round-off + back handspring + back tuck) is ONE skill. Do not list each element separately.
+  LEAP vs JUMP: A leap has one foot pushing off. A jump uses both feet. Label accurately — they have different SR values at different levels.
+
+VAULT — one skill total:
+  Vault is always ONE skill regardless of how many phases (run, hurdle, board, table, flight, landing). Do not list pre-flight and post-flight as separate skills.
+
+UNIVERSAL RULE: If you are not certain what a skill is, label it with the most conservative accurate description you can confirm. A shorter, accurate skill list is always better than a longer hallucinated one.
+
 III. Output Protocol
 For each skill and transition:
 1. Identify every skill performed, in order
@@ -97,6 +120,7 @@ Special Requirements:
 Amplitude:
   FLOOR: Split leap minimum 60°. Below 60°: -0.20.
   BARS:  Cast to below horizontal acceptable at Bronze, but knee/feet form still judged.
+SR VERIFICATION: Only credit a special requirement as MET if you clearly see the skill performed. If absent from the video, mark NOT_MET regardless of level expectations.
 `,
   XCEL_SILVER: `
 ## LEVEL: XCEL SILVER (WAG)
@@ -108,6 +132,7 @@ Special Requirements:
 Amplitude:
   FLOOR: Split leap minimum 90°. Below 90°: -0.10.
   BARS:  Cast should approach horizontal. Below 45°: -0.10.
+SR VERIFICATION: Only credit a special requirement as MET if you clearly see the skill performed. If absent from the video, mark NOT_MET regardless of level expectations.
 `,
   XCEL_GOLD: `
 ## LEVEL: XCEL GOLD (WAG)
@@ -138,6 +163,7 @@ State Championship additional scrutiny:
   - Artistry deductions up to -0.30 total for flat performance.
 
 XCEL GOLD FLOOR SKILL COUNT: A Gold routine has 1-2 tumbling passes. If you identify more than 2, recount. A tumbling pass ends when the gymnast's feet return to the floor and she takes a step or pause.
+SR VERIFICATION: Only credit a special requirement as MET if you clearly see the skill performed. If absent from the video, mark NOT_MET regardless of level expectations.
 `,
   XCEL_PLATINUM: `
 ## LEVEL: XCEL PLATINUM (WAG)
@@ -151,6 +177,7 @@ Amplitude:
   BARS:  Cast must be ABOVE HORIZONTAL (>180°/above the bar).
          At horizontal: -0.10. Below horizontal: -0.30 + SR not awarded.
 B-Value Requirement (BARS): Must identify at least 1 B-skill. If absent: -0.50 SV reduction.
+SR VERIFICATION: Only credit a special requirement as MET if you clearly see the skill performed. If absent from the video, mark NOT_MET regardless of level expectations.
 `,
   XCEL_DIAMOND: `
 ## LEVEL: XCEL DIAMOND (WAG)
@@ -163,6 +190,7 @@ Amplitude:
   BARS: Cast must be clearly ABOVE horizontal. Full handstand preferred.
         At horizontal: -0.30. Below: SR denied.
 Artistry is heavily weighted at Diamond. Deduct maximum for any flat performance.
+SR VERIFICATION: Only credit a special requirement as MET if you clearly see the skill performed. If absent from the video, mark NOT_MET regardless of level expectations.
 `,
 
   // ── JO Compulsory ──
@@ -171,18 +199,21 @@ Artistry is heavily weighted at Diamond. Deduct maximum for any flat performance
 Compulsory: Every skill is pre-defined. No variation.
 Start Value: 10.0
 Deduct for ANY deviation from the compulsory choreography pattern.
+SR VERIFICATION: Only credit a special requirement as MET if you clearly see the skill performed. If absent from the video, mark NOT_MET regardless of level expectations.
 `,
   JO_LEVEL_4: `
 ## LEVEL: JO LEVEL 4 (Compulsory WAG)
 Compulsory: Every skill is pre-defined.
 Start Value: 10.0
 Same structure as Level 3. Amplitude requirements begin (60°+ leaps).
+SR VERIFICATION: Only credit a special requirement as MET if you clearly see the skill performed. If absent from the video, mark NOT_MET regardless of level expectations.
 `,
   JO_LEVEL_5: `
 ## LEVEL: JO LEVEL 5 (Optional WAG)
 Start Value: 10.0
 BARS: Cast to horizontal required. Below: -0.10 to -0.50.
 FLOOR: Split 120°+ required. Salto required in acro passes.
+SR VERIFICATION: Only credit a special requirement as MET if you clearly see the skill performed. If absent from the video, mark NOT_MET regardless of level expectations.
 `,
 
   // ── JO Optional ──
@@ -191,24 +222,28 @@ FLOOR: Split 120°+ required. Salto required in acro passes.
 Start Value: 10.0
 BARS: Cast to horizontal. B-value element required.
 FLOOR: Two different acro passes, salto required in both.
+SR VERIFICATION: Only credit a special requirement as MET if you clearly see the skill performed. If absent from the video, mark NOT_MET regardless of level expectations.
 `,
   JO_LEVEL_7: `
 ## LEVEL: JO LEVEL 7 (Optional WAG)
 Start Value: 10.0
 BARS: Cast ABOVE horizontal. B-value element minimum.
 FLOOR: One pass must include a salto with a full twist or higher.
+SR VERIFICATION: Only credit a special requirement as MET if you clearly see the skill performed. If absent from the video, mark NOT_MET regardless of level expectations.
 `,
   JO_LEVEL_8: `
 ## LEVEL: JO LEVEL 8 (Optional WAG)
 Start Value: 10.0
 BARS: Casts to handstand expected. Amplitude deductions aggressive.
 FLOOR: Salto difficulty (C-level minimum) expected.
+SR VERIFICATION: Only credit a special requirement as MET if you clearly see the skill performed. If absent from the video, mark NOT_MET regardless of level expectations.
 `,
   JO_LEVEL_9: `
 ## LEVEL: JO LEVEL 9 (Optional WAG)
 D-score + E-score system. Start Value is SUM of difficulty + connection bonuses.
 BARS: Casts to handstand required. Release moves or pirouettes expected.
 FLOOR: C/D-level saltos expected. Artistry heavily weighted.
+SR VERIFICATION: Only credit a special requirement as MET if you clearly see the skill performed. If absent from the video, mark NOT_MET regardless of level expectations.
 `,
   JO_LEVEL_10: `
 ## LEVEL: JO LEVEL 10 / Pre-Elite (Optional WAG)
@@ -217,6 +252,7 @@ D-score: Sum of 8 highest difficulty elements + connection bonuses.
 E-score: 10.0 - execution deductions.
 BARS: Full pirouettes, release moves (C+) expected.
 FLOOR: D-level saltos, complex dance, full choreographic expression required.
+SR VERIFICATION: Only credit a special requirement as MET if you clearly see the skill performed. If absent from the video, mark NOT_MET regardless of level expectations.
 `,
   ELITE: `
 ## LEVEL: ELITE / FIG International (WAG/MAG)
@@ -224,6 +260,7 @@ Full FIG Code of Points. D-score + E-score + Neutral Deductions.
 D-score: 8 highest difficulty values + connection bonus + composition requirements.
 E-score: 10.0 - execution deductions (applied by two judge panels, averaged).
 Zero leniency. Artistry judged at highest professional standard.
+SR VERIFICATION: Only credit a special requirement as MET if you clearly see the skill performed. If absent from the video, mark NOT_MET regardless of level expectations.
 `,
 };
 
