@@ -3812,6 +3812,23 @@ const UploadScreen = React.memo(function UploadScreen({ profile, onBack, onAnaly
         paddingBottom: "calc(12px + env(safe-area-inset-bottom))",
       }}>
       <div style={{ width: "100%", maxWidth: 430 }}>
+        {video && event && (
+          <div style={{
+            marginBottom: 10, padding: "10px 14px", borderRadius: 10,
+            background: "rgba(232,150,42,0.07)", border: "1px solid rgba(232,150,42,0.15)",
+            display: "flex", gap: 10, alignItems: "flex-start",
+          }}>
+            <span style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}>⏱</span>
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(232,150,42,0.9)", marginBottom: 3, letterSpacing: 0.2 }}>
+                Analysis takes 30–45 seconds
+              </div>
+              <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.45)", lineHeight: 1.55 }}>
+                STRIVE runs a full biomechanical assessment — every joint angle, skill deduction, and injury risk evaluated frame by frame. Worth the wait.
+              </div>
+            </div>
+          </div>
+        )}
         <button
           className="btn-gold"
           onClick={() => onAnalyze({ video, videoUrl, event, notes, meetName, meetLocation, meetDate })}
@@ -5161,6 +5178,21 @@ IMPORTANT: The deduction_log must contain ONE entry per distinct skill or transi
         style={{ position: "absolute", width: 1, height: 1, opacity: 0.01, pointerEvents: "none", top: -100 }}
       />
 
+      {/* Opening message (0–25%) */}
+      {progress < 25 && (
+        <div style={{ textAlign: "center", marginBottom: 28, animation: "fadeIn 0.6s ease-out" }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(232,150,42,0.8)", letterSpacing: 0.5, textTransform: "uppercase", marginBottom: 8 }}>
+            Full analysis in progress
+          </div>
+          <div style={{ fontSize: 15, fontWeight: 600, color: "rgba(255,255,255,0.85)", lineHeight: 1.5, maxWidth: 280, margin: "0 auto" }}>
+            Evaluating every skill, joint angle, and deduction — like a certified judge watching in slow motion.
+          </div>
+          <div style={{ marginTop: 12, fontSize: 12, color: "rgba(255,255,255,0.3)", fontFamily: "'Space Mono', monospace" }}>
+            Est. 30–45 seconds
+          </div>
+        </div>
+      )}
+
       {/* Spinner */}
       <div style={{
         width: 72, height: 72, borderRadius: "50%", margin: "0 auto 24px",
@@ -5274,7 +5306,7 @@ IMPORTANT: The deduction_log must contain ONE entry per distinct skill or transi
       )}
 
       {/* Rotating tips during analysis */}
-      {progress > 30 && progress < 95 && (
+      {progress > 20 && progress < 95 && (
         <div style={{
           marginTop: 28, padding: "12px 20px", borderRadius: 12,
           background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)",
