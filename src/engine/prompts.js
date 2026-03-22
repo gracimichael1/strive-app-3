@@ -18,7 +18,9 @@
  * ═══════════════════════════════════════════════════════════════════════════════
  */
 
-export const PROMPT_VERSION = "v13_bhpa_engine";
+import { getProgression } from './usag-progression';
+
+export const PROMPT_VERSION = "v14_levelup_engine";
 
 // ─── BHPA Master System Instruction ─────────────────────────────────────────
 // Gold standard prompt — validated in Gemini Studio to produce 0.075 delta.
@@ -448,6 +450,55 @@ Before outputting, verify:
 - Your final_score is between 8.0 and 9.5 for a completed routine with no falls.
 - If it is not, adjust your deductions to match what a real judge panel would award.
 `);
+
+  // ── Section IV: Level Progression Analysis (runtime injection) ──────
+  const nextLevelData = getProgression(profile.level, event);
+  if (nextLevelData && nextLevelData.requiredSkills?.length > 0 && !nextLevelData.requiredSkills[0]?.includes('outside beta scope')) {
+    const nextLevel = nextLevelData.nextLevel || 'next level';
+    const nextLevelReqs = JSON.stringify({
+      requiredSkills: nextLevelData.requiredSkills,
+      executionStandards: nextLevelData.executionStandards,
+      srRequirements: nextLevelData.srRequirements,
+      commonGaps: nextLevelData.commonGaps,
+    }, null, 2);
+
+    parts.push(`
+=== SECTION IV: LEVEL PROGRESSION ANALYSIS ===
+
+Athlete's current level: ${profile.level || levelKey.replace(/_/g, ' ')}.
+Target next level: ${nextLevel}.
+
+Next level requirements for ${event || 'this event'}:
+${nextLevelReqs}
+
+Compare ALL observed skills and execution quality against these requirements. Identify every gap between current performance and what is needed at ${nextLevel}.
+
+Output a "levelProgressionAnalysis" field in your JSON response with this structure:
+{
+  "levelProgressionAnalysis": {
+    "currentLevel": "${profile.level || levelKey.replace(/_/g, ' ')}",
+    "targetLevel": "${nextLevel}",
+    "event": "${event || 'this event'}",
+    "overallReadiness": "Ready now" | "Close (2-4 weeks)" | "Working toward (1-2 months)" | "Long term goal",
+    "projectedScoreAtNextLevel": <number>,
+    "gaps": [
+      {
+        "gapName": "<skill or execution element>",
+        "currentState": "<what you observed>",
+        "nextLevelRequirement": "<what is required>",
+        "impactAtNextLevel": "<e.g. 0.5 SR deduction if not fixed>",
+        "priority": <1 is highest>,
+        "drill": "<one specific drill>",
+        "timelineEstimate": "1-2 weeks" | "2-4 weeks" | "1-2 months" | "requires full season"
+      }
+    ],
+    "strengthsCarryingOver": ["<skills already meeting next-level standard>"]
+  }
+}
+
+RULES: Maximum 6 gaps ranked by score impact. Do NOT invent requirements not in the table above. If a required skill was not observed, list as gap with currentState: "Not yet observed."
+`);
+  }
 
   const system = parts.join("\n");
 
