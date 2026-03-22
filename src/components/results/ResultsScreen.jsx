@@ -277,6 +277,11 @@ export default function ResultsScreen({ result, profile, previousResult, onBack,
         }}>
           &#9888; AI scoring estimates are typically within 0.15&ndash;0.25 of judge scores.
           Camera angle and video quality affect accuracy. Results are for training only.
+          <br /><br />
+          Skill identification is AI-estimated from video and may occasionally mislabel
+          similar-looking skills (e.g. tap swing vs kip). Deduction amounts are more
+          reliable than skill names. Tap any skill card to review — use 'Flag skill'
+          to help improve accuracy.
         </div>
 
       </div>
@@ -457,6 +462,21 @@ function SkillCard({ skill, index, isFree, freeDeductionLimit, globalDeductionIn
                     </div>
                   </div>
                 )}
+                <button
+                  onClick={() => {
+                    const msg = `Skill flagged: "${name}" may be incorrectly identified. Event: ${skill.category}, Timestamp: ${ts}`;
+                    console.log('[feedback]', msg);
+                    alert('Thank you — this helps us improve skill detection.');
+                  }}
+                  style={{
+                    marginTop: 8, fontSize: 11, color: 'rgba(255,255,255,0.35)',
+                    background: 'none', border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: 6, padding: '4px 10px', cursor: 'pointer',
+                    fontFamily: T.sans,
+                  }}
+                >
+                  ⚑ Flag incorrect skill
+                </button>
               </div>
             )}
 
