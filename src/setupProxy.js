@@ -18,6 +18,7 @@ module.exports = function (app) {
   }));
 
   const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+  console.log('[setupProxy] GEMINI_API_KEY present:', !!GEMINI_API_KEY, GEMINI_API_KEY ? `(${GEMINI_API_KEY.substring(0, 8)}...)` : '');
 
   if (!GEMINI_API_KEY) {
     console.warn('[setupProxy] No GEMINI_API_KEY env var — proxying /api to production Vercel.');
@@ -32,6 +33,7 @@ module.exports = function (app) {
   }
 
   app.post('/api/gemini', async (req, res) => {
+    console.log('[setupProxy] GEMINI ROUTE HIT, key present:', !!GEMINI_API_KEY);
     if (!GEMINI_API_KEY) {
       return res.status(500).json({ error: 'GEMINI_API_KEY not configured on server' });
     }

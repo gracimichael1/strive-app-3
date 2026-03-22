@@ -16,11 +16,8 @@ const PROXY = process.env.TEST_PROXY || "http://localhost:3000/api/gemini";
 const TOKEN = "strive-2026-launch";
 
 const VIDEOS = [
-  // Xcel Gold — correct program type for these test videos
-  { file: "differentvaultcomp.mov", event: "Vault", realScore: 8.85, level: "Xcel Gold" },
+  // Single bars test for diagnostic
   { file: "IMG_4061.MOV", event: "Uneven Bars", realScore: 8.525, level: "Xcel Gold" },
-  { file: "IMG_9884.MOV", event: "Balance Beam", realScore: 8.85, level: "Xcel Gold" },
-  { file: "IMG_5178 3.mov", event: "Floor Exercise", realScore: 8.925, level: "Xcel Gold" },
 ];
 
 async function api(body) {

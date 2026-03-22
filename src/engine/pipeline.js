@@ -120,6 +120,7 @@ export async function runAnalysisPipeline({ videoFile, profile, event, onProgres
   // ══════════════════════════════════════════════════════════════════════════
   onProgress({ stage: "pass1", pct: 40, label: "Judging routine — identifying skills and deductions..." });
   const { system: sys1, user: usr1 } = buildPass1Prompt(profile, event);
+  console.log("DIAGNOSTIC: PIPELINE EVENT:", event, "| LEVEL:", profile.level, "| LEVEL_CATEGORY:", profile.levelCategory);
   log.info("pass1", `Prompt: ${usr1.length} chars | Level: ${profile.level} | Event: ${event}`);
 
   let pass1Raw;
