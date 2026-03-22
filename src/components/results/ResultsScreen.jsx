@@ -59,6 +59,7 @@ function parseTs(ts) {
 export default function ResultsScreen({ result, profile, previousResult, onBack, onUpgrade, onJumpToTimestamp, videoUrl }) {
   const { tier, features } = useTier();
   const [showSkeleton, setShowSkeleton] = useState(false);
+  const [resultsTab, setResultsTab] = useState('analysis');
   const isFree = tier === 'free';
 
   if (!result) return <div style={{ minHeight: '100vh', background: T.bg }} />;
@@ -226,6 +227,27 @@ export default function ResultsScreen({ result, profile, previousResult, onBack,
           </div>
         )}
 
+        {/* ═══ RESULTS TAB BAR (Analysis / Level Up) ═══ */}
+        <div style={{ display: 'flex', gap: 0, margin: '14px 16px 0', borderRadius: 10, overflow: 'hidden', border: `1px solid ${T.border}` }}>
+          {[{ id: 'analysis', label: 'Analysis' }, { id: 'levelup', label: 'Level Up' }].map(t => (
+            <button key={t.id} onClick={() => setResultsTab(t.id)} style={{
+              flex: 1, padding: '10px 0', fontSize: 13, fontWeight: 600,
+              fontFamily: T.sans, cursor: 'pointer', border: 'none',
+              background: resultsTab === t.id ? 'rgba(240,160,48,0.12)' : T.bg,
+              color: resultsTab === t.id ? T.gold : T.textMuted,
+              transition: 'all 0.15s',
+            }}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {/* ═══ LEVEL UP TAB CONTENT ═══ */}
+        {resultsTab === 'levelup' && <LevelUpPanel result={result} isFree={isFree} onUpgrade={onUpgrade} />}
+
+        {/* ═══ ANALYSIS TAB CONTENT ═══ */}
+        {resultsTab === 'analysis' && <>
+
         {/* ═══ 3. SKILL SUMMARY BAR ═══ */}
         <div style={{
           display: 'flex', margin: '12px 16px 0',
@@ -291,6 +313,8 @@ export default function ResultsScreen({ result, profile, previousResult, onBack,
           </div>
         )}
 
+        </>}
+
         {/* ═══ 6. COMPLIANCE DISCLAIMER ═══ */}
         <div style={{
           margin: '24px 16px 0', padding: '12px 0', textAlign: 'center',
@@ -314,6 +338,173 @@ export default function ResultsScreen({ result, profile, previousResult, onBack,
 // ═════════════════════════════════════════════════════════════════════════════
 // SKILL CARD
 // ═════════════════════════════════════════════════════════════════════════════
+
+// ═════════════════════════════════════════════════════════════════════════════
+// LEVEL UP PANEL
+// ═════════════════════════════════════════════════════════════════════════════
+
+function LevelUpPanel({ result, isFree, onUpgrade }) {
+  const lpa = result?.levelProgressionAnalysis;
+  const [expandedGap, setExpandedGap] = useState(null);
+
+  if (!lpa) {
+    return (
+      <div style={{ margin: '16px 16px 0', padding: 20, borderRadius: 12, background: T.card, textAlign: 'center' }}>
+        <div style={{ fontSize: 14, color: T.textSec, fontFamily: T.sans }}>
+          Level progression data unavailable for this analysis. Upload a new routine to see your Level Up roadmap.
+        </div>
+      </div>
+    );
+  }
+
+  const readinessColors = {
+    'Ready now': T.green,
+    'Close (2-4 weeks)': '#fbbf24',
+    'Working toward (1-2 months)': T.gold,
+    'Long term goal': T.blue,
+  };
+  const readinessColor = readinessColors[lpa.overallReadiness] || T.gold;
+  const gaps = lpa.gaps || [];
+  const strengths = lpa.strengthsCarryingOver || [];
+
+  return (
+    <div style={{ margin: '16px 16px 0' }}>
+      {/* 1. READINESS BADGE */}
+      <div style={{
+        padding: '14px 16px', borderRadius: 12, textAlign: 'center', marginBottom: 12,
+        background: `${readinessColor}15`, border: `1.5px solid ${readinessColor}40`,
+      }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: readinessColor, letterSpacing: 0.5, textTransform: 'uppercase', fontFamily: T.sans, marginBottom: 4 }}>
+          Readiness for {lpa.targetLevel}
+        </div>
+        <div style={{ fontSize: 20, fontWeight: 800, color: readinessColor, fontFamily: T.sans }}>
+          {lpa.overallReadiness}
+        </div>
+      </div>
+
+      {/* 2. SCORE PROJECTION */}
+      {lpa.projectedScoreAtNextLevel && (
+        <div style={{
+          padding: '12px 16px', borderRadius: 10, textAlign: 'center', marginBottom: 12,
+          background: 'rgba(240,160,48,0.06)', border: `1px solid rgba(240,160,48,0.15)`,
+        }}>
+          <div style={{ fontSize: 12, color: T.textSec, fontFamily: T.sans, marginBottom: 4 }}>
+            Fix your top gaps → estimated score at {lpa.targetLevel}:
+          </div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: T.gold, fontFamily: T.mono }}>
+            {lpa.projectedScoreAtNextLevel.toFixed(3)}
+          </div>
+        </div>
+      )}
+
+      {/* 3. GAP CARDS */}
+      {gaps.length > 0 && (
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, letterSpacing: 0.5, textTransform: 'uppercase', fontFamily: T.sans, marginBottom: 8 }}>
+            Gaps to close ({gaps.length})
+          </div>
+          {gaps.map((gap, i) => {
+            const isExpanded = expandedGap === i;
+            const blurred = isFree && i >= 1;
+            const priorityColor = gap.priority === 1 ? T.red : gap.priority <= 3 ? '#fbbf24' : T.textMuted;
+
+            return (
+              <div key={i} style={{
+                marginBottom: 6, borderRadius: 10, overflow: 'hidden',
+                border: `1px solid ${isExpanded ? T.borderActive : T.border}`,
+                background: T.card,
+                filter: blurred ? 'blur(4px)' : 'none',
+                pointerEvents: blurred ? 'none' : 'auto',
+              }}>
+                <button onClick={() => setExpandedGap(isExpanded ? null : i)} style={{
+                  width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '12px 14px', background: 'none', border: 'none',
+                  borderLeft: `3px solid ${priorityColor}`, cursor: 'pointer', textAlign: 'left',
+                }}>
+                  <span style={{ fontSize: 12, fontWeight: 800, color: priorityColor, fontFamily: T.mono, flexShrink: 0 }}>
+                    #{gap.priority}
+                  </span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: T.text, fontFamily: T.sans }}>{gap.gapName}</div>
+                    <div style={{ fontSize: 11, color: T.textMuted, fontFamily: T.sans, marginTop: 2 }}>{gap.impactAtNextLevel}</div>
+                  </div>
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ flexShrink: 0, transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
+                    <path d="M2 4l4 3.5L10 4" stroke={T.textMuted} strokeWidth="1.5" strokeLinecap="round" />
+                  </svg>
+                </button>
+                <div style={{ display: 'grid', gridTemplateRows: isExpanded ? '1fr' : '0fr', transition: 'grid-template-rows 0.25s ease' }}>
+                  <div style={{ overflow: 'hidden' }}>
+                    <div style={{ padding: '0 14px 14px' }}>
+                      <div style={{ borderLeft: `3px solid ${T.orange}`, padding: '8px 12px', marginBottom: 8, background: 'rgba(249,115,22,0.04)', borderRadius: '0 8px 8px 0' }}>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: T.orange, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4, fontFamily: T.sans }}>Current</div>
+                        <div style={{ fontSize: 13, color: T.text, fontFamily: T.sans, lineHeight: 1.5 }}>{gap.currentState}</div>
+                      </div>
+                      <div style={{ borderLeft: `3px solid ${T.blue}`, padding: '8px 12px', marginBottom: 8, background: 'rgba(96,165,250,0.04)', borderRadius: '0 8px 8px 0' }}>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: T.blue, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4, fontFamily: T.sans }}>Required at {lpa.targetLevel}</div>
+                        <div style={{ fontSize: 13, color: T.text, fontFamily: T.sans, lineHeight: 1.5 }}>{gap.nextLevelRequirement}</div>
+                      </div>
+                      {gap.drill && (
+                        <div style={{ borderLeft: `3px solid ${T.gold}`, padding: '8px 12px', marginBottom: 8, background: T.goldBg, borderRadius: '0 8px 8px 0' }}>
+                          <div style={{ fontSize: 10, fontWeight: 700, color: T.gold, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4, fontFamily: T.sans }}>Drill</div>
+                          <div style={{ fontSize: 13, color: T.text, fontFamily: T.sans, lineHeight: 1.5 }}>{gap.drill}</div>
+                        </div>
+                      )}
+                      {gap.timelineEstimate && (
+                        <div style={{ fontSize: 12, color: T.textMuted, fontFamily: T.sans, display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span>⏱</span> {gap.timelineEstimate}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Free tier upsell */}
+          {isFree && gaps.length > 1 && (
+            <div style={{
+              padding: '14px 16px', borderRadius: 10, textAlign: 'center', marginTop: 8,
+              background: 'rgba(240,160,48,0.06)', border: '1px solid rgba(240,160,48,0.2)',
+            }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: T.text, fontFamily: T.sans, marginBottom: 6 }}>
+                {gaps.length - 1} more gap{gaps.length - 1 > 1 ? 's' : ''} holding back the score
+              </div>
+              <button onClick={onUpgrade} style={{
+                background: `linear-gradient(135deg, ${T.gold}, #ffc040)`, color: '#000',
+                border: 'none', borderRadius: 10, padding: '10px 24px', fontSize: 13,
+                fontWeight: 700, fontFamily: T.sans, cursor: 'pointer', minHeight: 44,
+              }}>
+                Unlock Full Level Up Analysis →
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 4. STRENGTHS */}
+      {strengths.length > 0 && (
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, letterSpacing: 0.5, textTransform: 'uppercase', fontFamily: T.sans, marginBottom: 8 }}>
+            Already meeting {lpa.targetLevel} standard
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {strengths.map((s, i) => (
+              <span key={i} style={{
+                padding: '5px 12px', borderRadius: 99, fontSize: 12, fontWeight: 600,
+                background: 'rgba(34,197,94,0.1)', color: T.green, fontFamily: T.sans,
+                border: '1px solid rgba(34,197,94,0.2)',
+              }}>
+                {s}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 
 function SkillCard({ skill, index, isFree, freeDeductionLimit, globalDeductionIndex, onJumpToTimestamp, onUpgrade, videoUrl, showSkeleton, setShowSkeleton }) {
   const [open, setOpen] = useState(false);
