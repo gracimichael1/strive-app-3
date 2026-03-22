@@ -1429,10 +1429,17 @@ export default function LegacyApp() {
     try { storage.set("strive-saved-results", JSON.stringify(newSaved)); } catch {}
 
     // ── Agent Epsilon: Cache last 5 analyses for offline access ──
+    // COMPLIANCE: Strip athlete_name from cached result before localStorage
     try {
       const cacheRaw = localStorage.getItem("strive_recent_analyses");
       let recentCache = cacheRaw ? JSON.parse(cacheRaw) : [];
-      recentCache.unshift({ id, result: lightResult, date: new Date().toISOString(), event: uploadData?.event });
+      const safeResult = {
+        ...lightResult,
+        summary: lightResult.summary
+          ? { ...lightResult.summary, athlete_name: undefined }
+          : undefined,
+      };
+      recentCache.unshift({ id, result: safeResult, date: new Date().toISOString(), event: uploadData?.event });
       recentCache = recentCache.slice(0, 5);
       localStorage.setItem("strive_recent_analyses", JSON.stringify(recentCache));
     } catch (e) { log.warn("cache", "Failed to cache recent analysis: " + (e.message || "")); }
@@ -2906,7 +2913,7 @@ function PreMeetFocusScreen({ profile, history, savedResults, onBack }) {
 
   // ── COACH NOTE from localStorage ──
   let coachNote = "";
-  try { coachNote = localStorage.getItem("strive-coach-meet-note") || ""; } catch {}
+  try { coachNote = sessionStorage.getItem("strive-coach-meet-note") || ""; } catch {}
 
   const today = new Date();
   const dateStr = today.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
@@ -7504,7 +7511,7 @@ const SettingsScreen = React.memo(function SettingsScreen({ profile, onSave, onB
   const sg = athleteRecord ? athleteRecord.seasonGoals || {} : {};
   const [editProfile, setEditProfile] = useState(() => {
     let coachNote = "";
-    try { coachNote = localStorage.getItem("strive-coach-meet-note") || ""; } catch {}
+    try { coachNote = sessionStorage.getItem("strive-coach-meet-note") || ""; } catch {}
     return {
       ...profile,
       seasonGoalScore: sg.targetScore || null,
@@ -7674,7 +7681,8 @@ const SettingsScreen = React.memo(function SettingsScreen({ profile, onSave, onB
           saveAthleteRecord(record);
         }
         // Save coach meet note to localStorage
-        try { localStorage.setItem("strive-coach-meet-note", editProfile.coachMeetNote || ""); } catch {}
+        // COMPLIANCE: Session-scoped, 500-char max. Supabase at Phase 3-A.
+        try { sessionStorage.setItem("strive-coach-meet-note", (editProfile.coachMeetNote || "").slice(0, 500)); } catch {}
         onSave(editProfile);
       }} style={{ width: "100%", marginTop: 32 }}>
         <Icon name="save" /> Save Changes
