@@ -1558,6 +1558,7 @@ export default function LegacyApp() {
       }} />
 
       {screen === "share" && <ShareScreen token={shareToken} />}
+      {screen === "legal" && <LegalScreen onBack={() => setScreen(profile ? "settings" : "splash")} />}
       {screen === "beta-gate" && <BetaCodeScreen onSuccess={() => setScreen("splash")} />}
       {screen === "splash" && <SplashScreen onStart={() => setScreen("onboarding")} />}
       {screen === "onboarding" && <OnboardingScreen onComplete={(p) => {
@@ -1712,6 +1713,7 @@ export default function LegacyApp() {
           profile={profile}
           onSave={(p) => { saveProfile(p); setScreen("dashboard"); }}
           onBack={() => setScreen("dashboard")}
+          onLegal={() => setScreen("legal")}
           onTierChange={(t) => { try { localStorage.setItem("strive-tier", t); } catch {} setUserTier(t); }}
           onReset={() => {
             setProfile(null);
@@ -1918,6 +1920,67 @@ export default function LegacyApp() {
     </div>
   );
 }
+// ─── LEGAL SCREEN ───────────────────────────────────────────────────
+function LegalScreen({ onBack }) {
+  const S = { h2: { fontFamily: "'Outfit', sans-serif", fontSize: 20, fontWeight: 700, color: "#f0a030", marginTop: 32, marginBottom: 12 }, p: { fontFamily: "'Outfit', sans-serif", fontSize: 14.5, color: "rgba(255,255,255,0.6)", lineHeight: 1.8, marginBottom: 12 }, li: { fontFamily: "'Outfit', sans-serif", fontSize: 14, color: "rgba(255,255,255,0.55)", lineHeight: 1.7, marginBottom: 6 } };
+  return (
+    <div style={{ minHeight: "100vh", background: "#0d1117", padding: "20px 16px 80px" }}>
+      <div style={{ maxWidth: 600, margin: "0 auto" }}>
+        <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.5)", fontSize: 13, fontFamily: "'Outfit', sans-serif", cursor: "pointer", padding: 0, marginBottom: 16 }}>&larr; Back</button>
+        <h1 style={{ fontFamily: "'Outfit', sans-serif", fontSize: 26, fontWeight: 800, color: "#e6edf3", marginBottom: 4 }}>STRIVE Legal</h1>
+        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", fontFamily: "'Outfit', sans-serif", marginBottom: 24 }}>Effective March 2026</div>
+
+        {/* ── PRIVACY POLICY ── */}
+        <div id="privacy">
+          <h2 style={S.h2}>Privacy Policy</h2>
+          <p style={S.p}><strong style={{ color: "#e6edf3" }}>What we collect:</strong> Gymnastics level, competition division, performance scores, training goals, and analysis history. Videos are sent to Google Gemini (Google's AI service) for scoring analysis and are deleted within 48 hours. STRIVE never stores video on our servers.</p>
+          <p style={S.p}><strong style={{ color: "#e6edf3" }}>Analytics:</strong> We use PostHog for anonymous usage analytics and Sentry for error monitoring. Neither service receives personally identifiable information.</p>
+          <p style={S.p}><strong style={{ color: "#e6edf3" }}>Payments:</strong> Processed by Stripe (PCI DSS Level 1 certified). We never see or store your card number.</p>
+          <p style={S.p}><strong style={{ color: "#e6edf3" }}>Your rights:</strong> You can delete all your data at any time via Settings → Delete Account. You can export all your data via Settings → Download My Data.</p>
+          <p style={S.p}><strong style={{ color: "#e6edf3" }}>Children under 13:</strong> Parental consent is required before any data is collected. See our COPPA section below.</p>
+          <p style={S.p}><strong style={{ color: "#e6edf3" }}>Contact:</strong> For privacy questions, email privacy@strivegymnastics.com.</p>
+        </div>
+
+        {/* ── TERMS OF SERVICE ── */}
+        <div id="terms">
+          <h2 style={S.h2}>Terms of Service</h2>
+          <p style={S.p}><strong style={{ color: "#e6edf3" }}>Service:</strong> STRIVE provides AI-assisted gymnastics scoring analysis for training and development purposes. Scores are estimates based on video analysis and are not official USAG results.</p>
+          <p style={S.p}><strong style={{ color: "#e6edf3" }}>Subscription:</strong> Competitive tier at $9.99/month or $99/year. Elite tier at $19.99/month or $199/year. Cancel anytime. 7-day free trial on first subscription.</p>
+          <p style={S.p}><strong style={{ color: "#e6edf3" }}>Acceptable use:</strong> Personal training and development only. No commercial resale of analysis data.</p>
+          <p style={S.p}><strong style={{ color: "#e6edf3" }}>Disclaimer:</strong> AI scoring estimates are for training guidance only. STRIVE is not affiliated with USA Gymnastics (USAG) and is not a substitute for certified judges. Camera angle and video quality affect accuracy.</p>
+          <p style={S.p}><strong style={{ color: "#e6edf3" }}>Availability:</strong> We aim for continuous availability but do not guarantee uptime. Analysis may be temporarily unavailable during maintenance.</p>
+        </div>
+
+        {/* ── COPPA NOTICE ── */}
+        <div id="coppa">
+          <h2 style={S.h2}>Children's Privacy (COPPA Notice)</h2>
+          <p style={S.p}>STRIVE collects limited information about child athletes to provide gymnastics analysis. We take children's privacy seriously.</p>
+          <p style={S.p}><strong style={{ color: "#e6edf3" }}>For athletes under 13:</strong> We require verified parental consent before any analysis can be performed. A parent or legal guardian must confirm their identity via email before the account is activated.</p>
+          <p style={S.p}><strong style={{ color: "#e6edf3" }}>What we collect about your child:</strong></p>
+          <ul style={{ paddingLeft: 20, marginBottom: 12 }}>
+            <li style={S.li}>Competition level and events</li>
+            <li style={S.li}>Performance scores and analysis results</li>
+            <li style={S.li}>Training notes added by parent or athlete</li>
+          </ul>
+          <p style={S.p}>Videos are processed by Google Gemini for analysis and deleted within 48 hours. We never store video.</p>
+          <p style={S.p}><strong style={{ color: "#e6edf3" }}>Your rights as a parent:</strong></p>
+          <ul style={{ paddingLeft: 20, marginBottom: 12 }}>
+            <li style={S.li}>Review all data collected about your child at any time</li>
+            <li style={S.li}>Request permanent deletion of all data (Settings → Delete Account)</li>
+            <li style={S.li}>Revoke consent at any time, which deactivates the account</li>
+          </ul>
+          <p style={S.p}>We do not sell, share, or use children's data for advertising purposes. Ever.</p>
+          <p style={S.p}><strong style={{ color: "#e6edf3" }}>Contact:</strong> For questions about children's privacy, email privacy@strivegymnastics.com.</p>
+        </div>
+
+        <div style={{ marginTop: 32, paddingTop: 20, borderTop: "1px solid rgba(255,255,255,0.06)", fontSize: 11, color: "rgba(255,255,255,0.25)", fontFamily: "'Outfit', sans-serif", textAlign: "center" }}>
+          STRIVE Gymnastics · Consent version 1.0 · March 2026
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── BETA CODE GATE ─────────────────────────────────────────────────
 function BetaCodeScreen({ onSuccess }) {
   const [code, setCode] = useState("");
@@ -7777,7 +7840,7 @@ function DeductionsScreen({ onBack, profile }) {
 }
 
 // ─── SETTINGS SCREEN ────────────────────────────────────────────────
-const SettingsScreen = React.memo(function SettingsScreen({ profile, onSave, onBack, onReset, onTierChange }) {
+const SettingsScreen = React.memo(function SettingsScreen({ profile, onSave, onBack, onReset, onTierChange, onLegal }) {
   // Load season goals from athlete record into editProfile
   const athleteRecord = getAthleteRecord(profile);
   const sg = athleteRecord ? athleteRecord.seasonGoals || {} : {};
@@ -8060,6 +8123,18 @@ const SettingsScreen = React.memo(function SettingsScreen({ profile, onSave, onB
             Prompt: {PROMPT_VER} · strive-app-amber.vercel.app
           </div>
         </div>
+
+        {/* ── Privacy & Terms ── */}
+        {onLegal && (
+          <button onClick={onLegal} style={{
+            width: "100%", padding: 12, borderRadius: 12, marginBottom: 12,
+            border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.02)",
+            color: "rgba(255,255,255,0.6)", cursor: "pointer", fontFamily: "'Outfit', sans-serif",
+            fontWeight: 600, fontSize: 13, textAlign: "left", display: "flex", alignItems: "center", gap: 8,
+          }}>
+            ⚖️ Privacy Policy & Terms
+          </button>
+        )}
 
         {/* ── Download My Data (CCPA) ── */}
         <button onClick={async () => {
