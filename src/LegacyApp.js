@@ -3,7 +3,7 @@ import { LineChart, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid,
 
 // ─── NEW COMPONENT IMPORTS ─────────────────────────────────────────
 const TrainingScreen = lazy(() => import("./screens/TrainingScreen"));
-const NewResultsScreen = lazy(() => import("./screens/ResultsScreen"));
+const NewResultsScreen = lazy(() => import("./components/results/ResultsScreen"));
 const NewDashboardScreen = lazy(() => import("./screens/DashboardScreen"));
 const UpgradeModal = lazy(() => import("./components/billing/UpgradeModal"));
 import AgeGate from "./components/legal/AgeGate";
