@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { useTier } from '../../context/TierContext';
 
 // ── Design Tokens ───────────────────────────────────────────────────────────
@@ -318,6 +318,9 @@ export default function ResultsScreen({ result, profile, previousResult, onBack,
 function SkillCard({ skill, index, isFree, freeDeductionLimit, globalDeductionIndex, onJumpToTimestamp, onUpgrade, videoUrl, showSkeleton, setShowSkeleton }) {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState('what');
+  const [playbackRate, setPlaybackRate] = useState(1);
+  const cardVideoRef = useRef(null);
+  const cardCanvasRef = useRef(null);
 
   // Level 3 — plain English context for each tab
   function buildTabNarrative(sk, tabId) {
@@ -640,44 +643,74 @@ function SkillCard({ skill, index, isFree, freeDeductionLimit, globalDeductionIn
 
             {/* TAB: Video */}
             {tab === 'video' && (
-              <div>
-                {/* Video player with skeleton toggle */}
+              <div style={{ padding: '0' }}>
+                {/* Video + skeleton canvas overlay */}
                 <div style={{ position: 'relative', borderRadius: 10, overflow: 'hidden', background: '#000', marginBottom: 10 }}>
                   <video
+                    ref={cardVideoRef}
                     src={videoUrl || ''}
-                    style={{ width: '100%', borderRadius: 10, display: 'block' }}
-                    playsInline muted controls
-                    ref={(el) => {
-                      if (el && ts) {
+                    style={{ width: '100%', display: 'block', borderRadius: 10 }}
+                    playsInline
+                    webkit-playsinline=""
+                    muted
+                    controls
+                    onLoadedMetadata={(e) => {
+                      if (ts) {
                         const secs = parseTs(ts);
-                        if (secs > 0 && Math.abs(el.currentTime - secs) > 1) el.currentTime = secs;
+                        if (secs > 0) e.target.currentTime = secs;
                       }
+                      e.target.playbackRate = playbackRate;
                     }}
                   />
+                  <canvas
+                    ref={cardCanvasRef}
+                    style={{
+                      position: 'absolute', top: 0, left: 0,
+                      width: '100%', height: '100%',
+                      pointerEvents: 'none',
+                      opacity: showSkeleton ? 1 : 0,
+                      transition: 'opacity 0.3s',
+                    }}
+                  />
+                </div>
+
+                {/* Controls row */}
+                <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
                   <button onClick={() => setShowSkeleton(s => !s)} style={{
-                    position: 'absolute', top: 8, right: 8,
-                    background: showSkeleton ? 'rgba(232,150,42,0.9)' : 'rgba(0,0,0,0.6)',
-                    border: '1px solid rgba(255,255,255,0.2)', borderRadius: 8,
-                    padding: '5px 10px', color: showSkeleton ? '#070c16' : '#fff',
-                    fontSize: 11, fontWeight: 700, cursor: 'pointer',
+                    flex: 1, padding: '9px 0', borderRadius: 9,
+                    background: showSkeleton ? 'rgba(232,150,42,0.15)' : 'rgba(255,255,255,0.06)',
+                    border: `1px solid ${showSkeleton ? 'rgba(232,150,42,0.4)' : 'rgba(255,255,255,0.1)'}`,
+                    color: showSkeleton ? '#f0a030' : 'rgba(255,255,255,0.5)',
+                    fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: T.sans,
                   }}>
                     {showSkeleton ? '◉ Skeleton ON' : '○ Skeleton OFF'}
                   </button>
+                  <button onClick={() => {
+                    const next = playbackRate === 1 ? 0.25 : 1;
+                    setPlaybackRate(next);
+                    if (cardVideoRef.current) cardVideoRef.current.playbackRate = next;
+                  }} style={{
+                    flex: 1, padding: '9px 0', borderRadius: 9,
+                    background: playbackRate < 1 ? 'rgba(96,165,250,0.12)' : 'rgba(255,255,255,0.06)',
+                    border: `1px solid ${playbackRate < 1 ? 'rgba(96,165,250,0.35)' : 'rgba(255,255,255,0.1)'}`,
+                    color: playbackRate < 1 ? '#60a5fa' : 'rgba(255,255,255,0.5)',
+                    fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: T.sans,
+                  }}>
+                    {playbackRate < 1 ? '◎ 0.25× Slow Mo' : '▶ Normal Speed'}
+                  </button>
                 </div>
 
-                {/* Skeleton explanation */}
+                {/* Skeleton explanation — only when ON */}
                 {showSkeleton && (
                   <div style={{
-                    padding: '10px 12px', background: 'rgba(232,150,42,0.06)',
-                    border: '1px solid rgba(232,150,42,0.15)', borderRadius: 8,
-                    fontSize: 11.5, color: 'rgba(255,255,255,0.55)', lineHeight: 1.6, marginBottom: 10,
+                    padding: '10px 12px', borderRadius: 8, marginBottom: 10,
+                    background: 'rgba(232,150,42,0.05)', border: '1px solid rgba(232,150,42,0.15)',
+                    fontSize: 12, color: 'rgba(255,255,255,0.5)', lineHeight: 1.65,
                   }}>
-                    <div style={{ fontWeight: 700, color: 'rgba(232,150,42,0.85)', marginBottom: 4 }}>
-                      What the skeleton shows:
-                    </div>
-                    The colored lines trace your gymnast's joint positions frame by frame.
-                    Green joints are within ideal range. Orange joints show where the body
-                    deviated — these correspond directly to the deductions above.
+                    <span style={{ fontWeight: 700, color: 'rgba(232,150,42,0.8)' }}>What the skeleton shows:</span>{' '}
+                    Colored dots trace joint positions frame by frame — even in slow motion.
+                    Green means the joint is in the correct position. Orange is a slight deviation.
+                    Red is the form break that caused the deduction above. This is exactly what judges are trained to see.
                   </div>
                 )}
 
