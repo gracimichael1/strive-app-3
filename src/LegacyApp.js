@@ -90,26 +90,26 @@ function parseTimestampToSec(ts) {
 // Persistent per-athlete storage: profile, analysis history, fault tracking,
 // drill plans, improvement curves, and goal tracking.
 
-function getAthleteStorageKey(name) {
-  if (!name) return "strive_athlete_default";
-  try { return "strive_athlete_" + btoa(unescape(encodeURIComponent(name))); } catch { return "strive_athlete_default"; }
+function getAthleteStorageKey(_name) {
+  // COMPLIANCE: Single key, no PII in localStorage key names
+  return "strive_athlete_local";
 }
 
 function getAthleteRecord(profile) {
   if (!profile) return null;
-  const key = getAthleteStorageKey(profile.name);
+  const key = getAthleteStorageKey();
   try {
     const raw = localStorage.getItem(key);
     if (raw) return JSON.parse(raw);
   } catch {}
-  // Create a new record
+  // Create a new record — no PII in localStorage
   return {
-    name: profile.name || "",
     gender: profile.gender || "female",
     level: profile.level || "",
     events: profile.primaryEvents || [],
-    coachName: profile.coachName || "",
-    gymName: profile.gymName || "",
+    gym_affiliation: profile.gymName || "",
+    tier: "",
+    created_at: new Date().toISOString(),
     seasonGoals: {
       targetScore: null,
       targetEvent: null,
@@ -122,10 +122,23 @@ function getAthleteRecord(profile) {
 }
 
 function saveAthleteRecord(record) {
-  if (!record || !record.name) return;
-  const key = getAthleteStorageKey(record.name);
+  if (!record) return;
+  const key = getAthleteStorageKey();
+  // COMPLIANCE: Strip PII before localStorage. Name/dob/email are Supabase-only (Phase 3-A).
+  const { name, dob, email, parent_email, parentEmail, ...rest } = record;
+  const safe = {
+    level: rest.level || "",
+    gym_affiliation: rest.gymName || rest.gym_affiliation || "",
+    tier: rest.tier || "",
+    created_at: rest.created_at || new Date().toISOString(),
+    gender: rest.gender || "",
+    events: rest.events || [],
+    seasonGoals: rest.seasonGoals || {},
+    analysisHistory: rest.analysisHistory || [],
+    faultHistory: rest.faultHistory || [],
+  };
   try {
-    localStorage.setItem(key, JSON.stringify(record));
+    localStorage.setItem(key, JSON.stringify(safe));
   } catch (e) {
     log.warn("intelligence", "Failed to save athlete record: " + e.message);
   }
@@ -387,7 +400,7 @@ if (typeof window !== "undefined") {
       const pass = readBack.name === "TestAthlete" && readBack.gymName === "Test Gym" && readBack.gender === "female";
       results.push({ test: "Persistence Chain", result: pass ? "PASS" : "FAIL", details: pass ? "All fields intact" : "Field mismatch" });
       // Cleanup
-      localStorage.removeItem(getAthleteStorageKey("TestAthlete"));
+      localStorage.removeItem(getAthleteStorageKey());
     } catch (e) {
       results.push({ test: "Persistence Chain", result: "FAIL", details: e.message });
     }
@@ -4198,7 +4211,9 @@ const AnalyzingScreen = React.memo(function AnalyzingScreen({ uploadData, profil
       || parts.map(p => p.text || "").join("\n");
 
     log.info("gemini", `[${label}] Response: ${rawText.length} chars`);
-    try { localStorage.setItem(`debug-gemini-${label}`, rawText); } catch {}
+    if (process.env.NODE_ENV === 'development') {
+      try { localStorage.setItem(`debug-gemini-${label}`, rawText); } catch {}
+    }
     return rawText;
   }, []);
 
@@ -4343,20 +4358,7 @@ IMPORTANT: The deduction_log must contain ONE entry per distinct skill or transi
       uploadData.event || "floor",
     ].join("_");
     const cacheKey = `strive_cache_${btoa(unescape(encodeURIComponent(fingerprintParts)))}`;
-    try {
-      const cached = localStorage.getItem(cacheKey);
-      if (cached) {
-        const { result, timestamp } = JSON.parse(cached);
-        const ageHours = (Date.now() - timestamp) / (1000 * 60 * 60);
-        if (ageHours < 24 && result && result.gradedSkills) {
-          log.info("cache", `Returning cached result (${ageHours.toFixed(1)}h old, ${result.gradedSkills.length} skills)`);
-          result._cached = true;
-          setProgress(100);
-          setStatus("Score verified — analyzed previously");
-          return result;
-        }
-      }
-    } catch (e) { log.warn("cache", `Cache read failed: ${e.message}`); }
+    // COMPLIANCE: strive_cache removed from localStorage (contained PII).
 
     try {
       // Upload video once — requires a client-side API key for direct Gemini uploads
@@ -4999,14 +5001,8 @@ IMPORTANT: The deduction_log must contain ONE entry per distinct skill or transi
         rawResponse,
       };
 
-      // ── Cache the result for duplicate submissions ──────────────
-      try {
-        localStorage.setItem(cacheKey, JSON.stringify({
-          result: analysisResult,
-          timestamp: Date.now(),
-        }));
-        log.info("cache", `Cached result under ${cacheKey}`);
-      } catch (e) { log.warn("cache", `Cache write failed: ${e.message}`); }
+      // COMPLIANCE: strive_cache purged from localStorage (contained PII via athlete_name).
+      // UX caching handled by pipeline.js sessionStorage if needed.
 
       return analysisResult;
 

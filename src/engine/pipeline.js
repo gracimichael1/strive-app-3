@@ -82,14 +82,8 @@ export async function runAnalysisPipeline({ videoFile, profile, event, onProgres
 
   if (!videoFile) throw new Error("No video file provided.");
 
-  // ── Check cache ───────────────────────────────────────────────────────────
-  const cacheKey = buildCacheKey(videoFile, profile, event);
-  const cached = readCache(cacheKey);
-  if (cached) {
-    log.info("cache", `Returning cached result (${cached._meta?.prompt_version})`);
-    onProgress({ stage: "complete", pct: 100, label: "Score verified — analyzed previously" });
-    return cached;
-  }
+  // COMPLIANCE: localStorage cache removed (contained PII via athlete_name).
+  // Every analysis runs fresh through the pipeline.
 
   // ── Verify server has API key ───────────────────────────────────────────
   try {
@@ -247,8 +241,7 @@ export async function runAnalysisPipeline({ videoFile, profile, event, onProgres
   // ── Transform for UI ──────────────────────────────────────────────────────
   const uiResult = transformForUI(validated);
 
-  // ── Cache the UI-ready result ─────────────────────────────────────────────
-  writeCache(cacheKey, uiResult);
+  // COMPLIANCE: localStorage cache write removed (PII purge).
 
   // ── Cleanup uploaded file (fire and forget) ───────────────────────────────
   try {
@@ -348,8 +341,10 @@ async function callGemini(fileRef, systemPrompt, userPrompt, config, label) {
 
   log.info("gemini", `[${label}] Response: ${text.length} chars`);
 
-  // Debug storage
-  try { localStorage.setItem(`debug-gemini-${label}`, text); } catch {}
+  // Debug storage — dev only, never in production
+  if (process.env.NODE_ENV === 'development') {
+    try { localStorage.setItem(`debug-gemini-${label}`, text); } catch {}
+  }
 
   return text;
 }
