@@ -7854,20 +7854,31 @@ const SettingsScreen = React.memo(function SettingsScreen({ profile, onSave, onB
           </div>
         </div>
 
-        {/* ── Clear Analysis Cache ── */}
-        <button onClick={() => {
-          const keys = Object.keys(localStorage).filter(k => k.startsWith("strive_cache_") || k.startsWith("debug-gemini-"));
-          keys.forEach(k => localStorage.removeItem(k));
-          alert("Cleared " + keys.length + " cached items. Next analysis will be fresh.");
+        {/* ── Download My Data (CCPA) ── */}
+        <button onClick={async () => {
+          try {
+            const res = await fetch("/api/account/export", {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "X-Strive-Token": "strive-2026-launch" },
+              body: JSON.stringify({ profile, analysisHistory: [], tier: "free" }),
+            });
+            const data = await res.json();
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url; a.download = "strive-data-export.json"; a.click();
+            URL.revokeObjectURL(url);
+          } catch (e) { alert("Export failed: " + e.message); }
         }} style={{
           width: "100%", padding: 12, borderRadius: 12, marginBottom: 12,
-          border: "1px solid rgba(255,193,90,0.2)", background: "rgba(255,193,90,0.04)",
-          color: "#ffc15a", cursor: "pointer", fontFamily: "'Outfit', sans-serif",
+          border: "1px solid rgba(232,150,42,0.2)", background: "rgba(232,150,42,0.04)",
+          color: "#e8962a", cursor: "pointer", fontFamily: "'Outfit', sans-serif",
           fontWeight: 600, fontSize: 13,
         }}>
-          Clear Analysis Cache
+          Download My Data
         </button>
 
+        {/* ── Delete Account ── */}
         {!showConfirm ? (
           <button onClick={() => setShowConfirm(true)} style={{
             width: "100%", padding: 14, borderRadius: 12, border: "1px solid rgba(220,38,38,0.3)",
@@ -7878,12 +7889,21 @@ const SettingsScreen = React.memo(function SettingsScreen({ profile, onSave, onB
           </button>
         ) : (
           <div className="card" style={{ borderColor: "rgba(220,38,38,0.3)", padding: 20 }}>
-            <p style={{ fontSize: 14, marginBottom: 16, color: "rgba(255,255,255,0.7)" }}>
-              This will delete your profile and all analysis history. Are you sure?
+            <p style={{ fontSize: 14, marginBottom: 16, color: "rgba(255,255,255,0.7)", fontWeight: 600 }}>
+              This cannot be undone. All your data will be permanently deleted.
             </p>
             <div style={{ display: "flex", gap: 12 }}>
               <button className="btn-outline" onClick={() => setShowConfirm(false)} style={{ flex: 1 }}>Cancel</button>
-              <button onClick={onReset} style={{
+              <button onClick={async () => {
+                try {
+                  await fetch("/api/account", {
+                    method: "DELETE",
+                    headers: { "Content-Type": "application/json", "X-Strive-Token": "strive-2026-launch" },
+                    body: JSON.stringify({ userId: "local-user", reason: "user_request" }),
+                  });
+                } catch {}
+                onReset();
+              }} style={{
                 flex: 1, padding: 12, borderRadius: 12, border: "none",
                 background: "#dc2626", color: "white", cursor: "pointer",
                 fontFamily: "'Outfit', sans-serif", fontWeight: 700,
