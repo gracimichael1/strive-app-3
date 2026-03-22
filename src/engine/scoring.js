@@ -160,6 +160,13 @@ export function computeScoreFromScorecard(scorecard, startValue = 10.0, options 
     final_score = Math.max(0, roundTo3(startValue - totalDeductions));
   }
 
+  // ── DIAGNOSTIC LOGS ────────────────────────────────────────────────────
+  console.log("DIAGNOSTIC: EVENT:", event, "| CALIBRATION FACTOR:", calibrationFactor);
+  console.log("DIAGNOSTIC: RAW GEMINI SCORE (AI holistic):", scorecard.final_score);
+  console.log("DIAGNOSTIC: RAW EXEC TOTAL (pre-cap):", roundTo3(rawExecutionTotal), "| POST-CAP EXEC:", roundTo3(executionTotal), "| CAP FIRED:", capFiredCount);
+  console.log("DIAGNOSTIC: ARTISTRY:", roundTo3(calibratedArtistry), "| SR:", srTotal, "| TOTAL DEDUCTIONS:", roundTo3(totalDeductions));
+  console.log("DIAGNOSTIC: CODE-COMPUTED SCORE:", roundTo3(final_score));
+
   // ── Score blending: AI holistic primary, code-computed as validation ────
   // AI holistic score is the better single estimator across events.
   // Code-computed score serves as validation bounds only.
@@ -171,15 +178,15 @@ export function computeScoreFromScorecard(scorecard, startValue = 10.0, options 
   if (typeof aiScore === "number" && aiScore > 0) {
     const scoreDiff = Math.abs(codeScore - aiScore);
 
-    // Always use AI holistic score as primary — it's the better estimator
-    final_score = roundTo3(aiScore);
-    scoreSource = "ai_holistic";
-
-    if (scoreDiff > 0.30) {
-      // Flag for review but do NOT override — AI holistic is still primary
-      warning = `SCORE REVIEW FLAGGED: AI estimated ${aiScore} but code computed ${codeScore} (diff: ${scoreDiff.toFixed(2)}). Using AI score. Review deductions for calibration data.`;
-      scoreSource = "ai_flagged";
-      console.warn(`[scoring] ${warning}`);
+    if (scoreDiff <= 0.30) {
+      // Within bounds — AI has seen the video, trust its judgment
+      final_score = roundTo3(aiScore);
+      scoreSource = "ai_holistic";
+    } else {
+      // AI is being unreliable — fall back to code-computed score
+      console.log("BLEND OVERRIDE:", aiScore, "→", codeScore);
+      warning = `BLEND OVERRIDE: AI estimated ${aiScore} but code computed ${codeScore} (diff: ${scoreDiff.toFixed(2)}). Using code score.`;
+      scoreSource = "code_override";
     }
   }
 
