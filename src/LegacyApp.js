@@ -1634,8 +1634,13 @@ export default function LegacyApp() {
             }}
             onSeek={() => {}}
             onBack={() => setScreen("dashboard")}
-            videoUrl={liveVideoUrl}
+            videoUrl={liveVideoUrl || (analysisResult?.videoUrl)}
             videoFile={videoFileRef.current}
+            onJumpToTimestamp={(seconds) => {
+              // Find any video element on the page and seek it
+              const v = document.querySelector('video');
+              if (v) { v.currentTime = seconds; v.play().catch(() => {}); }
+            }}
           />
           </Suspense>
         ) : (

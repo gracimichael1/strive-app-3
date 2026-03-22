@@ -56,8 +56,9 @@ function parseTs(ts) {
 // MAIN COMPONENT
 // ═════════════════════════════════════════════════════════════════════════════
 
-export default function ResultsScreen({ result, profile, previousResult, onBack, onUpgrade, onJumpToTimestamp }) {
+export default function ResultsScreen({ result, profile, previousResult, onBack, onUpgrade, onJumpToTimestamp, videoUrl }) {
   const { tier, features } = useTier();
+  const [showSkeleton, setShowSkeleton] = useState(false);
   const isFree = tier === 'free';
 
   if (!result) return <div style={{ minHeight: '100vh', background: T.bg }} />;
@@ -238,6 +239,9 @@ export default function ResultsScreen({ result, profile, previousResult, onBack,
               globalDeductionIndex={allDeductions.filter(d => skills.indexOf(skills.find(s => s === skills[d.skillIdx])) < idx).length}
               onJumpToTimestamp={onJumpToTimestamp}
               onUpgrade={onUpgrade}
+              videoUrl={videoUrl}
+              showSkeleton={showSkeleton}
+              setShowSkeleton={setShowSkeleton}
             />
           ))}
         </div>
@@ -285,7 +289,7 @@ export default function ResultsScreen({ result, profile, previousResult, onBack,
 // SKILL CARD
 // ═════════════════════════════════════════════════════════════════════════════
 
-function SkillCard({ skill, index, isFree, freeDeductionLimit, globalDeductionIndex, onJumpToTimestamp, onUpgrade }) {
+function SkillCard({ skill, index, isFree, freeDeductionLimit, globalDeductionIndex, onJumpToTimestamp, onUpgrade, videoUrl, showSkeleton, setShowSkeleton }) {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState('what');
 
@@ -535,20 +539,59 @@ function SkillCard({ skill, index, isFree, freeDeductionLimit, globalDeductionIn
 
             {/* TAB: Video */}
             {tab === 'video' && (
-              <div style={{ textAlign: 'center', padding: 12 }}>
-                <div style={{
-                  width: '100%', height: 120, borderRadius: 10, background: T.cardInner,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 10,
-                }}>
-                  <span style={{ fontSize: 32, opacity: 0.3 }}>&#9654;</span>
+              <div>
+                {/* Video player with skeleton toggle */}
+                <div style={{ position: 'relative', borderRadius: 10, overflow: 'hidden', background: '#000', marginBottom: 10 }}>
+                  <video
+                    src={videoUrl || ''}
+                    style={{ width: '100%', borderRadius: 10, display: 'block' }}
+                    playsInline muted controls
+                    ref={(el) => {
+                      if (el && ts) {
+                        const secs = parseTs(ts);
+                        if (secs > 0 && Math.abs(el.currentTime - secs) > 1) el.currentTime = secs;
+                      }
+                    }}
+                  />
+                  <button onClick={() => setShowSkeleton(s => !s)} style={{
+                    position: 'absolute', top: 8, right: 8,
+                    background: showSkeleton ? 'rgba(232,150,42,0.9)' : 'rgba(0,0,0,0.6)',
+                    border: '1px solid rgba(255,255,255,0.2)', borderRadius: 8,
+                    padding: '5px 10px', color: showSkeleton ? '#070c16' : '#fff',
+                    fontSize: 11, fontWeight: 700, cursor: 'pointer',
+                  }}>
+                    {showSkeleton ? '◉ Skeleton ON' : '○ Skeleton OFF'}
+                  </button>
                 </div>
-                <button onClick={() => onJumpToTimestamp?.(parseTs(ts))} style={{
-                  background: T.goldBg, border: `1px solid rgba(240,160,48,0.2)`,
-                  borderRadius: 10, padding: '10px 20px', cursor: 'pointer',
-                  color: T.gold, fontSize: 13, fontWeight: 600, fontFamily: T.sans, minHeight: 44,
-                }}>
-                  Jump to {ts || '0:00'}
-                </button>
+
+                {/* Skeleton explanation */}
+                {showSkeleton && (
+                  <div style={{
+                    padding: '10px 12px', background: 'rgba(232,150,42,0.06)',
+                    border: '1px solid rgba(232,150,42,0.15)', borderRadius: 8,
+                    fontSize: 11.5, color: 'rgba(255,255,255,0.55)', lineHeight: 1.6, marginBottom: 10,
+                  }}>
+                    <div style={{ fontWeight: 700, color: 'rgba(232,150,42,0.85)', marginBottom: 4 }}>
+                      What the skeleton shows:
+                    </div>
+                    The colored lines trace your gymnast's joint positions frame by frame.
+                    Green joints are within ideal range. Orange joints show where the body
+                    deviated — these correspond directly to the deductions above.
+                  </div>
+                )}
+
+                {/* Jump to timestamp button */}
+                {ts && onJumpToTimestamp && (
+                  <button onClick={() => onJumpToTimestamp(parseTs(ts))} style={{
+                    width: '100%', padding: '10px 14px',
+                    background: 'rgba(232,150,42,0.08)', border: '1px solid rgba(232,150,42,0.2)',
+                    borderRadius: 8, cursor: 'pointer', color: T.gold,
+                    fontSize: 13, fontWeight: 600, fontFamily: T.sans,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  }}>
+                    ▶ Jump to {ts} in full video
+                  </button>
+                )}
               </div>
             )}
 
