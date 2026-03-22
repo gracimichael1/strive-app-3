@@ -3601,27 +3601,39 @@ const UploadScreen = React.memo(function UploadScreen({ profile, onBack, onAnaly
           <span style={{ color: "#ef4444", marginLeft: 4 }}>*</span>
           <span style={{ marginLeft: 8, fontSize: 10, fontWeight: 600, color: "rgba(239,68,68,0.7)", textTransform: "none", letterSpacing: 0 }}>required</span>
         </label>
-        <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(events.length, 5)}, 1fr)`, gap: 8, border: !event ? "1.5px solid rgba(239,68,68,0.35)" : "1.5px solid transparent", borderRadius: 12, padding: !event ? 6 : 0, transition: "border 0.2s, padding 0.2s" }}>
+        <div style={{
+          display: "grid", gridTemplateColumns: `repeat(${Math.min(events.length, 5)}, 1fr)`, gap: 8,
+          border: video && !event ? "1.5px solid rgba(239,68,68,0.6)" : video && event ? "1.5px solid rgba(232,150,42,0.35)" : "1.5px solid rgba(255,255,255,0.06)",
+          borderRadius: 12, padding: video ? 6 : 4, transition: "all 0.3s",
+          background: video && !event ? "rgba(239,68,68,0.04)" : "transparent",
+          boxShadow: video && !event ? "0 0 0 3px rgba(239,68,68,0.08)" : video && event ? "0 0 0 3px rgba(232,150,42,0.08)" : "none",
+        }}>
           {events.map(e => (
             <button
               key={e}
               onClick={() => setEvent(e)}
               style={{
-                padding: "12px 8px", borderRadius: 10, border: "none", cursor: "pointer",
-                fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 12,
-                background: event === e ? "linear-gradient(135deg, #e8962a, #ffc15a)" : "rgba(255,255,255,0.06)",
-                color: event === e ? "#070c16" : "rgba(255,255,255,0.5)",
-                transition: "all 0.2s",
+                padding: "13px 8px", borderRadius: 10,
+                cursor: video ? "pointer" : "default",
+                fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 12,
+                background: event === e ? "linear-gradient(135deg, #e8962a, #ffc15a)" : video ? "rgba(255,255,255,0.13)" : "rgba(255,255,255,0.04)",
+                color: event === e ? "#070c16" : video ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.25)",
+                border: event === e ? "1.5px solid rgba(232,150,42,0.6)" : video ? "1.5px solid rgba(255,255,255,0.22)" : "1.5px solid rgba(255,255,255,0.07)",
+                boxShadow: event === e ? "0 2px 12px rgba(232,150,42,0.35)" : video ? "inset 0 1px 0 rgba(255,255,255,0.1)" : "none",
+                transform: event === e ? "translateY(-1px)" : "none",
+                transition: "all 0.25s", letterSpacing: 0.2,
+                opacity: video ? 1 : 0.45,
               }}
             >
               {e}
             </button>
           ))}
         </div>
-        {/* Helper text when no event selected */}
-        {!event && (
-          <div style={{ marginTop: 8, fontSize: 12, color: "rgba(232,150,42,0.8)", padding: "8px 12px", background: "rgba(232,150,42,0.06)", borderRadius: 8 }}>
-            Select an event to enable analysis
+        {/* Helper text — only after video loaded */}
+        {video && !event && (
+          <div style={{ marginTop: 8, fontSize: 12, fontWeight: 600, color: "rgba(232,150,42,0.9)", padding: "9px 12px", background: "rgba(232,150,42,0.08)", borderRadius: 8, border: "1px solid rgba(232,150,42,0.2)", display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ fontSize: 14 }}>👆</span>
+            Select an event above to continue
           </div>
         )}
         {/* MAG beta notice */}
