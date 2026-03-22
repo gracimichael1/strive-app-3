@@ -11,15 +11,16 @@ import fs from "fs";
 import path from "path";
 import { Readable } from "stream";
 
-// Use production endpoint directly for validation (rate limiter resets per cold start)
-const PROXY = process.env.TEST_PROXY || "https://strive-app-amber.vercel.app/api/gemini";
+// Use localhost for testing (no rate limiter in setupProxy)
+const PROXY = process.env.TEST_PROXY || "http://localhost:3000/api/gemini";
 const TOKEN = "strive-2026-launch";
 
 const VIDEOS = [
-  { file: "differentvaultcomp.mov", event: "Vault", realScore: 8.85, level: "JO Level 6" },
-  { file: "IMG_4061.MOV", event: "Uneven Bars", realScore: 8.525, level: "JO Level 6" },
-  { file: "IMG_9884.MOV", event: "Balance Beam", realScore: 8.85, level: "JO Level 6" },
-  { file: "IMG_5178 3.mov", event: "Floor Exercise", realScore: 8.925, level: "JO Level 6" },
+  // Xcel Gold — correct program type for these test videos
+  { file: "differentvaultcomp.mov", event: "Vault", realScore: 8.85, level: "Xcel Gold" },
+  { file: "IMG_4061.MOV", event: "Uneven Bars", realScore: 8.525, level: "Xcel Gold" },
+  { file: "IMG_9884.MOV", event: "Balance Beam", realScore: 8.85, level: "Xcel Gold" },
+  { file: "IMG_5178 3.mov", event: "Floor Exercise", realScore: 8.925, level: "Xcel Gold" },
 ];
 
 async function api(body) {

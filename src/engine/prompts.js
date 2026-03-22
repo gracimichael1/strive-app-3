@@ -109,6 +109,16 @@ Amplitude:
 `,
   XCEL_GOLD: `
 ## LEVEL: XCEL GOLD (WAG)
+## PROGRAM: XCEL (NOT Junior Olympic)
+This routine is scored under USAG Xcel Gold rules, NOT Junior Olympic rules.
+Key Xcel differences from JO:
+- Skills are athlete-chosen, no required elements beyond Xcel Gold minimums
+- Tumbling: 1-2 tumbling passes on floor (not 2-3 like JO)
+- Connections: Xcel bonus structure applies, different from JO connection values
+- Artistry: Xcel Gold standards (less demanding than JO Level 7+)
+- Do NOT apply JO Level 5-7 required element deductions
+- Score range: typically 8.0-9.5 for Xcel Gold at State Championships
+
 Start Value: 10.0
 Special Requirements:
   FLOOR: Two acro passes (one with two flight elements), dance passage (split 120°+), full turn.
@@ -124,6 +134,8 @@ State Championship additional scrutiny:
   - Rhythm deductions applied aggressively (any hesitation >0.5s).
   - All knee/toe form errors deducted without leniency.
   - Artistry deductions up to -0.30 total for flat performance.
+
+XCEL GOLD FLOOR SKILL COUNT: A Gold routine has 1-2 tumbling passes. If you identify more than 2, recount. A tumbling pass ends when the gymnast's feet return to the floor and she takes a step or pause.
 `,
   XCEL_PLATINUM: `
 ## LEVEL: XCEL PLATINUM (WAG)
