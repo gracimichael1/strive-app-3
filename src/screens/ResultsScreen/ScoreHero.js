@@ -72,8 +72,12 @@ function ScoreHero({ result, profile, previousResult, tier }) {
     <div
       style={{
         textAlign: 'center',
-        padding: '32px 20px 24px',
-        position: 'relative',
+        padding: '16px 20px 12px',
+        position: 'sticky',
+        top: 0,
+        zIndex: 100,
+        background: '#070c16',
+        borderBottom: '1px solid rgba(232, 150, 42, 0.08)',
       }}
       role="region"
       aria-label={`Score: ${finalScore.toFixed(3)} for ${eventLabel}`}

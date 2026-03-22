@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import ScoreHero from './ScoreHero';
 import JudgeScoreInput from '../../components/ui/JudgeScoreInput';
 import YourDataCard from '../../components/ui/YourDataCard';
+import ShareWithCoach from '../../components/ui/ShareWithCoach';
 import SkillCard from '../../components/ui/SkillCard';
 import VideoReviewPlayer from '../../components/video/VideoReviewPlayer';
 import { safeStr, safeArray, safeNum } from '../../utils/helpers';
@@ -32,6 +33,7 @@ const GRADE_COLOR = {
 const GRADE_RANK = { 'A+': 12, 'A': 11, 'A-': 10, 'B+': 9, 'B': 8, 'B-': 7, 'C+': 6, 'C': 5, 'C-': 4, 'D+': 3, 'D': 2, 'F': 1 };
 
 function Layer2Competitive({ result, profile, previousResult, onSeek, videoUrl }) {
+  const [activeTab, setActiveTab] = useState('analysis');
   const gradedSkills = safeArray(result?.gradedSkills);
   const deductions = safeArray(result?.executionDeductions);
   const finalScore = safeNum(result?.finalScore, 0);
@@ -87,8 +89,30 @@ function Layer2Competitive({ result, profile, previousResult, onSeek, videoUrl }
         tier="competitive"
       />
 
+      <ShareWithCoach result={result} />
       <JudgeScoreInput result={result} profile={profile} />
       <YourDataCard athleteNickname={profile?.name} />
+
+      {/* Tab bar */}
+      <div style={{ display: 'flex', gap: 0, margin: '16px 20px 0', borderRadius: 12, overflow: 'hidden', border: `1px solid ${COLORS.border}` }}>
+        {[
+          { id: 'analysis', label: 'Analysis' },
+          { id: 'levelup', label: 'Level Up' },
+        ].map(tab => (
+          <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{
+            flex: 1, padding: '10px 0', fontSize: 13, fontWeight: 600,
+            fontFamily: "'Outfit', sans-serif", cursor: 'pointer', border: 'none',
+            background: activeTab === tab.id ? 'rgba(232,150,42,0.12)' : COLORS.surface,
+            color: activeTab === tab.id ? COLORS.gold : COLORS.textSecondary,
+            transition: 'all 0.15s',
+          }}>
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* ── Analysis Tab ── */}
+      {activeTab === 'analysis' && <>
 
       {/* Video Review Player — slow-mo, seek-to-skill, skeleton overlay */}
       <VideoReviewPlayer videoUrl={videoUrl} result={result} />
@@ -458,8 +482,17 @@ function Layer2Competitive({ result, profile, previousResult, onSeek, videoUrl }
         </div>
       )}
 
-      {/* Road to the Next Level */}
-      <RoadToNextLevel profile={profile} result={result} />
+      </>}
+
+      {/* ── Level Up Tab ── */}
+      {activeTab === 'levelup' && (
+        <div style={{ padding: '12px 0' }}>
+          <RoadToNextLevel profile={profile} result={result} />
+        </div>
+      )}
+
+      {/* Remaining content below tabs (artistry, drills) shows on analysis tab */}
+      {activeTab === 'analysis' && <>
 
       {/* Artistry & Composition Breakdown */}
       {(artistry || composition) && (
@@ -750,6 +783,7 @@ function Layer2Competitive({ result, profile, previousResult, onSeek, videoUrl }
           ))}
         </div>
       )}
+      </>}
     </div>
   );
 }

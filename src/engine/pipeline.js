@@ -84,6 +84,19 @@ export async function runAnalysisPipeline({ videoFile, profile, event, onProgres
 
   if (!videoFile) throw new Error("No video file provided.");
 
+  // ── Video length gate: reject videos > 5 minutes ──────────────────────
+  try {
+    const duration = await getVideoDuration(videoFile);
+    if (duration > 300) {
+      const mins = Math.ceil(duration / 60);
+      throw new Error(`This video is ${mins} minutes long. STRIVE works best with routines under 5 minutes. Please trim to just the routine and try again.`);
+    }
+  } catch (e) {
+    if (e.message.includes("minutes long")) throw e;
+    // Duration check failed (e.g. unsupported format) — proceed anyway
+    log.warn("gate", `Could not check video duration: ${e.message}`);
+  }
+
   // COMPLIANCE: localStorage cache removed (contained PII via athlete_name).
   // Every analysis runs fresh through the pipeline.
 
@@ -497,6 +510,23 @@ function logTrainingData(data) {
 
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
+
+function getVideoDuration(file) {
+  return new Promise((resolve, reject) => {
+    const video = document.createElement("video");
+    video.preload = "metadata";
+    const url = URL.createObjectURL(file);
+    video.onloadedmetadata = () => {
+      URL.revokeObjectURL(url);
+      resolve(video.duration || 0);
+    };
+    video.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("Could not read video metadata"));
+    };
+    video.src = url;
+  });
+}
 
 function delay(ms) {
   return new Promise(r => setTimeout(r, ms));

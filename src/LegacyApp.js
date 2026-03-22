@@ -7,6 +7,7 @@ const NewResultsScreen = lazy(() => import("./screens/ResultsScreen"));
 const NewDashboardScreen = lazy(() => import("./screens/DashboardScreen"));
 const UpgradeModal = lazy(() => import("./components/billing/UpgradeModal"));
 import AgeGate from "./components/legal/AgeGate";
+import ShareScreen from "./screens/ShareScreen";
 import ParentalConsent from "./components/legal/ParentalConsent";
 import LegalDisclaimer from "./components/legal/LegalDisclaimer";
 import PrivacyNotice from "./components/legal/PrivacyNotice";
@@ -1349,6 +1350,17 @@ export default function LegacyApp() {
   // eslint-disable-next-line no-unused-vars
   const [useNewDashboard, setUseNewDashboard] = useState(true);
 
+  // ── Share route: /share/[token] ──
+  const [shareToken, setShareToken] = useState(null);
+  useEffect(() => {
+    const path = window.location.pathname;
+    const shareMatch = path.match(/^\/share\/(.+)$/);
+    if (shareMatch) {
+      setShareToken(shareMatch[1]);
+      setScreenRaw("share");
+    }
+  }, []);
+
   // ── COPPA: Handle consent confirmation from email link ──
   useEffect(() => {
     try {
@@ -1519,6 +1531,7 @@ export default function LegacyApp() {
         pointerEvents: "none", zIndex: 0, willChange: "transform",
       }} />
 
+      {screen === "share" && <ShareScreen token={shareToken} />}
       {screen === "splash" && <SplashScreen onStart={() => setScreen("onboarding")} />}
       {screen === "onboarding" && <OnboardingScreen onComplete={(p) => {
         saveProfile(p); setScreen("dashboard");
@@ -2442,17 +2455,46 @@ const DashboardScreen = React.memo(function DashboardScreen({ profile, history, 
             marginBottom: 24,
           }}>
             <div style={{ fontSize: 28, marginBottom: 10 }}>🔒</div>
-            <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>Monthly limit reached</div>
-            <div style={{ fontSize: 13, color: "#8890AB", lineHeight: 1.6, marginBottom: 16, maxWidth: 280, margin: "0 auto" }}>
-              You've used all 3 free analyses this month. Upgrade to Competitive for unlimited video analysis.
+            <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>You've used your 3 free analyses this month</div>
+            <div style={{ fontSize: 13, color: "#8890AB", lineHeight: 1.6, marginBottom: 20, maxWidth: 320, margin: "0 auto 20px" }}>
+              Unlimited analyses · Skill-by-skill breakdown · Training drills
             </div>
-            <button onClick={() => setShowUpgradeModal(true)} style={{
-              background: "linear-gradient(135deg, #8B5CF6, #A78BFA)", color: "#FFF",
-              border: "none", padding: "12px 32px", borderRadius: 12, fontWeight: 700,
-              fontSize: 14, cursor: "pointer", fontFamily: "'Outfit', sans-serif",
-            }}>
-              Upgrade to STRIVE Competitive
-            </button>
+            {/* Annual toggle */}
+            {(() => {
+              const [annual, setAnnual] = React.useState(true);
+              return (
+                <div>
+                  <div style={{ display: "flex", justifyContent: "center", gap: 8, marginBottom: 16 }}>
+                    <button onClick={() => setAnnual(false)} style={{
+                      padding: "8px 16px", borderRadius: 20, fontSize: 13, fontWeight: 600,
+                      fontFamily: "'Outfit', sans-serif", cursor: "pointer", border: "none",
+                      background: !annual ? "#e8962a" : "rgba(255,255,255,0.05)",
+                      color: !annual ? "#070c16" : "#8890AB",
+                    }}>Monthly</button>
+                    <button onClick={() => setAnnual(true)} style={{
+                      padding: "8px 16px", borderRadius: 20, fontSize: 13, fontWeight: 600,
+                      fontFamily: "'Outfit', sans-serif", cursor: "pointer", border: "none",
+                      background: annual ? "#e8962a" : "rgba(255,255,255,0.05)",
+                      color: annual ? "#070c16" : "#8890AB",
+                    }}>Annual — save 17%</button>
+                  </div>
+                  <div style={{ textAlign: "center", marginBottom: 16 }}>
+                    <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 28, fontWeight: 700, color: "#ffc15a" }}>
+                      {annual ? "$99/yr" : "$9.99/mo"}
+                    </div>
+                    {annual && <div style={{ fontSize: 12, color: "#22c55e", marginTop: 4 }}>Less than one MeetCritique review</div>}
+                  </div>
+                  <button onClick={() => setShowUpgradeModal(true)} style={{
+                    background: "linear-gradient(135deg, #e8962a, #ffc15a)", color: "#070c16",
+                    border: "none", padding: "14px 32px", borderRadius: 12, fontWeight: 700,
+                    fontSize: 15, cursor: "pointer", fontFamily: "'Outfit', sans-serif",
+                    width: "100%", minHeight: 48,
+                  }}>
+                    Start Free Trial
+                  </button>
+                </div>
+              );
+            })()}
           </div>
         ) : (
           <button

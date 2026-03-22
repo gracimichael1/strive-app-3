@@ -2,6 +2,7 @@ import React from 'react';
 import ScoreHero from './ScoreHero';
 import JudgeScoreInput from '../../components/ui/JudgeScoreInput';
 import YourDataCard from '../../components/ui/YourDataCard';
+import ShareWithCoach from '../../components/ui/ShareWithCoach';
 import { safeStr, safeArray } from '../../utils/helpers';
 
 const COLORS = {
@@ -81,6 +82,7 @@ function Layer1Free({ result, profile, previousResult, onUpgrade }) {
         tier="free"
       />
 
+      <ShareWithCoach result={result} />
       <JudgeScoreInput result={result} profile={profile} />
       <YourDataCard athleteNickname={profile?.name} />
 
