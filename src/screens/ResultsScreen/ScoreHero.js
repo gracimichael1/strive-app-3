@@ -171,6 +171,20 @@ function ScoreHero({ result, profile, previousResult, tier }) {
         Start Value {startValue.toFixed(1)} — Deductions {totalDeductions.toFixed(2)}
       </div>
 
+      {/* Scoring disclaimer */}
+      <div
+        style={{
+          fontSize: 10,
+          color: 'rgba(255,255,255,0.25)',
+          fontFamily: "'Outfit', sans-serif",
+          letterSpacing: 0.3,
+          marginTop: 2,
+        }}
+        aria-label="Scoring disclaimer"
+      >
+        AI score · training reference only · not an official USAG score
+      </div>
+
       {/* Delta */}
       {delta !== null && (
         <div
