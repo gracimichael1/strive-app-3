@@ -217,6 +217,9 @@ Zero leniency. Artistry judged at highest professional standard.
 
 const EVENT_RULES = {
   FLOOR: `
+## FLOOR SKILL COUNT RULE — READ BEFORE SCORING
+A Level 5-7 floor routine contains exactly 2-3 tumbling passes. Before scoring anything, count every tumbling pass from start to finish of the routine. If you count more than 3 passes, you have miscounted — go back and recount from the beginning. Do not assign any deductions until your pass count is confirmed at 2 or 3. A tumbling pass ends when the gymnast's feet return to the floor and she takes a step or pause. Connecting skills within one pass count as one pass, not multiple.
+
 ## EVENT SPECIFICS: FLOOR EXERCISE
 - Monitor "Inter-Knee Distance" during all tumbling. Gap > 3 inches: -0.10.
 - Monitor heel-drop timing during full turns. Early drop before 360°: -0.10 completion.
