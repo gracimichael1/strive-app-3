@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { useTier } from '../../context/TierContext';
 
 // ── Design Tokens ───────────────────────────────────────────────────────────
@@ -321,6 +321,137 @@ function SkillCard({ skill, index, isFree, freeDeductionLimit, globalDeductionIn
   const [playbackRate, setPlaybackRate] = useState(1);
   const cardVideoRef = useRef(null);
   const cardCanvasRef = useRef(null);
+  const poseRef = useRef(null);
+  const rafRef = useRef(null);
+
+  // ── Angle + color helpers for skeleton overlay ──
+  const calcAngle = (a, b, c) => {
+    const ab = { x: a.x - b.x, y: a.y - b.y };
+    const cb = { x: c.x - b.x, y: c.y - b.y };
+    const dot = ab.x * cb.x + ab.y * cb.y;
+    const magAB = Math.sqrt(ab.x * ab.x + ab.y * ab.y);
+    const magCB = Math.sqrt(cb.x * cb.x + cb.y * cb.y);
+    if (magAB === 0 || magCB === 0) return 180;
+    const cosA = Math.min(1, Math.max(-1, dot / (magAB * magCB)));
+    return Math.round((Math.acos(cosA) * 180) / Math.PI);
+  };
+
+  const jointColor = (angle, ideal) => {
+    const diff = Math.abs(angle - (ideal || 180));
+    if (diff <= 5) return '#22c55e';   // green — on target
+    if (diff <= 15) return '#ffc15a';  // amber — slight deviation
+    return '#dc2626';                   // red — form break
+  };
+
+  // ── MediaPipe skeleton detection loop ──
+  useEffect(() => {
+    if (!showSkeleton || !open || tab !== 'video') {
+      if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
+      return;
+    }
+    const canvas = cardCanvasRef.current;
+    const video = cardVideoRef.current;
+    if (!canvas || !video) return;
+
+    let running = true;
+
+    const loadCDN = () => new Promise((resolve) => {
+      if (window.Pose) return resolve();
+      // Load MediaPipe Pose + drawing utils from CDN
+      const s1 = document.createElement('script');
+      s1.src = 'https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5/pose.js';
+      s1.crossOrigin = 'anonymous';
+      s1.onload = () => {
+        const s2 = document.createElement('script');
+        s2.src = 'https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.3/drawing_utils.js';
+        s2.crossOrigin = 'anonymous';
+        s2.onload = resolve;
+        document.head.appendChild(s2);
+      };
+      document.head.appendChild(s1);
+    });
+
+    const initPose = async () => {
+      await loadCDN();
+      if (!poseRef.current && window.Pose) {
+        const pose = new window.Pose({ locateFile: (file) =>
+          `https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5/${file}`
+        });
+        pose.setOptions({
+          modelComplexity: 1,
+          smoothLandmarks: true,
+          minDetectionConfidence: 0.7,
+          minTrackingConfidence: 0.5,
+        });
+        pose.onResults((results) => {
+          if (!running) return;
+          const ctx = canvas.getContext('2d');
+          const cw = canvas.width;
+          const ch = canvas.height;
+          ctx.clearRect(0, 0, cw, ch);
+
+          if (results.poseLandmarks) {
+            const lm = results.poseLandmarks;
+            // Draw connectors
+            if (window.drawConnectors && window.POSE_CONNECTIONS) {
+              window.drawConnectors(ctx, lm, window.POSE_CONNECTIONS, { color: 'rgba(255,255,255,0.3)', lineWidth: 2 });
+            }
+            // Draw landmarks with angle-based coloring
+            const keyJoints = {
+              25: { a: 23, c: 27, ideal: 180 }, // left knee
+              26: { a: 24, c: 28, ideal: 180 }, // right knee
+              13: { a: 11, c: 15, ideal: 180 }, // left elbow
+              14: { a: 12, c: 16, ideal: 180 }, // right elbow
+              23: { a: 11, c: 25, ideal: 180 }, // left hip
+              24: { a: 12, c: 26, ideal: 180 }, // right hip
+            };
+            lm.forEach((pt, idx) => {
+              if ((pt.visibility || 0) < 0.5) return;
+              let color = 'rgba(255,255,255,0.7)';
+              const joint = keyJoints[idx];
+              if (joint && lm[joint.a] && lm[joint.c]) {
+                const angle = calcAngle(
+                  { x: lm[joint.a].x * cw, y: lm[joint.a].y * ch },
+                  { x: pt.x * cw, y: pt.y * ch },
+                  { x: lm[joint.c].x * cw, y: lm[joint.c].y * ch }
+                );
+                color = jointColor(angle, joint.ideal);
+              }
+              ctx.beginPath();
+              ctx.arc(pt.x * cw, pt.y * ch, 4, 0, 2 * Math.PI);
+              ctx.fillStyle = color;
+              ctx.fill();
+            });
+          }
+        });
+        await pose.initialize();
+        poseRef.current = pose;
+      }
+
+      // Detection loop — runs at display framerate (works in slow motion)
+      const detectLoop = async () => {
+        if (!running || !poseRef.current || video.paused || video.ended) {
+          if (running) rafRef.current = requestAnimationFrame(detectLoop);
+          return;
+        }
+        const vRect = video.getBoundingClientRect();
+        if (canvas.width !== vRect.width || canvas.height !== vRect.height) {
+          canvas.width = vRect.width;
+          canvas.height = vRect.height;
+        }
+        try { await poseRef.current.send({ image: video }); } catch {}
+        rafRef.current = requestAnimationFrame(detectLoop);
+      };
+      rafRef.current = requestAnimationFrame(detectLoop);
+    };
+
+    initPose().catch(e => console.warn('[skeleton] init failed:', e.message));
+
+    return () => {
+      running = false;
+      if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
+    };
+  }, [showSkeleton, open, tab, videoUrl]);
 
   // Level 3 — plain English context for each tab
   function buildTabNarrative(sk, tabId) {
