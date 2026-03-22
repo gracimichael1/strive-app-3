@@ -319,6 +319,8 @@ function SkillCard({ skill, index, isFree, freeDeductionLimit, globalDeductionIn
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState('what');
   const [playbackRate, setPlaybackRate] = useState(1);
+  const [liveAngles, setLiveAngles] = useState(null); // { lKnee, rKnee, lElbow, rElbow, lHip, rHip }
+  const [videoPaused, setVideoPaused] = useState(true);
   const cardVideoRef = useRef(null);
   const cardCanvasRef = useRef(null);
   const poseRef = useRef(null);
@@ -389,6 +391,7 @@ function SkillCard({ skill, index, isFree, freeDeductionLimit, globalDeductionIn
           const cw = canvas.width;
           const ch = canvas.height;
           ctx.clearRect(0, 0, cw, ch);
+          const isPaused = video.paused;
 
           if (results.poseLandmarks) {
             const lm = results.poseLandmarks;
@@ -396,32 +399,48 @@ function SkillCard({ skill, index, isFree, freeDeductionLimit, globalDeductionIn
             if (window.drawConnectors && window.POSE_CONNECTIONS) {
               window.drawConnectors(ctx, lm, window.POSE_CONNECTIONS, { color: 'rgba(255,255,255,0.3)', lineWidth: 2 });
             }
-            // Draw landmarks with angle-based coloring
+            // Key joints with ideal angles
             const keyJoints = {
-              25: { a: 23, c: 27, ideal: 180 }, // left knee
-              26: { a: 24, c: 28, ideal: 180 }, // right knee
-              13: { a: 11, c: 15, ideal: 180 }, // left elbow
-              14: { a: 12, c: 16, ideal: 180 }, // right elbow
-              23: { a: 11, c: 25, ideal: 180 }, // left hip
-              24: { a: 12, c: 26, ideal: 180 }, // right hip
+              25: { a: 23, c: 27, ideal: 180, label: 'L Knee' },
+              26: { a: 24, c: 28, ideal: 180, label: 'R Knee' },
+              13: { a: 11, c: 15, ideal: 180, label: 'L Elbow' },
+              14: { a: 12, c: 16, ideal: 180, label: 'R Elbow' },
+              23: { a: 11, c: 25, ideal: 180, label: 'L Hip' },
+              24: { a: 12, c: 26, ideal: 180, label: 'R Hip' },
             };
+            const angles = {};
             lm.forEach((pt, idx) => {
               if ((pt.visibility || 0) < 0.5) return;
               let color = 'rgba(255,255,255,0.7)';
               const joint = keyJoints[idx];
+              let angle = null;
               if (joint && lm[joint.a] && lm[joint.c]) {
-                const angle = calcAngle(
+                angle = calcAngle(
                   { x: lm[joint.a].x * cw, y: lm[joint.a].y * ch },
                   { x: pt.x * cw, y: pt.y * ch },
                   { x: lm[joint.c].x * cw, y: lm[joint.c].y * ch }
                 );
                 color = jointColor(angle, joint.ideal);
+                angles[joint.label] = angle;
               }
+              // Draw joint dot
               ctx.beginPath();
-              ctx.arc(pt.x * cw, pt.y * ch, 4, 0, 2 * Math.PI);
+              ctx.arc(pt.x * cw, pt.y * ch, isPaused ? 6 : 4, 0, 2 * Math.PI);
               ctx.fillStyle = color;
               ctx.fill();
+              // Draw angle label when paused (key joints only)
+              if (isPaused && joint && angle !== null) {
+                ctx.font = 'bold 11px sans-serif';
+                ctx.fillStyle = color;
+                ctx.strokeStyle = 'rgba(0,0,0,0.7)';
+                ctx.lineWidth = 3;
+                const label = `${angle}°`;
+                ctx.strokeText(label, pt.x * cw + 8, pt.y * ch - 6);
+                ctx.fillText(label, pt.x * cw + 8, pt.y * ch - 6);
+              }
             });
+            // Store live angles for the Judge's Analysis panel
+            setLiveAngles(Object.keys(angles).length > 0 ? angles : null);
           }
         });
         await pose.initialize();
@@ -792,6 +811,8 @@ function SkillCard({ skill, index, isFree, freeDeductionLimit, globalDeductionIn
                       }
                       e.target.playbackRate = playbackRate;
                     }}
+                    onPlay={() => setVideoPaused(false)}
+                    onPause={() => setVideoPaused(true)}
                   />
                   <canvas
                     ref={cardCanvasRef}
@@ -831,17 +852,135 @@ function SkillCard({ skill, index, isFree, freeDeductionLimit, globalDeductionIn
                   </button>
                 </div>
 
-                {/* Skeleton explanation — only when ON */}
+                {/* ═══ JUDGE'S SKELETON ANALYSIS ═══ */}
                 {showSkeleton && (
                   <div style={{
-                    padding: '10px 12px', borderRadius: 8, marginBottom: 10,
-                    background: 'rgba(232,150,42,0.05)', border: '1px solid rgba(232,150,42,0.15)',
-                    fontSize: 12, color: 'rgba(255,255,255,0.5)', lineHeight: 1.65,
+                    borderRadius: 10, marginBottom: 10, overflow: 'hidden',
+                    border: '1px solid rgba(232,150,42,0.2)',
+                    background: 'rgba(232,150,42,0.04)',
                   }}>
-                    <span style={{ fontWeight: 700, color: 'rgba(232,150,42,0.8)' }}>What the skeleton shows:</span>{' '}
-                    Colored dots trace joint positions frame by frame — even in slow motion.
-                    Green means the joint is in the correct position. Orange is a slight deviation.
-                    Red is the form break that caused the deduction above. This is exactly what judges are trained to see.
+                    {/* Header */}
+                    <div style={{
+                      padding: '10px 12px', background: 'rgba(232,150,42,0.08)',
+                      borderBottom: '1px solid rgba(232,150,42,0.12)',
+                    }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: T.gold, letterSpacing: 0.5, textTransform: 'uppercase', fontFamily: T.sans }}>
+                        ⚖️ Judge's Skeleton Analysis
+                      </div>
+                    </div>
+
+                    <div style={{ padding: '12px' }}>
+                      {/* What you're seeing */}
+                      <div style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.65)', lineHeight: 1.7, fontFamily: T.sans, marginBottom: 12 }}>
+                        The colored dots on the video track your gymnast's <strong style={{ color: T.text }}>joint positions in real time</strong> — the same positions judges evaluate from their seat.
+                        Pause the video to see exact angle measurements at each joint.
+                      </div>
+
+                      {/* Color key */}
+                      <div style={{ display: 'flex', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
+                        {[
+                          { color: T.green, label: 'On target', desc: 'Within 5° of ideal — no deduction' },
+                          { color: '#ffc15a', label: 'Slight deviation', desc: '5–15° off — possible 0.05' },
+                          { color: T.red, label: 'Form break', desc: '15°+ off — this is the deduction' },
+                        ].map(c => (
+                          <div key={c.label} style={{ display: 'flex', alignItems: 'flex-start', gap: 6, flex: '1 1 140px' }}>
+                            <div style={{ width: 10, height: 10, borderRadius: '50%', background: c.color, flexShrink: 0, marginTop: 3 }} />
+                            <div>
+                              <div style={{ fontSize: 11, fontWeight: 700, color: c.color, fontFamily: T.sans }}>{c.label}</div>
+                              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontFamily: T.sans }}>{c.desc}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Live angle readings (when available) */}
+                      {liveAngles && (
+                        <div style={{
+                          padding: '10px 12px', borderRadius: 8,
+                          background: 'rgba(255,255,255,0.03)',
+                          border: '1px solid rgba(255,255,255,0.06)',
+                          marginBottom: 12,
+                        }}>
+                          <div style={{ fontSize: 10, fontWeight: 700, color: T.textMuted, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6, fontFamily: T.sans }}>
+                            Live Joint Angles {videoPaused ? '(paused — showing exact frame)' : '(updating in real time)'}
+                          </div>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
+                            {Object.entries(liveAngles).map(([joint, angle]) => {
+                              const diff = Math.abs(angle - 180);
+                              const c = diff <= 5 ? T.green : diff <= 15 ? '#ffc15a' : T.red;
+                              const status = diff <= 5 ? 'Good' : diff <= 15 ? 'Watch' : 'Deduction';
+                              return (
+                                <div key={joint} style={{ padding: '6px 8px', borderRadius: 6, background: 'rgba(255,255,255,0.02)' }}>
+                                  <div style={{ fontSize: 9, color: T.textMuted, fontFamily: T.sans }}>{joint}</div>
+                                  <div style={{ fontSize: 16, fontWeight: 800, color: c, fontFamily: T.mono }}>{angle}°</div>
+                                  <div style={{ fontSize: 9, color: c, fontWeight: 600, fontFamily: T.sans }}>{status}</div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Findings — connect skeleton to this skill's deductions */}
+                      <div style={{
+                        padding: '10px 12px', borderRadius: 8,
+                        background: 'rgba(255,255,255,0.02)',
+                        border: '1px solid rgba(255,255,255,0.05)',
+                        marginBottom: 12,
+                      }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.6)', marginBottom: 6, fontFamily: T.sans }}>
+                          What this means for {name}
+                        </div>
+                        <div style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.55)', lineHeight: 1.7, fontFamily: T.sans }}>
+                          {faults.length === 0 ? (
+                            <>All joints tracked within ideal range on this skill. Clean execution — the skeleton confirms what the score shows.</>
+                          ) : (
+                            <>
+                              {faults.slice(0, 2).map((f, i) => {
+                                const bodyPart = f.bodyPoint || f.fault?.split(' ')[0] || '';
+                                return (
+                                  <span key={i}>
+                                    {i > 0 ? ' ' : ''}
+                                    The <strong style={{ color: T.orange }}>{bodyPart || 'form break'}</strong> deduction
+                                    (-{(f.deduction || 0).toFixed(2)}) corresponds to the{' '}
+                                    <strong style={{ color: T.red }}>red/orange joint</strong> you see on the skeleton at this moment.
+                                    {f.fault ? ` Specifically: ${f.fault}.` : ''}
+                                  </span>
+                                );
+                              })}
+                              {' '}Judges see these exact angles from their position at the meet — now you can see them too.
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* What to do with this info */}
+                      <div style={{
+                        padding: '10px 12px', borderRadius: 8,
+                        background: 'rgba(34,197,94,0.04)',
+                        border: '1px solid rgba(34,197,94,0.1)',
+                      }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: T.green, marginBottom: 4, fontFamily: T.sans }}>
+                          How to use this
+                        </div>
+                        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', lineHeight: 1.65, fontFamily: T.sans }}>
+                          {ded > 0 ? (
+                            <>
+                              <strong style={{ color: 'rgba(255,255,255,0.7)' }}>1.</strong> Play the video in slow motion and watch the red/orange joints.{' '}
+                              <strong style={{ color: 'rgba(255,255,255,0.7)' }}>2.</strong> Pause at the moment of the skill — you'll see the exact angle that caused the deduction.{' '}
+                              <strong style={{ color: 'rgba(255,255,255,0.7)' }}>3.</strong> Show your coach — this is what needs to change in practice.{' '}
+                              The drill in the "Today's Fix" tab targets this exact movement pattern.
+                              {gainIfFixed > 0 ? ` Fixing it adds +${gainIfFixed.toFixed(2)} back to the score.` : ''}
+                            </>
+                          ) : (
+                            <>
+                              All green! Share this with your gymnast — it's proof of clean execution.
+                              Keep doing exactly this in practice and it will hold at the next meet.
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 )}
 
