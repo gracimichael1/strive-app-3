@@ -187,6 +187,27 @@ export default function ResultsScreen({ result, profile, previousResult, onBack,
 
       <div style={{ maxWidth: 540, margin: '0 auto' }}>
 
+        {/* ═══ JUDGE'S OVERALL READ ═══ */}
+        {(result.overallAssessment || result.whyThisScore) && (
+          <div style={{
+            margin: '14px 16px 0', padding: '13px 14px 13px 16px', borderRadius: 10,
+            background: 'rgba(255,255,255,0.03)', borderLeft: '3px solid rgba(232,150,42,0.5)',
+          }}>
+            <div style={{
+              fontSize: 11, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase',
+              color: 'rgba(232,150,42,0.6)', marginBottom: 7, fontFamily: T.sans,
+            }}>
+              Judge's overall read
+            </div>
+            <div style={{
+              fontSize: 13.5, color: 'rgba(255,255,255,0.72)', lineHeight: 1.75,
+              fontStyle: 'italic', fontFamily: T.sans,
+            }}>
+              "{result.overallAssessment || result.whyThisScore}"
+            </div>
+          </div>
+        )}
+
         {/* ═══ 2. TODAY'S FIX ═══ */}
         {todaysFix && (
           <div style={{
@@ -298,6 +319,43 @@ function SkillCard({ skill, index, isFree, freeDeductionLimit, globalDeductionIn
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState('what');
 
+  // Level 3 — plain English context for each tab
+  function buildTabNarrative(sk, tabId) {
+    const n = sk.skillName || sk.skill || 'This skill';
+    const d = sk.deduction || 0;
+    if (tabId === 'what') {
+      if (!sk.reason) return null;
+      const fixed = d > 0 ? ` Fixing this adds +${d.toFixed(2)} to the score automatically — judges have no discretion on this.` : '';
+      return `Here's what the judge saw on ${n}: ${sk.reason}.${fixed}`;
+    }
+    if (tabId === 'deds') {
+      if (d === 0) return `No deductions on ${n} — clean execution.`;
+      const count = (sk.faults || []).length || 1;
+      return `${count === 1 ? 'One deduction' : `${count} deductions`} on ${n}, totaling -${d.toFixed(2)}. Each one below is something judges are specifically trained to spot and mark every time it appears.`;
+    }
+    if (tabId === 'bio') {
+      const bio = sk.bodyMechanics;
+      if (!bio) return `Body position data wasn't captured for ${n}.`;
+      const knee = bio.kneeAngle ? bio.kneeAngle.replace('°', '') : null;
+      const kneeNote = knee && parseInt(knee) < 170
+        ? `Her knees were at ${bio.kneeAngle} — ideal is 180° fully straight. Judges see this as a form break and deduct for it.`
+        : `Knee position was close to ideal on ${n}.`;
+      return `${kneeNote} The numbers below show joint angles measured from the video. Green means on target. Orange or red is what caused a deduction.`;
+    }
+    if (tabId === 'injury') {
+      if (!sk.injuryRisk) return `No elevated injury concerns on ${n} at this level.`;
+      return `This isn't about something that happened in this routine — it's about what repeated execution of this pattern can cause over time. The note below is what a sports medicine professional would flag.`;
+    }
+    if (tabId === 'video') {
+      return `The video below starts at the moment this skill begins. Toggle the skeleton to see joint positions highlighted in real time — green joints are on target, red shows where the deduction came from.`;
+    }
+    if (tabId === 'fix') {
+      if (!sk.drillRecommendation) return null;
+      return `This drill targets exactly what caused the deduction above. It's designed to fix the specific movement pattern judges marked — not general conditioning.`;
+    }
+    return null;
+  }
+
   const name = skill.skillName || skill.name || skill.skill || 'Skill';
   const grade = skill.grade || 'B';
   const gradeColor = GRADE_COLORS[grade] || T.blue;
@@ -380,6 +438,15 @@ function SkillCard({ skill, index, isFree, freeDeductionLimit, globalDeductionIn
             {ts && <span style={{ fontFamily: T.mono, marginRight: 6 }}>{ts}</span>}
             {snippet}
           </div>
+          {!open && skill.reason && (
+            <div style={{
+              fontSize: 11.5, color: 'rgba(255,255,255,0.38)', fontStyle: 'italic',
+              marginTop: 3, lineHeight: 1.4, overflow: 'hidden', textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap', maxWidth: '85%',
+            }}>
+              {skill.reason.length > 72 ? skill.reason.substring(0, 72) + '…' : skill.reason}
+            </div>
+          )}
         </div>
 
         {/* Deduction or clean pill */}
@@ -432,6 +499,20 @@ function SkillCard({ skill, index, isFree, freeDeductionLimit, globalDeductionIn
             </div>
 
             {/* TAB: What Happened */}
+            {/* Tab narrative — plain English context */}
+            {(() => {
+              const narrative = buildTabNarrative(skill, tab);
+              return narrative ? (
+                <div style={{
+                  padding: '11px 14px', marginBottom: 12, borderRadius: 9,
+                  background: 'rgba(255,255,255,0.03)', borderLeft: '3px solid rgba(255,255,255,0.12)',
+                  fontSize: 13, color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, fontFamily: T.sans,
+                }}>
+                  {narrative}
+                </div>
+              ) : null;
+            })()}
+
             {tab === 'what' && (
               <div>
                 {faultText && (
