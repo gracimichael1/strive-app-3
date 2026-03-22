@@ -3888,7 +3888,7 @@ const UploadScreen = React.memo(function UploadScreen({ profile, onBack, onAnaly
             <span style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}>⏱</span>
             <div>
               <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(232,150,42,0.9)", marginBottom: 3, letterSpacing: 0.2 }}>
-                Analysis takes 30–45 seconds
+                Typically 45–90 seconds depending on connection speed
               </div>
               <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.45)", lineHeight: 1.55 }}>
                 STRIVE runs a full biomechanical assessment — every joint angle, skill deduction, and injury risk evaluated frame by frame. Worth the wait.
@@ -5255,7 +5255,7 @@ IMPORTANT: The deduction_log must contain ONE entry per distinct skill or transi
             Evaluating every skill, joint angle, and deduction — like a certified judge watching in slow motion.
           </div>
           <div style={{ marginTop: 12, fontSize: 12, color: "rgba(255,255,255,0.3)", fontFamily: "'Space Mono', monospace" }}>
-            Est. 30–45 seconds
+            Est. 45–90 seconds
           </div>
         </div>
       )}
