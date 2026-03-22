@@ -6,6 +6,8 @@ const TrainingScreen = lazy(() => import("./screens/TrainingScreen"));
 const NewResultsScreen = lazy(() => import("./components/results/ResultsScreen"));
 const NewDashboardScreen = lazy(() => import("./screens/DashboardScreen"));
 const UpgradeModal = lazy(() => import("./components/billing/UpgradeModal"));
+const MastermindScreen = lazy(() => import("./components/mastermind/MastermindScreen"));
+import GoalSetupModal from "./components/GoalSetupModal";
 import AgeGate from "./components/legal/AgeGate";
 import ShareScreen from "./screens/ShareScreen";
 import ParentalConsent from "./components/legal/ParentalConsent";
@@ -1350,6 +1352,7 @@ export default function LegacyApp() {
   // Map legacy "pro" tier to new "competitive" tier name
   const normalizedTier = userTier === "competitive" ? "competitive" : userTier;
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [showGoalSetup, setShowGoalSetup] = useState(false);
   const [pendingAnalyzeData, setPendingAnalyzeData] = useState(null);
 
   // ── Feature flags for new screen components ──
@@ -1559,6 +1562,19 @@ export default function LegacyApp() {
 
       {screen === "share" && <ShareScreen token={shareToken} />}
       {screen === "legal" && <LegalScreen onBack={() => setScreen(profile ? "settings" : "splash")} />}
+      {screen === "training" && (
+        <Suspense fallback={<div style={{ minHeight: "100vh", background: "#0d1117" }} />}>
+          <MastermindScreen
+            athleteProfile={profile}
+            recentAnalyses={Object.values(savedResults || {})}
+            upcomingMeet={null}
+            tier={normalizedTier}
+            onBack={() => setScreen("dashboard")}
+            onUpgrade={() => setShowUpgradeModal(true)}
+            onChangeGoal={() => setShowGoalSetup(true)}
+          />
+        </Suspense>
+      )}
       {screen === "beta-gate" && <BetaCodeScreen onSuccess={() => setScreen("splash")} />}
       {screen === "splash" && <SplashScreen onStart={() => setScreen("onboarding")} />}
       {screen === "onboarding" && <OnboardingScreen onComplete={(p) => {
@@ -1659,6 +1675,13 @@ export default function LegacyApp() {
             history={Object.values(savedResults)}
             onUpgrade={() => {
               setShowUpgradeModal(true);
+            }}
+            onTraining={() => {
+              if (normalizedTier === 'elite' && !profile?.goal) {
+                setShowGoalSetup(true);
+              } else {
+                setScreen("training");
+              }
             }}
             onSeek={() => {}}
             onBack={() => setScreen("dashboard")}
@@ -1909,6 +1932,24 @@ export default function LegacyApp() {
       )}
 
       {/* ── Upgrade Modal ── */}
+      {/* Goal Setup Modal */}
+      {showGoalSetup && (
+        <GoalSetupModal
+          athleteName={profile?.name}
+          onConfirm={(goal) => {
+            const updated = { ...profile, goal };
+            saveProfile(updated);
+            setShowGoalSetup(false);
+            setScreen("training");
+          }}
+          onSkip={() => {
+            const updated = { ...profile, goal: 'unset' };
+            saveProfile(updated);
+            setShowGoalSetup(false);
+          }}
+        />
+      )}
+
       {showUpgradeModal && (
         <Suspense fallback={null}>
           <UpgradeModal

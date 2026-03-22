@@ -56,7 +56,7 @@ function parseTs(ts) {
 // MAIN COMPONENT
 // ═════════════════════════════════════════════════════════════════════════════
 
-export default function ResultsScreen({ result, profile, previousResult, onBack, onUpgrade, onJumpToTimestamp, videoUrl }) {
+export default function ResultsScreen({ result, profile, previousResult, onBack, onUpgrade, onTraining, onJumpToTimestamp, videoUrl }) {
   const { tier, features } = useTier();
   const [showSkeleton, setShowSkeleton] = useState(false);
   const [resultsTab, setResultsTab] = useState('analysis');
@@ -207,6 +207,18 @@ export default function ResultsScreen({ result, profile, previousResult, onBack,
               "{result.overallAssessment || result.whyThisScore}"
             </div>
           </div>
+        )}
+
+        {/* ═══ YOUR TRAINING CTA (elite only) ═══ */}
+        {onTraining && tier === 'elite' && (
+          <button onClick={onTraining} style={{
+            margin: '12px 16px 0', width: 'calc(100% - 32px)', padding: '11px 16px', borderRadius: 10,
+            background: 'rgba(45,212,191,0.06)', border: '1px solid rgba(45,212,191,0.2)',
+            color: '#2dd4bf', fontSize: 13, fontWeight: 600, fontFamily: T.sans,
+            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+          }}>
+            &#10024; Your Training Program &rarr;
+          </button>
         )}
 
         {/* ═══ 2. TODAY'S FIX ═══ */}
