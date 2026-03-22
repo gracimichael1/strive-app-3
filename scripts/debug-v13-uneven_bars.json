@@ -1,303 +1,274 @@
 {
   "start_value": 10,
-  "final_score": 8.3,
+  "final_score": 8.55,
   "deduction_log": [
     {
-      "skill_name": "Mount to Low Bar (Jump to LB)",
+      "skill_name": "Jump to High Bar",
       "skill_order": 1,
-      "timestamp_start": 1,
-      "timestamp_end": 1.5,
-      "executed_successfully": true,
-      "difficulty_value": 0.1,
-      "total_deduction": 0,
-      "deductions": [],
-      "quality_grade": 10,
-      "reason": "Clean mount with good body tension.",
-      "is_celebration": true,
-      "strength_note": "Excellent initial body tension and control during the mount."
-    },
-    {
-      "skill_name": "Front Hip Circle",
-      "skill_order": 2,
-      "timestamp_start": 2,
-      "timestamp_end": 2.5,
+      "timestamp_start": 1.5,
+      "timestamp_end": 3,
       "executed_successfully": true,
       "difficulty_value": 0.1,
       "total_deduction": 0.05,
       "deductions": [
         {
-          "type": "Execution",
-          "body_part": "Legs/Feet",
-          "description": "Slightly bent knees and relaxed toes during the circle.",
+          "type": "Form error",
+          "body_part": "Hips/Knees",
+          "description": "Slight hip pike and knee bend on catch to high bar.",
           "point_value": 0.05
         }
       ],
-      "quality_grade": 9.95,
-      "reason": "Minor form breaks in legs and feet.",
-      "is_celebration": false,
-      "rule_reference": "KTM/TPM"
+      "quality_grade": 0.95,
+      "reason": "Minor form break on catch.",
+      "is_celebration": false
     },
     {
-      "skill_name": "Cast to Back Hip Circle",
-      "skill_order": 3,
+      "skill_name": "Long Hang Kip",
+      "skill_order": 2,
       "timestamp_start": 3,
-      "timestamp_end": 4.5,
+      "timestamp_end": 5,
       "executed_successfully": true,
       "difficulty_value": 0.1,
-      "total_deduction": 0.2,
+      "total_deduction": 0.1,
       "deductions": [
         {
-          "type": "Execution",
-          "body_part": "Hips/Body Line",
-          "description": "Cast below horizontal (approx. 170-175 degrees).",
-          "point_value": 0.15
+          "type": "Form error",
+          "body_part": "Legs/Knees",
+          "description": "Minor leg separation and knee bend during kip.",
+          "point_value": 0.05
         },
         {
-          "type": "Execution",
-          "body_part": "Legs/Feet",
-          "description": "Slightly bent knees and relaxed toes during the back hip circle.",
+          "type": "Body position",
+          "body_part": "Torso",
+          "description": "Slight arch in front support position.",
           "point_value": 0.05
         }
       ],
-      "quality_grade": 9.8,
-      "reason": "Consistent low cast amplitude and minor leg form breaks.",
+      "quality_grade": 0.9,
+      "reason": "Minor form breaks in body line during kip and support.",
       "is_celebration": false,
-      "rule_reference": "Cast amplitude, KTM/TPM"
+      "strength_note": "Optimal toe beat for momentum generation."
     },
     {
-      "skill_name": "Cast to Low Bar Kip",
-      "skill_order": 4,
+      "skill_name": "Cast to Back Hip Circle (1)",
+      "skill_order": 3,
       "timestamp_start": 5,
-      "timestamp_end": 6.5,
+      "timestamp_end": 7.5,
       "executed_successfully": true,
-      "difficulty_value": 0.1,
-      "total_deduction": 0.2,
+      "difficulty_value": 0.2,
+      "total_deduction": 0.15,
       "deductions": [
         {
-          "type": "Execution",
-          "body_part": "Hips/Body Line",
-          "description": "Cast below horizontal (approx. 170-175 degrees) before kip.",
-          "point_value": 0.15
+          "type": "Amplitude",
+          "body_part": "Body",
+          "description": "Cast did not reach horizontal (approx. 178-179 degrees).",
+          "point_value": 0.1
         },
         {
-          "type": "Execution",
+          "type": "Form error",
           "body_part": "Hips/Legs",
-          "description": "Slight pike and bent knees during the kip.",
+          "description": "Minor hip angle and leg separation during back hip circle.",
           "point_value": 0.05
         }
       ],
-      "quality_grade": 9.8,
-      "reason": "Low cast amplitude and minor form breaks in kip.",
-      "is_celebration": false,
-      "rule_reference": "Cast amplitude, KTM"
+      "quality_grade": 0.85,
+      "reason": "Insufficient cast amplitude and minor form breaks in circling element.",
+      "is_celebration": false
+    },
+    {
+      "skill_name": "Cast to Back Hip Circle (2)",
+      "skill_order": 4,
+      "timestamp_start": 7.5,
+      "timestamp_end": 10,
+      "executed_successfully": true,
+      "difficulty_value": 0.2,
+      "total_deduction": 0.15,
+      "deductions": [
+        {
+          "type": "Amplitude",
+          "body_part": "Body",
+          "description": "Cast did not reach horizontal (approx. 178-179 degrees).",
+          "point_value": 0.1
+        },
+        {
+          "type": "Form error",
+          "body_part": "Hips/Legs",
+          "description": "Minor hip angle and leg separation during back hip circle.",
+          "point_value": 0.05
+        }
+      ],
+      "quality_grade": 0.85,
+      "reason": "Insufficient cast amplitude and minor form breaks in circling element.",
+      "is_celebration": false
     },
     {
       "skill_name": "Cast to Squat On",
       "skill_order": 5,
-      "timestamp_start": 7,
-      "timestamp_end": 8.5,
+      "timestamp_start": 10,
+      "timestamp_end": 12.5,
       "executed_successfully": true,
-      "difficulty_value": 0.1,
-      "total_deduction": 0.3,
+      "difficulty_value": 0.2,
+      "total_deduction": 0.25,
       "deductions": [
         {
-          "type": "Execution",
-          "body_part": "Hips/Body Line",
-          "description": "Cast below horizontal (approx. 170-175 degrees) before squat on.",
-          "point_value": 0.15
-        },
-        {
-          "type": "Execution",
-          "body_part": "Feet/Legs",
-          "description": "Heavy bar contact and slight cowboy knees during squat on.",
+          "type": "Amplitude",
+          "body_part": "Body",
+          "description": "Cast did not reach horizontal (approx. 178-179 degrees).",
           "point_value": 0.1
         },
         {
-          "type": "Execution",
-          "body_part": "Rhythm",
-          "description": "Slight hesitation/clunky foot placement on squat on (Heavy Bar flag).",
-          "point_value": 0.05
-        }
-      ],
-      "quality_grade": 9.7,
-      "reason": "Low cast amplitude and heavy, slightly splayed landing on squat on.",
-      "is_celebration": false,
-      "rule_reference": "Cast amplitude, Heavy Bar flag, KTM"
-    },
-    {
-      "skill_name": "Jump to High Bar",
-      "skill_order": 6,
-      "timestamp_start": 9,
-      "timestamp_end": 9.5,
-      "executed_successfully": true,
-      "difficulty_value": 0.1,
-      "total_deduction": 0.05,
-      "deductions": [
-        {
-          "type": "Execution",
-          "body_part": "Hips/Legs",
-          "description": "Slight pike in hips and bent knees during the jump to high bar.",
-          "point_value": 0.05
-        }
-      ],
-      "quality_grade": 9.95,
-      "reason": "Minor form breaks in body position during bar change.",
-      "is_celebration": false,
-      "rule_reference": "KTM"
-    },
-    {
-      "skill_name": "Long Hang Kip",
-      "skill_order": 7,
-      "timestamp_start": 10,
-      "timestamp_end": 10.8,
-      "executed_successfully": true,
-      "difficulty_value": 0.1,
-      "total_deduction": 0.05,
-      "deductions": [
-        {
-          "type": "Execution",
-          "body_part": "Hips/Legs",
-          "description": "Slight pike in hips and bent knees during the kip.",
-          "point_value": 0.05
-        }
-      ],
-      "quality_grade": 9.95,
-      "reason": "Minor form breaks in body position during kip.",
-      "is_celebration": false,
-      "rule_reference": "KTM"
-    },
-    {
-      "skill_name": "Cast to Back Hip Circle",
-      "skill_order": 8,
-      "timestamp_start": 11,
-      "timestamp_end": 12.5,
-      "executed_successfully": true,
-      "difficulty_value": 0.1,
-      "total_deduction": 0.2,
-      "deductions": [
-        {
-          "type": "Execution",
-          "body_part": "Hips/Body Line",
-          "description": "Cast below horizontal (approx. 170-175 degrees) before circle.",
-          "point_value": 0.15
+          "type": "Technical error",
+          "body_part": "Feet",
+          "description": "Heavy bar - clunky foot contact during squat on.",
+          "point_value": 0.1
         },
         {
-          "type": "Execution",
-          "body_part": "Legs/Feet",
-          "description": "Slightly bent knees and relaxed toes during the back hip circle.",
+          "type": "Form error",
+          "body_part": "Hips",
+          "description": "Slight hip pike on squat on.",
           "point_value": 0.05
         }
       ],
-      "quality_grade": 9.8,
-      "reason": "Consistent low cast amplitude and minor leg form breaks.",
-      "is_celebration": false,
-      "rule_reference": "Cast amplitude, KTM/TPM"
+      "quality_grade": 0.75,
+      "reason": "Insufficient cast amplitude, heavy bar contact, and minor hip pike.",
+      "is_celebration": false
     },
     {
       "skill_name": "Cast to Underswing",
-      "skill_order": 9,
-      "timestamp_start": 13,
-      "timestamp_end": 14.5,
+      "skill_order": 6,
+      "timestamp_start": 12.5,
+      "timestamp_end": 15.5,
       "executed_successfully": true,
-      "difficulty_value": 0.1,
-      "total_deduction": 0.2,
+      "difficulty_value": 0.2,
+      "total_deduction": 0.15,
       "deductions": [
         {
-          "type": "Execution",
-          "body_part": "Hips/Body Line",
-          "description": "Cast below horizontal (approx. 170-175 degrees) before underswing.",
-          "point_value": 0.15
+          "type": "Amplitude",
+          "body_part": "Body",
+          "description": "Cast did not reach horizontal (approx. 178-179 degrees).",
+          "point_value": 0.1
         },
         {
-          "type": "Execution",
-          "body_part": "Legs/Feet",
-          "description": "Slightly bent knees and relaxed toes during the underswing.",
+          "type": "Form error",
+          "body_part": "Hips/Knees",
+          "description": "Slight hip pike and knee bend during underswing.",
           "point_value": 0.05
         }
       ],
-      "quality_grade": 9.8,
-      "reason": "Low cast amplitude and minor leg form breaks during underswing.",
-      "is_celebration": false,
-      "rule_reference": "Cast amplitude, KTM/TPM"
+      "quality_grade": 0.85,
+      "reason": "Insufficient cast amplitude and minor form breaks in underswing.",
+      "is_celebration": false
     },
     {
       "skill_name": "Low Bar Kip",
-      "skill_order": 10,
-      "timestamp_start": 15,
-      "timestamp_end": 15.8,
+      "skill_order": 7,
+      "timestamp_start": 15.5,
+      "timestamp_end": 17,
       "executed_successfully": true,
       "difficulty_value": 0.1,
-      "total_deduction": 0.05,
+      "total_deduction": 0.1,
       "deductions": [
         {
-          "type": "Execution",
-          "body_part": "Hips/Legs",
-          "description": "Slight pike in hips and bent knees during the kip.",
+          "type": "Form error",
+          "body_part": "Legs/Knees",
+          "description": "Minor leg separation and knee bend during kip.",
+          "point_value": 0.05
+        },
+        {
+          "type": "Body position",
+          "body_part": "Torso",
+          "description": "Slight arch in front support position.",
           "point_value": 0.05
         }
       ],
-      "quality_grade": 9.95,
-      "reason": "Minor form breaks in body position during kip.",
+      "quality_grade": 0.9,
+      "reason": "Minor form breaks in body line during kip and support.",
       "is_celebration": false,
-      "rule_reference": "KTM"
+      "strength_note": "Optimal toe beat for momentum generation."
     },
     {
-      "skill_name": "Cast to Tuck Flyaway Dismount",
-      "skill_order": 11,
-      "timestamp_start": 16,
-      "timestamp_end": 17.5,
+      "skill_name": "Cast to Back Hip Circle (3)",
+      "skill_order": 8,
+      "timestamp_start": 17,
+      "timestamp_end": 19.5,
       "executed_successfully": true,
       "difficulty_value": 0.2,
-      "total_deduction": 0.3,
+      "total_deduction": 0.15,
       "deductions": [
         {
-          "type": "Execution",
-          "body_part": "Hips/Body Line",
-          "description": "Cast below horizontal (approx. 170-175 degrees) before dismount.",
-          "point_value": 0.15
+          "type": "Amplitude",
+          "body_part": "Body",
+          "description": "Cast did not reach horizontal (approx. 178-179 degrees).",
+          "point_value": 0.1
         },
         {
-          "type": "Execution",
-          "body_part": "Legs/Body Position",
-          "description": "Slight pike and cowboy knees in tuck position during flight.",
+          "type": "Form error",
+          "body_part": "Hips/Legs",
+          "description": "Minor hip angle and leg separation during back hip circle.",
+          "point_value": 0.05
+        }
+      ],
+      "quality_grade": 0.85,
+      "reason": "Insufficient cast amplitude and minor form breaks in circling element.",
+      "is_celebration": false
+    },
+    {
+      "skill_name": "Tuck Flyaway Dismount",
+      "skill_order": 9,
+      "timestamp_start": 19.5,
+      "timestamp_end": 21,
+      "executed_successfully": true,
+      "difficulty_value": 0.2,
+      "total_deduction": 0.2,
+      "deductions": [
+        {
+          "type": "Form error",
+          "body_part": "Legs",
+          "description": "Slight leg separation in tuck position.",
           "point_value": 0.05
         },
         {
-          "type": "Execution",
-          "body_part": "Landing",
-          "description": "Small hop on landing with chest slightly down.",
+          "type": "Body position",
+          "body_part": "Torso",
+          "description": "Chest down on landing.",
           "point_value": 0.1
+        },
+        {
+          "type": "Landing",
+          "body_part": "Feet",
+          "description": "Small hop on landing.",
+          "point_value": 0.05
         }
       ],
-      "quality_grade": 9.7,
-      "reason": "Low cast amplitude, minor form breaks in tuck, and landing deduction.",
+      "quality_grade": 0.8,
+      "reason": "Minor form breaks in tuck, chest down, and landing hop.",
       "is_celebration": false,
-      "rule_reference": "Cast amplitude, KTM, Landing deductions"
+      "rule_reference": "Landing Vector: Torso angle approx 10-15 degrees forward of vertical. CoM slightly leading the base of support, causing the hop. Width of Mass Audit: Slight leg separation increased moment of inertia, slightly reducing angular velocity."
     }
   ],
   "special_requirements": [
     {
       "requirement": "Two kips",
       "status": "MET",
-      "comment": "Performed multiple kips (Low Bar Kip, Long Hang Kip).",
+      "comment": "Long Hang Kip and Low Bar Kip performed.",
       "penalty": 0
     },
     {
       "requirement": "Two 360° circling elements",
       "status": "MET",
-      "comment": "Performed Front Hip Circle, Back Hip Circles, and Underswing.",
+      "comment": "Multiple Back Hip Circles performed.",
       "penalty": 0
     },
     {
       "requirement": "Bar change",
       "status": "MET",
-      "comment": "Performed Jump to High Bar and Underswing from High Bar to Low Bar.",
+      "comment": "Underswing from high bar to low bar performed.",
       "penalty": 0
     },
     {
       "requirement": "Dismount from high bar",
       "status": "MET",
-      "comment": "Performed a Tuck Flyaway dismount from the low bar. For Xcel Gold, a flight dismount from either bar is typically accepted to meet the spirit of the requirement.",
+      "comment": "Tuck Flyaway Dismount performed from high bar.",
       "penalty": 0
     }
   ],
@@ -307,35 +278,35 @@
     "choreography_variety_deduction": 0,
     "musicality_deduction": 0,
     "total_artistry_deduction": 0.1,
-    "notes": "The routine generally flows well, but there is a lack of consistent crispness in body lines and full extension, particularly evident in the knees and toes. This impacts the overall quality of movement and body tension."
+    "notes": "General lack of consistent body tension and full extension, leading to a slightly less dynamic presentation. Rhythm was generally good, but could be more fluid."
   },
-  "total_execution_deductions": 1.6,
+  "total_execution_deductions": 1.3,
   "total_artistry_deductions": 0.1,
   "score_range": {
-    "low": 8,
-    "high": 9.5
+    "low": 8.4,
+    "high": 9.3
   },
   "confidence": "HIGH",
-  "coaching_summary": "This is a solid Xcel Gold routine with all special requirements met and good overall rhythm. The gymnast demonstrates a good understanding of the basic elements. However, consistent technical refinements, particularly in cast amplitude and maintaining tight body lines (knees and toes), are crucial for higher scores. The dismount is well-executed but could benefit from a cleaner landing. Focusing on these areas will significantly elevate the performance quality.",
+  "coaching_summary": "This routine demonstrates a good understanding of the Xcel Gold requirements and a solid foundation of basic bar skills. The athlete performs a complete routine with good rhythm overall. The primary area for improvement is achieving full extension and body tension, especially in casts, and refining landing mechanics. To progress, a relentless focus on body line and amplitude is critical.",
   "top_3_fixes": [
-    "Improve Cast Amplitude: Focus on achieving a true horizontal cast (180°) on both bars. Drills should emphasize a powerful hollow-arch-hollow swing and a strong, active push away from the bar to reach the correct angle.",
-    "Maintain Leg and Foot Tension: Consistently lock knees and point toes throughout all skills and transitions. Implement 'Toe Point Monitor' and 'Knee Tension Monitor' drills, even during basic swings and casts, to build muscle memory for perfect form.",
-    "Refine Landing Control: Work on sticking landings with a stacked center of mass over the base of support. Drills should include repetition of dismounts onto firm surfaces, focusing on absorbing impact with bent knees but maintaining an upright chest and locked ankles."
+    "Cast Amplitude & Body Line: Consistently drive casts to a true horizontal position (180 degrees) with a tight, hollow body and open hips. This requires focused strength and flexibility work in the shoulders and core.",
+    "Consistent Body Tension in Swings/Kips: Eliminate minor leg separation, knee bends, and hip pikes in kips and circling elements. Focus on maintaining a laser-straight, hollow-to-arch-to-hollow shape throughout all swings and transitions.",
+    "Dismount Landing Precision: Work on a more aggressive block off the bar and a tighter tuck shape to ensure full rotation. Focus on spotting the landing and driving the chest up to achieve a stuck landing with a vertical torso."
   ],
   "celebrations": [
-    "The gymnast executed a complete routine without falls or major errors.",
-    "The Mount to Low Bar was clean with excellent initial body tension.",
-    "The routine demonstrated good flow and rhythm between skills."
+    "Successfully completed all required elements for Xcel Gold.",
+    "Good overall rhythm and flow between skills.",
+    "Strong initiation of kips with effective toe beats."
   ],
-  "athlete_name": "Gymnast",
-  "duration_seconds": 18,
+  "athlete_name": "the gymnast",
+  "duration_seconds": 21,
   "event": "Uneven Bars",
   "gender": "WAG",
   "level": "XCEL GOLD",
-  "_code_score": 8.555,
-  "_blended": 8.3,
+  "_code_score": 8.81,
+  "_blended": 8.55,
   "_source": "ai",
   "_cal_factor": 0.85,
-  "_raw_exec": 1.6,
-  "_scaled_exec": 1.36
+  "_raw_exec": 1.3000000000000005,
+  "_scaled_exec": 1.105
 }
