@@ -252,10 +252,17 @@ async function run(v) {
   });
 
   let sc;
+  // Robust JSON extraction — handles markdown fences and truncation
   try { sc = JSON.parse(text); } catch {
-    const match = text.match(/\{[\s\S]*\}/);
-    if (match) sc = JSON.parse(match[0]);
-    else { console.error("JSON parse failed. Raw:", text.substring(0, 500)); return null; }
+    // Try fence strip
+    const fenceMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (fenceMatch) try { sc = JSON.parse(fenceMatch[1].trim()); } catch {}
+    // Try brace extraction
+    if (!sc) {
+      const fb = text.indexOf("{"), lb = text.lastIndexOf("}");
+      if (fb !== -1 && lb > fb) try { sc = JSON.parse(text.slice(fb, lb + 1)); } catch {}
+    }
+    if (!sc) { console.error("JSON parse failed. Raw:", text.substring(0, 500)); return null; }
   }
 
   // ── Code-computed calibrated score (replicates scoring.js logic) ────────

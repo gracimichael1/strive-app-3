@@ -534,16 +534,58 @@ function delay(ms) {
 }
 
 function parseJSON(raw, label) {
-  try { return JSON.parse(raw); } catch {}
-  try {
-    const match = raw.match(/\{[\s\S]*\}/);
-    if (match) return JSON.parse(match[0]);
-  } catch {}
-  try {
-    const cleaned = raw.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
-    return JSON.parse(cleaned);
-  } catch (e) {
-    log.error("parse", `[${label}] JSON parse failed. Raw (first 500 chars): ${raw.substring(0, 500)}`);
-    throw new Error(`${label}: Could not parse JSON response`);
+  const result = extractJSON(raw);
+  if (!result) {
+    log.error("parse", `[${label}] JSON parse failed. Raw (first 500 chars): ${(raw || "").substring(0, 500)}`);
+    throw new Error(`${label}: Could not parse JSON response — raw preview: ${(raw || "").substring(0, 200)}`);
   }
+  return result;
+}
+
+function extractJSON(raw) {
+  if (!raw || typeof raw !== "string") return null;
+
+  console.log("[pipeline] raw response preview:", raw.substring(0, 300));
+
+  // Strip markdown code fences: ```json ... ``` or ``` ... ```
+  const fenceMatch = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (fenceMatch) {
+    try {
+      const parsed = JSON.parse(fenceMatch[1].trim());
+      console.log("[pipeline] parsed via fence strip");
+      return parsed;
+    } catch {}
+  }
+
+  // Try raw parse (clean response — ideal case)
+  try {
+    const parsed = JSON.parse(raw.trim());
+    console.log("[pipeline] parsed raw JSON directly");
+    return parsed;
+  } catch {}
+
+  // Extract from first { to last } (partial response)
+  const firstBrace = raw.indexOf("{");
+  const lastBrace = raw.lastIndexOf("}");
+  if (firstBrace !== -1 && lastBrace > firstBrace) {
+    try {
+      const parsed = JSON.parse(raw.slice(firstBrace, lastBrace + 1));
+      console.log("[pipeline] parsed via brace extraction");
+      return parsed;
+    } catch {}
+  }
+
+  // Extract from first [ to last ] (array response)
+  const firstBracket = raw.indexOf("[");
+  const lastBracket = raw.lastIndexOf("]");
+  if (firstBracket !== -1 && lastBracket > firstBracket) {
+    try {
+      const parsed = JSON.parse(raw.slice(firstBracket, lastBracket + 1));
+      console.log("[pipeline] parsed via bracket extraction");
+      return parsed;
+    } catch {}
+  }
+
+  console.error("[pipeline] extractJSON: all parse attempts failed");
+  return null;
 }

@@ -78,7 +78,9 @@ Phase 2: The Level-Up Comparison (Gap Analysis)
 Phase 3: The Unbiased Push
 * Identify the "Technical Anchor" — the one habit from the current level that will be the biggest liability at the next level. Provide one high-level drill to break it.
 
-Respond ONLY in the JSON schema provided. No prose. No markdown.`;
+Respond ONLY in the JSON schema provided. No prose. No markdown.
+
+CRITICAL OUTPUT FORMAT: Respond with raw JSON only. No markdown. No code fences. No backticks. No explanation before or after the JSON. Begin your response with { and end with }. Any other format will cause a parse failure.`;
 
 // ─── Level-Specific Rules ───────────────────────────────────────────────────
 
@@ -470,7 +472,9 @@ Also provide routine-level analysis:
 7. NUTRITION NOTE: one performance nutrition note relevant to this athlete's training load
 
 Be precise, specific, and constructive. This data goes directly to the athlete's parent.
-Respond ONLY in the JSON schema provided. No conversational text.`;
+Respond ONLY in the JSON schema provided. No conversational text.
+
+CRITICAL OUTPUT FORMAT: Respond with raw JSON only. No markdown. No code fences. No backticks. Begin your response with { and end with }.`;
 
   // Build skill list for context
   const skillList = (pass1Result.deduction_log || []).map(s => {
@@ -487,7 +491,7 @@ Match skills by name and timestamp.
 
 Then provide the routine-level training plan (top 3 drills), mental performance assessment, and nutrition note.
 
-Respond ONLY in the JSON schema provided.`;
+Respond ONLY in the JSON schema provided. Raw JSON only — no markdown, no code fences, no backticks.`;
 
   return { system, user };
 }
