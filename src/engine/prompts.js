@@ -538,9 +538,9 @@ Respond ONLY in the JSON schema provided. Raw JSON only — no markdown, no code
  * Thinking budget: medium — prompt quality drives accuracy more than max thinking.
  */
 export const PASS1_CONFIG = {
-  temperature: 0.2,
+  temperature: 0.1,
   topP: 0.95,
-  maxOutputTokens: 16384,
+  maxOutputTokens: 8192,
   responseMimeType: "application/json",
   thinkingConfig: {
     thinkingBudget: 8192,
@@ -644,12 +644,12 @@ export const PASS1_CONFIG = {
 
 /**
  * Pass 2 config: Deep analysis with team of specialists.
- * Same temperature for consistency.
+ * Lower temperature for structured output.
  * Thinking budget: medium.
  */
 export const PASS2_CONFIG = {
-  temperature: 0.4,
-  maxOutputTokens: 16384,
+  temperature: 0.2,
+  maxOutputTokens: 8192,
   responseMimeType: "application/json",
   thinkingConfig: {
     thinkingBudget: 8192,

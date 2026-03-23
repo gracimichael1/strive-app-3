@@ -110,8 +110,18 @@ export async function runAnalysisPipeline({ videoFile, profile, event, onProgres
     log.warn("gate", `Could not check video duration: ${e.message}`);
   }
 
-  // COMPLIANCE: localStorage cache removed (contained PII via athlete_name).
-  // Every analysis runs fresh through the pipeline.
+  // ── Session cache — check before re-analyzing same video ──────────────────
+  // Uses sessionStorage (cleared on tab close) — no PII persisted across sessions.
+  const cacheKey = `strive_session_${videoFile.name}_${videoFile.size}_${profile.level || ''}_${event}`;
+  try {
+    const cached = sessionStorage.getItem(cacheKey);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      log.info("cache", "Session cache hit — returning cached result");
+      onProgress({ stage: "complete", pct: 100, label: "Analysis complete! (cached)" });
+      return parsed;
+    }
+  } catch { /* cache miss — continue with fresh analysis */ }
 
   // ── Compress video if needed ──────────────────────────────────────────────
   let fileToUpload = videoFile;
@@ -315,7 +325,8 @@ export async function runAnalysisPipeline({ videoFile, profile, event, onProgres
   // ── Transform for UI ──────────────────────────────────────────────────────
   const uiResult = transformForUI(validated);
 
-  // COMPLIANCE: localStorage cache write removed (PII purge).
+  // ── Session cache write — fast reload of same video ─────────────────────
+  try { sessionStorage.setItem(cacheKey, JSON.stringify(uiResult)); } catch {}
 
   // ── Cleanup uploaded file (fire and forget) ───────────────────────────────
   try {
