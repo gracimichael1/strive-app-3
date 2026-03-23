@@ -381,9 +381,10 @@ async function uploadVideo(videoFile, onProgress) {
 
   log.info("upload", `Uploaded: ${fileName} (${(videoFile.size / 1024 / 1024).toFixed(1)}MB)`);
 
-  // Step 3: Poll until ACTIVE (longer timeout on mobile networks)
+  // Step 3: Poll until ACTIVE
+  // Post-compression files are 10-25MB vs 150-800MB original — processing is much faster.
   const isMobilePoll = typeof navigator !== 'undefined' && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
-  const maxPolls = isMobilePoll ? 60 : 40; // 120s mobile, 80s desktop
+  const maxPolls = isMobilePoll ? 25 : 20; // 50s mobile, 40s desktop (was 120s/80s)
   for (let i = 0; i < maxPolls; i++) {
     await delay(2000);
     try {
@@ -393,8 +394,8 @@ async function uploadVideo(videoFile, onProgress) {
     } catch (e) {
       if (e.message.includes("failed")) throw e;
     }
-    onProgress(Math.min(1, (i + 1) / 30));
-    if (i === maxPolls - 1) throw new Error(`Video processing timed out (${isMobilePoll ? '120' : '80'}s)`);
+    onProgress(Math.min(1, (i + 1) / 20));
+    if (i === maxPolls - 1) throw new Error(`Video processing timed out (${isMobilePoll ? '50' : '40'}s). Try trimming your video to just the routine.`);
   }
 
   return { fileUri, fileName, mimeType };
