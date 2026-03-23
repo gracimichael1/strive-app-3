@@ -15,7 +15,7 @@ import LegalDisclaimer from "./components/legal/LegalDisclaimer";
 import PrivacyNotice from "./components/legal/PrivacyNotice";
 import { runAnalysisPipeline } from "./engine/pipeline";
 import SkillCard from "./components/ui/SkillCard";
-import { canSeeWhatIf, canSeeSessionDiagnostics, getUpgradeCTA } from './engine/tierGates';
+import { canSeeWhatIf, canSeeSessionDiagnostics, getUpgradeCTA, hasReachedAnalysisCap, getMonthlyAnalysisCap } from './engine/tierGates';
 import LockedFeature from './components/LockedFeature';
 
 // ─── BUILD INFO ──
@@ -1756,7 +1756,7 @@ export default function LegacyApp() {
         <StriveErrorBoundary name="Progress">
         {(() => {
           let tier = "free"; try { tier = localStorage.getItem("strive-tier") || "free"; } catch {}
-          return tier === "competitive" ? (
+          return (tier === "competitive" || tier === "elite") ? (
             <ProgressScreen history={history} profile={profile} savedResults={savedResults} comparePreselect={comparePreselect} onClearPreselect={() => setComparePreselect(null)} onBack={() => setScreen("dashboard")} />
           ) : (
             <div style={{ minHeight: "100vh", padding: "16px 18px 90px", maxWidth: 540, margin: "0 auto" }}>
@@ -1794,7 +1794,7 @@ export default function LegacyApp() {
         <StriveErrorBoundary name="Mental Training">
         {(() => {
           let tier = "free"; try { tier = localStorage.getItem("strive-tier") || "free"; } catch {}
-          return tier === "competitive" ? (
+          return (tier === "competitive" || tier === "elite") ? (
             <MentalTrainingScreen profile={profile} onBack={() => setScreen("dashboard")} />
           ) : (
             <div style={{ minHeight: "100vh", padding: "16px 18px 90px", maxWidth: 540, margin: "0 auto" }}>
@@ -1828,7 +1828,7 @@ export default function LegacyApp() {
         <StriveErrorBoundary name="Season Goals">
         {(() => {
           let tier = "free"; try { tier = localStorage.getItem("strive-tier") || "free"; } catch {}
-          return tier === "competitive" ? (
+          return (tier === "competitive" || tier === "elite") ? (
             <SeasonGoalsScreen profile={profile} history={history} onBack={() => setScreen("dashboard")} />
           ) : (
             <div style={{ minHeight: "100vh", padding: "16px 18px 90px", maxWidth: 540, margin: "0 auto" }}>
@@ -2664,10 +2664,11 @@ const DashboardScreen = React.memo(function DashboardScreen({ profile, history, 
       {/* Upload CTA */}
       {(() => {
         let tier = "free"; try { tier = localStorage.getItem("strive-tier") || "free"; } catch {}
-        const isPro = tier === "competitive";
+        const cap = getMonthlyAnalysisCap(tier);
+        const isPaidTier = cap === Infinity;
         let analysesUsed = 0;
         let limitReached = false;
-        if (!isPro) {
+        if (!isPaidTier) {
           try {
             const now = new Date();
             const raw = localStorage.getItem("strive-analysis-count");
@@ -2678,9 +2679,9 @@ const DashboardScreen = React.memo(function DashboardScreen({ profile, history, 
               }
             }
           } catch {}
-          limitReached = analysesUsed >= 3;
+          limitReached = hasReachedAnalysisCap(tier, analysesUsed);
         }
-        const remaining = isPro ? null : 3 - analysesUsed;
+        const remaining = isPaidTier ? null : cap - analysesUsed;
 
         return limitReached ? (
           <div style={{
@@ -2757,7 +2758,7 @@ const DashboardScreen = React.memo(function DashboardScreen({ profile, history, 
                 Analyze routine
               </span>
               <span style={{ color: "rgba(255,255,255,0.25)", fontSize: 11, marginTop: 2, display: "block" }}>
-                {isPro ? "Unlimited · 2-pass scoring" : `${remaining} free remaining`}
+                {isPaidTier ? "Unlimited · 2-pass scoring" : `${remaining} free remaining`}
               </span>
             </div>
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0, opacity: 0.3 }}>
@@ -2939,8 +2940,8 @@ const DashboardScreen = React.memo(function DashboardScreen({ profile, history, 
 
       {/* Quick Actions — horizontal scrollable pills */}
       {(() => {
-        const tier = (() => { try { return localStorage.getItem("strive-tier") || "free"; } catch { return "free"; } })();
-        const isPro = tier === "competitive";
+        const qaTier = (() => { try { return localStorage.getItem("strive-tier") || "free"; } catch { return "free"; } })();
+        const isPaidTier = qaTier !== "free";
         return (
           <div style={{ display: "flex", gap: 8, marginBottom: 20, overflowX: "auto", paddingBottom: 4, WebkitOverflowScrolling: "touch" }}>
             {[
@@ -2962,7 +2963,7 @@ const DashboardScreen = React.memo(function DashboardScreen({ profile, history, 
               }}>
                 <span style={{ fontSize: 14 }}>{btn.emoji}</span>
                 {btn.label}
-                {btn.pro && !isPro && (
+                {btn.pro && !isPaidTier && (
                   <span style={{ fontSize: 8, fontWeight: 700, padding: "1px 5px", borderRadius: 4, background: "rgba(139,92,246,0.12)", color: "#A78BFA", marginLeft: 2 }}>PRO</span>
                 )}
               </button>
