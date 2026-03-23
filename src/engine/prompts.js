@@ -529,6 +529,47 @@ Respond ONLY in the JSON schema provided. Raw JSON only — no markdown, no code
 
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// COMPACT FALLBACK PROMPT — used when full prompt response is truncated
+// Produces a smaller JSON response with only essential scoring data
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export function buildCompactPrompt(profile, event) {
+  const gender = (profile.gender || "female").toLowerCase() === "male" ? "MAG" : "WAG";
+  const level = profile.level || "Level 6";
+  const athleteName = profile.name || "the gymnast";
+
+  const system = `You are an expert gymnastics execution judge. Score this routine. Be concise. Output ONLY raw JSON — no markdown, no fences, no prose. Begin with { and end with }.`;
+
+  const user = `Score this ${level} ${gender} ${event || ""} routine for ${athleteName}.
+
+For each skill: name it, give a total deduction (number), and a one-sentence reason.
+Give start_value, final_score, and confidence.
+
+Output this exact JSON structure:
+{
+  "start_value": 10.0,
+  "final_score": <number>,
+  "confidence": "HIGH" or "MEDIUM" or "LOW",
+  "deduction_log": [
+    { "skill_name": "<name>", "skill_order": <n>, "total_deduction": <number>, "reason": "<one sentence>", "executed_successfully": true }
+  ],
+  "coaching_summary": "<2 sentences>",
+  "top_3_fixes": ["<fix1>", "<fix2>", "<fix3>"]
+}
+
+Raw JSON only. No markdown. Begin with { end with }.`;
+
+  return { system, user };
+}
+
+export const COMPACT_CONFIG = {
+  temperature: 0.1,
+  maxOutputTokens: 4096,
+  responseMimeType: "application/json",
+};
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // Gemini API Configuration
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -540,7 +581,7 @@ Respond ONLY in the JSON schema provided. Raw JSON only — no markdown, no code
 export const PASS1_CONFIG = {
   temperature: 0.1,
   topP: 0.95,
-  maxOutputTokens: 8192,
+  maxOutputTokens: 16384,
   responseMimeType: "application/json",
   thinkingConfig: {
     thinkingBudget: 8192,
@@ -649,7 +690,7 @@ export const PASS1_CONFIG = {
  */
 export const PASS2_CONFIG = {
   temperature: 0.2,
-  maxOutputTokens: 8192,
+  maxOutputTokens: 16384,
   responseMimeType: "application/json",
   thinkingConfig: {
     thinkingBudget: 8192,

@@ -22,7 +22,7 @@
  * ═══════════════════════════════════════════════════════════════════════════════
  */
 
-import { buildPass1Prompt, buildPass2Prompt, PASS1_CONFIG, PASS2_CONFIG, PROMPT_VERSION } from "./prompts";
+import { buildPass1Prompt, buildPass2Prompt, buildCompactPrompt, PASS1_CONFIG, PASS2_CONFIG, COMPACT_CONFIG, PROMPT_VERSION } from "./prompts";
 import { validatePipelineResult, snapToUSAG, gradeFromQuality, parseTimestamp, formatTimestamp, emptyBiomechanics, emptyInjuryRisk, emptyCorrectiveDrill } from "./schema";
 import { computeScoreFromScorecard } from "./scoring";
 import { transformForUI } from "./transform";
@@ -206,12 +206,31 @@ export async function runAnalysisPipeline({ videoFile, profile, event, tier, onP
 
   if (!pass1Raw) throw new Error("Pass 1 returned empty response.");
 
-  const scorecard = parseJSON(pass1Raw, "pass1");
+  let scorecard;
+  let rawGeminiResponse = pass1Raw;
+
+  try {
+    scorecard = parseJSON(pass1Raw, "pass1");
+  } catch (parseErr) {
+    // ── Compact prompt retry — full response may have been truncated ──
+    log.warn("pass1", `Full prompt parse failed (${pass1Raw?.length} chars). Retrying with compact prompt...`);
+    onProgress({ stage: "pass1", pct: 55, label: "Retrying with optimized prompt..." });
+
+    try {
+      const { system: compSys, user: compUsr } = buildCompactPrompt(profile, event);
+      const compactRaw = await callGemini(fileRef, compSys, compUsr, COMPACT_CONFIG, "pass1-compact");
+      scorecard = parseJSON(compactRaw, "pass1-compact");
+      rawGeminiResponse = compactRaw;
+      log.info("pass1", `Compact retry succeeded: ${scorecard.deduction_log?.length || 0} skills`);
+    } catch (retryErr) {
+      // Both attempts failed — throw the original parse error
+      log.error("pass1", `Compact retry also failed: ${retryErr.message}`);
+      throw parseErr;
+    }
+  }
+
   log.info("pass1", `Scorecard: ${scorecard.deduction_log?.length || 0} skills, ` +
     `final_score: ${scorecard.final_score}, confidence: ${scorecard.confidence}`);
-
-  // Store raw response for diagnostics
-  const rawGeminiResponse = pass1Raw;
 
   if (!scorecard.deduction_log || scorecard.deduction_log.length === 0) {
     throw new Error("Pass 1 found no skills in the video.");
@@ -414,8 +433,9 @@ async function uploadVideo(videoFile, onProgress) {
 
   // Step 3: Poll until ACTIVE
   // Post-compression files are 10-25MB vs 150-800MB original — processing is much faster.
+  // Poll until ACTIVE — mobile needs more time on cellular networks
   const isMobilePoll = typeof navigator !== 'undefined' && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
-  const maxPolls = isMobilePoll ? 25 : 20; // 50s mobile, 40s desktop (was 120s/80s)
+  const maxPolls = isMobilePoll ? 45 : 30; // 90s mobile, 60s desktop
   for (let i = 0; i < maxPolls; i++) {
     await delay(2000);
     try {
@@ -425,8 +445,8 @@ async function uploadVideo(videoFile, onProgress) {
     } catch (e) {
       if (e.message.includes("failed")) throw e;
     }
-    onProgress(Math.min(1, (i + 1) / 20));
-    if (i === maxPolls - 1) throw new Error(`Video processing timed out (${isMobilePoll ? '50' : '40'}s). Try trimming your video to just the routine.`);
+    onProgress(Math.min(1, (i + 1) / 25));
+    if (i === maxPolls - 1) throw new Error(`Video processing timed out (${isMobilePoll ? '90' : '60'}s). Try trimming your video to just the routine.`);
   }
 
   return { fileUri, fileName, mimeType };

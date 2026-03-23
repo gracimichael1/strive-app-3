@@ -260,6 +260,20 @@ async function handleGenerate(req, res, apiKey) {
   const text = parts.filter(p => p.text && !p.thought).map(p => p.text).join('\n')
     || parts.map(p => p.text || '').join('\n');
 
+  // ── Truncation detection logging ──
+  const finishReason = data.candidates?.[0]?.finishReason;
+  console.log(`[gemini] Response: ${text.length} chars | finishReason: ${finishReason}`);
+  if (text.length > 0) {
+    console.log(`[gemini] Last 80 chars: ...${text.slice(-80)}`);
+    console.log(`[gemini] Ends with }: ${text.trimEnd().endsWith('}')}`);
+  }
+  if (finishReason === 'MAX_TOKENS') {
+    console.error('[gemini] TRUNCATED — hit maxOutputTokens limit');
+  }
+  if (!text.trimEnd().endsWith('}') && !text.trimEnd().endsWith(']')) {
+    console.warn('[gemini] Response may be truncated — does not end with } or ]');
+  }
+
   return res.status(200).json({ text });
 }
 
