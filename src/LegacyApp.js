@@ -3453,9 +3453,12 @@ const UploadScreen = React.memo(function UploadScreen({ profile, onBack, onAnaly
   // The old approach played at 3x speed which caused frame skipping and choppy output.
   // New approach: 1x playback, 1080p, 8Mbps = quality like a text message video.
   // Under 50MB: send original. Over 50MB: gentle re-encode preserving all motion detail.
-  const COMPRESS_THRESHOLD = 500 * 1024 * 1024; // 500MB — Gemini accepts up to 2GB, only compress truly huge files
-  const TARGET_WIDTH = 1080; // 1080p preserves body positions, toe points, knee angles
-  const TARGET_BITRATE = 8000000; // 8 Mbps — high quality, like iMessage/text compression
+  // Compression now handled by pipeline.js via videoCompressor.js (360p, 800kbps).
+  // This legacy threshold only governs pre-upload screen compression indicator.
+  // Set high to avoid double-compression (pipeline.js handles the real compression).
+  const COMPRESS_THRESHOLD = 999 * 1024 * 1024; // Effectively disabled — pipeline.js compresses at >20MB
+  const TARGET_WIDTH = 1080; // Legacy — not used for pipeline compression
+  const TARGET_BITRATE = 8000000; // Legacy — not used for pipeline compression
 
   const formatFileSize = (bytes) => {
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + " KB";
@@ -5458,7 +5461,7 @@ IMPORTANT: The deduction_log must contain ONE entry per distinct skill or transi
             Evaluating every skill, joint angle, and deduction — like a certified judge watching in slow motion.
           </div>
           <div style={{ marginTop: 12, fontSize: 12, color: "rgba(255,255,255,0.3)", fontFamily: "'Space Mono', monospace" }}>
-            Est. 45–90 seconds
+            Est. 30–60 seconds
           </div>
         </div>
       )}
@@ -5472,20 +5475,22 @@ IMPORTANT: The deduction_log must contain ONE entry per distinct skill or transi
 
       <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 6, textAlign: "center", maxWidth: 300 }}>{status}</h3>
 
-      {/* 2-Pass Pipeline Indicator */}
-      <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 16, marginBottom: 16 }}>
+      {/* Pipeline Step Indicator */}
+      <div style={{ display: "flex", gap: 4, alignItems: "center", marginTop: 16, marginBottom: 16 }}>
         {[
-          { label: "Detect", threshold: 60 },
-          { label: "Judge", threshold: 75 },
+          { label: "Optimize", threshold: 5 },
+          { label: "Upload", threshold: 12 },
+          { label: "Detect", threshold: 40 },
+          { label: "Judge", threshold: 65 },
           { label: "Verify", threshold: 82 },
         ].map((pass, i) => {
           const isDone = progress >= pass.threshold + 5;
-          const isActive = progress >= pass.threshold - 5 && !isDone;
+          const isActive = progress >= pass.threshold - 2 && !isDone;
           return (
             <React.Fragment key={i}>
               {i > 0 && (
                 <div style={{
-                  width: 20, height: 2, borderRadius: 1,
+                  width: 14, height: 2, borderRadius: 1,
                   background: isDone ? "#e8962a" : "rgba(255,255,255,0.1)",
                   transition: "background 0.5s",
                 }} />
@@ -5494,22 +5499,22 @@ IMPORTANT: The deduction_log must contain ONE entry per distinct skill or transi
                 display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
               }}>
                 <div style={{
-                  width: 28, height: 28, borderRadius: "50%",
+                  width: 26, height: 26, borderRadius: "50%",
                   background: isDone ? "rgba(232,150,42,0.2)" : isActive ? "rgba(232,150,42,0.1)" : "rgba(255,255,255,0.04)",
                   border: `2px solid ${isDone ? "#e8962a" : isActive ? "rgba(232,150,42,0.4)" : "rgba(255,255,255,0.08)"}`,
                   display: "flex", alignItems: "center", justifyContent: "center",
                   transition: "all 0.5s",
                 }}>
                   {isDone ? (
-                    <span style={{ color: "#e8962a", fontSize: 13, fontWeight: 700 }}>✓</span>
+                    <span style={{ color: "#e8962a", fontSize: 12, fontWeight: 700 }}>&#10003;</span>
                   ) : isActive ? (
-                    <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#e8962a", animation: "pulse 1s infinite" }} />
+                    <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#e8962a", animation: "pulse 1s infinite" }} />
                   ) : (
-                    <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 11, fontWeight: 600 }}>{i + 1}</span>
+                    <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 10, fontWeight: 600 }}>{i + 1}</span>
                   )}
                 </div>
                 <span style={{
-                  fontSize: 9, fontWeight: 600, letterSpacing: 0.5,
+                  fontSize: 8, fontWeight: 600, letterSpacing: 0.3,
                   color: isDone ? "#e8962a" : isActive ? "rgba(232,150,42,0.7)" : "rgba(255,255,255,0.2)",
                   transition: "color 0.5s",
                 }}>{pass.label}</span>
