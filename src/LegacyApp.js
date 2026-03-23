@@ -1453,8 +1453,11 @@ export default function LegacyApp() {
     try { await storage.set("strive-history", JSON.stringify(h)); } catch {}
   };
 
-  const handleAnalysisComplete = (result) => {
+  const handleAnalysisComplete = (result, options = {}) => {
     setAnalysisResult(result);
+
+    // Pass2 background update — only update result state, skip history/count/save
+    if (options.isPass2Update) return;
 
     // ── Agent Delta: Save to athlete intelligence layer ──
     saveAnalysisToHistory(profile, result, uploadData);
@@ -1649,7 +1652,7 @@ export default function LegacyApp() {
       {screen === "analyzing" && (
         <StriveErrorBoundary name="Analysis">
         <AnalyzingScreen
-          uploadData={uploadData}
+          uploadData={{ ...uploadData, videoUrl: liveVideoUrl || uploadData?.videoUrl }}
           profile={profile}
           onComplete={handleAnalysisComplete}
           onBack={() => setScreen("upload")}
@@ -5390,7 +5393,7 @@ IMPORTANT: The deduction_log must contain ONE entry per distinct skill or transi
 
 
 
-  // ── New engine pipeline (replaces analyzeWithAI) ──────────────────────
+  // ── New engine pipeline — pass1 results show immediately, pass2 enriches in background ──
   useEffect(() => {
     if (hasStarted.current) return;
     hasStarted.current = true;
@@ -5412,9 +5415,16 @@ IMPORTANT: The deduction_log must contain ONE entry per distinct skill or transi
             setProgress(pct);
             setStatus(label);
           },
+          onPass2Complete: (enrichedResult) => {
+            // Pass2 finished in background — silently update result
+            // User is already on results screen viewing pass1 data
+            enrichedResult.videoUrl = uploadData.videoUrl;
+            onComplete(enrichedResult, { isPass2Update: true });
+            console.log('[pipeline] pass2 enrichment applied silently');
+          },
         });
 
-        console.log('[pipeline] result:', result);
+        console.log('[pipeline] pass1 result:', result);
 
         // Attach video URL for VideoReviewPlayer
         result.videoUrl = uploadData.videoUrl;
@@ -5520,6 +5530,7 @@ IMPORTANT: The deduction_log must contain ONE entry per distinct skill or transi
             loop
             playsInline
             webkit-playsinline="true"
+            onError={(e) => { e.target.style.display = 'none'; }}
             style={{ width: '100%', maxHeight: 260, objectFit: 'contain', display: 'block' }}
           />
           {/* Gradient overlay */}

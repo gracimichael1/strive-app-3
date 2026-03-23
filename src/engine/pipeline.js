@@ -80,7 +80,7 @@ async function geminiProxy(body) {
  * @param {function} params.onProgress - Progress callback ({ stage, pct, label })
  * @returns {Promise<Object>} - UI-ready result (transformForUI output)
  */
-export async function runAnalysisPipeline({ videoFile, profile, event, onProgress = () => {} }) {
+export async function runAnalysisPipeline({ videoFile, profile, event, tier, onProgress = () => {}, onPass2Complete }) {
   const startTime = Date.now();
 
   if (!videoFile) throw new Error("No video file provided.");
@@ -217,26 +217,7 @@ export async function runAnalysisPipeline({ videoFile, profile, event, onProgres
     throw new Error("Pass 1 found no skills in the video.");
   }
 
-  onProgress({ stage: "pass1", pct: 60, label: `Found ${scorecard.deduction_log.length} skills — analyzing biomechanics...` });
-
-  // ══════════════════════════════════════════════════════════════════════════
-  // PASS 2: DEEP ANALYSIS — Biomechanics, injury, drills, mental, nutrition
-  // ══════════════════════════════════════════════════════════════════════════
-  onProgress({ stage: "pass2", pct: 65, label: "Analyzing biomechanics and building training plan..." });
-  const { system: sys2, user: usr2 } = buildPass2Prompt(scorecard, profile, event);
-  log.info("pass2", `Prompt: ${usr2.length} chars`);
-
-  let pass2Result = null;
-  try {
-    const pass2Raw = await callGemini(fileRef, sys2, usr2, PASS2_CONFIG, "pass2");
-    pass2Result = parseJSON(pass2Raw, "pass2");
-    log.info("pass2", `Enriched ${(pass2Result.skill_details || []).length} skills with biomechanics`);
-  } catch (e) {
-    // Pass 2 failure is non-fatal — we still have full scores from Pass 1
-    log.warn("pass2", `Failed (non-fatal): ${e.message}. Proceeding with Pass 1 data only.`);
-  }
-
-  onProgress({ stage: "scoring", pct: 85, label: "Computing score..." });
+  onProgress({ stage: "scoring", pct: 70, label: `Found ${scorecard.deduction_log.length} skills — computing score...` });
 
   // ══════════════════════════════════════════════════════════════════════════
   // SCORE COMPUTATION — Code computes, never trust AI (Deliverable 3)
@@ -257,81 +238,76 @@ export async function runAnalysisPipeline({ videoFile, profile, event, onProgres
     `Art: -${scoring.artistry_total} | SR: -${scoring.sr_total} | ` +
     `Skills: ${scorecard.deduction_log.length} | AI said: ${scorecard.final_score} (diff: ${scoring.score_diff})`);
 
-  // ── Merge Pass 1 + Pass 2 ────────────────────────────────────────────────
-  const mergedSkills = mergeSkills(scorecard, pass2Result);
+  // ── Build pass1-only result (no biomechanics yet) ────────────────────────
+  const pass1Skills = mergeSkills(scorecard, null);
 
-  // ── Assemble pipeline result (canonical schema) ─────────────────────────
-  const pipelineResult = {
-    routine_summary: {
-      apparatus: detectedEvent,
-      duration_seconds: scorecard.duration_seconds || 0,
-      d_score: scoring.d_score,
-      e_score: scoring.e_score,
-      final_score: finalScore,
-      total_deductions: scoring.total,
-      neutral_deductions: 0,
-      level: profile.level || "",
-      level_estimated: scorecard.level || "",
-      athlete_name: profile.name || "",
-      coaching_summary: scorecard.coaching_summary || "",
-      celebrations: scorecard.celebrations || [],
-      top_3_fixes: scorecard.top_3_fixes || [],
-      artistry: scorecard.artistry || null,
-      confidence: scorecard.confidence || "MEDIUM",
-      score_range: scorecard.score_range || null,
-      raw_gemini_response: rawGeminiResponse,
-    },
-    skills: mergedSkills,
-    special_requirements: scorecard.special_requirements || [],
-    training_plan: pass2Result?.training_plan || [],
-    mental_performance: pass2Result?.mental_performance || {
-      focus_indicators: "",
-      consistency_patterns: "",
-      athlete_recommendations: "",
-    },
-    nutrition_note: pass2Result?.nutrition_note || "",
-    levelProgressionAnalysis: scorecard.levelProgressionAnalysis || null,
-    _meta: {
-      prompt_version: PROMPT_VERSION,
-      timestamp: Date.now(),
-      duration_ms: Date.now() - startTime,
-      model: "gemini-2.5-flash",
-      pass1_skills: scorecard.deduction_log?.length || 0,
-      pass2_success: !!pass2Result,
-      score_breakdown: {
-        start_value: startValue,
+  function buildPipelineResult(skills, pass2Result) {
+    return {
+      routine_summary: {
+        apparatus: detectedEvent,
+        duration_seconds: scorecard.duration_seconds || 0,
         d_score: scoring.d_score,
         e_score: scoring.e_score,
-        execution_deductions: scoring.execution_total,
-        artistry_deductions: scoring.artistry_total,
-        sr_penalties: scoring.sr_total,
-        total_deductions: scoring.total,
-        d_score_from_skills: scoring.d_score_from_skills,
-        gemini_score: scorecard.final_score,
-        code_computed_score: finalScore,
         final_score: finalScore,
-        score_diff: scoring.score_diff,
-        warning: scoring.warning,
+        total_deductions: scoring.total,
+        neutral_deductions: 0,
+        level: profile.level || "",
+        level_estimated: scorecard.level || "",
+        athlete_name: profile.name || "",
+        coaching_summary: scorecard.coaching_summary || "",
+        celebrations: scorecard.celebrations || [],
+        top_3_fixes: scorecard.top_3_fixes || [],
+        artistry: scorecard.artistry || null,
+        confidence: scorecard.confidence || "MEDIUM",
+        score_range: scorecard.score_range || null,
+        raw_gemini_response: rawGeminiResponse,
       },
-    },
-  };
+      skills,
+      special_requirements: scorecard.special_requirements || [],
+      training_plan: pass2Result?.training_plan || [],
+      mental_performance: pass2Result?.mental_performance || {
+        focus_indicators: "",
+        consistency_patterns: "",
+        athlete_recommendations: "",
+      },
+      nutrition_note: pass2Result?.nutrition_note || "",
+      levelProgressionAnalysis: scorecard.levelProgressionAnalysis || null,
+      _meta: {
+        prompt_version: PROMPT_VERSION,
+        timestamp: Date.now(),
+        duration_ms: Date.now() - startTime,
+        model: "gemini-2.5-flash",
+        pass1_skills: scorecard.deduction_log?.length || 0,
+        pass2_success: !!pass2Result,
+        score_breakdown: {
+          start_value: startValue,
+          d_score: scoring.d_score,
+          e_score: scoring.e_score,
+          execution_deductions: scoring.execution_total,
+          artistry_deductions: scoring.artistry_total,
+          sr_penalties: scoring.sr_total,
+          total_deductions: scoring.total,
+          d_score_from_skills: scoring.d_score_from_skills,
+          gemini_score: scorecard.final_score,
+          code_computed_score: finalScore,
+          final_score: finalScore,
+          score_diff: scoring.score_diff,
+          warning: scoring.warning,
+        },
+      },
+    };
+  }
 
-  // ── Validate ──────────────────────────────────────────────────────────────
-  const { result: validated, warnings } = validatePipelineResult(pipelineResult);
+  // ── Validate + transform pass1 result ─────────────────────────────────────
+  const pass1PipelineResult = buildPipelineResult(pass1Skills, null);
+  const { result: validated, warnings } = validatePipelineResult(pass1PipelineResult);
   if (warnings.length > 0) {
     log.warn("validate", `${warnings.length} warnings:`, warnings);
   }
-
-  // ── Transform for UI ──────────────────────────────────────────────────────
   const uiResult = transformForUI(validated);
 
   // ── Session cache write — fast reload of same video ─────────────────────
   try { sessionStorage.setItem(cacheKey, JSON.stringify(uiResult)); } catch {}
-
-  // ── Cleanup uploaded file (fire and forget) ───────────────────────────────
-  try {
-    geminiProxy({ action: "deleteFile", fileName: fileRef.fileName });
-  } catch {}
 
   // ── Log training data (fire and forget) ────────────────────────────────
   try {
@@ -351,6 +327,50 @@ export async function runAnalysisPipeline({ videoFile, profile, event, onProgres
   }
 
   onProgress({ stage: "complete", pct: 100, label: "Analysis complete!" });
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // PASS 2: DEEP ANALYSIS — runs in BACKGROUND after pass1 results are shown
+  // Biomechanics, injury, drills, mental, nutrition
+  // Free tier: skip entirely (they can't see biomechanics)
+  // ══════════════════════════════════════════════════════════════════════════
+  const effectiveTier = tier || (() => { try { return localStorage.getItem("strive-tier") || "free"; } catch { return "free"; } })();
+
+  if (effectiveTier !== 'free' && onPass2Complete) {
+    // Fire and forget — never blocks the UI
+    (async () => {
+      try {
+        log.info("pass2", "Starting background pass2 enrichment...");
+        const { system: sys2, user: usr2 } = buildPass2Prompt(scorecard, profile, event);
+        const pass2Raw = await callGemini(fileRef, sys2, usr2, PASS2_CONFIG, "pass2");
+        const pass2Result = parseJSON(pass2Raw, "pass2");
+        log.info("pass2", `Enriched ${(pass2Result.skill_details || []).length} skills with biomechanics`);
+
+        // Rebuild with enriched data
+        const enrichedSkills = mergeSkills(scorecard, pass2Result);
+        const enrichedPipeline = buildPipelineResult(enrichedSkills, pass2Result);
+        const { result: enrichedValidated } = validatePipelineResult(enrichedPipeline);
+        const enrichedUI = transformForUI(enrichedValidated);
+
+        // Update session cache with enriched result
+        try { sessionStorage.setItem(cacheKey, JSON.stringify(enrichedUI)); } catch {}
+
+        onPass2Complete(enrichedUI);
+      } catch (e) {
+        // Pass 2 failure is completely silent — pass1 results already displayed
+        log.warn("pass2", `Background enrichment failed (non-fatal): ${e.message}`);
+      } finally {
+        // Cleanup uploaded file after pass2 completes (or fails)
+        try { geminiProxy({ action: "deleteFile", fileName: fileRef.fileName }); } catch {}
+      }
+    })();
+  } else {
+    // Free tier or no pass2 callback — cleanup uploaded file now
+    if (effectiveTier === 'free') {
+      log.info("pass2", "Skipping pass2 — free tier");
+    }
+    try { geminiProxy({ action: "deleteFile", fileName: fileRef.fileName }); } catch {}
+  }
+
   return uiResult;
 }
 
