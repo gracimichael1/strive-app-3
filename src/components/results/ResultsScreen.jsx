@@ -1,5 +1,7 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { useTier } from '../../context/TierContext';
+import { canSeeJudgeNarrative, canSeeDrills, canSeeBiomechanics, canSeeInjuryAwareness, canSeeSkeletonOverlay, canUseSlowMotion, canSeeLevelUp, getDeductionBlurThreshold } from '../../engine/tierGates';
+import LockedFeature from '../LockedFeature';
 
 // ── Design Tokens ───────────────────────────────────────────────────────────
 const T = {
@@ -188,8 +190,15 @@ export default function ResultsScreen({ result, profile, previousResult, onBack,
 
       <div style={{ maxWidth: 540, margin: '0 auto' }}>
 
-        {/* ═══ JUDGE'S OVERALL READ ═══ */}
-        {(result.overallAssessment || result.whyThisScore) && (
+        {/* ═══ JUDGE'S OVERALL READ (Competitive+) ═══ */}
+        {(result.overallAssessment || result.whyThisScore) && !canSeeJudgeNarrative(tier) && (
+          <div style={{ margin: '14px 16px 0', padding: '10px 14px', borderRadius: 10, background: 'rgba(255,255,255,0.03)' }}>
+            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', fontFamily: T.sans, lineHeight: 1.6 }}>
+              {(result.overallAssessment || result.whyThisScore || '').split('.').slice(0, 2).join('.') + '.'}
+            </div>
+          </div>
+        )}
+        {(result.overallAssessment || result.whyThisScore) && canSeeJudgeNarrative(tier) && (
           <div style={{
             margin: '14px 16px 0', padding: '13px 14px 13px 16px', borderRadius: 10,
             background: 'rgba(255,255,255,0.03)', borderLeft: '3px solid rgba(232,150,42,0.5)',
@@ -221,8 +230,16 @@ export default function ResultsScreen({ result, profile, previousResult, onBack,
           </button>
         )}
 
-        {/* ═══ 2. TODAY'S FIX ═══ */}
-        {todaysFix && (
+        {/* ═══ 2. TODAY'S FIX (Competitive+) ═══ */}
+        {todaysFix && !canSeeDrills(tier) && (
+          <LockedFeature feature="drills" tier={tier} onUpgrade={onUpgrade}>
+            <div style={{ margin: '16px 16px 0', padding: 16, borderRadius: 14, background: T.goldBg }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: T.gold }}>TODAY'S FIX</div>
+              <div style={{ fontSize: 14, color: T.text, marginTop: 4 }}>{todaysFixName}</div>
+            </div>
+          </LockedFeature>
+        )}
+        {todaysFix && canSeeDrills(tier) && (
           <div style={{
             margin: '16px 16px 0', padding: 16, borderRadius: 14,
             background: T.goldBg, border: '1px solid rgba(240,160,48,0.18)',
@@ -255,7 +272,11 @@ export default function ResultsScreen({ result, profile, previousResult, onBack,
         </div>
 
         {/* ═══ LEVEL UP TAB CONTENT ═══ */}
-        {resultsTab === 'levelup' && <LevelUpPanel result={result} isFree={isFree} onUpgrade={onUpgrade} />}
+        {resultsTab === 'levelup' && (
+          canSeeLevelUp(tier)
+            ? <LevelUpPanel result={result} isFree={false} onUpgrade={onUpgrade} />
+            : <div style={{ margin: '16px 16px 0' }}><LockedFeature feature="levelUp" tier={tier} onUpgrade={onUpgrade}><div style={{ height: 160, background: 'rgba(255,255,255,0.02)', borderRadius: 8 }} /></LockedFeature></div>
+        )}
 
         {/* ═══ ANALYSIS TAB CONTENT ═══ */}
         {resultsTab === 'analysis' && <>
@@ -290,6 +311,7 @@ export default function ResultsScreen({ result, profile, previousResult, onBack,
               skill={skill}
               index={idx}
               isFree={isFree}
+              tier={tier}
               freeDeductionLimit={freeLimit}
               globalDeductionIndex={allDeductions.filter(d => skills.indexOf(skills.find(s => s === skills[d.skillIdx])) < idx).length}
               onJumpToTimestamp={onJumpToTimestamp}
@@ -518,7 +540,7 @@ function LevelUpPanel({ result, isFree, onUpgrade }) {
 }
 
 
-function SkillCard({ skill, index, isFree, freeDeductionLimit, globalDeductionIndex, onJumpToTimestamp, onUpgrade, videoUrl, showSkeleton, setShowSkeleton }) {
+function SkillCard({ skill, index, isFree, tier, freeDeductionLimit, globalDeductionIndex, onJumpToTimestamp, onUpgrade, videoUrl, showSkeleton, setShowSkeleton }) {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState('what');
   const [playbackRate, setPlaybackRate] = useState(1);
@@ -1007,6 +1029,7 @@ function SkillCard({ skill, index, isFree, freeDeductionLimit, globalDeductionIn
 
             {/* TAB: Body Angles */}
             {tab === 'bio' && (
+              !canSeeBiomechanics(tier) ? <LockedFeature feature="biomechanics" tier={tier} onUpgrade={onUpgrade}><div style={{ height: 100 }} /></LockedFeature> :
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                 {[
                   { joint: 'Hips', actual: bioRaw.hips || bio.hipAlignment, ideal: '180' },
@@ -1040,6 +1063,7 @@ function SkillCard({ skill, index, isFree, freeDeductionLimit, globalDeductionIn
 
             {/* TAB: Injury */}
             {tab === 'injury' && (
+              !canSeeInjuryAwareness(tier) ? <LockedFeature feature="injury" tier={tier} onUpgrade={onUpgrade}><div style={{ height: 80 }} /></LockedFeature> :
               <div>
                 {injury ? (
                   <div style={{ padding: 12, background: 'rgba(249,115,22,0.06)', borderRadius: 10, border: '1px solid rgba(249,115,22,0.12)' }}>
@@ -1057,8 +1081,13 @@ function SkillCard({ skill, index, isFree, freeDeductionLimit, globalDeductionIn
               </div>
             )}
 
-            {/* TAB: Video */}
-            {tab === 'video' && (
+            {/* TAB: Video (skeleton gated) */}
+            {tab === 'video' && !canSeeSkeletonOverlay(tier) && (
+              <LockedFeature feature="skeleton" tier={tier} onUpgrade={onUpgrade}>
+                <div style={{ height: 120, background: '#000', borderRadius: 10 }} />
+              </LockedFeature>
+            )}
+            {tab === 'video' && canSeeSkeletonOverlay(tier) && (
               <div style={{ padding: '0' }}>
                 {/* Video + skeleton canvas overlay */}
                 <div style={{ position: 'relative', borderRadius: 10, overflow: 'hidden', background: '#000', marginBottom: 10 }}>
@@ -1268,6 +1297,7 @@ function SkillCard({ skill, index, isFree, freeDeductionLimit, globalDeductionIn
 
             {/* TAB: Today's Fix */}
             {tab === 'fix' && (
+              !canSeeDrills(tier) ? <LockedFeature feature="drills" tier={tier} onUpgrade={onUpgrade}><div style={{ height: 80 }} /></LockedFeature> :
               <div>
                 {drill ? (
                   <div style={{ padding: 12, background: T.goldBg, borderRadius: 10, border: '1px solid rgba(240,160,48,0.12)' }}>
