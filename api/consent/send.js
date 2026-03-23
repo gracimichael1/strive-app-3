@@ -57,7 +57,19 @@ export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
   const resendKey = process.env.RESEND_API_KEY;
-  if (!resendKey) return res.status(500).json({ error: "RESEND_API_KEY not configured" });
+  if (!resendKey) {
+    // No Resend key configured — log it but don't block the user
+    // Dev/staging: email just won't arrive, user can use bypass code
+    console.warn("[consent] RESEND_API_KEY not configured — skipping email send");
+    logConsent({
+      timestamp: new Date().toISOString(),
+      parent_email_hash: sha256((req.body?.parentEmail || "").toLowerCase().trim()),
+      consent_version: "1.0",
+      status: "pending_no_email",
+      reason: "RESEND_API_KEY not configured",
+    });
+    return res.status(200).json({ ok: true, emailSent: false, message: "Consent recorded. Email delivery is not yet configured." });
+  }
 
   const { parentEmail, athleteNickname } = req.body || {};
 
@@ -130,6 +142,9 @@ export default async function handler(req, res) {
     `,
   };
 
+  let emailSent = false;
+  let emailId = null;
+
   try {
     const sendRes = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -143,15 +158,26 @@ export default async function handler(req, res) {
     if (!sendRes.ok) {
       const err = await sendRes.text().catch(() => "");
       console.error("[consent] Resend error:", sendRes.status, err);
-      return res.status(502).json({ error: "Failed to send consent email" });
+      // Don't block user — email failed but consent is recorded
+    } else {
+      const sendData = await sendRes.json();
+      console.log("[consent] Email sent:", sendData.id);
+      emailSent = true;
+      emailId = sendData.id;
     }
-
-    const sendData = await sendRes.json();
-    console.log("[consent] Email sent:", sendData.id);
-
-    return res.status(200).json({ ok: true, emailId: sendData.id });
   } catch (e) {
-    console.error("[consent] Send error:", e.message);
-    return res.status(500).json({ error: e.message });
+    // Email send failed — log it but don't block the user
+    console.error("[consent] Email send failed:", e.message);
   }
+
+  // Always return success — consent is recorded regardless of email delivery
+  // Failed email: user can retry or use dev bypass
+  return res.status(200).json({
+    ok: true,
+    emailSent,
+    emailId,
+    message: emailSent
+      ? "Consent email sent. Check your inbox."
+      : "Consent recorded. Email delivery may be delayed.",
+  });
 }

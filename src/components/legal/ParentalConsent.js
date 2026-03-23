@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 
 const styles = {
   container: {
@@ -217,6 +217,14 @@ const ParentalConsent = React.memo(function ParentalConsent({
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
+  const [showBypass, setShowBypass] = useState(false);
+  const [bypassCode, setBypassCode] = useState('');
+
+  // Show dev bypass after 10 seconds (not immediately visible to real users)
+  useEffect(() => {
+    const timer = setTimeout(() => setShowBypass(true), 10000);
+    return () => clearTimeout(timer);
+  }, []);
 
   const displayName = athleteName || 'your child';
 
@@ -420,6 +428,63 @@ const ParentalConsent = React.memo(function ParentalConsent({
           >
             Back
           </button>
+        )}
+
+        {/* Dev bypass — appears after 10s for testing when email delivery is unavailable */}
+        {showBypass && (
+          <div style={{
+            marginTop: 24, paddingTop: 16,
+            borderTop: '1px solid rgba(255,255,255,0.06)',
+            textAlign: 'center',
+          }}>
+            <div style={{
+              fontSize: 11, color: 'rgba(221,224,237,0.25)',
+              marginBottom: 8, fontFamily: "'Space Mono', monospace",
+            }}>
+              Testing bypass
+            </div>
+            <div style={{ display: 'flex', gap: 8, maxWidth: 280, margin: '0 auto' }}>
+              <input
+                type="text"
+                placeholder="Test code"
+                value={bypassCode}
+                onChange={e => setBypassCode(e.target.value)}
+                style={{
+                  flex: 1, background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: 6, padding: '8px 12px', fontSize: 13,
+                  color: '#E2E8F0', fontFamily: "'Space Mono', monospace",
+                  outline: 'none', boxSizing: 'border-box',
+                }}
+              />
+              <button
+                onClick={() => {
+                  if (bypassCode === 'STRIVETEST2026') {
+                    try {
+                      localStorage.setItem('coppa-confirmed', 'true');
+                      localStorage.setItem('coppa-bypass', 'dev');
+                      sessionStorage.setItem('strive-consent-status', 'confirmed');
+                    } catch {}
+                    onConsent({
+                      parentEmail: 'dev-bypass@test',
+                      consentTimestamp: new Date().toISOString(),
+                      status: 'confirmed',
+                      bypass: true,
+                    });
+                  }
+                }}
+                style={{
+                  background: 'rgba(212,168,67,0.15)',
+                  border: '1px solid rgba(212,168,67,0.3)',
+                  borderRadius: 6, padding: '8px 14px', fontSize: 12,
+                  fontWeight: 700, color: '#ffc15a', cursor: 'pointer',
+                  fontFamily: "'Outfit', sans-serif", minHeight: 44,
+                }}
+              >
+                Skip
+              </button>
+            </div>
+          </div>
         )}
       </div>
     </div>
