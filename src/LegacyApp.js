@@ -5438,9 +5438,49 @@ IMPORTANT: The deduction_log must contain ONE entry per distinct skill or transi
     })();
   }, [uploadData, profile, onComplete]);
 
+  // ── Score range logic ──────────────────────────────────────────────
+  const LEVEL_SCORE_RANGES = useMemo(() => ({
+    '1': { min: 7.0, max: 9.5 }, '2': { min: 7.2, max: 9.5 },
+    '3': { min: 7.5, max: 9.6 }, '4': { min: 7.8, max: 9.6 },
+    '5': { min: 8.0, max: 9.7 }, '6': { min: 8.0, max: 9.7 },
+    '7': { min: 8.0, max: 9.8 }, '8': { min: 8.2, max: 9.8 },
+    'xcel_bronze': { min: 7.0, max: 9.4 }, 'xcel_silver': { min: 7.5, max: 9.5 },
+    'xcel_gold': { min: 7.8, max: 9.6 }, 'xcel_platinum': { min: 8.0, max: 9.7 },
+    'xcel_diamond': { min: 8.2, max: 9.8 }, 'default': { min: 7.0, max: 9.8 },
+  }), []);
+
+  const getLevelKey = useCallback((level) => {
+    if (!level) return 'default';
+    const l = level.toLowerCase();
+    if (/xcel.*bronze|^bronze$/i.test(l)) return 'xcel_bronze';
+    if (/xcel.*silver|^silver$/i.test(l)) return 'xcel_silver';
+    if (/xcel.*gold|^gold$/i.test(l)) return 'xcel_gold';
+    if (/xcel.*plat/i.test(l)) return 'xcel_platinum';
+    if (/xcel.*diamond|^diamond$/i.test(l)) return 'xcel_diamond';
+    const num = l.replace(/\D/g, '');
+    if (num && LEVEL_SCORE_RANGES[num]) return num;
+    return 'default';
+  }, [LEVEL_SCORE_RANGES]);
+
+  const liveRange = useMemo(() => {
+    const key = getLevelKey(profile?.level);
+    const base = LEVEL_SCORE_RANGES[key] || LEVEL_SCORE_RANGES['default'];
+    const spread = base.max - base.min;
+    const center = (base.min + base.max) / 2;
+    const narrowFactor = 1 - (progress / 100) * 0.85;
+    const currentSpread = spread * narrowFactor;
+    return {
+      low: Math.max(0, center - currentSpread / 2).toFixed(1),
+      high: Math.min(10, center + currentSpread / 2).toFixed(1),
+    };
+  }, [progress, profile?.level, getLevelKey, LEVEL_SCORE_RANGES]);
+
+  const videoUrl = uploadData?.videoUrl;
+  const showVideo = videoUrl && progress > 10; // show after compression, during upload+analysis
+
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 32 }}>
-      {/* Hidden video element */}
+      {/* Hidden video element for frame extraction */}
       <video
         ref={hiddenVideoRef}
         src={uploadData.videoUrl}
@@ -5467,12 +5507,89 @@ IMPORTANT: The deduction_log must contain ONE entry per distinct skill or transi
         </div>
       )}
 
-      {/* Spinner */}
-      <div style={{
-        width: 72, height: 72, borderRadius: "50%", margin: "0 auto 24px",
-        border: "3px solid rgba(232,150,42,0.15)", borderTopColor: "#e8962a",
-        animation: "rotate 1s linear infinite",
-      }} />
+      {/* ── Video playback during analysis ── */}
+      {showVideo && (
+        <div style={{
+          width: '100%', maxWidth: 390, margin: '0 auto 20px',
+          borderRadius: 12, overflow: 'hidden', background: '#000', position: 'relative',
+        }}>
+          <video
+            src={videoUrl}
+            autoPlay
+            muted
+            loop
+            playsInline
+            webkit-playsinline="true"
+            style={{ width: '100%', maxHeight: 260, objectFit: 'contain', display: 'block' }}
+          />
+          {/* Gradient overlay */}
+          <div style={{
+            position: 'absolute', inset: 0, pointerEvents: 'none',
+            background: 'linear-gradient(to bottom, transparent 60%, rgba(6,6,15,0.8) 100%)',
+          }}/>
+          {/* ANALYZING badge */}
+          <div style={{
+            position: 'absolute', top: 10, left: 10,
+            background: 'rgba(224,69,69,0.9)', borderRadius: 99,
+            padding: '3px 10px', fontSize: 10, fontWeight: 700,
+            color: '#fff', fontFamily: "'Space Mono', monospace",
+            letterSpacing: '0.08em', display: 'flex', alignItems: 'center', gap: 5,
+          }}>
+            <span style={{
+              width: 6, height: 6, borderRadius: '50%',
+              background: '#fff', animation: 'pulse 1s infinite',
+            }}/>
+            ANALYZING
+          </div>
+        </div>
+      )}
+
+      {/* ── Live score range ── */}
+      {progress > 5 && progress < 100 && (
+        <div style={{ textAlign: 'center', margin: '0 0 16px' }}>
+          <div style={{
+            fontSize: 10, fontFamily: "'Space Mono', monospace",
+            color: 'rgba(221,224,237,0.4)', letterSpacing: '0.08em',
+            marginBottom: 4, textTransform: 'uppercase',
+          }}>
+            Estimated Score Range
+          </div>
+          <div style={{
+            fontSize: 42, fontWeight: 700,
+            fontFamily: "'Outfit', sans-serif",
+            color: 'rgba(240,200,90,0.85)',
+            letterSpacing: '-1px', lineHeight: 1,
+          }}>
+            {liveRange.low} – {liveRange.high}
+          </div>
+          <div style={{
+            fontSize: 11, color: 'rgba(221,224,237,0.35)',
+            marginTop: 5, fontStyle: 'italic',
+          }}>
+            Narrowing as we analyze...
+          </div>
+          <div style={{
+            width: '50%', height: 2,
+            background: 'rgba(255,255,255,0.06)',
+            borderRadius: 99, margin: '8px auto 0', overflow: 'hidden',
+          }}>
+            <div style={{
+              height: '100%', width: `${progress}%`,
+              background: 'linear-gradient(90deg, #d4a843, #f0c85a)',
+              borderRadius: 99, transition: 'width 0.5s ease',
+            }}/>
+          </div>
+        </div>
+      )}
+
+      {/* Spinner — show only when video is not visible */}
+      {!showVideo && (
+        <div style={{
+          width: 72, height: 72, borderRadius: "50%", margin: "0 auto 24px",
+          border: "3px solid rgba(232,150,42,0.15)", borderTopColor: "#e8962a",
+          animation: "rotate 1s linear infinite",
+        }} />
+      )}
 
       <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 6, textAlign: "center", maxWidth: 300 }}>{status}</h3>
 
