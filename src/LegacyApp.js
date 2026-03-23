@@ -4608,16 +4608,17 @@ const AnalyzingScreen = React.memo(function AnalyzingScreen({ uploadData, profil
   //   compulsory/optional/xcel → judging context
   // ══════════════════════════════════════════════════════════════════
 
+  // LEGACY PROMPT — DEAD CODE. Replaced by pipeline.js + prompts.js (v15_ip_compliant).
+  // Kept for backward-compat reference only. Not called by any active code path.
   const buildJudgingPrompt = useCallback(() => {
     const level   = profile.level  || "Level 6";
     const gender  = profile.gender === "female" ? "Women's" : "Men's";
     const cat     = profile.levelCategory || "optional";
-    // For Xcel, the level already contains "Xcel" (e.g. "Xcel Gold") — don't prepend category
     const levelDisplay = cat === "xcel" ? level : `${cat === "compulsory" ? "Compulsory" : "Optional"} ${level}`;
     const athleteName = profile.name || "the gymnast";
 
-    return `The BHPA Master System Instruction
-Role: Act as a Brevet-level USAG ${gender} ${levelDisplay} Lead Judge and High-Performance Technical Coach. Your goal is to provide a "Zero-Lenience" score followed by a "Physics-Based" training roadmap.
+    return `Master System Instruction
+Role: Act as an expert-level gymnastics execution judge with deep knowledge of optional and compulsory scoring frameworks for ${gender} artistic gymnastics. You are also a High-Performance Technical Coach. Your goal is to provide a "Zero-Lenience" score followed by a "Physics-Based" training roadmap.
 
 ATHLETE: ${athleteName} | ${gender} ${levelDisplay}
 
@@ -4646,7 +4647,7 @@ III. Biomechanical Overlay & Kinetic Audit
 3. The Landing Vector: Provide a Torso-to-Vertical angle measurement at impact. Determine if the Center of Mass (CoM) was Leading, Trailing, or Stacked over the base of support.
 
 V.2 — The Master Level-Up Prompt (Multi-Phase Analysis)
-Objective: Analyze this ${gender} ${levelDisplay} routine as a Brevet-level USAG Lead Judge. Following execution analysis, provide a "Transition Audit" for the next competitive level.
+Objective: Analyze this ${gender} ${levelDisplay} routine as an expert execution judge. Following execution analysis, provide a "Transition Audit" for the next competitive level.
 
 Phase 1: Championship Strictness (Current Level)
 1. No Benefit of the Doubt: If a form break is visible, it is a deduction.

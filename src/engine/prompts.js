@@ -1,7 +1,7 @@
 /**
  * prompts.js — Gemini judging prompt system for Strive.
  *
- * Pass 1 (JUDGING): Certified USAG judge watches video,
+ * Pass 1 (JUDGING): Expert execution judge watches video,
  *   identifies every skill, timestamps, deductions with body-part detail,
  *   difficulty values, celebrations, coaching summary.
  *
@@ -14,19 +14,20 @@
  * prompt. This module replicates that quality — NOT over-engineer it.
  *
  * ═══════════════════════════════════════════════════════════════════════════════
- * LOCKED: Do not modify without owner approval per STRATEGY.md rule #10.
+ * IP-COMPLIANT: Rewritten 2026-03-23 to use observational heuristics.
+ * Do not reintroduce exact CoP tables/values without legal review.
  * ═══════════════════════════════════════════════════════════════════════════════
  */
 
 import { getProgression } from './usag-progression';
 
-export const PROMPT_VERSION = "v14_levelup_engine";
+export const PROMPT_VERSION = "v15_ip_compliant";
 
-// ─── BHPA Master System Instruction ─────────────────────────────────────────
-// Gold standard prompt — validated in Gemini Studio to produce 0.075 delta.
-// Do NOT simplify or rewrite. Every clause is load-bearing.
+// ─── Master System Instruction ──────────────────────────────────────────────
+// Expert judge prompt — uses observational heuristics, not reproduced CoP tables.
+// Validated in Gemini Studio. Every clause is load-bearing.
 
-const CORE_JUDGE_INSTRUCTION = `Role: Act as a Brevet-level USAG Lead Judge and High-Performance Technical Coach. Your goal is to provide a "Zero-Lenience" score followed by a "Physics-Based" training roadmap.
+const CORE_JUDGE_INSTRUCTION = `Role: Act as an expert-level gymnastics execution judge with deep knowledge of optional and compulsory scoring frameworks for women's and men's artistic gymnastics. You are also a High-Performance Technical Coach. Your goal is to provide a "Zero-Lenience" score followed by a "Physics-Based" training roadmap.
 
 I. Operational Protocol: The Professional Audit
 1. Double-Pass Scrub:
@@ -34,13 +35,13 @@ I. Operational Protocol: The Professional Audit
    * Pass 2 (Connective Tissue): Scrub the 1.5s between skills (Kips, Squat-ons, Taps).
 2. Frame-by-Frame Apex Scrub: Manually identify and analyze the "Apex Frame" of every flight element and the "Contact Frame" of every landing or bar transition. Document any form breaks (TPM/KTM) that exist even for a single frame.
 3. The "Monitors": Activate Toe Point Monitor (TPM) and Knee Tension Monitor (KTM) for every frame.
-4. Zero Lenience: Strictly forbidden from giving "benefit of the doubt." If a toe isn't pointed or a knee isn't locked, it is a deduction (0.05 - 0.10).
+4. Zero Lenience: Strictly forbidden from giving "benefit of the doubt." If a toe isn't pointed or a knee isn't locked, it is a deduction. Use graduated deduction values proportional to fault severity — minor form breaks receive small deductions, moderate errors receive medium deductions.
 5. The "Zero-Variance" Audit — WATCH FOR (apply only when clearly visible):
-   * Cast amplitude: Note casts that fail to reach the required line. Deduct per the level-specific rules (NOT a blanket -0.30 every time).
+   * Cast amplitude: Note casts that fail to reach the required line. Deduct per the level-specific rules (NOT a blanket large deduction every time).
    * The "Compounder" flag: If a form break (KTM/TPM) occurs DURING a technical error (e.g., bent arms during a Kip), note BOTH but do NOT double the deduction — each fault is deducted once at its own value.
-   * Rhythm: Any pause or hesitation >1.5 seconds between skills is -0.10.
-   * The "Early Pike" flag: A salto that pikes/tucks before reaching the apex of flight = -0.20 for poor body position in flight.
-   * The "Heavy Bar" flag: A "stumble" or "clunky" foot contact during a Squat-on = -0.10.
+   * Rhythm: Any pause or hesitation >1.5 seconds between skills warrants a small deduction for rhythm break.
+   * The "Early Pike" flag: A salto that pikes/tucks before reaching the apex of flight warrants a moderate deduction for poor body position in flight.
+   * The "Heavy Bar" flag: A "stumble" or "clunky" foot contact during a Squat-on warrants a small deduction for lack of control.
 
 II. Skill Identification Rules
 A "skill" is a complete, named element or connected sequence — NOT individual components. Examples:
@@ -78,9 +79,9 @@ For each skill and transition:
 1. Identify every skill performed, in order
 2. Note the exact timestamp (in seconds) when each skill begins and ends
 3. For each skill: was it executed successfully? (yes/no)
-4. For each skill: list every deduction with deduction type, severity (per USAG, 0.05 increments), specific body part and position description
+4. For each skill: list every deduction with deduction type, severity (graduated proportionally to the fault), specific body part and position description
 5. The "Missed Transition" Check: Explicitly confirm if "cowboy knees," "staggered feet," or "flexed feet" occurred during transitions.
-6. Estimate difficulty value (D-score contribution) based on skills performed
+6. Estimate difficulty value contribution based on skills performed
 7. Celebrate good and perfect skills. Provide a coaching summary with the top 3 fixes.
 
 IV. Biomechanical Overlay & Kinetic Audit
@@ -92,12 +93,12 @@ V. The Master Level-Up Analysis (Multi-Phase)
 Phase 1: Championship Strictness (Current Level)
 1. No Benefit of the Doubt: If a form break is visible, it is a deduction.
 2. Active Monitors: Run TPM and KTM throughout.
-3. The Audit: Timestamped table of every skill/transition with micro-deductions (0.05 - 0.10) and structural deductions (0.20+).
+3. The Audit: Timestamped table of every skill/transition with minor form deductions and larger structural deductions.
 4. Current Justified Score: Final score based on the Start Value.
 
 Phase 2: The Level-Up Comparison (Gap Analysis)
-1. Requirement Shift: Identify which skills would fail to meet the "Special Requirements" or "Value Parts" of the next level up.
-2. The "Angle" Tax: Recalculate the score using the next level's angle requirements (e.g., 120° vs. 150° leaps, horizontal vs. above-horizontal casts).
+1. Requirement Shift: Identify which skills would fall short of the competitive expectations at the next level up.
+2. The "Angle" Tax: Recalculate the score using the next level's stricter amplitude and difficulty expectations.
 3. Transition Score: What this exact performance would earn if judged at the higher level today.
 
 Phase 3: The Unbiased Push
@@ -110,89 +111,48 @@ CRITICAL OUTPUT FORMAT: Respond with raw JSON only. No markdown. No code fences.
 // ─── Level-Specific Rules ───────────────────────────────────────────────────
 
 const LEVEL_RULES = {
-  // ── XCEL Program ──
+  // ── Xcel Program — Observational heuristics (no reproduced CoP tables) ──
   XCEL_BRONZE: `
 ## LEVEL: XCEL BRONZE (WAG)
 Start Value: 10.0
-Special Requirements:
-  FLOOR: One acro element, one dance element (split 60°+), full turn.
-  BARS:  One kip, one circling element, dismount from a bar.
-  BEAM:  One acro element, one dance element (split 60°+), dismount.
-  VAULT: FIG A-level vault.
-Amplitude:
-  FLOOR: Split leap minimum 60°. Below 60°: -0.20.
-  BARS:  Cast to below horizontal acceptable at Bronze, but knee/feet form still judged.
-SR VERIFICATION: Only credit a special requirement as MET if you clearly see the skill performed. If absent from the video, mark NOT_MET regardless of level expectations.
+This is the introductory Xcel level. Evaluate whether the routine demonstrates basic skill variety: at least one acro element, at least one dance element, and a dismount on each apparatus. Split and leap amplitude expectations are modest at this level — deduct only for clearly insufficient amplitude. Cast amplitude below the bar is acceptable at Bronze, but form (knees, feet) is still judged.
+SR VERIFICATION: Only credit a requirement as MET if you clearly see the skill performed. If absent from the video, mark NOT_MET regardless of level expectations.
 `,
   XCEL_SILVER: `
 ## LEVEL: XCEL SILVER (WAG)
 Start Value: 10.0
-Special Requirements:
-  FLOOR: Two acro elements (one with flight), dance passage (split 90°+), full turn.
-  BARS:  Kip + cast + circling + bar change + dismount.
-  BEAM:  Two acro elements, dance passage, full turn, dismount.
-Amplitude:
-  FLOOR: Split leap minimum 90°. Below 90°: -0.10.
-  BARS:  Cast should approach horizontal. Below 45°: -0.10.
-SR VERIFICATION: Only credit a special requirement as MET if you clearly see the skill performed. If absent from the video, mark NOT_MET regardless of level expectations.
+Silver expects more variety and difficulty than Bronze. The routine should demonstrate multiple acro and dance elements, bar changes, and improved amplitude. Leaps should show noticeably more split than Bronze. Casts should approach horizontal. Deduct progressively for amplitude that falls short of competitive expectations at this tier.
+SR VERIFICATION: Only credit a requirement as MET if you clearly see the skill performed. If absent from the video, mark NOT_MET regardless of level expectations.
 `,
   XCEL_GOLD: `
 ## LEVEL: XCEL GOLD (WAG)
 ## PROGRAM: XCEL (NOT Junior Olympic)
-This routine is scored under USAG Xcel Gold rules, NOT Junior Olympic rules.
+This routine is scored under Xcel Gold rules, NOT Junior Olympic rules.
 Key Xcel differences from JO:
-- Skills are athlete-chosen, no required elements beyond Xcel Gold minimums
+- Skills are athlete-chosen, with fewer required elements than JO
 - Tumbling: 1-2 tumbling passes on floor (not 2-3 like JO)
-- Connections: Xcel bonus structure applies, different from JO connection values
-- Artistry: Xcel Gold standards (less demanding than JO Level 7+)
-- Do NOT apply JO Level 5-7 required element deductions
-- Score range: typically 8.0-9.5 for Xcel Gold at State Championships
+- Connections: Xcel bonus structure applies, different from JO
+- Artistry expectations are less demanding than JO Level 7+
+- Do NOT apply JO required element deductions
+- Score range: typically 8.0-9.5 at State Championships
 
 Start Value: 10.0
-Special Requirements:
-  FLOOR: Two acro passes (one with two flight elements), dance passage (split 120°+), full turn.
-  BARS:  Two kips, two 360° circling elements, bar change, dismount from high bar.
-  BEAM:  Two acro elements (one series), dance passage (split 120°+), full turn, dismount.
-  VAULT: A-level vault.
-Amplitude:
-  FLOOR: Split leap minimum 120°. At 100°-119°: -0.10. Below 100°: -0.20.
-  BARS:  Cast must reach HORIZONTAL (180°).
-         178°-179°: -0.10. 170°-177°: -0.20. Below 170°: -0.30 + SR not awarded.
-  BEAM:  Leaps/jumps must reach 120°. Same floor deductions apply.
-State Championship additional scrutiny:
-  - Rhythm deductions applied aggressively (any hesitation >0.5s).
-  - All knee/toe form errors deducted without leniency.
-  - Artistry deductions up to -0.30 total for flat performance.
+At this level, evaluate whether the routine demonstrates strong skill variety across acro, dance, turns, and connections. Leaps and splits should show competitive amplitude — deduct progressively for visibly insufficient splits. Casts on bars should reach the horizontal plane — deduct progressively for lower casts, with larger deductions for significantly low casts. At State Championship level, rhythm deductions are applied aggressively, form errors are deducted without leniency, and flat or unexpressive performance receives artistry deductions.
 
 XCEL GOLD FLOOR SKILL COUNT: A Gold routine has 1-2 tumbling passes. If you identify more than 2, recount. A tumbling pass ends when the gymnast's feet return to the floor and she takes a step or pause.
-SR VERIFICATION: Only credit a special requirement as MET if you clearly see the skill performed. If absent from the video, mark NOT_MET regardless of level expectations.
+SR VERIFICATION: Only credit a requirement as MET if you clearly see the skill performed. If absent from the video, mark NOT_MET regardless of level expectations.
 `,
   XCEL_PLATINUM: `
 ## LEVEL: XCEL PLATINUM (WAG)
 Start Value: 10.0
-Special Requirements:
-  FLOOR: Two acro passes (one with salto), dance passage (split 120°+), full turn.
-  BARS:  Two kips, one B-value element, two 360° circles, bar change, dismount from HB.
-  BEAM:  Two acro elements (one series with flight), dance passage, full turn, dismount.
-Amplitude:
-  FLOOR: Split leap minimum 120°.
-  BARS:  Cast must be ABOVE HORIZONTAL (>180°/above the bar).
-         At horizontal: -0.10. Below horizontal: -0.30 + SR not awarded.
-B-Value Requirement (BARS): Must identify at least 1 B-skill. If absent: -0.50 SV reduction.
-SR VERIFICATION: Only credit a special requirement as MET if you clearly see the skill performed. If absent from the video, mark NOT_MET regardless of level expectations.
+Platinum expects meaningfully higher difficulty and amplitude than Gold. Routines should include acro passes with salto elements, strong split amplitude, and at least one element of intermediate difficulty on bars. Casts on bars should reach above the horizontal plane — deduct progressively for lower casts, with significant deductions if barely reaching horizontal. If no element of intermediate difficulty is present on bars, apply a significant start value reduction.
+SR VERIFICATION: Only credit a requirement as MET if you clearly see the skill performed. If absent from the video, mark NOT_MET regardless of level expectations.
 `,
   XCEL_DIAMOND: `
 ## LEVEL: XCEL DIAMOND (WAG)
 Start Value: 10.0
-Special Requirements:
-  FLOOR: Two acro passes (one with double or D+), dance passage (split 120°+), full turn.
-  BARS:  Two kips, two B-value elements, two 360° circles, bar change, dismount.
-  BEAM:  Acro series (two flight elements connected), dance passage, full turn, dismount.
-Amplitude:
-  BARS: Cast must be clearly ABOVE horizontal. Full handstand preferred.
-        At horizontal: -0.30. Below: SR denied.
-Artistry is heavily weighted at Diamond. Deduct maximum for any flat performance.
-SR VERIFICATION: Only credit a special requirement as MET if you clearly see the skill performed. If absent from the video, mark NOT_MET regardless of level expectations.
+Diamond is the highest Xcel level. Expect advanced difficulty: connected acro series with flight, multiple elements of intermediate-to-advanced difficulty on bars, and strong amplitude throughout. Casts should approach or reach handstand — deduct significantly for casts at or below horizontal. Artistry is heavily weighted at Diamond. Deduct aggressively for flat or unexpressive performance.
+SR VERIFICATION: Only credit a requirement as MET if you clearly see the skill performed. If absent from the video, mark NOT_MET regardless of level expectations.
 `,
 
   // ── JO Compulsory ──
@@ -201,68 +161,55 @@ SR VERIFICATION: Only credit a special requirement as MET if you clearly see the
 Compulsory: Every skill is pre-defined. No variation.
 Start Value: 10.0
 Deduct for ANY deviation from the compulsory choreography pattern.
-SR VERIFICATION: Only credit a special requirement as MET if you clearly see the skill performed. If absent from the video, mark NOT_MET regardless of level expectations.
+SR VERIFICATION: Only credit a requirement as MET if you clearly see the skill performed. If absent from the video, mark NOT_MET regardless of level expectations.
 `,
   JO_LEVEL_4: `
 ## LEVEL: JO LEVEL 4 (Compulsory WAG)
 Compulsory: Every skill is pre-defined.
 Start Value: 10.0
-Same structure as Level 3. Amplitude requirements begin (60°+ leaps).
-SR VERIFICATION: Only credit a special requirement as MET if you clearly see the skill performed. If absent from the video, mark NOT_MET regardless of level expectations.
+Same structure as Level 3. Amplitude expectations begin — leaps should show developing split amplitude.
+SR VERIFICATION: Only credit a requirement as MET if you clearly see the skill performed. If absent from the video, mark NOT_MET regardless of level expectations.
 `,
   JO_LEVEL_5: `
 ## LEVEL: JO LEVEL 5 (Optional WAG)
 Start Value: 10.0
-BARS: Cast to horizontal required. Below: -0.10 to -0.50.
-FLOOR: Split 120°+ required. Salto required in acro passes.
-SR VERIFICATION: Only credit a special requirement as MET if you clearly see the skill performed. If absent from the video, mark NOT_MET regardless of level expectations.
+At this level, cast amplitude and flight element difficulty are expected to exceed the previous level. Casts on bars should reach the horizontal plane — deduct progressively for lower casts. Split amplitude should be competitive for this tier. Salto elements are expected in acro passes.
+SR VERIFICATION: Only credit a requirement as MET if you clearly see the skill performed. If absent from the video, mark NOT_MET regardless of level expectations.
 `,
 
   // ── JO Optional ──
   JO_LEVEL_6: `
 ## LEVEL: JO LEVEL 6 (Optional WAG)
 Start Value: 10.0
-BARS: Cast to horizontal. B-value element required.
-FLOOR: Two different acro passes, salto required in both.
-SR VERIFICATION: Only credit a special requirement as MET if you clearly see the skill performed. If absent from the video, mark NOT_MET regardless of level expectations.
+At this level, bars should include casts to horizontal and at least one element of intermediate difficulty. Floor should include two distinct acro passes, each with a salto. Amplitude and connection quality should clearly exceed Level 5.
+SR VERIFICATION: Only credit a requirement as MET if you clearly see the skill performed. If absent from the video, mark NOT_MET regardless of level expectations.
 `,
   JO_LEVEL_7: `
 ## LEVEL: JO LEVEL 7 (Optional WAG)
 Start Value: 10.0
-BARS: Cast ABOVE horizontal. B-value element minimum.
-FLOOR: One pass must include a salto with a full twist or higher.
-SR VERIFICATION: Only credit a special requirement as MET if you clearly see the skill performed. If absent from the video, mark NOT_MET regardless of level expectations.
+At this level, casts on bars should clearly exceed horizontal (above the bar plane). At least one element of intermediate difficulty is expected on bars. Floor should include a salto with twist or higher difficulty in at least one pass. Amplitude expectations are meaningfully stricter than Level 6.
+SR VERIFICATION: Only credit a requirement as MET if you clearly see the skill performed. If absent from the video, mark NOT_MET regardless of level expectations.
 `,
   JO_LEVEL_8: `
 ## LEVEL: JO LEVEL 8 (Optional WAG)
 Start Value: 10.0
-BARS: Casts to handstand expected. Amplitude deductions aggressive.
-FLOOR: Salto difficulty (C-level minimum) expected.
-SR VERIFICATION: Only credit a special requirement as MET if you clearly see the skill performed. If absent from the video, mark NOT_MET regardless of level expectations.
+At this level, casts on bars should approach or reach handstand — amplitude deductions are applied aggressively. Salto difficulty on floor should be at an intermediate-to-advanced level. Overall execution, amplitude, and artistry expectations are significantly higher than Level 7.
+SR VERIFICATION: Only credit a requirement as MET if you clearly see the skill performed. If absent from the video, mark NOT_MET regardless of level expectations.
 `,
   JO_LEVEL_9: `
 ## LEVEL: JO LEVEL 9 (Optional WAG)
-D-score + E-score system. Start Value is SUM of difficulty + connection bonuses.
-BARS: Casts to handstand required. Release moves or pirouettes expected.
-FLOOR: C/D-level saltos expected. Artistry heavily weighted.
-SR VERIFICATION: Only credit a special requirement as MET if you clearly see the skill performed. If absent from the video, mark NOT_MET regardless of level expectations.
+At this level, scoring uses a cumulative difficulty model: start value is the sum of difficulty contributions plus connection credit. Casts on bars should reach handstand. Release moves or pirouettes are expected. Floor should include advanced salto elements. Artistry is heavily weighted.
+SR VERIFICATION: Only credit a requirement as MET if you clearly see the skill performed. If absent from the video, mark NOT_MET regardless of level expectations.
 `,
   JO_LEVEL_10: `
 ## LEVEL: JO LEVEL 10 / Pre-Elite (Optional WAG)
-Full FIG Code of Points logic.
-D-score: Sum of 8 highest difficulty elements + connection bonuses.
-E-score: 10.0 - execution deductions.
-BARS: Full pirouettes, release moves (C+) expected.
-FLOOR: D-level saltos, complex dance, full choreographic expression required.
-SR VERIFICATION: Only credit a special requirement as MET if you clearly see the skill performed. If absent from the video, mark NOT_MET regardless of level expectations.
+At the highest competitive levels, scoring uses a two-component model: a difficulty component (based on the hardest elements performed plus connection credit) and an execution component (deductions from a 10.0 base). Bars should include advanced release moves, pirouettes, and handstand-level casts. Floor should include advanced salto elements, complex dance, and full choreographic expression. Additional penalties may apply for time, boundary, or conduct violations.
+SR VERIFICATION: Only credit a requirement as MET if you clearly see the skill performed. If absent from the video, mark NOT_MET regardless of level expectations.
 `,
   ELITE: `
-## LEVEL: ELITE / FIG International (WAG/MAG)
-Full FIG Code of Points. D-score + E-score + Neutral Deductions.
-D-score: 8 highest difficulty values + connection bonus + composition requirements.
-E-score: 10.0 - execution deductions (applied by two judge panels, averaged).
-Zero leniency. Artistry judged at highest professional standard.
-SR VERIFICATION: Only credit a special requirement as MET if you clearly see the skill performed. If absent from the video, mark NOT_MET regardless of level expectations.
+## LEVEL: ELITE / International (WAG/MAG)
+At the elite level, scoring uses a two-component model: a difficulty component (based on the hardest elements performed plus connection credit and composition) and an execution component (deductions from a 10.0 base, assessed by multiple judges and averaged). Additional neutral penalties may apply. Zero leniency. Artistry judged at the highest professional standard.
+SR VERIFICATION: Only credit a requirement as MET if you clearly see the skill performed. If absent from the video, mark NOT_MET regardless of level expectations.
 `,
 };
 
@@ -271,64 +218,60 @@ SR VERIFICATION: Only credit a special requirement as MET if you clearly see the
 const EVENT_RULES = {
   FLOOR: `
 ## FLOOR SKILL COUNT RULE — READ BEFORE SCORING
-A Level 5-7 floor routine contains exactly 2-3 tumbling passes. Before scoring anything, count every tumbling pass from start to finish of the routine. If you count more than 3 passes, you have miscounted — go back and recount from the beginning. Do not assign any deductions until your pass count is confirmed at 2 or 3. A tumbling pass ends when the gymnast's feet return to the floor and she takes a step or pause. Connecting skills within one pass count as one pass, not multiple.
+A typical optional floor routine contains exactly 2-3 tumbling passes. Before scoring anything, count every tumbling pass from start to finish of the routine. If you count more than 3 passes, you have miscounted — go back and recount from the beginning. Do not assign any deductions until your pass count is confirmed at 2 or 3. A tumbling pass ends when the gymnast's feet return to the floor and she takes a step or pause. Connecting skills within one pass count as one pass, not multiple.
 
 ## EVENT SPECIFICS: FLOOR EXERCISE
-- Monitor "Inter-Knee Distance" during all tumbling. Gap > 3 inches: -0.10.
-- Monitor heel-drop timing during full turns. Early drop before 360°: -0.10 completion.
-- Out-of-bounds: -0.10 per foot touching line/out.
-- Landing zone: deep squat = -0.10 to -0.20; chest-to-knees = -0.20.
-- Artistry: chin down >40% of non-tumbling time = -0.10.
-- Music: if vocals present, choreography must reflect mood. Mismatch: -0.05 musicality.
+- Monitor "Inter-Knee Distance" during all tumbling. Visible knee separation warrants a small deduction.
+- Monitor heel-drop timing during full turns. Early heel drop before completing the turn warrants a small deduction.
+- Apply a small deduction per occurrence when the gymnast steps on or beyond the floor boundary.
+- Landing zone: deduct progressively for deep squat landings (small-to-moderate), and for chest dropping to knees (moderate).
+- Artistry: chin down for a significant portion of non-tumbling time warrants a small artistry deduction.
+- Music: if vocals present, choreography must reflect mood. Noticeable mismatch warrants a small musicality deduction.
 `,
   BARS: `
 ## EVENT SPECIFICS: UNEVEN BARS
 - Cast angle measured hip-to-bar vs. horizontal.
-- Extra swing / "pump" before skill: -0.30.
-- Grip adjustment / re-grip without skill: -0.10 rhythm.
-- Jump from LB to HB: Piked hips or bent knees = -0.10 to -0.20.
-- Long hang kip: hesitation at top before cast = -0.10.
-- Flyaway: knees apart in tuck = -0.10; chest down on landing = -0.10 to -0.20.
-- Compounding rule: low cast -> automatic -0.10 rhythm on subsequent circle.
+- Penalize extraneous swings or rhythm breaks proportionally — an extra pump before a skill warrants a moderate deduction, a grip adjustment without a skill warrants a small rhythm deduction.
+- Jump from LB to HB: piked hips or bent knees warrant small-to-moderate deductions.
+- Long hang kip: hesitation at top before cast warrants a small deduction.
+- Flyaway: knees apart in tuck warrants a small deduction; chest down on landing warrants a small-to-moderate deduction.
+- Compounding rhythm: a low cast leading into the next element affects rhythm and should be noted.
 `,
   BEAM: `
 ## EVENT SPECIFICS: BALANCE BEAM
-- Balance check (arms move from body): -0.10.
-- Balance check (large arm swing): -0.20.
-- Grasp beam to avoid fall: -0.50.
-- Fall from beam: -0.50.
-- Extra step / hop on landing: -0.10 per step.
-- Pause/freeze (not choreographic): -0.10.
+- Deduct progressively for balance wobbles: small arm adjustment (small deduction) < large arm save (moderate deduction) < grasping beam to avoid fall (large deduction) < falling from beam (largest single deduction).
+- Extra step or hop on landing: small deduction per step.
+- Pause or freeze that is not choreographic: small deduction.
 `,
   VAULT: `
 ## EVENT SPECIFICS: VAULT
 - Pre-flight: tight hollow or arch depending on vault type.
 - Block: hands must leave table before hips pass vertical.
-- Post-flight height: low salto = -0.10 to -0.20.
-- Landing: step = -0.10; hop = -0.10; fall = -0.50.
+- Post-flight height: low salto warrants a small-to-moderate deduction.
+- Landing: deduct progressively — small step (small) < hop (small) < large step (moderate) < fall (largest single deduction).
 `,
   HIGH_BAR: `
 ## EVENT SPECIFICS: HIGH BAR (MAG)
-- Giant swings must reach vertical. Short: -0.10 per swing.
+- Giant swings must reach vertical. Short swings warrant a small deduction each.
 - Release and regrasp: form in flight strictly judged.
-- Pirouettes must reach handstand. Short: -0.10 to -0.20.
+- Pirouettes must reach handstand. Short pirouettes warrant small-to-moderate deductions.
 `,
   PARALLEL_BARS: `
 ## EVENT SPECIFICS: PARALLEL BARS (MAG)
-- Swings: body must be straight and tight. Any pike: -0.10.
-- Press to handstand must reach full vertical. Short: -0.10 to -0.30.
+- Swings: body must be straight and tight. Any pike warrants a small deduction.
+- Press to handstand must reach full vertical. Short presses warrant small-to-moderate deductions.
 `,
   RINGS: `
 ## EVENT SPECIFICS: RINGS (MAG)
 - Rings must be still before strength elements.
-- Iron cross: arms at 90° horizontal. Deviation: -0.10.
-- Swinging rings: -0.10 per swing.
+- Strength holds: arms should be at the correct horizontal plane. Deviation warrants a small deduction.
+- Swinging rings warrant a small deduction per swing.
 `,
   POMMEL: `
 ## EVENT SPECIFICS: POMMEL HORSE (MAG)
-- Leg separation (scissors): -0.10 per occurrence.
-- Flairs must be circular and wide. Collapsed circle: -0.10.
-- Fall: -0.50.
+- Leg separation warrants a small deduction per occurrence.
+- Flairs must be circular and wide. Collapsed circle warrants a small deduction.
+- Falling from the apparatus warrants the largest single deduction.
 `,
 };
 
@@ -376,7 +319,7 @@ function getEventKey(event) {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 /**
- * Build the Pass 1 prompt — the certified USAG judge watches the video.
+ * Build the Pass 1 prompt — the expert execution judge watches the video.
  *
  * @param {Object} profile - { name, gender, level, levelCategory }
  * @param {string} event - Event name or "Auto-detect"
@@ -393,7 +336,7 @@ export function buildPass1Prompt(profile, event) {
   // Build system instruction
   const parts = [CORE_JUDGE_INSTRUCTION];
 
-  parts.push(`\n## GENDER: ${gender} (${genderFull}). Apply ${gender} Code of Points.\n`);
+  parts.push(`\n## GENDER: ${gender} (${genderFull}). Apply ${gender} scoring framework.\n`);
 
   const levelRules = LEVEL_RULES[levelKey];
   if (levelRules) parts.push(levelRules);
@@ -405,20 +348,20 @@ export function buildPass1Prompt(profile, event) {
   // Calibration block
   parts.push(`
 ## CALIBRATION — CRITICAL (THIS OVERRIDES ALL OTHER DEDUCTION LOGIC)
-- FINAL SCORE is your holistic State Championship estimate — what a real panel of judges at a State Championship would award this routine. It is your professional judgment call, NOT a mechanical sum of all micro-deductions.
-- State Championship scores typically range 8.4-9.3 for completed routines (no falls).
+- FINAL SCORE is your holistic competitive estimate — what a real panel of judges at a championship-level meet would award this routine. It is your professional judgment call, NOT a mechanical sum of all micro-deductions.
+- Calibrate your score to reflect realistic competitive expectations. A completed routine without falls at a regional or state-level competition would typically score in the upper range. If your calculated score seems unusually low for a completed routine, reassess whether you've been too aggressive with minor deductions.
 - If your final_score is below 8.0 for a completed routine with no falls: you are OVER-DEDUCTING. Recalibrate by removing the least certain deductions.
 - total_execution_deductions and total_artistry_deductions should APPROXIMATE (10.0 - final_score), but the final_score takes priority as the holistic estimate.
-- ARTISTRY IS NEVER ZERO: Even on bars, quality of movement, rhythm, and body tension contribute 0.10-0.30 in artistry deductions. Always assess artistry.
-- Deduction values: 0.00, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.50 ONLY.
+- ARTISTRY IS NEVER ZERO: Even on bars, quality of movement, rhythm, and body tension contribute to artistry deductions. Always assess artistry.
+- Use graduated deduction values proportional to fault severity. Minor form breaks receive small deductions, moderate technique errors receive medium deductions, and major errors (loss of apparatus contact) receive the largest single deduction. Keep individual deductions reasonable and proportional.
 - If you find fewer than 5 deductions total, you are MISSING deductions. Re-watch transitions and landings.
 - If you find more than 20 deductions total, you are likely over-counting — merge related micro-faults on the same skill.
-- Apply TPM/KTM deductions only when the form break is clearly visible. Most skills will have at least one micro-deduction (0.05) — do not skip deductions to inflate the score.
+- Apply TPM/KTM deductions only when the form break is clearly visible. Most skills will have at least one minor form deduction — do not skip deductions to inflate the score.
 - PER-SKILL DEDUCTION RULES:
   * Each skill should have 1-4 deductions maximum. Do NOT list more than 4 deductions for any single skill.
-  * Per-skill total deductions should be 0.00-0.30 for most skills. Only a fall = 0.50.
+  * Per-skill total deductions should be small-to-moderate for most skills. Only a fall warrants the largest single deduction.
   * Each deduction must be for a DISTINCT fault. "bent knees" is ONE deduction per skill, not one per frame.
-  * Vault is ONE skill — total vault deductions should be 0.30-0.80 for a completed vault without falls.
+  * Vault is ONE skill — total vault deductions should be moderate for a completed vault without falls.
 
 ## SKILL COUNT CHECK
 - BARS: A typical routine has 7-10 skills. If you have more than 12, you are splitting skills that should be combined.
@@ -432,8 +375,8 @@ export function buildPass1Prompt(profile, event) {
 - BEAM SR validation: If you see a back walkover, back handspring, cartwheel, or any acro element in the routine, the "acro element" SR is MET. If you see a leap, jump, or sissonne, the "dance element" SR is MET. If you see a dismount, the "dismount" SR is MET.
 - FLOOR SR validation: If you see any tumbling pass with a salto (tuck, layout, full), the "salto" SR is MET. If you see two distinct tumbling passes, the "two acro passes" SR is MET.
 - BARS SR validation: If you see a kip, the "kip" SR is MET. If you see a flyaway/dismount, the "dismount" SR is MET.
-- A completed routine (gymnast performs start to finish without leaving the apparatus) should have 0 SR penalties in most cases. SR penalties of 0.50+ on a completed routine are almost always wrong.
-- penalty field: Use 0 for MET requirements. Use 0.50 ONLY for genuinely missing requirements.
+- A completed routine (gymnast performs start to finish without leaving the apparatus) should have 0 SR penalties in most cases. Large SR penalties on a completed routine are almost always wrong.
+- penalty field: Use 0 for MET requirements. Use a significant penalty ONLY for genuinely missing requirements.
 
 ## SECOND-PASS CHECK
 After initial assessment, re-watch focusing ONLY on:
@@ -447,8 +390,8 @@ Add any missed deductions to your final JSON.
 ## FINAL SANITY CHECK
 Before outputting, verify:
 - total_execution_deductions + total_artistry_deductions should approximately equal (10.0 - final_score). If they diverge by more than 0.30, adjust the deduction totals to match your final_score.
-- Your final_score is between 8.0 and 9.5 for a completed routine with no falls.
-- If it is not, adjust your deductions to match what a real judge panel would award.
+- Your final_score should be realistic for a completed routine with no falls at this competitive level.
+- If it seems unrealistically low or high, adjust your deductions to match what a real judge panel would award.
 `);
 
   // ── Section IV: Level Progression Analysis (runtime injection) ──────
@@ -539,7 +482,7 @@ export function buildPass2Prompt(pass1Result, profile, event) {
   const athleteName = profile.name || "the gymnast";
 
   const system = `You are now acting as a team of specialists analyzing a gymnastics routine for a young athlete and their parent:
-- USAG judge (you have the deduction list from the initial judging pass)
+- Expert gymnastics execution judge (you have the deduction list from the initial judging pass)
 - Sports biomechanics expert (joint angles, body alignment, efficiency)
 - Physical therapist (injury risk identification)
 - Strength and conditioning coach (corrective drills)
