@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { generateMastermindPlan } from '../../engine/mastermind';
+import { canSeeMastermind } from '../../engine/tierGates';
+import LockedFeature from '../LockedFeature';
+import MastermindPreview from './MastermindPreview';
 
 const T = {
   bg: '#0d1117', card: '#161b22', cardInner: '#1c2230',
@@ -55,29 +58,28 @@ export default function MastermindScreen({ athleteProfile, recentAnalyses, upcom
     try { localStorage.setItem('strive_conditioning_done', JSON.stringify(next)); } catch {}
   };
 
-  // Elite gate
-  if (tier !== 'elite') {
+  // Tier gate — competitive gets preview with functional Goals, free gets full lock
+  if (!canSeeMastermind(tier)) {
+    if (tier === 'competitive') {
+      return (
+        <MastermindPreview
+          tier={tier}
+          athleteProfile={athleteProfile}
+          onUpgrade={() => {
+            window.dispatchEvent(
+              new CustomEvent('strive:showUpgrade',
+                { detail: { feature: 'mastermind', tier } })
+            );
+            if (onUpgrade) onUpgrade();
+          }}
+        />
+      );
+    }
+    // free tier: full lock
     return (
-      <div style={{ minHeight: '100vh', background: T.bg, padding: '24px 16px' }}>
-        <div style={{ maxWidth: 430, margin: '0 auto', textAlign: 'center' }}>
-          {onBack && <button onClick={onBack} style={{ background: 'none', border: 'none', color: T.textSec, fontSize: 13, fontFamily: T.sans, cursor: 'pointer', marginBottom: 16 }}>&larr; Back</button>}
-          <div style={{ fontSize: 22, fontWeight: 700, color: T.text, fontFamily: T.sans, marginBottom: 8 }}>Training Program</div>
-          <div style={{ fontSize: 14, color: T.textSec, fontFamily: T.sans, marginBottom: 24 }}>6 intelligent panels that update after every analysis.</div>
-          {PANELS.map(p => (
-            <div key={p.id} style={{ padding: '14px 16px', borderRadius: 12, background: T.card, border: `1px solid ${T.border}`, marginBottom: 8, filter: 'blur(3px)', pointerEvents: 'none', display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ fontSize: 18 }}>{p.icon}</span>
-              <span style={{ fontSize: 14, fontWeight: 600, color: T.text, fontFamily: T.sans }}>{p.label}</span>
-            </div>
-          ))}
-          <button onClick={onUpgrade} style={{
-            marginTop: 16, width: '100%', padding: '14px 0', borderRadius: 12,
-            background: `linear-gradient(135deg, ${T.gold}, #ffc040)`, color: '#000',
-            border: 'none', fontSize: 15, fontWeight: 700, fontFamily: T.sans, cursor: 'pointer', minHeight: 48,
-          }}>
-            Unlock with Elite — $19.99/mo
-          </button>
-        </div>
-      </div>
+      <LockedFeature feature="mastermind" tier={tier}>
+        <div style={{ height: 300 }} />
+      </LockedFeature>
     );
   }
 
