@@ -552,55 +552,109 @@ function parseJSON(raw, label) {
   const result = extractJSON(raw);
   if (!result) {
     log.error("parse", `[${label}] JSON parse failed. Raw (first 500 chars): ${(raw || "").substring(0, 500)}`);
-    throw new Error(`${label}: Could not parse JSON response — raw preview: ${(raw || "").substring(0, 200)}`);
+    throw new Error('ANALYSIS_PARSE_FAILED');
   }
   return result;
 }
 
+/**
+ * Hardened JSON extractor — handles all Gemini response formats:
+ *   1. Raw JSON object
+ *   2. Wrapped in ```json ... ``` markdown fences
+ *   3. Wrapped in ``` ... ``` fences (no language tag)
+ *   4. JSON embedded in prose text
+ *   5. Truncated response — extract what's there
+ *   6. Multiple JSON objects — take the largest
+ */
 function extractJSON(raw) {
-  if (!raw || typeof raw !== "string") return null;
+  if (!raw || typeof raw !== 'string') return null;
 
-  console.log("[pipeline] raw response preview:", raw.substring(0, 300));
-
-  // Strip markdown code fences: ```json ... ``` or ``` ... ```
-  const fenceMatch = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
-  if (fenceMatch) {
-    try {
-      const parsed = JSON.parse(fenceMatch[1].trim());
-      console.log("[pipeline] parsed via fence strip");
-      return parsed;
-    } catch {}
-  }
-
-  // Try raw parse (clean response — ideal case)
+  // ── Pass 1: Direct parse ─────────────────────────────
   try {
-    const parsed = JSON.parse(raw.trim());
-    console.log("[pipeline] parsed raw JSON directly");
-    return parsed;
-  } catch {}
+    const trimmed = raw.trim();
+    if (trimmed.startsWith('{')) {
+      return JSON.parse(trimmed);
+    }
+  } catch { /* continue */ }
 
-  // Extract from first { to last } (partial response)
-  const firstBrace = raw.indexOf("{");
-  const lastBrace = raw.lastIndexOf("}");
-  if (firstBrace !== -1 && lastBrace > firstBrace) {
-    try {
-      const parsed = JSON.parse(raw.slice(firstBrace, lastBrace + 1));
-      console.log("[pipeline] parsed via brace extraction");
-      return parsed;
-    } catch {}
-  }
+  // ── Pass 2: Strip markdown fences ────────────────────
+  try {
+    // Handles ```json ... ``` and ``` ... ```
+    const fenceMatch = raw.match(
+      /```(?:json)?\s*\n?([\s\S]*?)\n?```/
+    );
+    if (fenceMatch?.[1]) {
+      return JSON.parse(fenceMatch[1].trim());
+    }
+  } catch { /* continue */ }
 
-  // Extract from first [ to last ] (array response)
-  const firstBracket = raw.indexOf("[");
-  const lastBracket = raw.lastIndexOf("]");
-  if (firstBracket !== -1 && lastBracket > firstBracket) {
-    try {
-      const parsed = JSON.parse(raw.slice(firstBracket, lastBracket + 1));
-      console.log("[pipeline] parsed via bracket extraction");
-      return parsed;
-    } catch {}
-  }
+  // ── Pass 3: Find first { ... } block ─────────────────
+  try {
+    const firstBrace = raw.indexOf('{');
+    const lastBrace = raw.lastIndexOf('}');
+    if (firstBrace !== -1 && lastBrace > firstBrace) {
+      const candidate = raw.slice(firstBrace, lastBrace + 1);
+      return JSON.parse(candidate);
+    }
+  } catch { /* continue */ }
 
-  console.error("[pipeline] extractJSON: all parse attempts failed");
+  // ── Pass 4: Largest JSON block in response ────────────
+  // Gemini sometimes wraps multiple blocks — find the biggest
+  try {
+    const blocks = [];
+    let depth = 0;
+    let start = -1;
+    for (let i = 0; i < raw.length; i++) {
+      if (raw[i] === '{') {
+        if (depth === 0) start = i;
+        depth++;
+      } else if (raw[i] === '}') {
+        depth--;
+        if (depth === 0 && start !== -1) {
+          blocks.push(raw.slice(start, i + 1));
+          start = -1;
+        }
+      }
+    }
+    // Sort by length — largest block is most likely the full response
+    blocks.sort((a, b) => b.length - a.length);
+    for (const block of blocks) {
+      try { return JSON.parse(block); } catch { /* try next */ }
+    }
+  } catch { /* continue */ }
+
+  // ── Pass 5: Truncated JSON — attempt repair ───────────
+  // If response was cut off, try closing open structures
+  try {
+    const firstBrace = raw.indexOf('{');
+    if (firstBrace !== -1) {
+      let partial = raw.slice(firstBrace);
+      // Count unclosed braces and brackets
+      let braces = 0, brackets = 0;
+      let inString = false, escape = false;
+      for (const ch of partial) {
+        if (escape) { escape = false; continue; }
+        if (ch === '\\') { escape = true; continue; }
+        if (ch === '"') { inString = !inString; continue; }
+        if (inString) continue;
+        if (ch === '{') braces++;
+        if (ch === '}') braces--;
+        if (ch === '[') brackets++;
+        if (ch === ']') brackets--;
+      }
+      // Close open structures
+      // Remove trailing incomplete key-value pair
+      partial = partial.replace(/,\s*"[^"]*"\s*:\s*[^,}\]]*$/, '');
+      partial = partial.replace(/,\s*"[^"]*"\s*$/, '');
+      // Close brackets and braces
+      partial += ']'.repeat(Math.max(0, brackets));
+      partial += '}'.repeat(Math.max(0, braces));
+      return JSON.parse(partial);
+    }
+  } catch { /* all passes failed */ }
+
+  // ── All passes failed ─────────────────────────────────
+  console.error('[extractJSON] All 5 passes failed. Raw preview:',
+    raw.slice(0, 200));
   return null;
 }

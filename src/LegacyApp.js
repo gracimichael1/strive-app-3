@@ -5420,7 +5420,15 @@ IMPORTANT: The deduction_log must contain ONE entry per distinct skill or transi
       } catch (err) {
         console.error("Analysis pipeline failed:", err);
         setProgress(0);
-        setStatus(`Analysis didn't complete — ${err.message || 'please try again.'}`);
+        if (err.message === 'ANALYSIS_PARSE_FAILED') {
+          setStatus('Analysis completed but could not be read. Please try again — this is usually a temporary issue.');
+        } else {
+          // Sanitize error message — never show raw JSON/technical details to user
+          const safeMsg = (err.message || '').length > 80
+            ? 'please try again.'
+            : (err.message || 'please try again.');
+          setStatus(`Analysis didn't complete — ${safeMsg}`);
+        }
         // Do NOT show demo data as if it were a real result
       }
     })();
