@@ -26,6 +26,7 @@ import { buildPass1Prompt, buildPass2Prompt, PASS1_CONFIG, PASS2_CONFIG, PROMPT_
 import { validatePipelineResult, snapToUSAG, gradeFromQuality, parseTimestamp, formatTimestamp, emptyBiomechanics, emptyInjuryRisk, emptyCorrectiveDrill } from "./schema";
 import { computeScoreFromScorecard } from "./scoring";
 import { transformForUI } from "./transform";
+import { compressVideo, needsCompression, formatMB } from "./videoCompressor";
 
 // ─── Structured logging ─────────────────────────────────────────────────────
 
@@ -112,6 +113,50 @@ export async function runAnalysisPipeline({ videoFile, profile, event, onProgres
   // COMPLIANCE: localStorage cache removed (contained PII via athlete_name).
   // Every analysis runs fresh through the pipeline.
 
+  // ── Compress video if needed ──────────────────────────────────────────────
+  let fileToUpload = videoFile;
+  let compressionStats = null;
+
+  if (needsCompression(videoFile)) {
+    onProgress({ stage: "compress", pct: 5, label: "Optimizing video..." });
+    try {
+      const result = await compressVideo(videoFile, (pct) => {
+        // Compression gets 0-10% of the overall progress bar
+        onProgress({ stage: "compress", pct: Math.round(pct * 0.10), label: "Optimizing video..." });
+      });
+
+      fileToUpload = new File(
+        [result.blob],
+        `compressed_${videoFile.name.replace(/\.[^.]+$/, '')}.${result.mimeType.includes('mp4') ? 'mp4' : 'webm'}`,
+        { type: result.mimeType }
+      );
+
+      compressionStats = result;
+      log.info("compress", `${result.originalMB.toFixed(1)}MB → ${result.compressedMB.toFixed(1)}MB (${result.reductionPct}% reduction)`);
+
+      onProgress({
+        stage: "compress",
+        pct: 10,
+        label: `Optimized — ${formatMB(videoFile.size)} → ${formatMB(result.blob.size)}`,
+      });
+
+      // Brief pause to show the user the result
+      await delay(1200);
+
+    } catch (compressionError) {
+      if (compressionError.message === 'IOS_TOO_LARGE') {
+        throw new Error(
+          'This video is too large for quick analysis on iPhone. ' +
+          'Please trim it to just the routine (under 2 minutes) ' +
+          'and try again. Most routines are 60–90 seconds.'
+        );
+      }
+      // Compression failed — fall back to original file silently
+      log.warn("compress", `Compression failed, using original: ${compressionError.message}`);
+      fileToUpload = videoFile;
+    }
+  }
+
   // ── Verify server has API key ───────────────────────────────────────────
   try {
     await geminiProxy({ action: "pollFile", fileName: "files/__healthcheck__" });
@@ -122,9 +167,9 @@ export async function runAnalysisPipeline({ videoFile, profile, event, onProgres
   }
 
   // ── Upload video ──────────────────────────────────────────────────────────
-  onProgress({ stage: "upload", pct: 10, label: "Uploading video..." });
-  const fileRef = await uploadVideo(videoFile, (pct) => {
-    onProgress({ stage: "upload", pct: 10 + Math.floor(pct * 0.25), label: "Uploading video..." });
+  onProgress({ stage: "upload", pct: 12, label: "Uploading video..." });
+  const fileRef = await uploadVideo(fileToUpload, (pct) => {
+    onProgress({ stage: "upload", pct: 12 + Math.floor(pct * 0.23), label: "Uploading video..." });
   });
 
   // ══════════════════════════════════════════════════════════════════════════
