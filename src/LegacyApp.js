@@ -15,6 +15,8 @@ import LegalDisclaimer from "./components/legal/LegalDisclaimer";
 import PrivacyNotice from "./components/legal/PrivacyNotice";
 import { runAnalysisPipeline } from "./engine/pipeline";
 import SkillCard from "./components/ui/SkillCard";
+import { canSeeWhatIf, canSeeSessionDiagnostics, getUpgradeCTA } from './engine/tierGates';
+import LockedFeature from './components/LockedFeature';
 
 // ─── BUILD INFO ──
 const BUILD_VERSION = "1.0.0";
@@ -6895,8 +6897,9 @@ const ResultsScreen = React.memo(function ResultsScreen({ result, profile, histo
 
   const hasVideo = !!(result.videoUrl || videoUrl);
   
-  // ── Tier gating: check localStorage for pro status ──
-  const isPro = (() => { try { return localStorage.getItem("strive-tier") === "competitive"; } catch { return false; } })();
+  // ── Tier gating: check localStorage for tier status ──
+  const tier = (() => { try { return localStorage.getItem("strive-tier") || "free"; } catch { return "free"; } })();
+  const isPro = tier === "competitive" || tier === "elite";
   
   const tabs = [
     { id: "overview",   label: "Overview" },
@@ -7514,9 +7517,13 @@ const ResultsScreen = React.memo(function ResultsScreen({ result, profile, histo
         </StriveErrorBoundary>
       )}
 
-      {/* ─── WHAT-IF SIMULATOR TAB (Pro only) ─── */}
-      {activeTab === "whatif" && isPro && (
-        <WhatIfSimulator result={result} />
+      {/* ─── WHAT-IF SIMULATOR TAB (Elite only) ─── */}
+      {activeTab === "whatif" && (
+        canSeeWhatIf(tier)
+          ? <WhatIfSimulator result={result} />
+          : <LockedFeature feature="whatIf" tier={tier}>
+              <div style={{height:120, background:'rgba(255,255,255,.03)', borderRadius:8}}/>
+            </LockedFeature>
       )}
 
       {/* ─── BIOMECHANICS TAB (Pro only) ─── */}
@@ -7529,9 +7536,13 @@ const ResultsScreen = React.memo(function ResultsScreen({ result, profile, histo
         <TrainingProgram result={result} profile={profile} history={history} />
       )}
 
-      {/* ─── DIAGNOSTICS TAB (Pro only) ─── */}
-      {activeTab === "diagnostics" && isPro && (
-        <DiagnosticsDashboard result={result} />
+      {/* ─── DIAGNOSTICS TAB (Elite only) ─── */}
+      {activeTab === "diagnostics" && (
+        canSeeSessionDiagnostics(tier)
+          ? <DiagnosticsDashboard result={result} />
+          : <LockedFeature feature="diagnostics" tier={tier}>
+              <div style={{height:80, background:'rgba(255,255,255,.03)', borderRadius:8}}/>
+            </LockedFeature>
       )}
 
       {/* Drills CTA */}
