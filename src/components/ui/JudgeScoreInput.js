@@ -11,7 +11,7 @@ const COLORS = {
   border: 'rgba(232, 150, 42, 0.12)',
 };
 
-const STRIVE_TOKEN = 'strive-2026-launch';
+const STRIVE_TOKEN = process.env.REACT_APP_STRIVE_TOKEN || 'strive-2026-launch';
 
 /**
  * JudgeScoreInput — optional "What did the judges give?" input.

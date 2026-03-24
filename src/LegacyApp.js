@@ -3434,7 +3434,7 @@ const UploadScreen = React.memo(function UploadScreen({ profile, onBack, onAnaly
       try {
         const resp = await fetch("/api/gemini", {
           method: "POST",
-          headers: { "Content-Type": "application/json", "X-Strive-Token": "strive-2026-launch" },
+          headers: { "Content-Type": "application/json", "X-Strive-Token": (process.env.REACT_APP_STRIVE_TOKEN || "strive-2026-launch") },
           body: JSON.stringify({ action: "pollFile", fileName: "files/__healthcheck__" }),
         });
         // Any response (even file-not-found) means the proxy is up and has the key
@@ -4713,7 +4713,7 @@ IMPORTANT: The deduction_log must contain ONE entry per distinct skill or transi
     let serverKeyAvailable = false;
     let apiKey = null;
     try {
-      const resp = await fetch("/api/gemini-key", { headers: { "X-Strive-Token": "strive-2026-launch" } });
+      const resp = await fetch("/api/gemini-key", { headers: { "X-Strive-Token": (process.env.REACT_APP_STRIVE_TOKEN || "strive-2026-launch") } });
       if (resp.ok) { const d = await resp.json(); serverKeyAvailable = !!d.available; if (d.key) apiKey = d.key; }
     } catch {}
     // If server key available, use server proxy at /api/analyze — no client-side key needed
@@ -4782,7 +4782,7 @@ IMPORTANT: The deduction_log must contain ONE entry per distinct skill or transi
         const videoBase64 = btoa(String.fromCharCode(...new Uint8Array(videoBuffer)));
         const proxyResp = await fetch("/api/analyze", {
           method: "POST",
-          headers: { "Content-Type": "application/json", "X-Strive-Token": "strive-2026-launch" },
+          headers: { "Content-Type": "application/json", "X-Strive-Token": (process.env.REACT_APP_STRIVE_TOKEN || "strive-2026-launch") },
           body: JSON.stringify({
             videoBase64,
             mimeType: uploadData.video.type || "video/mp4",
@@ -5260,7 +5260,7 @@ IMPORTANT: The deduction_log must contain ONE entry per distinct skill or transi
         };
         const coachRes = await fetch("/api/coach", {
           method: "POST",
-          headers: { "Content-Type": "application/json", "X-Strive-Token": "strive-2026-launch" },
+          headers: { "Content-Type": "application/json", "X-Strive-Token": (process.env.REACT_APP_STRIVE_TOKEN || "strive-2026-launch") },
           body: JSON.stringify({
             auditData: auditPayload,
             athleteLevel: profile.level,
@@ -8335,7 +8335,7 @@ const SettingsScreen = React.memo(function SettingsScreen({ profile, onSave, onB
           try {
             const res = await fetch("/api/account/export", {
               method: "POST",
-              headers: { "Content-Type": "application/json", "X-Strive-Token": "strive-2026-launch" },
+              headers: { "Content-Type": "application/json", "X-Strive-Token": (process.env.REACT_APP_STRIVE_TOKEN || "strive-2026-launch") },
               body: JSON.stringify({ profile, analysisHistory: [], tier: "free" }),
             });
             const data = await res.json();
@@ -8374,7 +8374,7 @@ const SettingsScreen = React.memo(function SettingsScreen({ profile, onSave, onB
                 try {
                   await fetch("/api/account", {
                     method: "DELETE",
-                    headers: { "Content-Type": "application/json", "X-Strive-Token": "strive-2026-launch" },
+                    headers: { "Content-Type": "application/json", "X-Strive-Token": (process.env.REACT_APP_STRIVE_TOKEN || "strive-2026-launch") },
                     body: JSON.stringify({ userId: "local-user", reason: "user_request" }),
                   });
                 } catch {}

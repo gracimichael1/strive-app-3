@@ -45,7 +45,7 @@ const log = {
 // ─── Server proxy helper ────────────────────────────────────────────────────
 
 const PROXY_URL = "/api/gemini";
-const STRIVE_TOKEN = "strive-2026-launch";
+const STRIVE_TOKEN = process.env.REACT_APP_STRIVE_TOKEN || "strive-2026-launch";
 
 async function geminiProxy(body) {
   const res = await fetch(PROXY_URL, {
