@@ -26,10 +26,13 @@ function isAllowedOrigin(origin) {
 }
 
 function setCorsHeaders(req, res) {
-  // Allow all origins — mobile Safari requires this for cross-origin fetch
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  const origin = req.headers.origin;
+  if (origin && isAllowedOrigin(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Strive-Token');
+  res.setHeader('Vary', 'Origin');
 }
 
 function validateAppToken(req) {

@@ -4,10 +4,27 @@
  * ANTHROPIC_API_KEY must be set in Vercel env vars.
  */
 
+const ALLOWED_ORIGINS = [
+  'https://strive-app-amber.vercel.app',
+  'http://localhost:3000',
+  'http://localhost:3001',
+];
+
+function isAllowedOrigin(origin) {
+  if (!origin) return true;
+  if (ALLOWED_ORIGINS.includes(origin)) return true;
+  if (origin.match(/^https:\/\/strive-app.*\.vercel\.app$/)) return true;
+  return false;
+}
+
 module.exports = async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  const origin = req.headers.origin;
+  if (origin && isAllowedOrigin(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Vary', 'Origin');
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
