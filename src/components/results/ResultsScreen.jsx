@@ -928,7 +928,7 @@ function SkillCard({ skill, index, isFree, tier, freeDeductionLimit, globalDeduc
             }}>
               {TABS.map((t, i) => (
                 <button key={t.id} onClick={() => setTab(t.id)} style={{
-                  flex: 1, padding: '8px 2px', fontSize: 9.5, fontWeight: 600,
+                  flex: 1, padding: '8px 2px', fontSize: 10.5, fontWeight: 600,
                   fontFamily: T.sans, cursor: 'pointer', border: 'none', minHeight: 44,
                   background: tab === t.id ? 'rgba(240,160,48,0.1)' : 'transparent',
                   color: tab === t.id ? T.gold : T.textMuted,
