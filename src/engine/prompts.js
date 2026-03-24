@@ -114,14 +114,30 @@ const LEVEL_RULES = {
   // ── Xcel Program — Observational heuristics (no reproduced CoP tables) ──
   XCEL_BRONZE: `
 ## LEVEL: XCEL BRONZE (WAG)
+## PROGRAM: XCEL — introductory competitive division (NAWGJ 2022-2026 cycle)
 Start Value: 10.0
-This is the introductory Xcel level. Evaluate whether the routine demonstrates basic skill variety: at least one acro element, at least one dance element, and a dismount on each apparatus. Split and leap amplitude expectations are modest at this level — deduct only for clearly insufficient amplitude. Cast amplitude below the bar is acceptable at Bronze, but form (knees, feet) is still judged.
+Bronze is the entry-level Xcel division. Amplitude expectations are modest — deduct only for clearly insufficient technique, not developmental imperfection. Do NOT apply JO required element deductions.
+
+Time requirements: Floor minimum 45 seconds. Beam maximum 45 seconds.
+
+Special Requirements — Vault: Performed on a 16–48 inch mat stack with a 4-inch top layer. Two allowed options: (1) stretch jump onto the mat stack then kick to handstand flat-back, or (2) jump to handstand and fall to flat-back. NO repulsion required. A handspring is NOT performed at Bronze. If neither option is attempted, mark SR NOT_MET.
+Special Requirements — Bars: mount to low bar, cast (hips must visibly leave the bar — any cast counts at Bronze), one 360° circle skill (back hip circle or equivalent), dismount (NO saltos allowed at Bronze). Missing any SR = -0.50 from Start Value.
+Special Requirements — Beam: one acro skill (non-flight is acceptable — cartwheel, back walkover, etc.), one leap or jump with minimum 60°+ split, one half turn (180°) on one foot (full 360° turn is NOT required at Bronze), dismount. Maximum 45 seconds. Missing any SR = -0.50 from Start Value.
+Special Requirements — Floor: two acro passes required. Pass 1: two directly connected acro elements (e.g. round-off + back handspring, or cartwheel + cartwheel). Pass 2: one acro skill minimum. Dance passage: minimum two different skills, one of which must be a split leap showing 60°+ amplitude. Minimum half turn (180°) on one foot. No salto required. Minimum 45 seconds. Missing any SR = -0.50 from Start Value.
 SR VERIFICATION: Only credit a requirement as MET if you clearly see the skill performed. If absent from the video, mark NOT_MET regardless of level expectations.
 `,
   XCEL_SILVER: `
 ## LEVEL: XCEL SILVER (WAG)
+## PROGRAM: XCEL (NOT Junior Olympic) — NAWGJ 2025 requirements
 Start Value: 10.0
-Silver expects more variety and difficulty than Bronze. The routine should demonstrate multiple acro and dance elements, bar changes, and improved amplitude. Leaps should show noticeably more split than Bronze. Casts should approach horizontal. Deduct progressively for amplitude that falls short of competitive expectations at this tier.
+Silver expects more variety and difficulty than Bronze. Flight elements are now required in tumbling. Leap amplitude standard increases to 90°. A full 360° turn is now required on floor (not just a half turn). Do NOT apply JO required element deductions.
+
+Time requirements: Floor maximum 1 minute. Beam maximum 50 seconds.
+
+Special Requirements — Vault: Two allowed options: (1) handspring over a mat stack, or (2) quarter-to-half turn onto the table or stack landing on feet facing the mat stack. A full handspring over a regulation table is NOT required at Silver. If neither option is performed, mark SR NOT_MET.
+Special Requirements — Bars: mount, cast to minimum 45° below horizontal (penalize casts shallower than 45° below horizontal progressively), one 360° circle skill, dismount (NO saltos allowed at Silver). Missing any SR = -0.50 from Start Value.
+Special Requirements — Beam: one acro skill (non-flight is acceptable), one leap or jump with 90°+ split, one half turn (180°) on one foot (full 360° turn is NOT required on beam at Silver), dismount. Maximum 50 seconds. Missing any SR = -0.50 from Start Value.
+Special Requirements — Floor: two acro passes required. Pass 1: two connected acro elements with at least one flight skill (e.g. round-off + back handspring). Pass 2: two connected acro elements OR one flight skill. Dance passage: minimum two different skills, one must be a split leap showing 90°+ amplitude. One full turn (360°) on one foot required on floor. Maximum 1 minute. Missing any SR = -0.50 from Start Value.
 SR VERIFICATION: Only credit a requirement as MET if you clearly see the skill performed. If absent from the video, mark NOT_MET regardless of level expectations.
 `,
   XCEL_GOLD: `
@@ -144,14 +160,39 @@ SR VERIFICATION: Only credit a requirement as MET if you clearly see the skill p
 `,
   XCEL_PLATINUM: `
 ## LEVEL: XCEL PLATINUM (WAG)
+## PROGRAM: XCEL (NOT Junior Olympic)
 Start Value: 10.0
-Platinum expects meaningfully higher difficulty and amplitude than Gold. Routines should include acro passes with salto elements, strong split amplitude, and at least one element of intermediate difficulty on bars. Casts on bars should reach above the horizontal plane — deduct progressively for lower casts, with significant deductions if barely reaching horizontal. If no element of intermediate difficulty is present on bars, apply a significant start value reduction.
+Platinum expects meaningfully higher difficulty and amplitude than Gold. Routines must include acro passes with salto elements, competitive split amplitude (150°+ on leaps), and at least one B-value element on bars. Artistry and expression are judged more strictly than Gold — deduct for flat or mechanical performance. Do NOT apply JO required element deductions.
+
+Special Requirements — Bars: cast to horizontal or above (deduct progressively for casts failing to reach horizontal — significant deduction if clearly below), B-value circling skill, B-value release OR B-value dismount. Missing any SR = -0.50 from Start Value.
+Special Requirements — Beam: B-value acro element (back walkover, aerial cartwheel, or equivalent), leap or jump with 150°+ split, full turn (360°) on one foot, B-value dismount. Missing any SR = -0.50 from Start Value.
+Special Requirements — Floor: B-value tumbling pass (RO+BHS+salto or equivalent), dance passage with leap/jump showing 150°+ split, full turn (360°) on one foot, second acro pass. Missing any SR = -0.50 from Start Value.
+Special Requirements — Vault: handspring vault or Tsukahara entry — post-flight must show clear amplitude and body tension. Missing = significant SV reduction.
 SR VERIFICATION: Only credit a requirement as MET if you clearly see the skill performed. If absent from the video, mark NOT_MET regardless of level expectations.
 `,
   XCEL_DIAMOND: `
 ## LEVEL: XCEL DIAMOND (WAG)
+## PROGRAM: XCEL (NOT Junior Olympic)
 Start Value: 10.0
-Diamond is the highest Xcel level. Expect advanced difficulty: connected acro series with flight, multiple elements of intermediate-to-advanced difficulty on bars, and strong amplitude throughout. Casts should approach or reach handstand — deduct significantly for casts at or below horizontal. Artistry is heavily weighted at Diamond. Deduct aggressively for flat or unexpressive performance.
+Diamond is a high-level Xcel division. Expect advanced difficulty: connected acro series with flight, multiple elements of intermediate-to-advanced difficulty on bars, and strong amplitude throughout. Casts should approach or reach handstand — deduct significantly for casts at or below horizontal. Artistry is heavily weighted at Diamond. Deduct aggressively for flat or unexpressive performance. Do NOT apply JO required element deductions.
+
+Special Requirements — Bars: cast to handstand (within 10° of vertical), C-value skill, C-value dismount. Missing any SR = -0.50 from Start Value.
+Special Requirements — Beam: acro series with flight element (two connected acro skills, at least one with flight), leap or jump with 180°+ split, full turn (360°) on one foot, C-value dismount. Missing any SR = -0.50 from Start Value.
+Special Requirements — Floor: C-value tumbling pass (layout, full twist, or connected saltos), dance series with leap/jump showing 180°+ split, full turn (360°) on one foot, C-value final tumbling pass. Missing any SR = -0.50 from Start Value.
+Special Requirements — Vault: Yurchenko or Tsukahara entry required — block from table must show clear post-flight height and body tension. Missing = significant SV reduction.
+SR VERIFICATION: Only credit a requirement as MET if you clearly see the skill performed. If absent from the video, mark NOT_MET regardless of level expectations.
+`,
+
+  XCEL_SAPPHIRE: `
+## LEVEL: XCEL SAPPHIRE (WAG)
+## PROGRAM: XCEL (NOT Junior Olympic)
+Start Value: 10.0
+Sapphire is the highest Xcel division — equivalent in difficulty expectation to JO Level 9/10. Expect D-value skills, connected acro series with multiple flight elements, and near-perfect execution. Casts must reach handstand — any cast below handstand receives significant deduction. Artistry, amplitude, and expression are judged at the same standard as upper-optional JO. Apply deductions without leniency. Any routine lacking D-value elements should receive a notable Start Value reduction.
+
+Special Requirements — Bars: cast to handstand (within 10° of vertical), D-value release move or pirouette, D-value dismount. Missing any SR = -0.50 from Start Value.
+Special Requirements — Beam: flight acro series (two connected elements, both with flight), leap or jump with 180°+ split, full turn (360°) on one foot, D-value acro skill or D-value dismount. Missing any SR = -0.50 from Start Value.
+Special Requirements — Floor: D-value tumbling pass (double back, double twist, or equivalent), dance series with leap/jump showing 180°+ split, full turn (360°) on one foot — 1.5 turn preferred, D-value final tumbling pass. Missing any SR = -0.50 from Start Value.
+Special Requirements — Vault: Yurchenko layout or higher required. Yurchenko tuck receives significant deduction at Sapphire level.
 SR VERIFICATION: Only credit a requirement as MET if you clearly see the skill performed. If absent from the video, mark NOT_MET regardless of level expectations.
 `,
 
@@ -288,6 +329,7 @@ function getLevelKey(level, levelCategory) {
   if (/XCEL.*GOLD/i.test(level) || (levelCategory === "xcel" && /GOLD/i.test(level))) return "XCEL_GOLD";
   if (/XCEL.*PLAT/i.test(level) || /PLATINUM/i.test(level)) return "XCEL_PLATINUM";
   if (/XCEL.*DIAMOND/i.test(level) || /DIAMOND/i.test(level)) return "XCEL_DIAMOND";
+  if (/XCEL.*SAPPHIRE/i.test(level) || /SAPPHIRE/i.test(level)) return "XCEL_SAPPHIRE";
 
   const levelNum = parseInt(level.replace(/\D/g, ""), 10);
   if (levelNum >= 3 && levelNum <= 10) return `JO_LEVEL_${levelNum}`;

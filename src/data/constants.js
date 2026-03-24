@@ -166,6 +166,12 @@ export const EVENT_JUDGING_RULES = {
         "C-value dismount",
         "Missing any SR = -0.50 from Start Value"
       ],
+      "Xcel Sapphire": [
+        "Cast to handstand (within 10° of vertical)",
+        "D-value release move or pirouette",
+        "D-value dismount",
+        "Missing any SR = -0.50 from Start Value"
+      ],
       "Level 5": [
         "Kip",
         "Cast to horizontal or above",
@@ -229,6 +235,27 @@ export const EVENT_JUDGING_RULES = {
         "Full turn (360°) on one foot",
         "Dismount from the beam"
       ],
+      "Xcel Platinum": [
+        "B-value acro element (back walkover, aerial cartwheel, etc.)",
+        "Leap or jump with 150°+ split",
+        "Full turn (360°) on one foot",
+        "B-value dismount",
+        "Missing any SR = -0.50 from Start Value"
+      ],
+      "Xcel Diamond": [
+        "Acro series with flight element (two connected skills, at least one with flight)",
+        "Leap or jump with 180°+ split",
+        "Full turn (360°) on one foot",
+        "C-value dismount",
+        "Missing any SR = -0.50 from Start Value"
+      ],
+      "Xcel Sapphire": [
+        "Flight acro series (two connected flight elements)",
+        "Leap or jump with 180°+ split",
+        "Full turn (360°) on one foot",
+        "D-value acro skill or D-value dismount",
+        "Missing any SR = -0.50 from Start Value"
+      ],
       "Level 5": [
         "Back walkover or back handspring",
         "Split leap 120°+",
@@ -290,6 +317,27 @@ export const EVENT_JUDGING_RULES = {
         "Full turn (360°) on one foot",
         "Second acro pass"
       ],
+      "Xcel Platinum": [
+        "B-value tumbling pass (RO+BHS+salto or equivalent)",
+        "Dance passage with leap/jump showing 150°+ split",
+        "Full turn (360°) on one foot",
+        "Second acro pass",
+        "Missing any SR = -0.50 from Start Value"
+      ],
+      "Xcel Diamond": [
+        "C-value tumbling pass (layout, full twist, or connected saltos)",
+        "Dance series with leap/jump showing 180°+ split",
+        "Full turn (360°) on one foot",
+        "C-value final tumbling pass",
+        "Missing any SR = -0.50 from Start Value"
+      ],
+      "Xcel Sapphire": [
+        "D-value tumbling pass (double back, double twist, or equivalent)",
+        "Dance series with leap/jump showing 180°+ split",
+        "Full turn (360°) on one foot — 1.5 turn preferred",
+        "D-value final tumbling pass",
+        "Missing any SR = -0.50 from Start Value"
+      ],
       "Level 5": [
         "Round-off BHS back tuck",
         "Front handspring",
@@ -337,6 +385,9 @@ export const EVENT_JUDGING_RULES = {
     rhythmJudging: null,
     specialRequirements: {
       "Xcel Gold": ["Handspring vault (must achieve brief flight in post-flight)"],
+      "Xcel Platinum": ["Handspring vault or Tsukahara entry — post-flight must show clear amplitude and body tension"],
+      "Xcel Diamond": ["Yurchenko or Tsukahara entry vault — block from table must be powerful with clear post-flight height"],
+      "Xcel Sapphire": ["Yurchenko layout or higher required — Yurchenko tuck receives significant deduction at Sapphire level"],
       "Level 5": ["Handspring over vault table"],
       "Level 6": ["Handspring vault (higher amplitude)"],
       "Level 7": ["Handspring vault with good amplitude and distance"],

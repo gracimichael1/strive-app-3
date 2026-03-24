@@ -235,7 +235,8 @@ function DashboardScreen({ profile, tier, recentAnalyses, lastResult, onAnalyze,
         </button>
       )}
 
-      {/* Training program teaser */}
+      {/* Training program teaser — Elite only */}
+      {normalizedTier === 'elite' && (
       <div
         style={{
           background: COLORS.surface,
@@ -264,6 +265,7 @@ function DashboardScreen({ profile, tier, recentAnalyses, lastResult, onAnalyze,
           Your drill plan updated — {analyses.length > 0 ? '3 focus areas this week' : 'analyze a routine to get started'}
         </div>
       </div>
+      )}
 
       {/* Progress snapshot (Competitive/Elite only) */}
       {isCompetitiveOrHigher && analyses.length >= 2 && (
@@ -306,14 +308,14 @@ function DashboardScreen({ profile, tier, recentAnalyses, lastResult, onAnalyze,
         </div>
       )}
 
-      {/* Quick links */}
+      {/* Quick links — Mental Training + Training are Elite tier only */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
         {[
-          { label: 'History', key: 'history', icon: 'M3 3h18v2H3V3zm0 4h18v2H3V7zm0 4h12v2H3v-2z' },
-          { label: 'Guide', key: 'guide', icon: 'M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5' },
-          { label: 'Mental Training', key: 'mental', icon: 'M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.4 0-8-3.6-8-8s3.6-8 8-8 8 3.6 8 8-3.6 8-8 8zm-1-13h2v6h-2V7zm0 8h2v2h-2v-2z' },
-          { label: 'Training', key: 'training', icon: 'M20.57 14.86L22 13.43 20.57 12 17 15.57 8.43 7 12 3.43 10.57 2 9.14 3.43 7.71 2 5.57 4.14 4.14 2.71 2.71 4.14l1.43 1.43L2 7.71l1.43 1.43L2 10.57 3.43 12 7 8.43 15.57 17 12 20.57 13.43 22l1.43-1.43 1.43 1.43 2.14-2.14 1.43 1.43 1.43-1.43-1.43-1.43L22 16.29z' },
-        ].map(item => (
+          { label: 'History', key: 'history', eliteOnly: false, icon: 'M3 3h18v2H3V3zm0 4h18v2H3V7zm0 4h12v2H3v-2z' },
+          { label: 'Guide', key: 'guide', eliteOnly: false, icon: 'M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5' },
+          { label: 'Mental Training', key: 'mental', eliteOnly: true, icon: 'M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.4 0-8-3.6-8-8s3.6-8 8-8 8 3.6 8 8-3.6 8-8 8zm-1-13h2v6h-2V7zm0 8h2v2h-2v-2z' },
+          { label: 'Training', key: 'training', eliteOnly: true, icon: 'M20.57 14.86L22 13.43 20.57 12 17 15.57 8.43 7 12 3.43 10.57 2 9.14 3.43 7.71 2 5.57 4.14 4.14 2.71 2.71 4.14l1.43 1.43L2 7.71l1.43 1.43L2 10.57 3.43 12 7 8.43 15.57 17 12 20.57 13.43 22l1.43-1.43 1.43 1.43 2.14-2.14 1.43 1.43 1.43-1.43-1.43-1.43L22 16.29z' },
+        ].filter(item => !item.eliteOnly || normalizedTier === 'elite').map(item => (
           <button
             key={item.key}
             onClick={() => onNavigate && onNavigate(item.key)}

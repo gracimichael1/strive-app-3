@@ -2391,7 +2391,7 @@ function OnboardingScreen({ onComplete }) {
         ))}
       </div>
       {levelOptions.length > 0 && (() => {
-        const COMING_SOON_LEVELS = ["Level 9", "Level 10", "Elite", "Xcel Platinum", "Xcel Diamond", "Xcel Sapphire"];
+        const COMING_SOON_LEVELS = ["Level 9", "Level 10", "Elite"];
         return (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
           {levelOptions.map(l => {
@@ -2439,8 +2439,8 @@ function OnboardingScreen({ onComplete }) {
         <div style={{ marginTop: 14, padding: "11px 14px", borderRadius: 10, background: "rgba(232,150,42,0.06)", border: "1px solid rgba(232,150,42,0.16)", display: "flex", gap: 10, alignItems: "flex-start" }}>
           <span style={{ fontSize: 15, flexShrink: 0 }}>⭐</span>
           <div>
-            <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(232,150,42,0.9)", marginBottom: 3 }}>Beta covers Xcel Bronze through Gold</div>
-            <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.4)", lineHeight: 1.55 }}>Platinum, Diamond, and Sapphire are coming soon. STRIVE is currently optimized for Bronze, Silver, and Gold divisions.</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(232,150,42,0.9)", marginBottom: 3 }}>Xcel Bronze through Sapphire — all divisions active</div>
+            <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.4)", lineHeight: 1.55 }}>STRIVE supports all six Xcel divisions. Level 9, 10, and Elite are in development.</div>
           </div>
         </div>
       )}
@@ -5456,7 +5456,7 @@ IMPORTANT: The deduction_log must contain ONE entry per distinct skill or transi
     '7': { min: 8.0, max: 9.8 }, '8': { min: 8.2, max: 9.8 },
     'xcel_bronze': { min: 7.0, max: 9.4 }, 'xcel_silver': { min: 7.5, max: 9.5 },
     'xcel_gold': { min: 7.8, max: 9.6 }, 'xcel_platinum': { min: 8.0, max: 9.7 },
-    'xcel_diamond': { min: 8.2, max: 9.8 }, 'default': { min: 7.0, max: 9.8 },
+    'xcel_diamond': { min: 8.2, max: 9.8 }, 'xcel_sapphire': { min: 8.5, max: 9.9 }, 'default': { min: 7.0, max: 9.8 },
   }), []);
 
   const getLevelKey = useCallback((level) => {
@@ -5467,6 +5467,7 @@ IMPORTANT: The deduction_log must contain ONE entry per distinct skill or transi
     if (/xcel.*gold|^gold$/i.test(l)) return 'xcel_gold';
     if (/xcel.*plat/i.test(l)) return 'xcel_platinum';
     if (/xcel.*diamond|^diamond$/i.test(l)) return 'xcel_diamond';
+    if (/xcel.*sapphire|^sapphire$/i.test(l)) return 'xcel_sapphire';
     const num = l.replace(/\D/g, '');
     if (num && LEVEL_SCORE_RANGES[num]) return num;
     return 'default';
