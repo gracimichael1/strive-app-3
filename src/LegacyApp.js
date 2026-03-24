@@ -2076,7 +2076,7 @@ function BetaCodeScreen({ onSuccess }) {
         </button>
         <div style={{ marginTop: 20 }}>
           <a
-            href="https://forms.gle/PLACEHOLDER"
+            href="https://striveapp.ai/waitlist"
             target="_blank"
             rel="noopener noreferrer"
             style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", fontFamily: "'Outfit', sans-serif", textDecoration: "none" }}
