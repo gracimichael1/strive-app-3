@@ -66,19 +66,54 @@ export function TierProvider({ children }) {
   useEffect(() => {
     (async () => {
       try {
+        // DEV OVERRIDE — manual tier override for QA testing
+        if (process.env.NODE_ENV === 'development') {
+          const override = localStorage.getItem('strive-tier-override');
+          if (override) {
+            setTier(override);
+            setLoading(false);
+            return;
+          }
+        }
+
+        // Load cached tier from storage first (instant)
         const stored = await storage.get('strive-tier');
         if (stored) {
-          // Normalize legacy "pro" tier to "competitive"
           const val = stored.value === 'pro' ? TIERS.COMPETITIVE : stored.value;
           setTier(val);
         }
+
+        // Load analysis count
         const count = await storage.get('strive-analyses-month');
         if (count) {
           const data = JSON.parse(count.value);
           const now = new Date();
-          // Reset count if month changed
           if (data.month === now.getMonth() && data.year === now.getFullYear()) {
             setAnalysesThisMonth(data.count);
+          }
+        }
+
+        // Hydrate from backend — source of truth for paid tiers
+        const profile = JSON.parse(localStorage.getItem('strive-athlete-profile') || '{}');
+        const email = profile.email || profile.parentEmail;
+        if (email) {
+          try {
+            const token = process.env.REACT_APP_STRIVE_TOKEN || 'strive-2026-launch';
+            const res = await fetch(`/api/account/subscription?email=${encodeURIComponent(email)}`, {
+              headers: { 'X-Strive-Token': token }
+            });
+            if (!res.ok) throw new Error('API error');
+            const data = await res.json();
+            if (data.tier && data.tier !== 'free' && data.status === 'active') {
+              setTier(data.tier);
+              await storage.set('strive-tier', data.tier);
+            } else if (data.status === 'canceled' || data.status === 'none') {
+              setTier(TIERS.FREE);
+              await storage.delete('strive-tier');
+            }
+          } catch (err) {
+            // Network failure — keep cached tier, don't lock users out
+            console.warn('STRIVE: tier hydration failed, using cache', err.message);
           }
         }
       } catch {}
