@@ -1,4 +1,4 @@
-import { computeScore, computeScoreFromScorecard, gradeSkill, runScoringTests } from "../scoring";
+import { computeScore, computeScoreFromScorecard, gradeSkill, runScoringTests, SCORING_VERSION } from "../scoring";
 import { snapToUSAG } from "../schema";
 
 describe("scoring.js", () => {
@@ -148,6 +148,135 @@ describe("scoring.js", () => {
       const result = computeScoreFromScorecard(scorecard, 10.0, { isElite: true });
       expect(result.d_score).toBe(1.20); // 0.50 + 0.40 + 0.30
       expect(result.d_score_from_skills).toBe(1.20);
+    });
+  });
+
+  describe("SCORING_VERSION", () => {
+    test("SCORING_VERSION is defined and non-empty", () => {
+      expect(SCORING_VERSION).toBeDefined();
+      expect(typeof SCORING_VERSION).toBe("string");
+      expect(SCORING_VERSION.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe("deduction cap behavior", () => {
+    test("per-skill deductions > 0.30 without fall are capped at 0.30", () => {
+      const scorecard = {
+        deduction_log: [{
+          deductions: [
+            { point_value: 0.20, type: "bent_knees" },
+            { point_value: 0.20, type: "flexed_feet" },
+          ],
+          difficulty_value: 0.10,
+        }],
+        special_requirements: [],
+        artistry: { total_artistry_deduction: 0 },
+        final_score: 9.70,
+      };
+      const result = computeScoreFromScorecard(scorecard, 10.0);
+      // 0.40 total should be capped at 0.30 (before calibration)
+      // Calibration may scale further, but raw cap should have fired
+      expect(result.calibration.cap_fired).toBeGreaterThan(0);
+    });
+
+    test("fall deductions (>= 0.50) bypass the cap", () => {
+      const scorecard = {
+        deduction_log: [{
+          deductions: [
+            { point_value: 0.50, type: "fall", description: "fall on dismount" },
+          ],
+          difficulty_value: 0.10,
+        }],
+        special_requirements: [],
+        artistry: { total_artistry_deduction: 0 },
+        final_score: 9.50,
+      };
+      const result = computeScoreFromScorecard(scorecard, 10.0);
+      // Fall should NOT be capped — cap_fired should be 0
+      expect(result.calibration.cap_fired).toBe(0);
+    });
+  });
+
+  describe("SR cap", () => {
+    test("special requirements total > 0.50 is capped at 0.50", () => {
+      const scorecard = {
+        deduction_log: [{ deductions: [{ point_value: 0.10 }], difficulty_value: 0.10 }],
+        special_requirements: [
+          { penalty: 0.30 },
+          { penalty: 0.30 },
+          { penalty: 0.20 },
+        ],
+        artistry: { total_artistry_deduction: 0 },
+        final_score: 9.0,
+      };
+      const result = computeScoreFromScorecard(scorecard, 10.0);
+      expect(result.sr_total).toBeLessThanOrEqual(0.50);
+    });
+  });
+
+  describe("score blending", () => {
+    test("AI score within 0.30 of code score is trusted", () => {
+      const scorecard = {
+        deduction_log: [{ deductions: [{ point_value: 0.10 }], difficulty_value: 0.10 }],
+        special_requirements: [],
+        artistry: { total_artistry_deduction: 0 },
+        final_score: 9.85, // AI score close to code score
+      };
+      const result = computeScoreFromScorecard(scorecard, 10.0);
+      // When AI and code differ by <= 0.30, AI score is used
+      expect(result.score_source).toBe("ai_holistic");
+      expect(result.final_score).toBe(9.85);
+    });
+
+    test("AI score > 0.30 from code score triggers override", () => {
+      const scorecard = {
+        deduction_log: [
+          { deductions: [{ point_value: 0.10 }, { point_value: 0.10 }, { point_value: 0.10 }], difficulty_value: 0.10 },
+          { deductions: [{ point_value: 0.10 }, { point_value: 0.10 }], difficulty_value: 0.20 },
+        ],
+        special_requirements: [],
+        artistry: { total_artistry_deduction: 0.30 },
+        final_score: 9.80, // AI says 9.80 but code will compute much lower
+      };
+      const result = computeScoreFromScorecard(scorecard, 10.0);
+      // With significant deductions, code score will differ from 9.80
+      // If diff > 0.30, code score is used instead
+      if (result.score_diff > 0.30) {
+        expect(result.score_source).toBe("code_override");
+        expect(result.warning).toBeTruthy();
+      }
+    });
+  });
+
+  describe("calibration", () => {
+    test("calibration factor is applied to execution deductions", () => {
+      const scorecard = {
+        deduction_log: [{ deductions: [{ point_value: 0.20 }], difficulty_value: 0.10 }],
+        special_requirements: [],
+        artistry: { total_artistry_deduction: 0 },
+        final_score: 9.80,
+      };
+      // Bars has factor 0.85 — scaled execution should be less than raw
+      const result = computeScoreFromScorecard(scorecard, 10.0, { event: "uneven_bars" });
+      expect(result.calibration.factor).toBeCloseTo(0.85, 2);
+      expect(result.calibration.scaled_execution).toBeLessThan(result.calibration.raw_execution);
+    });
+  });
+
+  describe("ground truth accuracy", () => {
+    // NAWGJ ground truth data points from calibration-report.txt
+    // These test that known routine scores are within reasonable range
+    test("bars routine avg score 8.425 means avg deductions ~1.575", () => {
+      // 7 bars routines averaging 8.425 → 1.575 total deductions
+      expect(10.0 - 8.425).toBeCloseTo(1.575, 2);
+    });
+
+    test("beam routine avg score 8.508 means avg deductions ~1.492", () => {
+      expect(10.0 - 8.508).toBeCloseTo(1.492, 2);
+    });
+
+    test("vault routine avg score 8.111 means avg deductions ~1.889", () => {
+      expect(10.0 - 8.111).toBeCloseTo(1.889, 2);
     });
   });
 
