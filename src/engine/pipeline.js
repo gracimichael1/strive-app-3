@@ -24,9 +24,19 @@
 
 import { buildPass1Prompt, buildPass2Prompt, buildCompactPrompt, PASS1_CONFIG, PASS2_CONFIG, COMPACT_CONFIG, PROMPT_VERSION } from "./prompts";
 import { validatePipelineResult, snapToUSAG, gradeFromQuality, parseTimestamp, formatTimestamp, emptyBiomechanics, emptyInjuryRisk, emptyCorrectiveDrill } from "./schema";
-import { computeScoreFromScorecard } from "./scoring";
+import { computeScoreFromScorecard, SCORING_VERSION } from "./scoring";
 import { transformForUI } from "./transform";
 import { compressVideo, needsCompression, formatMB } from "./videoCompressor";
+
+// ─── Analysis metadata — version traceability for calibration ────────────────
+const ANALYSIS_METADATA = {
+  prompt_version: PROMPT_VERSION,
+  model_name: 'gemini-2.5-flash',
+  scoring_version: SCORING_VERSION,
+  calibration_dataset: 'nawgj-v1',
+  pipeline_version: '2.0',
+  timestamp: null, // Set at runtime
+};
 
 // ─── Structured logging ─────────────────────────────────────────────────────
 
@@ -312,6 +322,14 @@ export async function runAnalysisPipeline({ videoFile, profile, event, tier, onP
           final_score: finalScore,
           score_diff: scoring.score_diff,
           warning: scoring.warning,
+        },
+      },
+      analysis_metadata: {
+        ...ANALYSIS_METADATA,
+        timestamp: new Date().toISOString(),
+        calibration_factors: {
+          event: detectedEvent,
+          factor: scoring.calibration?.factor,
         },
       },
     };

@@ -45,6 +45,7 @@ function JudgeScoreInput({ result, profile }) {
           rawExecution: result?._meta?.score_breakdown?.execution_deductions || null,
           scaledExecution: result?._meta?.score_breakdown?.calibration?.scaled_execution || null,
           skillCount: result?.gradedSkills?.length || 0,
+          analysis_metadata: result?.analysis_metadata || null,
         }),
       });
       setSubmitted(true);

@@ -45,6 +45,9 @@ export { gradeSkill } from "./schema";
  */
 // ─── Event-specific calibration scaling factors ─────────────────────────────
 // Derived from test suite: AI deductions vs real judge scores.
+export const SCORING_VERSION = '1.0';
+// Increment on: calibration factor change, cap change, blend logic change
+
 // Applied AFTER summing raw deductions to bring code-computed score
 // in line with real judge panels. Tuned per-event because Gemini's
 // deduction density varies by apparatus.
