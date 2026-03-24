@@ -1,4 +1,5 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const { kv } = require('@vercel/kv');
 
 // Vercel serverless: disable body parsing so we can verify the raw signature
 module.exports.config = {
@@ -44,22 +45,53 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: 'Invalid signature' });
   }
 
+  // Idempotency check — skip already-processed events
+  const eventId = event.id;
+  const alreadyProcessed = await kv.get(`event:${eventId}`);
+  if (alreadyProcessed) return res.json({ received: true });
+
   switch (event.type) {
     case 'checkout.session.completed': {
       const session = event.data.object;
-      // TODO: Write subscription to database
+      const customerEmail = session.customer_details?.email || session.customer_email;
+      const subscriptionId = session.subscription;
+      const customerId = session.customer;
+      const tier = session.metadata?.tier || 'competitive';
+
+      if (customerEmail) {
+        await kv.set(`sub:${customerEmail}`, JSON.stringify({
+          tier,
+          stripe_customer_id: customerId,
+          stripe_subscription_id: subscriptionId,
+          status: 'active',
+          current_period_end: null,
+          updated_at: new Date().toISOString()
+        }));
+      }
+
       console.log('[Strive] Checkout completed:', {
         sessionId: session.id,
-        customerId: session.customer,
-        subscriptionId: session.subscription,
-        customerEmail: session.customer_details?.email,
+        customerId,
+        subscriptionId,
+        customerEmail,
+        tier,
       });
       break;
     }
 
     case 'customer.subscription.updated': {
       const subscription = event.data.object;
-      // TODO: Update subscription status in database
+      const email = subscription.metadata?.email;
+      if (email) {
+        const existing = await kv.get(`sub:${email}`);
+        const record = existing ? (typeof existing === 'string' ? JSON.parse(existing) : existing) : {};
+        await kv.set(`sub:${email}`, JSON.stringify({
+          ...record,
+          status: subscription.status,
+          current_period_end: subscription.current_period_end,
+          updated_at: new Date().toISOString()
+        }));
+      }
       console.log('[Strive] Subscription updated:', {
         subscriptionId: subscription.id,
         customerId: subscription.customer,
@@ -71,7 +103,17 @@ module.exports = async function handler(req, res) {
 
     case 'customer.subscription.deleted': {
       const subscription = event.data.object;
-      // TODO: Mark subscription as cancelled in database
+      const email = subscription.metadata?.email;
+      if (email) {
+        const existing = await kv.get(`sub:${email}`);
+        const record = existing ? (typeof existing === 'string' ? JSON.parse(existing) : existing) : {};
+        await kv.set(`sub:${email}`, JSON.stringify({
+          ...record,
+          tier: 'free',
+          status: 'canceled',
+          updated_at: new Date().toISOString()
+        }));
+      }
       console.log('[Strive] Subscription deleted:', {
         subscriptionId: subscription.id,
         customerId: subscription.customer,
@@ -80,9 +122,28 @@ module.exports = async function handler(req, res) {
       break;
     }
 
+    case 'invoice.payment_failed': {
+      const invoice = event.data.object;
+      const email = invoice.customer_email;
+      if (email) {
+        const existing = await kv.get(`sub:${email}`);
+        const record = existing ? (typeof existing === 'string' ? JSON.parse(existing) : existing) : {};
+        await kv.set(`sub:${email}`, JSON.stringify({
+          ...record,
+          status: 'past_due',
+          updated_at: new Date().toISOString()
+        }));
+      }
+      console.error('STRIVE payment failed:', email, new Date().toISOString());
+      break;
+    }
+
     default:
       console.log(`[Strive] Unhandled event type: ${event.type}`);
   }
+
+  // Mark event processed (7-day TTL for idempotency)
+  await kv.set(`event:${eventId}`, '1', { ex: 86400 * 7 });
 
   return res.status(200).json({ received: true });
 };
