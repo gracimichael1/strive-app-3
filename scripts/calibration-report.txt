@@ -1,0 +1,55 @@
+STRIVE CALIBRATION REPORT
+Generated: 2026-03-24T16:10:34.638Z
+Source: NAWGJ Education Committee scored practice judging videos
+
+EVENT    | ROUTINES | AVG JUDGE SCORE | AVG DEDUCTIONS (10-score) | CURRENT FACTOR
+------------------------------------------------------------------------------------------
+bars     | 7        | 8.425           | 1.575                     | 0.85
+
+  Per-routine detail:
+    Level 4 Bars #1           | Score: 7.05 | Deductions: 2.95 | Skill ded avg: 2.85 | Judges: 6
+    Level 4 Bars #2           | Score: 7.35 | Deductions: 2.65 | Skill ded avg: 3.06 | Judges: 7
+    Level 4 Bars #5           | Score: 9.05 | Deductions: 0.95 | Skill ded avg: 1.05 | Judges: 8
+    Level 4 Bars #6           | Score: 8.60 | Deductions: 1.40 | Skill ded avg: 1.52 | Judges: 7
+    Level 4 Bars #8           | Score: 9.50 | Deductions: 0.50 | Skill ded avg: 0.51 | Judges: 8
+    Level 4 Bars #9           | Score: 9.13 | Deductions: 0.88 | Skill ded avg: 1.07 | Judges: 6
+    Level 4 Bars #12          | Score: 8.30 | Deductions: 1.70 | Skill ded avg: 2.35 | Judges: 7
+
+beam     | 7        | 8.508           | 1.492                     | 0.70
+
+  Per-routine detail:
+    Level 4 Beam #1           | Score: 8.43 | Deductions: 1.57 | Skill ded avg: 1.55 | Judges: 7
+    Level 4 Beam #2           | Score: 8.50 | Deductions: 1.50 | Skill ded avg: 2.08 | Judges: 6
+    Level 4 Beam #7           | Score: 8.13 | Deductions: 1.87 | Skill ded avg: 1.89 | Judges: 5
+    Level 4 Beam #12          | Score: 8.60 | Deductions: 1.40 | Skill ded avg: 1.49 | Judges: 5
+    Level 4 Beam #4b          | Score: 8.60 | Deductions: 1.40 | Skill ded avg: 1.36 | Judges: 5
+    Level 4 Beam #5b          | Score: 8.15 | Deductions: 1.85 | Skill ded avg: 2.16 | Judges: 7
+    Level 4 Beam 7b           | Score: 9.15 | Deductions: 0.85 | Skill ded avg: 0.94 | Judges: 5
+
+vault    | 9        | 8.111           | 1.889                     | 1.35
+
+  Per-routine detail:
+    Level 4/5 Vault #2b       | Score: 8.40 | Deductions: 1.60 | Skill ded avg: 1.38 | Judges: 6
+    Level 4/5 Vault #3a       | Score: 8.30 | Deductions: 1.70 | Skill ded avg: 1.49 | Judges: 8
+    Level 4/5 Vault #4a       | Score: 7.50 | Deductions: 2.50 | Skill ded avg: 2.23 | Judges: 9
+    Level 4/5 Vault #6b       | Score: 8.10 | Deductions: 1.90 | Skill ded avg: 1.75 | Judges: 6
+    Level 4/5 Vault #8a       | Score: 8.40 | Deductions: 1.60 | Skill ded avg: 1.48 | Judges: 9
+    Level 4/5 Vault #8b       | Score: 8.60 | Deductions: 1.40 | Skill ded avg: 1.26 | Judges: 5
+    Level 4/5 Vault #9b       | Score: 9.15 | Deductions: 0.85 | Skill ded avg: 0.77 | Judges: 7
+    Level 4/5 Vault #10b      | Score: 6.70 | Deductions: 3.30 | Skill ded avg: 2.74 | Judges: 5
+    Level 4/5 Vault #11a      | Score: 7.85 | Deductions: 2.15 | Skill ded avg: 2.01 | Judges: 8
+
+
+═══════════════════════════════════════════════════════════════
+CALIBRATION ANALYSIS
+═══════════════════════════════════════════════════════════════
+
+Current factors represent the ratio of AI raw deductions to ground truth.
+Factor < 1.0 = AI over-deducts (scale down)
+Factor > 1.0 = AI under-deducts (scale up)
+
+NOTE: These factors should be updated once Strive has run analyses on
+these same videos. Compare Strive's raw AI deduction totals against the
+ground truth deductions above to compute empirical calibration factors.
+
+Current factors (from manual tuning): bars=0.85, beam=0.7, vault=1.35, floor=0.7
