@@ -282,13 +282,16 @@ function transformSkill(skill, idx) {
   const category = skill.category || "ACRO";
 
   // Build structured faults from per-skill deductions array
-  const faults = (skill.deductions || []).map(d => ({
-    fault: d.description || d.type || "",
-    deduction: d.point_value || 0,
-    severity: deductionSeverity(d.point_value),
-    bodyPoint: d.body_part || null,
-    type: d.type || "execution",
-  }));
+  // Filter out entries with no meaningful description and zero deduction
+  const faults = (skill.deductions || [])
+    .filter(d => (d.description && d.description.trim()) || (d.point_value && d.point_value > 0))
+    .map(d => ({
+      fault: d.description || d.type || "",
+      deduction: d.point_value || 0,
+      severity: deductionSeverity(d.point_value),
+      bodyPoint: d.body_part || null,
+      type: d.type || "execution",
+    }));
 
   // If no deductions array but has a reason, create single fault
   if (faults.length === 0 && deduction > 0 && skill.reason) {

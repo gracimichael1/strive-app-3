@@ -272,7 +272,8 @@ function SkillCard({ skill, index, defaultExpanded, videoFile }) {
   const injuryText = safeStr(skill.injuryRisk || skill.injuryNote || skill.physicalRisk, '');
   const drillRec = safeStr(skill.drillRecommendation || skill.drill, '');
   const strengthNote = safeStr(skill.strengthNote || skill.strength, '');
-  const isClean = faults.length === 0 && deduction === 0;
+  const meaningfulFaults = faults.filter(f => (typeof f === 'string' ? f : (f.fault || f.name || '')).trim().length > 0);
+  const isClean = meaningfulFaults.length === 0 && deduction === 0;
   const correctForm = safeStr(skill.correctForm || skill.correct_form, '');
   const gainIfFixed = typeof skill.gainIfFixed === 'number' ? skill.gainIfFixed : 0;
   const ruleRef = safeStr(skill.ruleReference || skill.rule_reference, '');
@@ -413,7 +414,7 @@ function SkillCard({ skill, index, defaultExpanded, videoFile }) {
             )}
           </div>
           {/* Preview fault text when collapsed */}
-          {!expanded && (skill.fault || faults.length > 0) && deduction > 0 && (
+          {!expanded && (skill.fault || meaningfulFaults.length > 0) && deduction > 0 && (
             <div
               style={{
                 fontSize: 12,
@@ -582,7 +583,7 @@ function SkillCard({ skill, index, defaultExpanded, videoFile }) {
               )}
 
               {/* Deduction Line Items */}
-              {faults.length > 0 ? (
+              {faults.length > 0 && faults.some(f => (typeof f === 'string' ? f : (f.fault || f.name || '')).trim().length > 0) ? (
                 <SectionBox borderColor="rgba(224,104,32,0.15)" bgColor="rgba(224,104,32,0.04)">
                   <SectionHeader color={COLORS.orange}>Deductions Found</SectionHeader>
                   {faults.map((fault, i) => {

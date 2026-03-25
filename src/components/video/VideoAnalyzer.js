@@ -76,6 +76,9 @@ function UploadZone({ onFile, disabled }) {
       >
         Select Video
       </button>
+      <div style={{ fontSize: 11, color: '#e8962a', textAlign: 'center', opacity: 0.7, marginTop: 12, fontFamily: "'Outfit', sans-serif" }}>
+        For best results, use video where your athlete is the only person performing
+      </div>
     </div>
   );
 }
