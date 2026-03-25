@@ -16,6 +16,7 @@ import PrivacyNotice from "./components/legal/PrivacyNotice";
 import { runAnalysisPipeline } from "./engine/pipeline";
 import SkillCard from "./components/ui/SkillCard";
 import { canSeeWhatIf, canSeeSessionDiagnostics, getUpgradeCTA, hasReachedAnalysisCap, getMonthlyAnalysisCap } from './engine/tierGates';
+import { useTier, TIERS } from './context/TierContext';
 import LockedFeature from './components/LockedFeature';
 import { loadPoseDetector, detectPose } from './analysis/poseDetector';
 import ScoreCardExport from './components/ui/ScoreCardExport';
@@ -1404,6 +1405,8 @@ export default function LegacyApp() {
   });
   // Map legacy "pro" tier to new "competitive" tier name
   const normalizedTier = userTier === "competitive" ? "competitive" : userTier;
+  // Wire into TierContext so ResultsScreen (which reads context) stays in sync
+  const tierCtx = useTier();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showGoalSetup, setShowGoalSetup] = useState(false);
   const [pendingAnalyzeData, setPendingAnalyzeData] = useState(null);
@@ -1432,6 +1435,7 @@ export default function LegacyApp() {
       if (params.get('checkout') === 'success') {
         localStorage.setItem('strive-tier', 'competitive');
         setUserTier('competitive');
+        tierCtx.changeTier('competitive');
         // Clean URL
         const url = new URL(window.location);
         url.searchParams.delete('checkout');
@@ -1798,7 +1802,12 @@ export default function LegacyApp() {
           onSave={(p) => { saveProfile(p); setScreen("dashboard"); }}
           onBack={() => setScreen("dashboard")}
           onLegal={() => setScreen("legal")}
-          onTierChange={(t) => { try { localStorage.setItem("strive-tier", t); } catch {} setUserTier(t); }}
+          onTierChange={(t) => {
+            try { localStorage.setItem("strive-tier", t); } catch {}
+            setUserTier(t);
+            // Update TierContext so ResultsScreen and all context consumers see the change
+            tierCtx.changeTier(t);
+          }}
           onReset={() => {
             setProfile(null);
             setHistory([]);

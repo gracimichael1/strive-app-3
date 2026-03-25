@@ -107,10 +107,14 @@ export function TierProvider({ children }) {
             if (data.tier && data.tier !== 'free' && data.status === 'active') {
               setTier(data.tier);
               await storage.set('strive-tier', data.tier);
-            } else if (data.status === 'canceled' || data.status === 'none') {
+            } else if (data.status === 'canceled') {
+              // Only downgrade on explicit cancellation — not 'none'.
+              // 'none' means no Stripe subscription exists, which is normal
+              // for manually-set tiers (Settings switcher, dev testing).
               setTier(TIERS.FREE);
               await storage.delete('strive-tier');
             }
+            // status === 'none' → keep cached tier from localStorage (line 80)
           } catch (err) {
             // Network failure — keep cached tier, don't lock users out
             console.warn('STRIVE: tier hydration failed, using cache', err.message);
@@ -121,15 +125,17 @@ export function TierProvider({ children }) {
     })();
   }, []);
 
-  const upgradeToCompetitive = async () => {
-    setTier(TIERS.COMPETITIVE);
-    await storage.set('strive-tier', TIERS.COMPETITIVE);
+  const changeTier = async (newTier) => {
+    setTier(newTier);
+    if (newTier === TIERS.FREE) {
+      await storage.delete('strive-tier');
+    } else {
+      await storage.set('strive-tier', newTier);
+    }
   };
 
-  const upgradeToElite = async () => {
-    setTier(TIERS.ELITE);
-    await storage.set('strive-tier', TIERS.ELITE);
-  };
+  const upgradeToCompetitive = async () => changeTier(TIERS.COMPETITIVE);
+  const upgradeToElite = async () => changeTier(TIERS.ELITE);
 
   const incrementAnalyses = async () => {
     const now = new Date();
@@ -154,6 +160,7 @@ export function TierProvider({ children }) {
       canAnalyze,
       analysesRemaining,
       analysesThisMonth,
+      changeTier,
       upgradeToCompetitive,
       upgradeToElite,
       incrementAnalyses,
