@@ -27,7 +27,7 @@ describe("prompts.js", () => {
     test("includes calibration block", () => {
       const { system } = buildPass1Prompt(profile, event);
       expect(system).toContain("CALIBRATION");
-      expect(system).toContain("0.80");
+      expect(system).toContain("FORBIDDEN");
     });
 
     test("never mentions Gemini or Claude", () => {
@@ -89,7 +89,7 @@ describe("prompts.js", () => {
     });
 
     test("PASS2_CONFIG has required fields and thinking budget", () => {
-      expect(PASS2_CONFIG.temperature).toBe(0.1);
+      expect(PASS2_CONFIG.temperature).toBe(0.2);
       expect(PASS2_CONFIG.maxOutputTokens).toBeGreaterThanOrEqual(16384);
       expect(PASS2_CONFIG.thinkingConfig).toBeDefined();
     });

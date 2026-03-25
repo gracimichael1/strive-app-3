@@ -89,9 +89,13 @@ describe("scoring.js", () => {
         artistry: { total_artistry_deduction: 0.20 },
         final_score: 9.60,
       };
+      // No event specified → default calibration factor 0.80
+      // Raw execution: 0.20, calibrated: 0.20 * 0.80 = 0.16
+      // Raw artistry: 0.20, calibrated: 0.20 * 0.80 = 0.16
       const result = computeScoreFromScorecard(scorecard, 10.0);
-      expect(result.execution_total).toBe(0.20);
-      expect(result.artistry_total).toBe(0.20);
+      expect(result.execution_total).toBeCloseTo(0.16, 2);
+      expect(result.artistry_total).toBeCloseTo(0.16, 2);
+      // AI says 9.60, code computes 10.0 - 0.32 = 9.68, diff 0.08 → trust AI
       expect(result.final_score).toBe(9.60);
     });
 
@@ -105,8 +109,10 @@ describe("scoring.js", () => {
         artistry: { total_artistry_deduction: 0 },
         final_score: 9.75,
       };
+      // No event → default factor 0.80. Raw: 0.15+0.10=0.25, calibrated: 0.25*0.80=0.20
       const result = computeScoreFromScorecard(scorecard, 10.0);
-      expect(result.execution_total).toBe(0.25);
+      expect(result.execution_total).toBeCloseTo(0.20, 2);
+      // AI says 9.75, code computes 9.80, diff 0.05 → trust AI
       expect(result.final_score).toBe(9.75);
     });
 
@@ -127,11 +133,14 @@ describe("scoring.js", () => {
         deduction_log: [{ deductions: [{ point_value: 0.50 }], difficulty_value: 0.10 }],
         special_requirements: [],
         artistry: { total_artistry_deduction: 0.30 },
-        final_score: 9.80, // AI says 9.80, code says 9.20 — big diff
+        final_score: 9.80, // AI says 9.80
       };
+      // No event → factor 0.80. Fall (0.50) exempts cap.
+      // Exec: 0.50*0.80=0.40, art: 0.30*0.80=0.24, total=0.64, code=9.36
+      // diff = |9.36-9.80| = 0.44 > 0.30 → code override
       const result = computeScoreFromScorecard(scorecard, 10.0);
       expect(result.warning).toBeTruthy();
-      expect(result.final_score).toBe(9.20);
+      expect(result.final_score).toBeCloseTo(9.36, 2);
     });
 
     test("computes D-score from skill difficulty values for Elite", () => {
