@@ -405,9 +405,11 @@ export function buildPass1Prompt(profile, event) {
 - If you find more than 20 deductions total, you are likely over-counting — merge related micro-faults on the same skill.
 - Apply TPM/KTM deductions only when the form break is clearly visible. Most skills will have at least one minor form deduction — do not skip deductions to inflate the score.
 - PER-SKILL DEDUCTION RULES (HARD LIMITS — NEVER EXCEED):
-  * Each skill MUST have 1-3 deductions maximum. NEVER list more than 3 deductions for any single skill.
-  * If you identify 4+ faults on one skill, keep only the 3 most significant and merge or drop the rest.
-  * Per-skill total deductions should be small-to-moderate for most skills. Only a fall warrants the largest single deduction.
+  * RULE 1 — PER-SKILL ONLY: Every deduction MUST be attached to a specific named skill in deduction_log. "Execution: 1.40" is FORBIDDEN output. "Round-off Back Handspring — bent knees on handspring: -0.10" is CORRECT. Never return a deduction without naming the skill it belongs to.
+  * RULE 2 — NO AGGREGATES: Never combine multiple deductions into one line item. Each deduction is one fault, one skill, one amount. Maximum 3 deductions per skill. If you see more than 3 faults on one skill, report only the 3 largest.
+  * RULE 3 — VALID AMOUNTS ONLY: Deduction point_value must be one of: 0.05, 0.10, 0.20, 0.30, 0.50. No ranges. No estimates. No strings like "0.05-0.10". Round to nearest valid amount.
+  * RULE 4 — START VALUE FIRST: Always set start_value before computing deductions. Final score = start value minus total deductions. If start value is not visible, estimate from level requirements.
+  * RULE 5 — ANTI-STACKING: Beam wobbles: one wobble = one deduction on the skill where it occurred. Do not list the same wobble twice. Vault: score holistically, maximum total deduction 0.40 unless there is a fall. Floor artistry: count once per routine, not per pass.
   * Each deduction must be for a DISTINCT fault. "bent knees" is ONE deduction per skill, not one per frame.
   * Vault is ONE skill — total vault deductions should be moderate for a completed vault without falls.
   * BALANCE BEAM WOBBLES are NOT separate skills. A wobble is a deduction ON the preceding skill.
@@ -437,8 +439,32 @@ After initial assessment, re-watch focusing ONLY on:
 5. Arms — any bent arm moments in support or flight?
 Add any missed deductions to your final JSON.
 
+## REQUIRED JSON SCHEMA — deduction_log
+Your response MUST include a "deduction_log" array. Each entry MUST follow this exact structure:
+{
+  "skill_name": "Back Hip Circle",
+  "skill_order": 3,
+  "timestamp_start": 12.5,
+  "timestamp_end": 14.0,
+  "executed_successfully": true,
+  "difficulty_value": 0.10,
+  "total_deduction": 0.15,
+  "deductions": [
+    { "type": "execution", "body_part": "knees", "description": "slight knee bend at top", "point_value": 0.10 },
+    { "type": "execution", "body_part": "feet", "description": "flexed feet through rotation", "point_value": 0.05 }
+  ],
+  "celebration": null,
+  "reason": "minor form breaks"
+}
+CRITICAL: The "deductions" array is MANDATORY. Do NOT use total_deduction alone without a deductions array. Every deduction entry must have type, body_part, description, and point_value. point_value must be 0.05, 0.10, 0.20, 0.30, or 0.50.
+FORBIDDEN: {"skill_name": "Execution deductions", "total_deduction": 1.40} — this is an aggregate, NOT a per-skill entry.
+FORBIDDEN: {"skill_name": "Artistry", "total_deduction": 0.30} — artistry must be in the "artistry" field, not in deduction_log.
+
 ## FINAL SANITY CHECK
 Before outputting, verify:
+- Every entry in deduction_log has a real skill_name (not "Execution", "Composition", "Artistry", or "Form deductions").
+- Every deduction has a point_value from the set {0.05, 0.10, 0.20, 0.30, 0.50}.
+- No skill has more than 3 deductions.
 - total_execution_deductions + total_artistry_deductions should approximately equal (10.0 - final_score). If they diverge by more than 0.30, adjust the deduction totals to match your final_score.
 - Your final_score should be realistic for a completed routine with no falls at this competitive level.
 - If it seems unrealistically low or high, adjust your deductions to match what a real judge panel would award.

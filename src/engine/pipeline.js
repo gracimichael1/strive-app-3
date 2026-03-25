@@ -246,6 +246,9 @@ export async function runAnalysisPipeline({ videoFile, profile, event, tier, onP
     throw new Error("Pass 1 found no skills in the video.");
   }
 
+  // ── Validate and sanitize deduction_log ─────────────────────────────────
+  scorecard.deduction_log = validateDeductionLog(scorecard.deduction_log);
+
   onProgress({ stage: "scoring", pct: 70, label: `Found ${scorecard.deduction_log.length} skills — computing score...` });
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -772,4 +775,85 @@ function extractJSON(raw) {
   console.error('[extractJSON] All 5 passes failed. Raw preview:',
     raw.slice(0, 200));
   return null;
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// DEDUCTION LOG VALIDATION — reject aggregates, enforce per-skill structure
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const VALID_DEDUCTION_AMOUNTS = new Set([0.05, 0.10, 0.20, 0.30, 0.50]);
+const AGGREGATE_NAMES = /^(execution|composition|artistry|dynamics|form|musicality|footwork|total|neutral|penalties|deductions?)$/i;
+
+function snapDeductionAmount(val) {
+  // Convert string ranges like "0.05-0.10" to midpoint, then snap
+  if (typeof val === 'string') {
+    if (val.includes('-')) {
+      const parts = val.split('-').map(p => parseFloat(p.trim()));
+      if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+        val = (parts[0] + parts[1]) / 2;
+      } else {
+        val = parseFloat(val);
+      }
+    } else {
+      val = parseFloat(val);
+    }
+  }
+  if (typeof val !== 'number' || isNaN(val)) return 0.10; // default
+  val = Math.abs(val);
+  // Snap to nearest valid amount
+  let best = 0.10;
+  let bestDist = Infinity;
+  for (const v of VALID_DEDUCTION_AMOUNTS) {
+    const dist = Math.abs(val - v);
+    if (dist < bestDist) { bestDist = dist; best = v; }
+  }
+  return best;
+}
+
+function validateDeductionLog(deductionLog) {
+  const MAX_DEDUCTIONS_PER_SKILL = 3;
+  const validated = [];
+  let rejectedCount = 0;
+
+  for (const entry of deductionLog) {
+    const name = entry.skill_name || entry.skill || '';
+
+    // Reject aggregate entries (no real skill name)
+    if (AGGREGATE_NAMES.test(name.trim())) {
+      console.warn(`[validateDeductionLog] REJECTED aggregate entry: "${name}" (total_deduction: ${entry.total_deduction || entry.deduction_value || '?'})`);
+      rejectedCount++;
+      continue;
+    }
+
+    // Validate and cap per-skill deductions array
+    if (Array.isArray(entry.deductions) && entry.deductions.length > 0) {
+      // Snap all amounts to valid values
+      for (const d of entry.deductions) {
+        d.point_value = snapDeductionAmount(d.point_value);
+      }
+
+      // Cap at MAX_DEDUCTIONS_PER_SKILL — keep largest
+      if (entry.deductions.length > MAX_DEDUCTIONS_PER_SKILL) {
+        console.warn(`[validateDeductionLog] Capped "${name}" from ${entry.deductions.length} to ${MAX_DEDUCTIONS_PER_SKILL} deductions`);
+        entry.deductions.sort((a, b) => (b.point_value || 0) - (a.point_value || 0));
+        entry.deductions = entry.deductions.slice(0, MAX_DEDUCTIONS_PER_SKILL);
+      }
+
+      // Recompute total_deduction from validated deductions
+      entry.total_deduction = entry.deductions.reduce((sum, d) => sum + (d.point_value || 0), 0);
+    } else if (entry.total_deduction || entry.deduction_value) {
+      // Has a total but no per-skill array — snap the total
+      const rawTotal = Math.abs(entry.total_deduction || entry.deduction_value || 0);
+      entry.total_deduction = snapDeductionAmount(rawTotal);
+    }
+
+    validated.push(entry);
+  }
+
+  if (rejectedCount > 0) {
+    console.warn(`[validateDeductionLog] Rejected ${rejectedCount} aggregate entries, kept ${validated.length} per-skill entries`);
+  }
+
+  return validated;
 }
