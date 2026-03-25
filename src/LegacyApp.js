@@ -17,6 +17,8 @@ import { runAnalysisPipeline } from "./engine/pipeline";
 import SkillCard from "./components/ui/SkillCard";
 import { canSeeWhatIf, canSeeSessionDiagnostics, getUpgradeCTA, hasReachedAnalysisCap, getMonthlyAnalysisCap } from './engine/tierGates';
 import LockedFeature from './components/LockedFeature';
+import ScoreCardExport from './components/ui/ScoreCardExport';
+import ScoringCaveatBanner from './components/ui/ScoringCaveatBanner';
 
 // ─── BUILD INFO ──
 const BUILD_VERSION = "1.0.0";
@@ -1525,6 +1527,11 @@ export default function LegacyApp() {
     } catch {}
 
     setScreen("results");
+
+    // Elite tier: prompt goal setup after first analysis if no goal set
+    if (normalizedTier === 'elite' && !profile?.goal) {
+      setTimeout(() => setShowGoalSetup(true), 800);
+    }
   };
 
   return (
@@ -1855,19 +1862,7 @@ export default function LegacyApp() {
       )}
 
       {/* Bottom Navigation */}
-      {/* ── New Training Screen ── */}
-      {screen === "training" && (
-        <StriveErrorBoundary name="Training">
-        <Suspense fallback={<div style={{ minHeight: "100vh", background: "#070c16" }} />}>
-        <TrainingScreen
-          result={analysisResult}
-          profile={profile}
-          tier={normalizedTier}
-          onBack={() => setScreen("dashboard")}
-        />
-        </Suspense>
-        </StriveErrorBoundary>
-      )}
+      {/* TrainingScreen removed — MastermindScreen handles screen === "training" above */}
 
       {["dashboard", "deductions", "meets", "progress", "mental", "goals", "settings", "meetfocus", "training"].includes(screen) && (
         <nav style={{
@@ -7566,6 +7561,9 @@ const ResultsScreen = React.memo(function ResultsScreen({ result, profile, histo
             <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, color: "#141414", opacity: 0.4 }}>N:0</span>
           </div>
 
+          {/* ── SCORING CAVEAT BANNER (Beam/Vault/Floor only) ── */}
+          <ScoringCaveatBanner event={result?.event || uploadData?.event} />
+
           {/* ── JUDGE'S PERSPECTIVE ── */}
           {result.overallAssessment && (
             <div style={{ marginBottom: 16, padding: "14px 16px", background: "#fff", border: "1px solid #141414", borderRadius: 4, borderLeft: "3px solid #141414" }}>
@@ -7736,6 +7734,9 @@ const ResultsScreen = React.memo(function ResultsScreen({ result, profile, histo
         >
           <Icon name="save" size={14} /> Share with Coach
         </button>
+
+        {/* Score Card Export */}
+        <ScoreCardExport result={result} athleteName={profile?.name || 'Athlete'} tier={normalizedTier} />
 
         {/* Analyze Another */}
         <button

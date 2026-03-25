@@ -2,6 +2,8 @@ import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import { useTier } from '../../context/TierContext';
 import { canSeeJudgeNarrative, canSeeDrills, canSeeBiomechanics, canSeeInjuryAwareness, canSeeSkeletonOverlay, canUseSlowMotion, canSeeLevelUp, getDeductionBlurThreshold } from '../../engine/tierGates';
 import LockedFeature from '../LockedFeature';
+import ScoreCardExport from '../ui/ScoreCardExport';
+import ScoringCaveatBanner from '../ui/ScoringCaveatBanner';
 
 // ── Design Tokens ───────────────────────────────────────────────────────────
 const T = {
@@ -176,6 +178,11 @@ export default function ResultsScreen({ result, profile, previousResult, onBack,
           ⚖️ Scored at State Championship competitive standard
         </div>
 
+        {/* Score Card Export */}
+        <div style={{ padding: '0 16px' }}>
+          <ScoreCardExport result={result} athleteName={profile?.name || 'Athlete'} tier={tier} />
+        </div>
+
         {/* Stat bar */}
         <div style={{ display: 'flex', gap: 12, marginTop: 10, fontSize: 12, color: T.textSec, fontFamily: T.mono }}>
           <span>SV {startValue.toFixed(1)}</span>
@@ -255,6 +262,9 @@ export default function ResultsScreen({ result, profile, previousResult, onBack,
             </div>
           </div>
         )}
+
+        {/* Scoring Caveat Banner — Beam/Vault/Floor only */}
+        <ScoringCaveatBanner event={result?.event || result?.summary?.event} />
 
         {/* ═══ RESULTS TAB BAR (Analysis / Level Up) ═══ */}
         <div style={{ display: 'flex', gap: 0, margin: '14px 16px 0', borderRadius: 10, overflow: 'hidden', border: `1px solid ${T.border}` }}>

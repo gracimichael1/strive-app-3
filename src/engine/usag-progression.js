@@ -442,12 +442,215 @@ export const USAG_PROGRESSION = {
     },
   },
 
-  // ── JO Level 8 (terminal for beta — no L9 progression) ───────────
+  // ── JO Level 8 → Level 9 ─────────────────────────────────────────
   '8': {
-    bars: { nextLevel: '9', requiredSkills: ['Level 9+ requirements outside beta scope'], executionStandards: [], srRequirements: [], scoreThreshold: null, commonGaps: ['Level 9 progression coming soon'] },
-    beam: { nextLevel: '9', requiredSkills: ['Level 9+ requirements outside beta scope'], executionStandards: [], srRequirements: [], scoreThreshold: null, commonGaps: ['Level 9 progression coming soon'] },
-    vault: { nextLevel: '9', requiredSkills: ['Level 9+ requirements outside beta scope'], executionStandards: [], srRequirements: [], scoreThreshold: null, commonGaps: ['Level 9 progression coming soon'] },
-    floor: { nextLevel: '9', requiredSkills: ['Level 9+ requirements outside beta scope'], executionStandards: [], srRequirements: [], scoreThreshold: null, commonGaps: ['Level 9 progression coming soon'] },
+    bars: {
+      nextLevel: '9',
+      requiredSkills: [
+        'Cast to handstand on every cast', // VERIFY: confirm L9 cast standard
+        'D-value release move (Tkatchev, Gienger, or equivalent)', // VERIFY: confirm common D releases at L9
+        'Pirouette on bars (clear hip full pirouette or stalder full)', // VERIFY
+        'D-value dismount (double back or double twist flyaway)', // VERIFY
+      ],
+      executionStandards: [
+        'Cast to handstand mandatory — any deviation is -0.30+',
+        'D-value elements required for competitive L9 scoring',
+        'Rhythm and amplitude judged at elite standard',
+      ],
+      srRequirements: [
+        'Cast to handstand', // VERIFY: confirm L9 bar SR
+        'Release move',
+        'Pirouette or turning element',
+        'D-value dismount',
+      ],
+      scoreThreshold: null,
+      commonGaps: [
+        'No D-value release — only C-value',
+        'Pirouette not yet consistent',
+        'Dismount below D-value',
+        'Cast handstand consistency under fatigue',
+      ],
+    },
+    beam: {
+      nextLevel: '9',
+      requiredSkills: [
+        'Acro series with two flight elements', // VERIFY: confirm L9 acro series requirement
+        'Dance series with 180°+ split leaps',
+        'Difficult turn (1.5 or double)', // VERIFY: confirm L9 turn requirement
+        'D-value dismount', // VERIFY
+      ],
+      executionStandards: [
+        'Split 180° minimum on all dance',
+        'Acro flight series with height and control',
+        'Artistry and expression at advanced optional standard',
+      ],
+      srRequirements: [
+        'Acro series with flight', // VERIFY: confirm exact L9 beam SR
+        'Dance series',
+        'Difficulty turn',
+        'D-value dismount',
+      ],
+      scoreThreshold: null,
+      commonGaps: [
+        'Acro series: insufficient flight',
+        'Split not consistently at 180°',
+        'Turn difficulty below 1.5',
+        'Dismount below D-value',
+      ],
+    },
+    vault: {
+      nextLevel: '9',
+      requiredSkills: [
+        'Yurchenko layout or Tsukahara layout', // VERIFY: confirm L9 vault minimum
+        'Post-flight height well above horizontal',
+      ],
+      executionStandards: [
+        'Layout position mandatory — tuck is insufficient',
+        'Post-flight height significant',
+        'Landing: stick or minimal step',
+      ],
+      srRequirements: [
+        'C-value vault minimum', // VERIFY: confirm minimum vault SV at L9
+      ],
+      scoreThreshold: null,
+      commonGaps: [
+        'Still performing Yurchenko tuck — need layout',
+        'Post-flight height insufficient',
+        'Body shape breaks in layout',
+        'Landing deductions',
+      ],
+    },
+    floor: {
+      nextLevel: '9',
+      requiredSkills: [
+        'D-value tumbling pass (double back, double twist)', // VERIFY: confirm common D-value floor skills at L9
+        'Two passes with C+ difficulty',
+        'Dance series with 180° splits',
+        'Double or 2.5 turn', // VERIFY
+      ],
+      executionStandards: [
+        'D-value salto in at least one pass',
+        'C+ difficulty in remaining passes',
+        'Full choreographic expression — elite artistry',
+      ],
+      srRequirements: [
+        'D-value pass', // VERIFY: confirm L9 floor SR
+        'Two acro passes with C+ elements',
+        'Dance passage 180°+',
+        'Difficulty turn',
+      ],
+      scoreThreshold: null,
+      commonGaps: [
+        'No D-value salto — only C-value (full twist)',
+        'Second pass below C-value',
+        'Split inconsistent at 180°',
+        'Choreography not at Level 9 maturity',
+      ],
+    },
+  },
+
+  // ── JO Level 9 → Level 10 ────────────────────────────────────────
+  '9': {
+    bars: {
+      nextLevel: '10',
+      requiredSkills: [
+        'D+ release moves (Tkatchev variations, Pak salto)', // VERIFY: confirm L10 bar expectations
+        'E-value dismount or D+D combination', // VERIFY
+        'Multiple pirouettes',
+        'Cast to handstand — perfect every time',
+      ],
+      executionStandards: [
+        'Near-perfect execution on all elements',
+        'E-value difficulty expected for competitive L10',
+        'Composition and connection value evaluated',
+      ],
+      srRequirements: [
+        'D+ release', // VERIFY: confirm L10 bar SR
+        'D+ dismount',
+        'Connection value between skills',
+      ],
+      scoreThreshold: null,
+      commonGaps: [
+        'Release difficulty below D+ level',
+        'Dismount value insufficient',
+        'Connection value not maximized',
+        'Execution errors on high-difficulty skills',
+      ],
+    },
+    beam: {
+      nextLevel: '10',
+      requiredSkills: [
+        'D+ acro series with flight', // VERIFY
+        'Dance series with 180° split leaps',
+        'Double turn or higher', // VERIFY
+        'D+ dismount (double back or equivalent)', // VERIFY
+      ],
+      executionStandards: [
+        'Split 180° minimum — below is automatic deduction',
+        'D+ difficulty expected for competitive L10',
+        'Composition and artistry at national standard',
+      ],
+      srRequirements: [
+        'D+ acro', // VERIFY: confirm L10 beam SR
+        'Dance series',
+        'D+ dismount',
+      ],
+      scoreThreshold: null,
+      commonGaps: [
+        'Acro difficulty below D+',
+        'Dismount below D+',
+        'Consistency under pressure',
+        'Artistry not at L10 national standard',
+      ],
+    },
+    vault: {
+      nextLevel: '10',
+      requiredSkills: [
+        'Yurchenko layout full or higher', // VERIFY: confirm L10 vault expectations
+      ],
+      executionStandards: [
+        'Full twist in layout position minimum',
+        'Post-flight: exceptional height',
+        'Landing: stick expected',
+      ],
+      srRequirements: [
+        'D-value vault minimum', // VERIFY: confirm L10 minimum vault SV
+      ],
+      scoreThreshold: null,
+      commonGaps: [
+        'Still performing Yurchenko layout — need full twist',
+        'Post-flight height or distance insufficient',
+        'Twist incomplete or late',
+        'Landing deductions',
+      ],
+    },
+    floor: {
+      nextLevel: '10',
+      requiredSkills: [
+        'E-value tumbling (double layout, double Arabian, etc.)', // VERIFY: confirm common E-value floor skills
+        'D+ passes throughout',
+        'Dance with 180°+ split',
+        '2.5 or triple turn', // VERIFY
+      ],
+      executionStandards: [
+        'E-value salto expected for competitive L10',
+        'D+ difficulty throughout routine',
+        'National-level artistry and expression',
+      ],
+      srRequirements: [
+        'E-value tumbling', // VERIFY: confirm L10 floor SR
+        'D+ second pass',
+        'Dance series 180°+',
+        'Difficulty turn',
+      ],
+      scoreThreshold: null,
+      commonGaps: [
+        'No E-value salto yet',
+        'Difficulty gap in second and third passes',
+        'Artistry and choreography not at national L10 standard',
+        'Stamina — execution drops on final pass',
+      ],
+    },
   },
 
   // ── Xcel Bronze → Silver ──────────────────────────────────────────
@@ -558,12 +761,221 @@ export const USAG_PROGRESSION = {
     },
   },
 
-  // ── Xcel Platinum (terminal for beta) ─────────────────────────────
+  // ── Xcel Platinum → Diamond ───────────────────────────────────────
   'xcel_platinum': {
-    bars: { nextLevel: 'xcel_diamond', requiredSkills: ['Diamond requirements outside beta scope'], executionStandards: [], srRequirements: [], scoreThreshold: null, commonGaps: ['Diamond progression coming soon'] },
-    beam: { nextLevel: 'xcel_diamond', requiredSkills: ['Diamond requirements outside beta scope'], executionStandards: [], srRequirements: [], scoreThreshold: null, commonGaps: ['Diamond progression coming soon'] },
-    vault: { nextLevel: 'xcel_diamond', requiredSkills: ['Diamond requirements outside beta scope'], executionStandards: [], srRequirements: [], scoreThreshold: null, commonGaps: ['Diamond progression coming soon'] },
-    floor: { nextLevel: 'xcel_diamond', requiredSkills: ['Diamond requirements outside beta scope'], executionStandards: [], srRequirements: [], scoreThreshold: null, commonGaps: ['Diamond progression coming soon'] },
+    bars: {
+      nextLevel: 'xcel_diamond',
+      requiredSkills: [
+        'Cast to handstand (within 10° of vertical)',
+        'C-value circling skill (clear hip handstand, stalder, toe-on)',
+        'C-value dismount (layout flyaway with twist or higher)',
+      ],
+      executionStandards: [
+        'Cast to handstand expected — below handstand is -0.30+',
+        'C-value elements required for Diamond SR',
+        'Rhythm and flow between skills judged strictly',
+      ],
+      srRequirements: [
+        'Cast to handstand',
+        'C-value skill',
+        'C-value dismount',
+      ],
+      scoreThreshold: null,
+      commonGaps: [
+        'Cast not reaching handstand consistently',
+        'No C-value circling element — only B-value',
+        'Dismount below C-value',
+        'Rhythm breaks between skills',
+      ],
+    },
+    beam: {
+      nextLevel: 'xcel_diamond',
+      requiredSkills: [
+        'Acro series with flight element (two connected, at least one with flight)',
+        'Leap or jump with 180°+ split',
+        'Full turn (360°) on one foot',
+        'C-value dismount',
+      ],
+      executionStandards: [
+        'Split must reach 180° — below 170° is significant deduction',
+        'Acro series requires flight in at least one element',
+        'C-value dismount with controlled landing',
+      ],
+      srRequirements: [
+        'Acro series with flight',
+        'Leap/jump 180°+',
+        'Full turn',
+        'C-value dismount',
+      ],
+      scoreThreshold: null,
+      commonGaps: [
+        'Acro series lacks flight element',
+        'Split not reaching 180°',
+        'Dismount below C-value',
+        'Balance adjustments through routine',
+      ],
+    },
+    vault: {
+      nextLevel: 'xcel_diamond',
+      requiredSkills: [
+        'Yurchenko or Tsukahara entry vault',
+        'Post-flight with clear height and body tension',
+      ],
+      executionStandards: [
+        'Block from table must show power',
+        'Post-flight: well above horizontal',
+        'Landing: near-stick expected at Diamond',
+      ],
+      srRequirements: [
+        'Yurchenko or Tsukahara entry',
+      ],
+      scoreThreshold: null,
+      commonGaps: [
+        'Still performing handspring vault — need Yurchenko/Tsuk entry',
+        'Post-flight too low',
+        'Body shape breaks in post-flight',
+        'Landing control',
+      ],
+    },
+    floor: {
+      nextLevel: 'xcel_diamond',
+      requiredSkills: [
+        'C-value tumbling pass (layout, full twist, or connected saltos)',
+        'Dance series with leap/jump showing 180°+ split',
+        'Full turn (360°) on one foot',
+        'C-value final tumbling pass',
+      ],
+      executionStandards: [
+        'C-value salto in at least one pass',
+        'Split 180°+ on primary dance elements',
+        'Artistry and expression heavily weighted',
+      ],
+      srRequirements: [
+        'C-value tumbling pass',
+        'Dance series 180°+',
+        'Full turn',
+        'C-value final pass',
+      ],
+      scoreThreshold: null,
+      commonGaps: [
+        'No C-value salto yet — only B-value (back tuck, back layout)',
+        'Split not reaching 180°',
+        'Final pass below C-value',
+        'Artistry and choreography not Diamond-level',
+      ],
+    },
+  },
+
+  // ── Xcel Diamond → Sapphire ─────────────────────────────────────
+  'xcel_diamond': {
+    bars: {
+      nextLevel: 'xcel_sapphire',
+      requiredSkills: [
+        'Cast to handstand (within 10° of vertical)',
+        'D-value release move or pirouette',
+        'D-value dismount',
+      ],
+      executionStandards: [
+        'Cast to handstand mandatory — any deviation is significant',
+        'D-value elements required for Sapphire SR',
+        'Near-perfect execution expected',
+      ],
+      srRequirements: [
+        'Cast to handstand',
+        'D-value release/pirouette',
+        'D-value dismount',
+      ],
+      scoreThreshold: null,
+      commonGaps: [
+        'No D-value release — only C-value skills', // VERIFY: confirm D-value bar skills common at this transition
+        'Dismount below D-value',
+        'Execution errors on high-difficulty skills',
+        'Cast handstand consistency',
+      ],
+    },
+    beam: {
+      nextLevel: 'xcel_sapphire',
+      requiredSkills: [
+        'Flight acro series (two connected elements, both with flight)',
+        'Leap or jump with 180°+ split',
+        'Full turn (360°) on one foot',
+        'D-value acro skill or D-value dismount',
+      ],
+      executionStandards: [
+        'Both elements in acro series must have flight',
+        'Split 180° is minimum standard',
+        'D-value difficulty required',
+      ],
+      srRequirements: [
+        'Flight acro series (both with flight)',
+        'Leap/jump 180°+',
+        'Full turn',
+        'D-value acro or dismount',
+      ],
+      scoreThreshold: null,
+      commonGaps: [
+        'Acro series: only one element with flight',
+        'No D-value acro skill on beam', // VERIFY: confirm common D-value beam skills at this transition
+        'Dismount difficulty insufficient',
+        'Execution errors on flight series',
+      ],
+    },
+    vault: {
+      nextLevel: 'xcel_sapphire',
+      requiredSkills: [
+        'Yurchenko layout or higher',
+      ],
+      executionStandards: [
+        'Yurchenko tuck insufficient at Sapphire — layout minimum',
+        'Post-flight: high, with full body tension',
+        'Landing: controlled, near-stick',
+      ],
+      srRequirements: [
+        'Yurchenko layout or higher',
+      ],
+      scoreThreshold: null,
+      commonGaps: [
+        'Still performing Yurchenko tuck — need layout',
+        'Post-flight height insufficient for Sapphire',
+        'Body shape breaks in layout position',
+        'Landing deductions',
+      ],
+    },
+    floor: {
+      nextLevel: 'xcel_sapphire',
+      requiredSkills: [
+        'D-value tumbling pass (double back, double twist, or equivalent)',
+        'Dance series with leap/jump showing 180°+ split',
+        'Full turn (360°) on one foot — 1.5 turn preferred',
+        'D-value final tumbling pass',
+      ],
+      executionStandards: [
+        'D-value salto required in at least one pass',
+        'Split 180° minimum',
+        'Upper-optional artistry standard',
+      ],
+      srRequirements: [
+        'D-value tumbling pass',
+        'Dance series 180°+',
+        'Full turn (1.5 preferred)',
+        'D-value final pass',
+      ],
+      scoreThreshold: null,
+      commonGaps: [
+        'No D-value salto yet — only C-value (full twist, layout)', // VERIFY: confirm common D-value floor skills
+        'Split inconsistent at 180°',
+        'Final pass below D-value',
+        'Artistry not at upper-optional standard',
+      ],
+    },
+  },
+
+  // ── Xcel Sapphire (highest Xcel level) ──────────────────────────
+  'xcel_sapphire': {
+    bars: { nextLevel: null, requiredSkills: ['Sapphire is the highest Xcel division — outside beta scope'], executionStandards: [], srRequirements: [], scoreThreshold: null, commonGaps: ['No higher Xcel level exists. Consider JO Level 9/10 track.'] },
+    beam: { nextLevel: null, requiredSkills: ['Sapphire is the highest Xcel division — outside beta scope'], executionStandards: [], srRequirements: [], scoreThreshold: null, commonGaps: ['No higher Xcel level exists. Consider JO Level 9/10 track.'] },
+    vault: { nextLevel: null, requiredSkills: ['Sapphire is the highest Xcel division — outside beta scope'], executionStandards: [], srRequirements: [], scoreThreshold: null, commonGaps: ['No higher Xcel level exists. Consider JO Level 9/10 track.'] },
+    floor: { nextLevel: null, requiredSkills: ['Sapphire is the highest Xcel division — outside beta scope'], executionStandards: [], srRequirements: [], scoreThreshold: null, commonGaps: ['No higher Xcel level exists. Consider JO Level 9/10 track.'] },
   },
 };
 
