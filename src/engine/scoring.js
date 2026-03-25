@@ -45,7 +45,7 @@ export { gradeSkill } from "./schema";
  */
 // ─── Event-specific calibration scaling factors ─────────────────────────────
 // Derived from test suite: AI deductions vs real judge scores.
-export const SCORING_VERSION = '1.0';
+export const SCORING_VERSION = '2.0';
 // Increment on: calibration factor change, cap change, blend logic change
 
 // Applied AFTER summing raw deductions to bring code-computed score
@@ -54,16 +54,15 @@ export const SCORING_VERSION = '1.0';
 //
 // Factor < 1.0 = AI over-deducts on this event (scale deductions down)
 // Factor > 1.0 = AI under-deducts (scale deductions up)
-// Calibrated 2026-03-24 from NAWGJ ground-truth data (N=7 bars, N=7 beam, N=9 vault)
-// Ground truth avg deductions: bars=1.575, beam=1.492, vault=1.889
-// factor = target_total_deductions / avg_raw_total_deductions
-// Refine these from /api/scores training data once N>25 per event.
-// Previous: bars 0.85, beam 0.70, vault 1.35 (manual tuning)
+// Calibrated 2026-03-25 from NAWGJ Pipeline A extraction (N=177 quality rows)
+// N per event: floor=64, beam=37, bars=45, vault=31
+// Optimal factors via grid search minimizing avg |strive_score - judge_score|
+// Previous v1.0: vault 1.35, bars 0.85, beam 0.70, floor 0.70
 const EVENT_CALIBRATION = {
-  VAULT:  1.35,   // AI under-deducts vault — scale UP. GT avg ded: 1.889
-  BARS:   0.85,   // AI over-deducts bars — scale down. GT avg ded: 1.575
-  BEAM:   0.70,   // AI over-deducts beam — scale down. GT avg ded: 1.492
-  FLOOR:  0.70,   // AI over-deducts floor — scale down. No GT data yet
+  VAULT:  0.75,   // v1→v2: 1.35→0.75. AI over-deducts vault. avgΔ 0.764→0.292
+  BARS:   0.85,   // Held at 0.85 — near P1 gate (0.198 live). Do not touch.
+  BEAM:   0.91,   // v1→v2: 0.70→0.91. AI over-deducts beam. avgΔ 0.461→0.376
+  FLOOR:  0.92,   // v1→v2: 0.70→0.92. AI over-deducts floor. avgΔ 0.467→0.364
   // MAG events — starting estimates, refine with training data
   HIGH_BAR:      0.80,
   PARALLEL_BARS: 0.80,
