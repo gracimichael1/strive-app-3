@@ -426,6 +426,22 @@ function LevelUpPanel({ result, isFree, onUpgrade }) {
         </div>
       </div>
 
+      {/* Verification disclaimer for upper levels */}
+      {(lpa.targetLevel === 'Level 9' || lpa.targetLevel === 'Level 10' ||
+        lpa.targetLevel === 'Xcel Diamond' || lpa.targetLevel === 'Xcel Sapphire') && (
+        <div style={{
+          padding: '10px 14px', borderRadius: 8, marginBottom: 10,
+          background: 'rgba(251,191,36,0.06)',
+          border: '1px solid rgba(251,191,36,0.2)',
+          fontSize: 11, color: 'rgba(230,237,243,0.6)',
+          lineHeight: 1.5, fontFamily: "'Outfit', sans-serif",
+        }}>
+          ⚡ Level Up requirements for this division are being verified against the
+          official USAG Code of Points. Discuss with your coach before making
+          training decisions based on these projections.
+        </div>
+      )}
+
       {/* 2. SCORE PROJECTION */}
       {lpa.projectedScoreAtNextLevel && (
         <div style={{

@@ -438,7 +438,7 @@ Before outputting, verify:
 
   // ── Section IV: Level Progression Analysis (runtime injection) ──────
   const nextLevelData = getProgression(profile.level, event);
-  if (nextLevelData && nextLevelData.requiredSkills?.length > 0 && !nextLevelData.requiredSkills[0]?.includes('outside beta scope')) {
+  if (nextLevelData && nextLevelData.nextLevel && nextLevelData.requiredSkills?.length > 0 && !nextLevelData.requiredSkills[0]?.includes('outside beta scope') && !nextLevelData.requiredSkills[0]?.includes('highest')) {
     const nextLevel = nextLevelData.nextLevel || 'next level';
     const nextLevelReqs = JSON.stringify({
       requiredSkills: nextLevelData.requiredSkills,

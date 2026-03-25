@@ -194,7 +194,7 @@ module.exports = function (app) {
   function sha256(str) { return crypto.createHash('sha256').update(str).digest('hex'); }
   function getConsentSecret() { return process.env.STRIVE_CONSENT_SECRET || sha256(RESEND_KEY || 'strive-fallback-secret'); }
 
-  app.post('/api/consent/send', async (req, res) => {
+  app.post('/api/consent', async (req, res) => {
     let body = '';
     req.on('data', c => { body += c; });
     req.on('end', async () => {
@@ -210,7 +210,7 @@ module.exports = function (app) {
         const payloadB64 = Buffer.from(payload).toString('base64url');
         const sig = crypto.createHmac('sha256', getConsentSecret()).update(payloadB64).digest('base64url');
         const token = `${payloadB64}.${sig}`;
-        const confirmUrl = `http://localhost:3000/api/consent/confirm?token=${encodeURIComponent(token)}`;
+        const confirmUrl = `http://localhost:3000/api/consent?token=${encodeURIComponent(token)}`;
         const displayName = athleteNickname || 'your child';
 
         // Log pending consent
@@ -235,7 +235,7 @@ module.exports = function (app) {
     });
   });
 
-  app.get('/api/consent/confirm', (req, res) => {
+  app.get('/api/consent', (req, res) => {
     const { token } = req.query;
     if (!token || !token.includes('.')) return res.status(400).send('Invalid token');
     const [payloadB64, sig] = token.split('.');

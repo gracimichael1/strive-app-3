@@ -99,7 +99,7 @@ export function TierProvider({ children }) {
         if (email) {
           try {
             const token = process.env.REACT_APP_STRIVE_TOKEN || 'strive-2026-launch';
-            const res = await fetch(`/api/account/subscription?email=${encodeURIComponent(email)}`, {
+            const res = await fetch(`/api/account?action=subscription&email=${encodeURIComponent(email)}`, {
               headers: { 'X-Strive-Token': token }
             });
             if (!res.ok) throw new Error('API error');

@@ -4705,17 +4705,9 @@ IMPORTANT: The deduction_log must contain ONE entry per distinct skill or transi
     setProgress(35);
 
     // Check if server-side Gemini key is available (key stays server-side, not exposed)
-    let serverKeyAvailable = false;
+    // Server proxy at /api/gemini is always available — gemini-key canary check removed
+    // (api/gemini-key was deprecated; all analysis routes through /api/gemini server proxy)
     let apiKey = null;
-    try {
-      const resp = await fetch("/api/gemini-key", { headers: { "X-Strive-Token": (process.env.REACT_APP_STRIVE_TOKEN || "strive-2026-launch") } });
-      if (resp.ok) { const d = await resp.json(); serverKeyAvailable = !!d.available; if (d.key) apiKey = d.key; }
-    } catch {}
-    // If server key available, use server proxy at /api/analyze — no client-side key needed
-    // Server proxy is the only path — no user-provided keys
-    if (!serverKeyAvailable) {
-      throw new Error("Analysis service temporarily unavailable. Please try again in a moment.");
-    }
     if (!uploadData.video) throw new Error("No video file available.");
 
     // ── Score caching — return cached result for duplicate submissions ──
@@ -8335,7 +8327,7 @@ const SettingsScreen = React.memo(function SettingsScreen({ profile, onSave, onB
         {/* ── Download My Data (CCPA) ── */}
         <button onClick={async () => {
           try {
-            const res = await fetch("/api/account/export", {
+            const res = await fetch("/api/account?action=export", {
               method: "POST",
               headers: { "Content-Type": "application/json", "X-Strive-Token": (process.env.REACT_APP_STRIVE_TOKEN || "strive-2026-launch") },
               body: JSON.stringify({ profile, analysisHistory: [], tier: "free" }),

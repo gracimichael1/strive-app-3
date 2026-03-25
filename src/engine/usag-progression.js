@@ -972,10 +972,10 @@ export const USAG_PROGRESSION = {
 
   // ── Xcel Sapphire (highest Xcel level) ──────────────────────────
   'xcel_sapphire': {
-    bars: { nextLevel: null, requiredSkills: ['Sapphire is the highest Xcel division — outside beta scope'], executionStandards: [], srRequirements: [], scoreThreshold: null, commonGaps: ['No higher Xcel level exists. Consider JO Level 9/10 track.'] },
-    beam: { nextLevel: null, requiredSkills: ['Sapphire is the highest Xcel division — outside beta scope'], executionStandards: [], srRequirements: [], scoreThreshold: null, commonGaps: ['No higher Xcel level exists. Consider JO Level 9/10 track.'] },
-    vault: { nextLevel: null, requiredSkills: ['Sapphire is the highest Xcel division — outside beta scope'], executionStandards: [], srRequirements: [], scoreThreshold: null, commonGaps: ['No higher Xcel level exists. Consider JO Level 9/10 track.'] },
-    floor: { nextLevel: null, requiredSkills: ['Sapphire is the highest Xcel division — outside beta scope'], executionStandards: [], srRequirements: [], scoreThreshold: null, commonGaps: ['No higher Xcel level exists. Consider JO Level 9/10 track.'] },
+    bars: { nextLevel: null, requiredSkills: ['Xcel Sapphire is the highest Xcel division'], executionStandards: ['Focus on execution excellence — this is the peak'], srRequirements: [], scoreThreshold: null, commonGaps: ['Consider JO Optional track for further progression'] },
+    beam: { nextLevel: null, requiredSkills: ['Xcel Sapphire is the highest Xcel division'], executionStandards: [], srRequirements: [], scoreThreshold: null, commonGaps: [] },
+    vault: { nextLevel: null, requiredSkills: ['Xcel Sapphire is the highest Xcel division'], executionStandards: [], srRequirements: [], scoreThreshold: null, commonGaps: [] },
+    floor: { nextLevel: null, requiredSkills: ['Xcel Sapphire is the highest Xcel division'], executionStandards: [], srRequirements: [], scoreThreshold: null, commonGaps: [] },
   },
 };
 
