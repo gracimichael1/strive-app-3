@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { safeStr, safeArray } from '../../utils/helpers';
+import { loadPoseDetector, detectPose } from '../../analysis/poseDetector';
 
 const COLORS = {
   surface: '#0d1422',
@@ -165,6 +166,8 @@ function SkillCard({ skill, index, defaultExpanded, videoFile }) {
   const [playbackRate, setPlaybackRate] = useState(1);
   const skillVideoRef = useRef(null);
   const [skillVideoUrl, setSkillVideoUrl] = useState(null);
+  const [skelFrame, setSkelFrame] = useState(null); // { dataUrl, joints }
+  const skelAttemptedRef = useRef(false);
 
   // Create/cleanup blob URL for per-skill video
   useEffect(() => {
@@ -195,6 +198,66 @@ function SkillCard({ skill, index, defaultExpanded, videoFile }) {
       return () => v.removeEventListener('loadedmetadata', handleLoaded);
     }
   }, [skillVideoUrl, expanded]);
+
+  // Extract skeleton frame after video seeks to skill timestamp
+  useEffect(() => {
+    if (!expanded || !skillVideoUrl || skelAttemptedRef.current) return;
+    const v = skillVideoRef.current;
+    if (!v) return;
+
+    const extractFrame = async () => {
+      skelAttemptedRef.current = true;
+      try {
+        const canvas = document.createElement('canvas');
+        const vw = v.videoWidth || 640;
+        const vh = v.videoHeight || 480;
+        canvas.width = Math.min(vw, 640);
+        canvas.height = Math.round(canvas.width * (vh / vw));
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+
+        // Check not blank
+        const px = ctx.getImageData(canvas.width >> 1, canvas.height >> 1, 1, 1).data;
+        if (px[0] < 5 && px[1] < 5 && px[2] < 5) {
+          setSkelFrame({ dataUrl, joints: null });
+          return;
+        }
+
+        setSkelFrame({ dataUrl, joints: null });
+
+        // Run pose detection (async, non-blocking)
+        try {
+          await loadPoseDetector();
+          const result = await detectPose(canvas);
+          if (result?.joints) {
+            setSkelFrame(prev => prev ? { ...prev, joints: result.joints } : null);
+          }
+        } catch (e) {
+          console.error('[SkillCard] MediaPipe detection failed:', e);
+        }
+      } catch (e) {
+        console.error('[SkillCard] Frame extraction failed:', e);
+      }
+    };
+
+    // Wait for video to be seeked and ready
+    const onSeeked = () => {
+      v.removeEventListener('seeked', onSeeked);
+      setTimeout(extractFrame, 100); // small delay to ensure frame is rendered
+    };
+    if (v.readyState >= 2) {
+      setTimeout(extractFrame, 200);
+    } else {
+      v.addEventListener('seeked', onSeeked, { once: true });
+      // Fallback if seeked never fires
+      const timeout = setTimeout(() => {
+        v.removeEventListener('seeked', onSeeked);
+        if (v.readyState >= 2) extractFrame();
+      }, 3000);
+      return () => { clearTimeout(timeout); v.removeEventListener('seeked', onSeeked); };
+    }
+  }, [expanded, skillVideoUrl]);
 
   if (!skill) return null;
 
@@ -456,6 +519,49 @@ function SkillCard({ skill, index, defaultExpanded, videoFile }) {
               </button>
             ))}
           </div>
+
+          {/* ── Skeleton Frame (extracted from video at skill timestamp) ── */}
+          {skelFrame?.dataUrl && (
+            <div style={{
+              position: 'relative',
+              marginBottom: 12,
+              borderRadius: 10,
+              overflow: 'hidden',
+              border: '1px solid rgba(232,150,42,0.15)',
+              background: '#000',
+            }}>
+              <img
+                src={skelFrame.dataUrl}
+                alt={`Frame at ${formatTimestamp(timestamp)}`}
+                style={{ width: '100%', display: 'block' }}
+              />
+              {skelFrame.joints && (
+                <svg
+                  viewBox="0 0 1 1"
+                  preserveAspectRatio="none"
+                  style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none' }}
+                >
+                  {SKELETON_CONNECTIONS.map(([a, b]) => {
+                    // Map from SkillCard naming to MediaPipe naming
+                    const MAP = { lShoulder: 'leftShoulder', rShoulder: 'rightShoulder', lElbow: 'leftElbow', rElbow: 'rightElbow', lWrist: 'leftWrist', rWrist: 'rightWrist', lHip: 'leftHip', rHip: 'rightHip', lKnee: 'leftKnee', rKnee: 'rightKnee', lAnkle: 'leftAnkle', rAnkle: 'rightAnkle', head: 'nose', neck: 'shoulder' };
+                    const p1 = skelFrame.joints[MAP[a] || a];
+                    const p2 = skelFrame.joints[MAP[b] || b];
+                    if (!p1 || !p2) return null;
+                    return <line key={`${a}-${b}`} x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y} stroke="rgba(232,150,42,0.85)" strokeWidth="0.008" strokeLinecap="round" />;
+                  })}
+                  {Object.entries(skelFrame.joints).filter(([n]) => n.startsWith('left') || n.startsWith('right')).map(([name, j]) => (
+                    <g key={name}>
+                      <circle cx={j.x} cy={j.y} r="0.012" fill={name.includes('Shoulder') ? '#e8962a' : name.includes('Hip') ? '#3B82F6' : name.includes('Knee') ? '#60A5FA' : name.includes('Ankle') ? '#93C5FD' : '#ffc15a'} />
+                      <circle cx={j.x} cy={j.y} r="0.004" fill="rgba(255,255,255,0.9)" />
+                    </g>
+                  ))}
+                </svg>
+              )}
+              <div style={{ position: 'absolute', top: 6, left: 6, background: 'rgba(0,0,0,0.7)', padding: '2px 8px', borderRadius: 4, fontSize: 9, fontWeight: 700, color: '#e8962a', fontFamily: "'Space Mono', monospace" }}>
+                {formatTimestamp(timestamp)}
+              </div>
+            </div>
+          )}
 
           {/* ═══ TAB: OVERVIEW ═══ */}
           {cardTab === 'overview' && (

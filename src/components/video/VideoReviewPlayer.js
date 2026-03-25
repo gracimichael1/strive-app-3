@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { safeStr, safeNum } from '../../utils/helpers';
+import { loadPoseDetector, detectPose } from '../../analysis/poseDetector';
 
 // ─── DEDUCTION SCALE ─────────────────────────────────────────────────
 const DEDUCTION_SCALE = {
@@ -170,43 +171,11 @@ function VideoReviewPlayer({ videoUrl: propUrl, result }) {
 
   const runSkeletonDetection = async (canvas) => {
     try {
-      const { PoseLandmarker, FilesetResolver } = await import('@mediapipe/tasks-vision');
-      const vision = await FilesetResolver.forVisionTasks(
-        'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm'
-      );
-      const landmarker = await PoseLandmarker.createFromOptions(vision, {
-        baseOptions: {
-          modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task',
-          delegate: 'GPU',
-        },
-        runningMode: 'IMAGE',
-        numPoses: 1,
-      });
-      const poseResult = landmarker.detect(canvas);
-      const raw = poseResult.landmarks?.[0];
-      if (!raw) return null;
-
-      const JOINT_MAP = {
-        leftShoulder: 11, rightShoulder: 12, leftElbow: 13, rightElbow: 14,
-        leftWrist: 15, rightWrist: 16, leftHip: 23, rightHip: 24,
-        leftKnee: 25, rightKnee: 26, leftAnkle: 27, rightAnkle: 28,
-      };
-      const joints = {};
-      for (const [name, idx] of Object.entries(JOINT_MAP)) {
-        const lm = raw[idx];
-        if (lm && (lm.visibility || 0) > 0.3) {
-          joints[name] = { x: lm.x, y: lm.y, visibility: lm.visibility };
-        }
-      }
-      if (joints.leftHip && joints.rightHip) joints.hip = mid(joints.leftHip, joints.rightHip);
-      if (joints.leftShoulder && joints.rightShoulder) joints.shoulder = mid(joints.leftShoulder, joints.rightShoulder);
-      if (joints.leftKnee && joints.rightKnee) joints.knee = mid(joints.leftKnee, joints.rightKnee);
-      if (joints.leftAnkle && joints.rightAnkle) joints.ankle = mid(joints.leftAnkle, joints.rightAnkle);
-      if (joints.leftElbow && joints.rightElbow) joints.elbow = mid(joints.leftElbow, joints.rightElbow);
-      landmarker.close();
-      return joints;
+      await loadPoseDetector(); // singleton — initializes once, reused
+      const result = await detectPose(canvas);
+      return result?.joints || null;
     } catch (e) {
-      console.warn('[skeleton]', e.message);
+      console.error('[MediaPipe] Skeleton detection failed:', e);
       return null;
     }
   };

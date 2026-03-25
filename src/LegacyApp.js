@@ -17,6 +17,7 @@ import { runAnalysisPipeline } from "./engine/pipeline";
 import SkillCard from "./components/ui/SkillCard";
 import { canSeeWhatIf, canSeeSessionDiagnostics, getUpgradeCTA, hasReachedAnalysisCap, getMonthlyAnalysisCap } from './engine/tierGates';
 import LockedFeature from './components/LockedFeature';
+import { loadPoseDetector, detectPose } from './analysis/poseDetector';
 import ScoreCardExport from './components/ui/ScoreCardExport';
 import ScoringCaveatBanner from './components/ui/ScoringCaveatBanner';
 
@@ -151,6 +152,44 @@ function saveAthleteRecord(record) {
   }
 }
 
+/**
+ * Parse biomechanical signals from Gemini BHPA text output.
+ * Best-effort: null for any unparseable field.
+ */
+function parseBiomechanicalSignals(result) {
+  // Gather all text that might contain BHPA signals
+  const texts = [
+    result?.overallAssessment,
+    result?.whyThisScore,
+    ...(result?.gradedSkills || []).map(s => [s.fault, s.injuryRisk, s.correction, ...(s.subFaults || []).map(f => f.fault)]).flat(),
+    ...(result?.executionDeductions || []).map(d => [d.fault, d.correction, ...(d.subFaults || []).map(f => f.fault)]).flat(),
+    ...(result?.bodyPositionNotes || []).map(n => n.note),
+    result?.rawResponse,
+  ].filter(Boolean).join(' ').toLowerCase();
+
+  if (!texts) return {};
+
+  // fall_count: look for explicit fall count or count "fall" mentions in deductions
+  let fall_count = null;
+  const fallMatch = texts.match(/(\d+)\s*falls?/);
+  if (fallMatch) {
+    fall_count = parseInt(fallMatch[1], 10);
+  } else {
+    const fallDeds = (result?.executionDeductions || []).filter(d => (d.severity || '').toLowerCase() === 'fall');
+    if (fallDeds.length > 0) fall_count = fallDeds.length;
+  }
+
+  return {
+    fall_count,
+    hard_landing: /hard\s*landing|heavy\s*landing/.test(texts) ? true : null,
+    hyperextension: /hyperextension|over[\s-]*arch/.test(texts) ? true : null,
+    asymmetry_side: /left\s*(side\s*)?asymmetry|asymmetry.*left/.test(texts) ? 'left'
+      : /right\s*(side\s*)?asymmetry|asymmetry.*right/.test(texts) ? 'right' : null,
+    knee_valgus: /knee\s*valgus|knees?\s*in\b|valgus/.test(texts) ? true : null,
+    back_arch: /back\s*arch|lumbar|excessive\s*arch/.test(texts) ? true : null,
+  };
+}
+
 function saveAnalysisToHistory(profile, result, uploadData) {
   if (!profile || !result) return null;
   const record = getAthleteRecord(profile);
@@ -164,6 +203,9 @@ function saveAnalysisToHistory(profile, result, uploadData) {
   const routineId = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   const eventType = (uploadData && uploadData.event) || result.event || "";
 
+  // Parse biomechanical signals from BHPA output
+  const bioSignals = parseBiomechanicalSignals(result);
+
   // Append analysis summary
   record.analysisHistory.push({
     date: new Date().toISOString(),
@@ -174,6 +216,13 @@ function saveAnalysisToHistory(profile, result, uploadData) {
     skillCount: (result.gradedSkills || []).length,
     faultCount: (result.executionDeductions || []).length,
     meetName: (uploadData && uploadData.meetName) || "",
+    // Biomechanical signals (Phase 3-C) — null = not detected/unparseable
+    hyperextension: bioSignals.hyperextension || null,
+    hard_landing: bioSignals.hard_landing || null,
+    asymmetry_side: bioSignals.asymmetry_side || null,
+    fall_count: bioSignals.fall_count ?? null,
+    knee_valgus: bioSignals.knee_valgus || null,
+    back_arch: bioSignals.back_arch || null,
   });
 
   // Extract faults from gradedSkills and append to faultHistory
@@ -5868,49 +5917,14 @@ function VideoReviewPlayer({ videoUrl: propUrl, result }) {
     }, 1500);
   };
 
-  // ── MediaPipe skeleton detection on a canvas ─────────────────────────────
-  const mid = (a, b) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, visibility: Math.min(a.visibility || 0, b.visibility || 0) });
-
+  // ── MediaPipe skeleton detection (uses singleton from poseDetector.js) ────
   const runSkeletonDetection = async (canvas) => {
     try {
-      const { PoseLandmarker, FilesetResolver } = await import("@mediapipe/tasks-vision");
-      const vision = await FilesetResolver.forVisionTasks(
-        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
-      );
-      const landmarker = await PoseLandmarker.createFromOptions(vision, {
-        baseOptions: {
-          modelAssetPath: "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
-          delegate: "GPU",
-        },
-        runningMode: "IMAGE",
-        numPoses: 1,
-      });
-      const result = landmarker.detect(canvas);
-      const raw = result.landmarks?.[0];
-      if (!raw) return null;
-
-      const JOINT_MAP = {
-        leftShoulder: 11, rightShoulder: 12, leftElbow: 13, rightElbow: 14,
-        leftWrist: 15, rightWrist: 16, leftHip: 23, rightHip: 24,
-        leftKnee: 25, rightKnee: 26, leftAnkle: 27, rightAnkle: 28,
-      };
-      const joints = {};
-      for (const [name, idx] of Object.entries(JOINT_MAP)) {
-        const lm = raw[idx];
-        if (lm && (lm.visibility || 0) > 0.3) {
-          joints[name] = { x: lm.x, y: lm.y, visibility: lm.visibility };
-        }
-      }
-      // Midpoints
-      if (joints.leftHip && joints.rightHip) joints.hip = mid(joints.leftHip, joints.rightHip);
-      if (joints.leftShoulder && joints.rightShoulder) joints.shoulder = mid(joints.leftShoulder, joints.rightShoulder);
-      if (joints.leftKnee && joints.rightKnee) joints.knee = mid(joints.leftKnee, joints.rightKnee);
-      if (joints.leftAnkle && joints.rightAnkle) joints.ankle = mid(joints.leftAnkle, joints.rightAnkle);
-      if (joints.leftElbow && joints.rightElbow) joints.elbow = mid(joints.leftElbow, joints.rightElbow);
-      landmarker.close();
-      return joints;
+      await loadPoseDetector(); // singleton — initializes once, reused
+      const result = await detectPose(canvas);
+      return result?.joints || null;
     } catch (e) {
-      console.warn("[skeleton]", e.message);
+      console.error("[MediaPipe] Skeleton detection failed:", e);
       return null;
     }
   };
