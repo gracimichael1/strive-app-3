@@ -402,6 +402,15 @@ function transformSkill(skill, idx) {
 
     // ── Celebration flag ──
     isCelebration: skill.is_celebration || false,
+
+    // ── Fall detection ──
+    fallDetected: !!skill.fall_detected,
+
+    // ── Narrative (3-sentence What Happened) ──
+    narrative: skill.narrative || null,
+
+    // ── Injury signal (proactive, every skill) ──
+    injurySignal: skill.injury_signal || null,
   };
 }
 

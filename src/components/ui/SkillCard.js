@@ -278,6 +278,12 @@ function SkillCard({ skill, index, defaultExpanded, videoFile }) {
   const gainIfFixed = typeof skill.gainIfFixed === 'number' ? skill.gainIfFixed : 0;
   const ruleRef = safeStr(skill.ruleReference || skill.rule_reference, '');
   const category = safeStr(skill.category, '');
+  const fallDetected = !!skill.fallDetected;
+  const narrativeText = safeStr(skill.narrative, '');
+  const injurySignal = safeStr(skill.injurySignal, '');
+  const [showFlagSheet, setShowFlagSheet] = useState(false);
+  const [flagText, setFlagText] = useState('');
+  const [flagSubmitted, setFlagSubmitted] = useState(false);
 
   // Left border color based on grade
   const gradeGroup = (grade || '').charAt(0);
@@ -405,6 +411,11 @@ function SkillCard({ skill, index, defaultExpanded, videoFile }) {
                 }}
               >
                 {category}
+              </span>
+            )}
+            {fallDetected && (
+              <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 4, background: 'rgba(220,38,38,0.15)', color: COLORS.red }}>
+                FALL
               </span>
             )}
             {hasInjuryRisk && (
@@ -567,6 +578,16 @@ function SkillCard({ skill, index, defaultExpanded, videoFile }) {
           {/* ═══ TAB: OVERVIEW ═══ */}
           {cardTab === 'overview' && (
             <>
+              {/* What Happened — 3-sentence narrative */}
+              {narrativeText && (
+                <SectionBox borderColor="rgba(232,150,42,0.15)" bgColor="rgba(232,150,42,0.04)">
+                  <SectionHeader color={COLORS.gold}>What Happened</SectionHeader>
+                  <div style={{ fontSize: 13, color: COLORS.text, lineHeight: 1.7, fontFamily: "'Outfit', sans-serif" }}>
+                    {narrativeText}
+                  </div>
+                </SectionBox>
+              )}
+
               {/* Fault Observed */}
               {skill.fault && deduction > 0 && (
                 <SectionBox borderColor="rgba(224,104,32,0.15)" bgColor="rgba(224,104,32,0.04)">
@@ -748,6 +769,16 @@ function SkillCard({ skill, index, defaultExpanded, videoFile }) {
                   </div>
                   <div style={{ fontSize: 13, color: COLORS.text, fontFamily: "'Outfit', sans-serif", lineHeight: 1.6 }}>
                     {injuryText}
+                  </div>
+                </SectionBox>
+              ) : injurySignal ? (
+                <SectionBox borderColor="rgba(232,150,42,0.15)" bgColor="rgba(232,150,42,0.04)">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                    <span style={{ fontSize: 13 }} aria-hidden="true">&#128170;</span>
+                    <SectionHeader color={COLORS.gold}>Physical Loading</SectionHeader>
+                  </div>
+                  <div style={{ fontSize: 13, color: COLORS.text, fontFamily: "'Outfit', sans-serif", lineHeight: 1.6 }}>
+                    {injurySignal}
                   </div>
                 </SectionBox>
               ) : (

@@ -410,6 +410,8 @@ export function buildPass1Prompt(profile, event) {
   * RULE 3 — VALID AMOUNTS ONLY: Deduction point_value must be one of: 0.05, 0.10, 0.20, 0.30, 0.50. No ranges. No estimates. No strings like "0.05-0.10". Round to nearest valid amount.
   * RULE 4 — START VALUE FIRST: Always set start_value before computing deductions. Final score = start value minus total deductions. If start value is not visible, estimate from level requirements.
   * RULE 5 — ANTI-STACKING: Beam wobbles: one wobble = one deduction on the skill where it occurred. Do not list the same wobble twice. Vault: score holistically, maximum total deduction 0.40 unless there is a fall. Floor artistry: count once per routine, not per pass.
+  * RULE 6 — PRIMARY ATHLETE ONLY: Analyze only the athlete who is actively performing the routine. The primary athlete is the one centered in the frame or closest to the camera who is executing a continuous skill sequence. Ignore all background athletes completely — do not reference, score, or describe any movement from athletes not performing the routine. If multiple athletes are visible, track only the primary performer from the first skill to the last. Never describe a skill performed by a background athlete as belonging to the routine being analyzed.
+  * RULE 7 — FALL DETECTION (MANDATORY): A fall is defined as any loss of balance resulting in a body part other than hands or feet touching the apparatus or floor unintentionally, or stepping off the apparatus. If a fall occurs on any skill: that skill receives a mandatory deduction of exactly 0.50. This is not optional. It does not matter how clean the rest of the skill was. Falls must be explicitly flagged: set "fall_detected": true on the skill object and include a deduction entry with description "Fall" and point_value 0.50 as the first item in the deductions array. Never call a skill "executed_successfully": true if a fall occurred during that skill. Never omit a fall deduction because the rest of the skill looked good.
   * Each deduction must be for a DISTINCT fault. "bent knees" is ONE deduction per skill, not one per frame.
   * Vault is ONE skill — total vault deductions should be moderate for a completed vault without falls.
   * BALANCE BEAM WOBBLES are NOT separate skills. A wobble is a deduction ON the preceding skill.
@@ -453,12 +455,29 @@ Your response MUST include a "deduction_log" array. Each entry MUST follow this 
     { "type": "execution", "body_part": "knees", "description": "slight knee bend at top", "point_value": 0.10 },
     { "type": "execution", "body_part": "feet", "description": "flexed feet through rotation", "point_value": 0.05 }
   ],
+  "fall_detected": false,
   "celebration": null,
-  "reason": "minor form breaks"
+  "reason": "minor form breaks",
+  "narrative": "The judge saw slight knee bend during the push phase of the back hip circle, breaking the straight-body line required through the rotation. This triggered a 0.10 deduction — small individually but it compounds if the same fault appears on multiple skills. In practice, focus on actively pressing the knees straight before initiating the circle.",
+  "injury_signal": "Shoulder extension loading is highest during the pull phase — monitor for shoulder tightness after high-repetition bar sessions. No compensation patterns observed in this execution."
 }
 CRITICAL: The "deductions" array is MANDATORY. Do NOT use total_deduction alone without a deductions array. Every deduction entry must have type, body_part, description, and point_value. point_value must be 0.05, 0.10, 0.20, 0.30, or 0.50.
 FORBIDDEN: {"skill_name": "Execution deductions", "total_deduction": 1.40} — this is an aggregate, NOT a per-skill entry.
 FORBIDDEN: {"skill_name": "Artistry", "total_deduction": 0.30} — artistry must be in the "artistry" field, not in deduction_log.
+
+## NARRATIVE REQUIREMENTS — "narrative" field on every skill
+Every skill in deduction_log MUST have a "narrative" field containing exactly 3 sentences:
+- Sentence 1 — What the judge saw: specific, factual, references the skill by name. Example: "The judge saw bent knees during the push phase of the cartwheel, which breaks the required straight-body line."
+- Sentence 2 — Why it matters for the score: connects execution to the deduction or clean performance to the score benefit. Example: "This triggered a 0.10 deduction — small individually but it compounds if the same fault appears on multiple skills."
+- Sentence 3 — What to watch next time: one coachable action, specific and achievable. Example: "In practice, slow the cartwheel down and focus on locking the knees before the hands leave the floor."
+For CLEAN skills, the narrative should celebrate the execution and explain what the gymnast is doing right. Example: "The judge saw clean arm and leg extension through the cartwheel with consistent body alignment. Clean execution here protects the start value and avoids the 0.10-0.20 form deductions that accumulate quickly on beam. To maintain this, focus on keeping the hips square at the moment of hand contact."
+NEVER produce a 1-sentence narrative. NEVER use generic language like "good execution" or "needs improvement" without specifics.
+
+## INJURY SIGNAL — "injury_signal" field on every skill
+Every skill MUST have an "injury_signal" field containing exactly 2 sentences:
+- Sentence 1: The primary physical loading pattern for this skill type and what to monitor over time with high repetition.
+- Sentence 2: Whether the execution showed compensation patterns (set "elevated_risk": true/false in the injury_signal object if compensation was visible).
+This content appears EVEN when the skill is clean. It is proactive, not reactive. For example, a clean back walkover still carries wrist and lower back loading information parents should know about.
 
 ## FINAL SANITY CHECK
 Before outputting, verify:
