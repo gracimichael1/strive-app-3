@@ -840,6 +840,84 @@ function SkillCard({ skill, index, defaultExpanded, videoFile }) {
               </div>
             </div>
           )}
+          {/* ── Flag Incorrect Skill ── */}
+          <div style={{ marginTop: 12, textAlign: 'center' }}>
+            {flagSubmitted ? (
+              <div style={{ fontSize: 12, color: COLORS.green, fontFamily: "'Outfit', sans-serif" }}>
+                Thanks — this helps STRIVE improve.
+              </div>
+            ) : !showFlagSheet ? (
+              <button
+                onClick={() => setShowFlagSheet(true)}
+                style={{
+                  background: 'none', border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: 8, padding: '6px 14px', cursor: 'pointer',
+                  fontSize: 11, color: 'rgba(255,255,255,0.35)', fontFamily: "'Outfit', sans-serif",
+                }}
+              >
+                Flag incorrect skill
+              </button>
+            ) : (
+              <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 10, padding: 12, border: '1px solid rgba(255,255,255,0.08)' }}>
+                <div style={{ fontSize: 12, color: COLORS.text, marginBottom: 8, fontFamily: "'Outfit', sans-serif" }}>
+                  What skill was this actually?
+                </div>
+                <input
+                  type="text"
+                  value={flagText}
+                  onChange={e => setFlagText(e.target.value)}
+                  placeholder="e.g. Back Walkover, not Back Handspring"
+                  style={{
+                    width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.15)',
+                    background: 'rgba(255,255,255,0.05)', color: COLORS.text, fontSize: 13,
+                    fontFamily: "'Outfit', sans-serif", boxSizing: 'border-box',
+                  }}
+                />
+                <div style={{ display: 'flex', gap: 8, marginTop: 8, justifyContent: 'center' }}>
+                  <button
+                    onClick={() => setShowFlagSheet(false)}
+                    style={{
+                      background: 'none', border: '1px solid rgba(255,255,255,0.1)',
+                      borderRadius: 6, padding: '6px 14px', cursor: 'pointer',
+                      fontSize: 11, color: 'rgba(255,255,255,0.4)', fontFamily: "'Outfit', sans-serif",
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (!flagText.trim()) return;
+                      const record = {
+                        analysis_id: skill.analysisId || skill.id || 'unknown',
+                        timestamp_sec: skill.timestampStart || skill.timestamp_start || 0,
+                        flagged_skill: skillName,
+                        suggested_correction: flagText.trim(),
+                        video_id: skill.videoId || 'unknown',
+                        flagged_at: new Date().toISOString(),
+                      };
+                      try {
+                        const existing = JSON.parse(localStorage.getItem('strive_skill_corrections') || '[]');
+                        existing.push(record);
+                        localStorage.setItem('strive_skill_corrections', JSON.stringify(existing));
+                        console.log('[SkillCard] Skill correction stored:', record);
+                      } catch (e) {
+                        console.warn('[SkillCard] Failed to store correction:', e);
+                      }
+                      setFlagSubmitted(true);
+                      setShowFlagSheet(false);
+                    }}
+                    style={{
+                      background: COLORS.gold, border: 'none', borderRadius: 6,
+                      padding: '6px 14px', cursor: 'pointer', fontSize: 11,
+                      fontWeight: 700, color: '#070c16', fontFamily: "'Outfit', sans-serif",
+                    }}
+                  >
+                    Submit
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
