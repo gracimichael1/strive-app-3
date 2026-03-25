@@ -268,6 +268,8 @@ A typical optional floor routine contains exactly 2-3 tumbling passes. Before sc
 - Landing zone: deduct progressively for deep squat landings (small-to-moderate), and for chest dropping to knees (moderate).
 - Artistry: chin down for a significant portion of non-tumbling time warrants a small artistry deduction.
 - Music: if vocals present, choreography must reflect mood. Noticeable mismatch warrants a small musicality deduction.
+ANTI-STACKING: Artistry and musicality are ROUTINE-LEVEL deductions, not per-skill. Assess artistry ONCE for the whole routine (small deduction if slightly flat, moderate if noticeably lacking). Do NOT also add per-skill artistry deductions on individual dance elements — that is double-counting the same fault.
+ANTI-STACKING: "Flexed feet during transitions" is ONE cumulative deduction for the entire routine (typically small-to-moderate total), NOT one deduction per transition. Count the occurrences, then assign ONE total deduction.
 `,
   BARS: `
 ## EVENT SPECIFICS: UNEVEN BARS
@@ -283,6 +285,8 @@ A typical optional floor routine contains exactly 2-3 tumbling passes. Before sc
 - Deduct progressively for balance wobbles: small arm adjustment (small deduction) < large arm save (moderate deduction) < grasping beam to avoid fall (large deduction) < falling from beam (largest single deduction).
 - Extra step or hop on landing: small deduction per step.
 - Pause or freeze that is not choreographic: small deduction.
+ANTI-STACKING: A balance wobble AFTER a skill is ONE deduction on that skill, not a separate entry. If a gymnast wobbles after a back walkover, that is a single "balance check" deduction attached to the back walkover — do NOT create a separate "wobble" skill entry. The wobble is part of the skill's execution, not an independent event.
+ANTI-STACKING: Foot placement adjustments on beam (small shifts to stay centered) are NORMAL at youth levels and do NOT warrant per-occurrence deductions. Only deduct for clearly misplaced feet that cause visible instability.
 `,
   VAULT: `
 ## EVENT SPECIFICS: VAULT
@@ -290,6 +294,7 @@ A typical optional floor routine contains exactly 2-3 tumbling passes. Before sc
 - Block: hands must leave table before hips pass vertical.
 - Post-flight height: low salto warrants a small-to-moderate deduction.
 - Landing: deduct progressively — small step (small) < hop (small) < large step (moderate) < fall (largest single deduction).
+ANTI-STACKING: Vault is ONE skill with ONE total deduction. Do NOT list pre-flight, block, post-flight, and landing as separate deductions. Instead, assess the vault holistically: identify the 1-2 most significant faults (e.g., "low post-flight" and "step on landing") and assign ONE combined deduction that reflects the overall quality. A completed vault without a fall should have total deductions in the small-to-moderate range (typically 0.10-0.30). If your vault deductions exceed 0.40, you are over-deducting.
 `,
   HIGH_BAR: `
 ## EVENT SPECIFICS: HIGH BAR (MAG)
@@ -399,11 +404,14 @@ export function buildPass1Prompt(profile, event) {
 - If you find fewer than 5 deductions total, you are MISSING deductions. Re-watch transitions and landings.
 - If you find more than 20 deductions total, you are likely over-counting — merge related micro-faults on the same skill.
 - Apply TPM/KTM deductions only when the form break is clearly visible. Most skills will have at least one minor form deduction — do not skip deductions to inflate the score.
-- PER-SKILL DEDUCTION RULES:
-  * Each skill should have 1-4 deductions maximum. Do NOT list more than 4 deductions for any single skill.
+- PER-SKILL DEDUCTION RULES (HARD LIMITS — NEVER EXCEED):
+  * Each skill MUST have 1-3 deductions maximum. NEVER list more than 3 deductions for any single skill.
+  * If you identify 4+ faults on one skill, keep only the 3 most significant and merge or drop the rest.
   * Per-skill total deductions should be small-to-moderate for most skills. Only a fall warrants the largest single deduction.
   * Each deduction must be for a DISTINCT fault. "bent knees" is ONE deduction per skill, not one per frame.
   * Vault is ONE skill — total vault deductions should be moderate for a completed vault without falls.
+  * BALANCE BEAM WOBBLES are NOT separate skills. A wobble is a deduction ON the preceding skill.
+  * FLOOR ARTISTRY is a ROUTINE-LEVEL assessment — do NOT add artistry deductions on individual skills AND the routine.
 
 ## SKILL COUNT CHECK
 - BARS: A typical routine has 7-10 skills. If you have more than 12, you are splitting skills that should be combined.

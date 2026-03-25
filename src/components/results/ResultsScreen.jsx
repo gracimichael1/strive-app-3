@@ -167,22 +167,6 @@ export default function ResultsScreen({ result, profile, previousResult, onBack,
           range {rangeLow}–{rangeHigh} · {confidence} confidence
         </div>
 
-        {/* Judging standard badge */}
-        <div style={{
-          display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 5,
-          padding: '3px 9px', borderRadius: 99,
-          background: 'rgba(232,150,42,0.08)', border: '1px solid rgba(232,150,42,0.18)',
-          fontSize: 10.5, fontWeight: 600, color: 'rgba(232,150,42,0.8)',
-          letterSpacing: 0.3, fontFamily: T.sans,
-        }}>
-          ⚖️ Scored at State Championship competitive standard
-        </div>
-
-        {/* Score Card Export */}
-        <div style={{ padding: '0 16px' }}>
-          <ScoreCardExport result={result} athleteName={profile?.name || 'Athlete'} tier={tier} />
-        </div>
-
         {/* Stat bar */}
         <div style={{ display: 'flex', gap: 12, marginTop: 10, fontSize: 12, color: T.textSec, fontFamily: T.mono }}>
           <span>SV {startValue.toFixed(1)}</span>
@@ -358,6 +342,24 @@ export default function ResultsScreen({ result, profile, previousResult, onBack,
         )}
 
         </>}
+
+        {/* ═══ SCORE CARD EXPORT + JUDGING BADGE (moved from header) ═══ */}
+        <div style={{ margin: '20px 16px 0' }}>
+          <ScoreCardExport result={result} athleteName={profile?.name || 'Athlete'} tier={tier} />
+          <div style={{
+            display: 'flex', justifyContent: 'center', marginTop: 10,
+          }}>
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: 5,
+              padding: '3px 9px', borderRadius: 99,
+              background: 'rgba(232,150,42,0.08)', border: '1px solid rgba(232,150,42,0.18)',
+              fontSize: 10.5, fontWeight: 600, color: 'rgba(232,150,42,0.8)',
+              letterSpacing: 0.3, fontFamily: T.sans,
+            }}>
+              ⚖️ Scored at State Championship competitive standard
+            </span>
+          </div>
+        </div>
 
         {/* ═══ 6. COMPLIANCE DISCLAIMER ═══ */}
         <div style={{
