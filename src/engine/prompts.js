@@ -637,7 +637,7 @@ export function buildCompactPrompt(profile, event) {
 
   const user = `Score this ${level} ${gender} ${event || ""} routine for ${athleteName}.
 
-For each skill: name it, give a total deduction (number), and a one-sentence reason.
+For each skill: name it, give deductions, a 3-sentence narrative, and injury signal.
 Give start_value, final_score, and confidence.
 
 Output this exact JSON structure:
@@ -645,11 +645,33 @@ Output this exact JSON structure:
   "start_value": 10.0,
   "final_score": <number>,
   "confidence": "HIGH" or "MEDIUM" or "LOW",
+  "event": "<floor/beam/bars/vault>",
+  "total_execution_deductions": <number>,
+  "total_artistry_deductions": <number>,
+  "score_range": { "low": <number>, "high": <number> },
+  "special_requirements": [],
+  "artistry": { "expression_deduction": 0, "quality_of_movement_deduction": 0, "choreography_variety_deduction": 0, "musicality_deduction": 0, "total_artistry_deduction": <number>, "notes": "" },
   "deduction_log": [
-    { "skill_name": "<name>", "skill_order": <n>, "total_deduction": <number>, "reason": "<one sentence>", "executed_successfully": true }
+    {
+      "skill_name": "<name>",
+      "skill_order": <n>,
+      "timestamp_start": <seconds>,
+      "timestamp_end": <seconds>,
+      "executed_successfully": true,
+      "difficulty_value": 0.10,
+      "total_deduction": <number>,
+      "deductions": [{ "type": "execution", "body_part": "<part>", "description": "<fault>", "point_value": <0.05|0.10|0.20|0.30|0.50> }],
+      "quality_grade": <number>,
+      "reason": "<one sentence>",
+      "is_celebration": false,
+      "fall_detected": false,
+      "narrative": "<3 sentences: what happened, why it matters, what to fix>",
+      "injury_signal": "<2 sentences: loading pattern and compensation check>"
+    }
   ],
   "coaching_summary": "<2 sentences>",
-  "top_3_fixes": ["<fix1>", "<fix2>", "<fix3>"]
+  "top_3_fixes": ["<fix1>", "<fix2>", "<fix3>"],
+  "celebrations": []
 }
 
 Raw JSON only. No markdown. Begin with { end with }.`;
@@ -659,8 +681,57 @@ Raw JSON only. No markdown. Begin with { end with }.`;
 
 export const COMPACT_CONFIG = {
   temperature: 0.1,
-  maxOutputTokens: 4096,
+  maxOutputTokens: 8192,
   responseMimeType: "application/json",
+  responseSchema: {
+    type: "object",
+    properties: {
+      start_value: { type: "number" },
+      final_score: { type: "number" },
+      confidence: { type: "string", enum: ["HIGH", "MEDIUM", "LOW"] },
+      event: { type: "string" },
+      total_execution_deductions: { type: "number" },
+      total_artistry_deductions: { type: "number" },
+      score_range: {
+        type: "object",
+        properties: { low: { type: "number" }, high: { type: "number" } },
+        required: ["low", "high"],
+      },
+      special_requirements: { type: "array", items: { type: "object", properties: { requirement: { type: "string" }, status: { type: "string" }, comment: { type: "string" }, penalty: { type: "number" } }, required: ["requirement", "status", "comment", "penalty"] } },
+      artistry: {
+        type: "object",
+        properties: { expression_deduction: { type: "number" }, quality_of_movement_deduction: { type: "number" }, choreography_variety_deduction: { type: "number" }, musicality_deduction: { type: "number" }, total_artistry_deduction: { type: "number" }, notes: { type: "string" } },
+        required: ["total_artistry_deduction", "notes"],
+      },
+      deduction_log: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            skill_name: { type: "string" },
+            skill_order: { type: "number" },
+            timestamp_start: { type: "number" },
+            timestamp_end: { type: "number" },
+            executed_successfully: { type: "boolean" },
+            difficulty_value: { type: "number" },
+            total_deduction: { type: "number" },
+            deductions: { type: "array", items: { type: "object", properties: { type: { type: "string" }, body_part: { type: "string" }, description: { type: "string" }, point_value: { type: "number" } }, required: ["type", "description", "point_value"] } },
+            quality_grade: { type: "number" },
+            reason: { type: "string" },
+            is_celebration: { type: "boolean" },
+            fall_detected: { type: "boolean" },
+            narrative: { type: "string" },
+            injury_signal: { type: "string" },
+          },
+          required: ["skill_name", "total_deduction", "deductions", "fall_detected", "narrative", "injury_signal"],
+        },
+      },
+      coaching_summary: { type: "string" },
+      top_3_fixes: { type: "array", items: { type: "string" } },
+      celebrations: { type: "array", items: { type: "string" } },
+    },
+    required: ["start_value", "final_score", "deduction_log", "coaching_summary"],
+  },
 };
 
 
@@ -733,11 +804,15 @@ export const PASS1_CONFIG = {
             rule_reference: { type: "string" },
             is_celebration: { type: "boolean" },
             strength_note: { type: "string" },
+            fall_detected: { type: "boolean" },
+            narrative: { type: "string" },
+            injury_signal: { type: "string" },
           },
           required: [
             "skill_name", "skill_order", "timestamp_start", "timestamp_end",
             "executed_successfully", "difficulty_value", "total_deduction",
             "deductions", "quality_grade", "reason", "is_celebration",
+            "fall_detected", "narrative", "injury_signal",
           ],
         },
       },
