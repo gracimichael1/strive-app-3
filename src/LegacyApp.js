@@ -1639,10 +1639,9 @@ export default function LegacyApp() {
               setScreen("legal-disclaimer");
               return;
             }
-            // COPPA gate: block analysis for under-13 without confirmed consent
+            // COPPA gate: block analysis for under-13 without confirmed consent on profile
             const athleteAge = profile?.age ? parseInt(profile.age) : (profile?.dateOfBirth ? Math.floor((Date.now() - new Date(profile.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000)) : null);
-            const consentConfirmed = sessionStorage.getItem('strive-consent-status') === 'confirmed';
-            if (athleteAge !== null && athleteAge < 13 && !consentConfirmed) {
+            if (athleteAge !== null && athleteAge < 13 && !profile?.consentConfirmed) {
               setPendingAnalyzeData(data);
               setShowCoppaGate(true);
               return;
@@ -1752,7 +1751,19 @@ export default function LegacyApp() {
         <StriveErrorBoundary name="Settings">
         <SettingsScreen
           profile={profile}
-          onSave={(p) => { saveProfile(p); setScreen("dashboard"); }}
+          onSave={(p) => {
+            // COPPA gate on profile save: if age < 13 and no consent, show consent modal
+            const age = p?.age ? parseInt(p.age) : (p?.dateOfBirth ? Math.floor((Date.now() - new Date(p.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000)) : null);
+            if (age !== null && age < 13 && !p?.consentConfirmed) {
+              setPendingAnalyzeData(null); // Not resuming analysis, just gating profile save
+              setCoppaEmail(p?.parentEmail || '');
+              setShowCoppaGate(true);
+              // Store pending profile to save after consent
+              window.__pendingCoppaProfile = p;
+              return;
+            }
+            saveProfile(p); setScreen("dashboard");
+          }}
           onBack={() => setScreen("dashboard")}
           onLegal={() => setScreen("legal")}
           onTierChange={(t) => {
@@ -1926,10 +1937,9 @@ export default function LegacyApp() {
             if (pendingAnalyzeData) {
               const data = pendingAnalyzeData;
 
-              // COPPA gate after legal disclaimer
+              // COPPA gate after legal disclaimer — check profile, not sessionStorage
               const athleteAge = profile?.age ? parseInt(profile.age) : (profile?.dateOfBirth ? Math.floor((Date.now() - new Date(profile.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000)) : null);
-              const consentConfirmed = sessionStorage.getItem('strive-consent-status') === 'confirmed';
-              if (athleteAge !== null && athleteAge < 13 && !consentConfirmed) {
+              if (athleteAge !== null && athleteAge < 13 && !profile?.consentConfirmed) {
                 setShowCoppaGate(true);
                 return;
               }
@@ -1978,9 +1988,19 @@ export default function LegacyApp() {
                   body: JSON.stringify({ parentEmail, athleteNickname: profile?.name || 'your child' }),
                 });
               } catch {}
-              sessionStorage.setItem('strive-consent-status', 'confirmed');
+              // Persist consent on profile (survives across sessions in localStorage)
               setShowCoppaGate(false);
-              // Resume analysis with pending data
+              // Case 1: Profile save was pending (Settings flow)
+              if (window.__pendingCoppaProfile) {
+                const p = { ...window.__pendingCoppaProfile, consentConfirmed: true, parentEmail };
+                window.__pendingCoppaProfile = null;
+                saveProfile(p);
+                setScreen("dashboard");
+                return;
+              }
+              // Case 2: Analysis was pending (upload flow)
+              const updatedProfile = { ...profile, consentConfirmed: true, parentEmail };
+              saveProfile(updatedProfile);
               if (pendingAnalyzeData) {
                 const data = pendingAnalyzeData;
                 setPendingAnalyzeData(null);
@@ -2578,10 +2598,8 @@ function OnboardingScreen({ onComplete }) {
         accountEmail="" /* No account email yet pre-Supabase */
         onConsent={(record) => {
           setParentalConsentRecord(record);
-          // Set consent status to pending — blocks analysis until confirmed
-          try { sessionStorage.setItem('strive-consent-status', 'pending'); } catch {}
           setLegalScreen(null);
-          setStep(2); // proceed to gender (analysis blocked until email confirmed)
+          setStep(2); // proceed to gender — consentConfirmed stored on profile at completion
         }}
         onDecline={() => {
           // Stay on declined screen (ParentalConsent handles the declined UI)
@@ -2600,7 +2618,7 @@ function OnboardingScreen({ onComplete }) {
             role, name, age: age ? parseInt(age) : null, gender, levelCategory, level,
             primaryEvents, goals: goals.trim() || null, createdAt: Date.now(),
             dateOfBirth, requiresParentalConsent, isMinor,
-            ...(parentalConsentRecord ? { parentalConsent: parentalConsentRecord } : {}),
+            ...(parentalConsentRecord ? { parentalConsent: parentalConsentRecord, consentConfirmed: true } : {}),
           });
         }}
         onBack={() => setLegalScreen(null)}
@@ -4767,14 +4785,13 @@ IMPORTANT: The deduction_log must contain ONE entry per distinct skill or transi
   // ── Main analysis orchestrator — single pass ─────────────────────
   const analyzeWithAI = useCallback(async (extractedFrames) => {
     // COPPA: Block analysis if under-13 consent is pending
-    try {
-      const consentStatus = sessionStorage.getItem('strive-consent-status');
-      if (consentStatus === 'pending') {
-        setStatus("Parental consent required — check your parent's email for the confirmation link.");
-        setProgress(0);
-        return;
-      }
-    } catch {}
+    // COPPA: check profile-stored consent (not sessionStorage)
+    const athleteAge = profile?.age ? parseInt(profile.age) : null;
+    if (athleteAge !== null && athleteAge < 13 && !profile?.consentConfirmed) {
+      setStatus("Parental consent required — complete consent in Settings before analyzing.");
+      setProgress(0);
+      return;
+    }
 
     setStatus("Preparing analysis...");
     setProgress(35);
