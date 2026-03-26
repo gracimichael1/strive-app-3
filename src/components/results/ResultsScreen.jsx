@@ -347,6 +347,52 @@ export default function ResultsScreen({ result, profile, previousResult, onBack,
 
         </>}
 
+        {/* ═══ BIOMECHANICAL ANALYSIS (Elite only) ═══ */}
+        {tier === 'elite' && (
+          <div style={{
+            margin: '16px 16px 0', padding: 16, borderRadius: 14,
+            background: '#0f1623', border: '1px solid rgba(232,150,42,0.12)',
+          }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#e8962a', fontFamily: "'Outfit', sans-serif", marginBottom: 10 }}>
+              Biomechanical Analysis
+            </div>
+            {(() => {
+              const bs = result?.biomechanicalSignals;
+              const hasFlags = bs && (bs.hyperextension || bs.hard_landing || bs.asymmetry_side || (bs.fall_count && bs.fall_count > 0) || bs.knee_valgus || bs.back_arch);
+              if (!hasFlags) {
+                return <div style={{ fontSize: 12, color: '#22c55e', fontFamily: "'Space Mono', monospace" }}>✓ No biomechanical flags detected</div>;
+              }
+              return (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {bs.hyperextension && <div style={{ fontSize: 12, color: '#fbbf24', fontFamily: "'Space Mono', monospace" }}>⚠️ Hyperextension detected</div>}
+                  {bs.hard_landing && <div style={{ fontSize: 12, color: '#fbbf24', fontFamily: "'Space Mono', monospace" }}>⚠️ Hard landing detected</div>}
+                  {bs.asymmetry_side && <div style={{ fontSize: 12, color: '#fbbf24', fontFamily: "'Space Mono', monospace" }}>⚠️ Movement asymmetry: {bs.asymmetry_side}</div>}
+                  {bs.fall_count > 0 && <div style={{ fontSize: 12, color: '#fbbf24', fontFamily: "'Space Mono', monospace" }}>⚠️ Falls recorded: {bs.fall_count}</div>}
+                  {bs.knee_valgus && <div style={{ fontSize: 12, color: '#fbbf24', fontFamily: "'Space Mono', monospace" }}>⚠️ Knee valgus detected</div>}
+                  {bs.back_arch && <div style={{ fontSize: 12, color: '#fbbf24', fontFamily: "'Space Mono', monospace" }}>⚠️ Back arch detected</div>}
+                </div>
+              );
+            })()}
+            {result?.biomechanics_raw ? (
+              <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: 'rgba(230,237,243,0.5)', fontFamily: "'Outfit', sans-serif", marginBottom: 6 }}>Raw Measurements</div>
+                {result.biomechanics_raw.map((m, i) => (
+                  <div key={i} style={{ fontSize: 11, color: '#e2e8f0', fontFamily: "'Space Mono', monospace", lineHeight: 1.8 }}>
+                    {m.skill_name}: knee {m.knee_angle_left != null ? `${m.knee_angle_left}°/${m.knee_angle_right}°` : 'Pending'} · hip {m.hip_angle_left != null ? `${m.hip_angle_left}°/${m.hip_angle_right}°` : 'Pending'} · spine {m.spine_angle != null ? `${m.spine_angle}°` : 'Pending'}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                <div style={{ fontSize: 11, color: 'rgba(230,237,243,0.35)', fontFamily: "'Space Mono', monospace" }}>Raw measurements: Pending video analysis</div>
+              </div>
+            )}
+            <div style={{ fontSize: 10, color: 'rgba(230,237,243,0.25)', fontFamily: "'Outfit', sans-serif", marginTop: 8 }}>
+              Biomechanical data is used for personalized training recommendations and long-term athletic development tracking.
+            </div>
+          </div>
+        )}
+
         {/* ═══ SCORE CARD EXPORT + JUDGING BADGE (moved from header) ═══ */}
         <div style={{ margin: '20px 16px 0' }}>
           <ScoreCardExport result={result} athleteName={profile?.name || 'Athlete'} tier={tier} />
@@ -379,6 +425,40 @@ export default function ResultsScreen({ result, profile, previousResult, onBack,
           to help improve accuracy.
         </div>
 
+        {/* ═══ DATA EXPORT ═══ */}
+        <div style={{ margin: '16px 16px 24px', textAlign: 'center' }}>
+          <button
+            onClick={() => {
+              try {
+                const exportData = {
+                  exportDate: new Date().toISOString(),
+                  athlete: { level: profile?.level || '', events: profile?.primaryEvents || [] },
+                  analyses: JSON.parse(localStorage.getItem('strive_recent_analyses') || '[]'),
+                  judgeScores: JSON.parse(localStorage.getItem('strive_judge_scores') || '[]'),
+                  biomechanics: [],
+                  flaggedSkills: JSON.parse(localStorage.getItem('strive_skill_corrections') || '[]'),
+                };
+                const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `strive_export_${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+              } catch (e) { console.warn('[export] Failed:', e); }
+            }}
+            style={{
+              background: 'none', border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: 8, padding: '8px 16px', cursor: 'pointer',
+              fontSize: 11, color: 'rgba(230,237,243,0.35)', fontFamily: "'Outfit', sans-serif",
+            }}
+          >
+            Export My Data
+          </button>
+        </div>
+
       </div>
     </div>
   );
@@ -397,11 +477,16 @@ function LevelUpPanel({ result, isFree, onUpgrade }) {
   const lpa = result?.levelProgressionAnalysis;
   const [expandedGap, setExpandedGap] = useState(null);
 
+  // State A: no analysis or no progression data
   if (!lpa) {
+    const level = result?.level || '';
+    const isUpperLevel = /level\s*(8|9|10)/i.test(level) || /elite/i.test(level);
     return (
       <div style={{ margin: '16px 16px 0', padding: 20, borderRadius: 12, background: T.card, textAlign: 'center' }}>
-        <div style={{ fontSize: 14, color: T.textSec, fontFamily: T.sans }}>
-          Level progression data unavailable for this analysis. Upload a new routine to see your Level Up roadmap.
+        <div style={{ fontSize: 14, color: T.gold, fontFamily: T.sans }}>
+          {isUpperLevel
+            ? `Level Up roadmap for ${level} is coming soon.`
+            : 'Run your first analysis to see your Level Up roadmap.'}
         </div>
       </div>
     );
@@ -449,7 +534,7 @@ function LevelUpPanel({ result, isFree, onUpgrade }) {
       )}
 
       {/* 2. SCORE PROJECTION */}
-      {lpa.projectedScoreAtNextLevel && (
+      {typeof lpa.projectedScoreAtNextLevel === 'number' && lpa.projectedScoreAtNextLevel > 0 && (
         <div style={{
           padding: '12px 16px', borderRadius: 10, textAlign: 'center', marginBottom: 12,
           background: 'rgba(240,160,48,0.06)', border: `1px solid rgba(240,160,48,0.15)`,
@@ -748,11 +833,18 @@ function SkillCard({ skill, index, isFree, tier, freeDeductionLimit, globalDeduc
       }
 
       // Detection loop — runs during playback AND sends frames when paused (on seek)
+      let frameCount = 0;
       const detectLoop = async () => {
         if (!running || !poseRef.current) return;
+        frameCount++;
+        // Frame-skip: only process every 3rd frame during playback to reduce CPU
+        if (!video.paused && frameCount % 3 !== 0) {
+          if (running) rafRef.current = requestAnimationFrame(detectLoop);
+          return;
+        }
         const now = Date.now();
-        // Throttle: max ~15fps during playback, 1fps when paused
-        const interval = video.paused ? 1000 : 66;
+        // Throttle: ~10fps during playback (every 3rd frame), 1fps when paused
+        const interval = video.paused ? 1000 : 33;
         if (now - lastSendTime >= interval && video.readyState >= 2) {
           syncCanvasSize();
           lastSendTime = now;

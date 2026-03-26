@@ -466,12 +466,13 @@ FORBIDDEN: {"skill_name": "Execution deductions", "total_deduction": 1.40} — t
 FORBIDDEN: {"skill_name": "Artistry", "total_deduction": 0.30} — artistry must be in the "artistry" field, not in deduction_log.
 
 ## NARRATIVE REQUIREMENTS — "narrative" field on every skill
-Every skill in deduction_log MUST have a "narrative" field containing exactly 3 sentences:
+Every skill in deduction_log MUST have a "narrative" field containing exactly 4 sentences:
 - Sentence 1 — What the judge saw: specific, factual, references the skill by name. Example: "The judge saw bent knees during the push phase of the cartwheel, which breaks the required straight-body line."
 - Sentence 2 — Why it matters for the score: connects execution to the deduction or clean performance to the score benefit. Example: "This triggered a 0.10 deduction — small individually but it compounds if the same fault appears on multiple skills."
 - Sentence 3 — What to watch next time: one coachable action, specific and achievable. Example: "In practice, slow the cartwheel down and focus on locking the knees before the hands leave the floor."
-For CLEAN skills, the narrative should celebrate the execution and explain what the gymnast is doing right. Example: "The judge saw clean arm and leg extension through the cartwheel with consistent body alignment. Clean execution here protects the start value and avoids the 0.10-0.20 form deductions that accumulate quickly on beam. To maintain this, focus on keeping the hips square at the moment of hand contact."
-NEVER produce a 1-sentence narrative. NEVER use generic language like "good execution" or "needs improvement" without specifics.
+- Sentence 4 — The judge's technical read: "A judge would note [specific technical detail about execution quality for this skill]." Example: "A judge would note the lack of tension through the core during the rotation, which is the root cause of the knee break."
+For CLEAN skills, the narrative should celebrate the execution and explain what the gymnast is doing right, ending with the judge's technical observation. Example: "The judge saw clean arm and leg extension through the cartwheel with consistent body alignment. Clean execution here protects the start value and avoids the 0.10-0.20 form deductions that accumulate quickly on beam. To maintain this, focus on keeping the hips square at the moment of hand contact. A judge would note the consistent body tension through the full rotation — this is championship-level execution for this skill."
+NEVER produce a 1-sentence or 2-sentence narrative. NEVER use generic language like "good execution" or "needs improvement" without specifics.
 
 ## INJURY SIGNAL — "injury_signal" field on every skill
 Every skill MUST have an "injury_signal" field containing exactly 2 sentences:
@@ -551,7 +552,7 @@ You are strictly forbidden from giving "benefit of the doubt." Focus on micro-de
 
 For every skill: name it, note the exact timestamp when it begins and ends (in seconds from video start), list every deduction with the specific body part and position, and estimate its difficulty value.
 
-Celebrate the good and perfect skills as well. Provide a coaching summary with the top 3 fixes.
+Celebrate the good and perfect skills as well. Provide a coaching summary with the top 3 fixes. End the coaching_summary with one sentence giving the judge's holistic competitive perspective, formatted: "From a judging standpoint, [specific observation about what defined this routine competitively]."
 ${event === "Auto-detect" ? "\nAuto-detect which apparatus/event this is from the video." : ""}`;
 
   return { system, user };

@@ -280,7 +280,14 @@ function SkillCard({ skill, index, defaultExpanded, videoFile }) {
   const category = safeStr(skill.category, '');
   const fallDetected = !!skill.fallDetected;
   const narrativeText = safeStr(skill.narrative, '');
-  const injurySignal = safeStr(skill.injurySignal, '');
+  const rawInjurySignal = safeStr(skill.injurySignal, '');
+  const injurySignal = (() => {
+    if (!rawInjurySignal) return '';
+    const clean = rawInjurySignal.toLowerCase().trim();
+    if (clean === '' || clean === 'none' || clean === 'n/a' || clean === 'no injury signal' ||
+        clean === 'no injury signals detected' || clean === 'normal') return '';
+    return rawInjurySignal;
+  })();
   const [showFlagSheet, setShowFlagSheet] = useState(false);
   const [flagText, setFlagText] = useState('');
   const [flagSubmitted, setFlagSubmitted] = useState(false);

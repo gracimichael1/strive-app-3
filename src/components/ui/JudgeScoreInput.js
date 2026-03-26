@@ -67,11 +67,14 @@ function JudgeScoreInput({ result, profile }) {
       }
       // Also store in a dedicated key for calibration pipeline
       const scores = JSON.parse(localStorage.getItem('strive_judge_scores') || '[]');
+      const aiScore = result?.finalScore || 0;
       scores.push({
         judgeScore: parsed,
-        aiScore: result?.finalScore || 0,
+        aiScore,
+        delta: Math.round((parsed - aiScore) * 1000) / 1000,
         event: result?.event || '',
         level: profile?.level || '',
+        videoId: result?._meta?.videoId || result?.summary?.videoId || 'unknown',
         timestamp: new Date().toISOString(),
       });
       localStorage.setItem('strive_judge_scores', JSON.stringify(scores));

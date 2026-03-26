@@ -41,7 +41,7 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({ error: 'Mastermind not configured' });
   }
 
-  const { type, athleteProfile, recentScores, upcomingMeet } = req.body || {};
+  const { type, athleteProfile, recentScores, upcomingMeet, topFaults, event, level } = req.body || {};
 
   try {
     if (type === 'mental') {
@@ -55,10 +55,11 @@ module.exports = async function handler(req, res) {
         recentScores.slice(-2).every((s, i, a) => i === 0 || s < a[i - 1] - 0.3);
 
       const userPrompt = [
-        `Gymnast: ${name || 'this athlete'}, age ${age || 'unknown'}.`,
+        `Gymnast: ${name || 'this athlete'}, age ${age || 'unknown'}, ${level || 'level unknown'}, primary event: ${event || 'not specified'}.`,
         `Goal: ${goal || 'not set'}.`,
         `Score trend: ${trendLabel} (last ${recentScores?.length ?? 0} analyses).`,
         topStrength ? `Top strength this month: ${topStrength}.` : '',
+        topFaults?.length > 0 ? `Top recurring faults: ${topFaults.join(', ')}. Reference these in your affirmation — acknowledge the work being done on them.` : '',
         daysUntilMeet ? `Meet in ${daysUntilMeet} days.` : 'No upcoming meet logged.',
         isSlump ? 'NOTE: Scores have dropped 0.3+ two sessions in a row.' : '',
         '', 'Generate:', '1. morningAffirmation (2 sentences max — reference something specific above)',
@@ -88,9 +89,10 @@ module.exports = async function handler(req, res) {
         ? Math.ceil((new Date(upcomingMeet) - new Date()) / 86400000) : null;
 
       const userPrompt = [
-        `Youth gymnast, age ${ageNum}.`,
-        `Primary events: ${(events || []).join(', ') || 'not specified'}.`,
+        `Youth gymnast, age ${ageNum}, ${level || 'level unknown'}.`,
+        `Primary events: ${(events || []).join(', ') || event || 'not specified'}.`,
         `Goal: ${goal || 'not set'}.`,
+        topFaults?.length > 0 ? `Top recurring faults: ${topFaults.join(', ')}. Tailor nutrition to the physical demands that cause these faults.` : '',
         daysUntilMeet ? `Meet in ${daysUntilMeet} days.` : 'No upcoming meet.',
         '',
         ageNum < 13 ? 'IMPORTANT: Athlete is under 13. NO calorie counts or portion sizes. Food quality and timing only.' : '',

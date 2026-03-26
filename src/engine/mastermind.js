@@ -51,9 +51,18 @@ export async function generateMastermindPlan(athleteProfile, recentAnalyses, upc
   try {
     const recentScores = (recentAnalyses || []).slice(-5).map(a => a?.finalScore ?? a?.score ?? null).filter(s => s !== null);
     const topStrength = getTopStrength(recentAnalyses);
+    const latestEvent = recentAnalyses?.[0]?.event || '';
     const res = await fetch('/api/mastermind', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type: 'mental', athleteProfile: { ...athleteProfile, topStrength }, recentScores, upcomingMeet }),
+      body: JSON.stringify({
+        type: 'mental',
+        athleteProfile: { ...athleteProfile, topStrength },
+        recentScores,
+        upcomingMeet,
+        topFaults: topDeductions.slice(0, 3),
+        event: latestEvent,
+        level: athleteProfile?.level || '',
+      }),
     });
     plan.mental = res.ok ? await res.json() : mentalFallback(athleteProfile);
   } catch { plan.mental = mentalFallback(athleteProfile); }
@@ -64,9 +73,17 @@ export async function generateMastermindPlan(athleteProfile, recentAnalyses, upc
     plan.nutrition = cachedNutrition;
   } else {
     try {
+      const latestEvent = recentAnalyses?.[0]?.event || '';
       const res = await fetch('/api/mastermind', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'nutrition', athleteProfile, upcomingMeet }),
+        body: JSON.stringify({
+          type: 'nutrition',
+          athleteProfile,
+          upcomingMeet,
+          topFaults: topDeductions.slice(0, 3),
+          event: latestEvent,
+          level: athleteProfile?.level || '',
+        }),
       });
       const data = res.ok ? await res.json() : nutritionFallback();
       plan.nutrition = data;

@@ -266,6 +266,12 @@ export function transformForUI(pipelineResult, extras = {}) {
 
     // ── Level progression (Section IV) ──
     levelProgressionAnalysis: levelProgressionAnalysis || null,
+
+    // ── Biomechanical signals (soft, parsed from Gemini text) ──
+    biomechanicalSignals: parseBioSignals(skills, routine_summary),
+
+    // ── Biomechanics raw (hard measurements — populated by MediaPipe capture) ──
+    biomechanics_raw: null,
   };
 }
 
@@ -442,4 +448,34 @@ function computeAverageGrade(gradedSkills) {
 
   const avg = validSkills.reduce((s, sk) => s + (GRADE_VALUES[sk.grade] || 5), 0) / validSkills.length;
   return REVERSE[Math.round(avg)] || "B";
+}
+
+// ─── Parse biomechanical signals from Gemini text output ──────────────────
+
+function parseBioSignals(skills, routine_summary) {
+  const texts = [
+    routine_summary?.coaching_summary,
+    ...(skills || []).map(s => [s.reason, s.fault_observed, s.injury_signal, s.narrative,
+      ...(s.deductions || []).map(d => d.description)]).flat(),
+  ].filter(Boolean).join(' ').toLowerCase();
+
+  if (!texts) return { hyperextension: null, hard_landing: null, asymmetry_side: null, fall_count: null, knee_valgus: null, back_arch: null };
+
+  let fall_count = null;
+  const fallMatch = texts.match(/(\d+)\s*falls?/);
+  if (fallMatch) fall_count = parseInt(fallMatch[1], 10);
+  else {
+    const fallSkills = (skills || []).filter(s => s.fall_detected);
+    if (fallSkills.length > 0) fall_count = fallSkills.length;
+  }
+
+  return {
+    fall_count,
+    hard_landing: /hard\s*landing|heavy\s*landing/.test(texts) ? true : null,
+    hyperextension: /hyperextension|over[\s-]*arch/.test(texts) ? true : null,
+    asymmetry_side: /left\s*(side\s*)?asymmetry|asymmetry.*left/.test(texts) ? 'left'
+      : /right\s*(side\s*)?asymmetry|asymmetry.*right/.test(texts) ? 'right' : null,
+    knee_valgus: /knee\s*valgus|knees?\s*in\b|valgus/.test(texts) ? true : null,
+    back_arch: /back\s*arch|lumbar|excessive\s*arch/.test(texts) ? true : null,
+  };
 }
