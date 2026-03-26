@@ -29,7 +29,17 @@ module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return res.status(503).json({ error: 'Mastermind not configured' });
+  if (!apiKey) {
+    // No API key configured — return graceful fallbacks instead of 503
+    if (type === 'mental') {
+      const name = athleteProfile?.name || 'She';
+      return res.status(200).json({ morningAffirmation: `${name} is putting in the work — trust the process.`, focusWord: 'STRONG', preMeetNote: null, postSlumpNote: null });
+    }
+    if (type === 'nutrition') {
+      return res.status(200).json({ dailyTip: 'Start training days with a balanced meal 2 hours before practice.', weeklyFocus: 'Consistent hydration throughout every practice.', preMeetProtocol: null, disclaimer: 'General guidance for active young athletes. Consult a registered dietitian for personalized advice.' });
+    }
+    return res.status(200).json({ error: 'Mastermind not configured' });
+  }
 
   const { type, athleteProfile, recentScores, upcomingMeet } = req.body || {};
 
@@ -114,8 +124,16 @@ module.exports = async function handler(req, res) {
 
     return res.status(400).json({ error: 'Invalid type — must be mental or nutrition' });
   } catch (e) {
-    console.error('[mastermind]', e.message);
-    return res.status(500).json({ error: e.message });
+    console.error('[mastermind]', type, e.message);
+    // Return graceful fallbacks instead of 500 — mastermind is non-critical
+    if (type === 'mental') {
+      const name = athleteProfile?.name || 'She';
+      return res.status(200).json({ morningAffirmation: `${name} is putting in the work — trust the process.`, focusWord: 'STRONG', preMeetNote: null, postSlumpNote: null });
+    }
+    if (type === 'nutrition') {
+      return res.status(200).json({ dailyTip: 'Start training days with a balanced meal 2 hours before practice.', weeklyFocus: 'Consistent hydration throughout every practice.', preMeetProtocol: null, disclaimer: 'General guidance for active young athletes. Consult a registered dietitian for personalized advice.' });
+    }
+    return res.status(200).json({ error: e.message });
   }
 };
 

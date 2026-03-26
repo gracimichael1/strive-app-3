@@ -250,7 +250,8 @@ function saveAnalysisToHistory(profile, result, uploadData) {
   if (record.faultHistory.length > 500) record.faultHistory = record.faultHistory.slice(-500);
 
   saveAthleteRecord(record);
-  log.info("intelligence", `Saved analysis #${record.analysisHistory.length} for ${record.name}. Faults tracked: ${record.faultHistory.length}`);
+  const displayName = profile?.name || 'athlete';
+  log.info("intelligence", `Saved analysis #${record.analysisHistory.length} for ${displayName}. Faults tracked: ${record.faultHistory.length}`);
   return record;
 }
 
