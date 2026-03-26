@@ -128,6 +128,9 @@ export default function ResultsScreen({ result, profile, previousResult, onBack,
   return (
     <div style={{ minHeight: '100vh', background: T.bg, paddingBottom: 80 }}>
 
+      {/* ═══ PRIMARY ATHLETE BANNER ═══ */}
+      <PrimaryAthleteBanner confidence={result?.primaryAthleteConfidence} />
+
       {/* ═══ 1. SCORE HEADER (sticky) ═══ */}
       <div style={{
         position: 'sticky', top: 0, zIndex: 100,
@@ -657,6 +660,26 @@ function LevelUpPanel({ result, isFree, onUpgrade }) {
 }
 
 
+function PrimaryAthleteBanner({ confidence }) {
+  const [dismissed, setDismissed] = useState(false);
+  if (dismissed || !confidence || confidence === 'high') return null;
+  return (
+    <div style={{
+      margin: '0 16px 0', padding: '12px 16px', borderRadius: 10,
+      background: 'rgba(251,191,36,0.1)', border: '1px solid #fbbf24',
+      display: 'flex', alignItems: 'center', gap: 10,
+    }}>
+      <div style={{ flex: 1, fontSize: 13, color: '#fbbf24', fontFamily: "'Outfit', sans-serif", lineHeight: 1.5 }}>
+        ⚠️ Multiple people may be visible in this video. For best accuracy, upload video showing only the competing gymnast.
+      </div>
+      <button onClick={() => setDismissed(true)} style={{
+        background: 'none', border: 'none', color: '#fbbf24', fontSize: 16,
+        cursor: 'pointer', padding: '0 4px', flexShrink: 0,
+      }}>✕</button>
+    </div>
+  );
+}
+
 function SkillCard({ skill, index, isFree, tier, freeDeductionLimit, globalDeductionIndex, onJumpToTimestamp, onUpgrade, videoUrl, showSkeleton, setShowSkeleton }) {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState('what');
@@ -922,6 +945,11 @@ function SkillCard({ skill, index, isFree, tier, freeDeductionLimit, globalDeduc
   }
 
   const name = skill.skillName || skill.name || skill.skill || 'Skill';
+  const skillConf = skill.skillConfidence || skill.skill_confidence || 'high';
+  const [confDismissed, setConfDismissed] = useState(false);
+  const [confCorrecting, setConfCorrecting] = useState(false);
+  const [confInput, setConfInput] = useState('');
+  const [confSaved, setConfSaved] = useState(false);
   const grade = skill.grade || 'B';
   const gradeColor = GRADE_COLORS[grade] || T.blue;
   const gradeLabel = GRADE_LABELS[grade] || '';
@@ -992,6 +1020,9 @@ function SkillCard({ skill, index, isFree, tier, freeDeductionLimit, globalDeduc
             <span style={{ fontSize: 14, fontWeight: 600, color: T.text, fontFamily: T.sans, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {name}
             </span>
+            {skillConf === 'medium' && (
+              <span title="Skill identification is approximate" style={{ fontSize: 11, cursor: 'help', opacity: 0.6 }}>◐</span>
+            )}
             <span style={{
               fontSize: 9, fontWeight: 600, padding: '2px 6px', borderRadius: 4,
               background: category === 'DANCE' || category === 'TURN' || category === 'LEAP' ? 'rgba(96,165,250,0.12)' : 'rgba(255,255,255,0.04)',
@@ -1044,6 +1075,52 @@ function SkillCard({ skill, index, isFree, tier, freeDeductionLimit, globalDeduc
       }}>
         <div style={{ overflow: 'hidden' }}>
           <div style={{ padding: '0 14px 14px' }}>
+
+            {/* Low-confidence skill prompt */}
+            {skillConf === 'low' && !confDismissed && !confSaved && (
+              <div style={{ padding: '10px 12px', borderRadius: 10, border: `1px solid rgba(232,150,42,0.25)`, background: 'rgba(232,150,42,0.06)', marginBottom: 10 }}>
+                <div style={{ fontSize: 13, color: T.text, fontFamily: T.sans, marginBottom: 8 }}>
+                  We detected what appears to be a <strong>{name}</strong>. Does this look right?
+                </div>
+                {!confCorrecting ? (
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button onClick={() => {
+                      try {
+                        const records = JSON.parse(localStorage.getItem('strive_skill_confirmations') || '[]');
+                        records.push({ skillOrder: skill.skillOrder || index, confirmed: true, originalName: name, timestamp: new Date().toISOString() });
+                        localStorage.setItem('strive_skill_confirmations', JSON.stringify(records));
+                      } catch {}
+                      setConfDismissed(true);
+                    }} style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid rgba(34,197,94,0.3)', background: 'rgba(34,197,94,0.08)', color: T.green, fontSize: 12, fontWeight: 600, fontFamily: T.sans, cursor: 'pointer' }}>
+                      ✓ Yes, that's correct
+                    </button>
+                    <button onClick={() => setConfCorrecting(true)} style={{ padding: '6px 12px', borderRadius: 6, border: `1px solid rgba(232,150,42,0.3)`, background: 'rgba(232,150,42,0.08)', color: '#e8962a', fontSize: 12, fontWeight: 600, fontFamily: T.sans, cursor: 'pointer' }}>
+                      ✗ No, fix it
+                    </button>
+                  </div>
+                ) : (
+                  <div>
+                    <input type="text" value={confInput} onChange={e => setConfInput(e.target.value)} placeholder="What skill was this?" style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', color: T.text, fontSize: 13, fontFamily: T.sans, boxSizing: 'border-box', marginBottom: 8 }} />
+                    <button onClick={() => {
+                      if (!confInput.trim()) return;
+                      try {
+                        const records = JSON.parse(localStorage.getItem('strive_skill_corrections') || '[]');
+                        records.push({ skillOrder: skill.skillOrder || index, confirmed: false, originalName: name, correctedName: confInput.trim(), timestamp: new Date().toISOString() });
+                        localStorage.setItem('strive_skill_corrections', JSON.stringify(records));
+                      } catch {}
+                      setConfSaved(true);
+                    }} style={{ padding: '6px 14px', borderRadius: 6, background: '#e8962a', border: 'none', color: '#070c16', fontSize: 12, fontWeight: 700, fontFamily: T.sans, cursor: 'pointer' }}>
+                      Submit
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+            {confSaved && (
+              <div style={{ padding: '8px 12px', borderRadius: 8, background: 'rgba(34,197,94,0.06)', marginBottom: 10, fontSize: 13, color: T.green, fontFamily: T.sans }}>
+                Thanks — we'll use this to improve.
+              </div>
+            )}
 
             {/* Tab bar */}
             <div style={{

@@ -304,6 +304,8 @@ export async function runAnalysisPipeline({ videoFile, profile, event, tier, onP
       },
       nutrition_note: pass2Result?.nutrition_note || "",
       levelProgressionAnalysis: scorecard.levelProgressionAnalysis || null,
+      primary_athlete_confidence: scorecard.primary_athlete_confidence || "high",
+      sv_verified: !!scorecard.sv_verified,
       _meta: {
         prompt_version: PROMPT_VERSION,
         timestamp: Date.now(),
@@ -544,6 +546,7 @@ function mergeSkills(scorecard, pass2Result) {
       deductions,
       narrative: entry.narrative || "",
       injury_signal: entry.injury_signal || "",
+      skill_confidence: entry.skill_confidence || "high",
       quality_grade: qualityGrade,
       reason: entry.reason || "",
       rule_reference: entry.rule_reference || "",

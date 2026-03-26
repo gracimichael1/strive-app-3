@@ -279,6 +279,15 @@ ANTI-STACKING: "Flexed feet during transitions" is ONE cumulative deduction for 
 - Long hang kip: hesitation at top before cast warrants a small deduction.
 - Flyaway: knees apart in tuck warrants a small deduction; chest down on landing warrants a small-to-moderate deduction.
 - Compounding rhythm: a low cast leading into the next element affects rhythm and should be noted.
+BARS-SPECIFIC DEDUCTION RULES:
+- Cast handstand: Deduct 0.10 per 10° below vertical. A cast reaching only horizontal = -0.30. Below horizontal = -0.50. This is the most commonly under-deducted bars element.
+- Kip: Deduct 0.10 for piked kip (hips not fully extended at top). Deduct 0.10 for bent arms during kip. These stack — piked bent-arm kip = -0.20 minimum.
+- Tap swing: Deduct 0.10 for insufficient arch on backswing or failure to establish hollow on front swing. Deduct 0.10 for dead hang between skills (loss of swing momentum).
+- Pirouette: Deduct 0.10 per quarter-turn short of completion. Deduct 0.10 for bent arms. Deduct 0.10 for low pirouette (below horizontal). These stack.
+- Release skills: Deduct 0.10-0.30 for insufficient release height above bar. Deduct 0.30 for late or early catch that disrupts swing continuity.
+- Clear hip circle: Deduct 0.10 for not reaching horizontal. Deduct 0.30 for incomplete circle.
+- Connection bonus: Requires skills in direct succession — no extra swing between them. If athlete takes additional swing between skills: no connection bonus. Verify before crediting any connection bonus.
+- Dismount landing: Deduct 0.10 per step. Deduct 0.30 for hop. Deduct 0.50 for fall. Deduct 0.10 for bent knees at landing. Deduct 0.10 for incomplete vertical (chest fall).
 `,
   BEAM: `
 ## EVENT SPECIFICS: BALANCE BEAM
@@ -412,6 +421,10 @@ export function buildPass1Prompt(profile, event) {
   * RULE 5 — ANTI-STACKING: Beam wobbles: one wobble = one deduction on the skill where it occurred. Do not list the same wobble twice. Vault: score holistically, maximum total deduction 0.40 unless there is a fall. Floor artistry: count once per routine, not per pass.
   * RULE 6 — PRIMARY ATHLETE ONLY: Analyze only the athlete who is actively performing the routine. The primary athlete is the one centered in the frame or closest to the camera who is executing a continuous skill sequence. Ignore all background athletes completely — do not reference, score, or describe any movement from athletes not performing the routine. If multiple athletes are visible, track only the primary performer from the first skill to the last. Never describe a skill performed by a background athlete as belonging to the routine being analyzed.
   * RULE 7 — FALL DETECTION (MANDATORY): A fall is defined as any loss of balance resulting in a body part other than hands or feet touching the apparatus or floor unintentionally, or stepping off the apparatus. If a fall occurs on any skill: that skill receives a mandatory deduction of exactly 0.50. This is not optional. It does not matter how clean the rest of the skill was. Falls must be explicitly flagged: set "fall_detected": true on the skill object and include a deduction entry with description "Fall" and point_value 0.50 as the first item in the deductions array. Never call a skill "executed_successfully": true if a fall occurred during that skill. Never omit a fall deduction because the rest of the skill looked good.
+  * RULE 8 — DEDUCTION FLOOR: No successfully executed skill receives 0.0 total deduction in Xcel or JO Level 3-10 competition. Assign minimum 0.10 to any skill where any form break is observable — bent knees, flexed feet, uneven hips, insufficient height, or any deviation from ideal form. If you cannot identify a specific form break, assign 0.10 anyway for any sub-elite routine. Only genuinely elite-level execution (national or international caliber) earns 0.0.
+  * RULE 9 — CONFIDENCE BIAS: When uncertain between two deduction amounts, always apply the higher amount. Judges in competition do not give benefit of the doubt. A possible bent knee is treated as a confirmed bent knee. A potential form break that may or may not reach 0.10 is deducted at 0.10. Under-deducting is a more serious error than over-deducting for this system.
+  * RULE 10 — START VALUE VERIFICATION: Before returning your final response, perform this internal check: 1) List every skill credited toward start value. 2) Sum their individual difficulty values. 3) Confirm the sum equals your declared start_value. 4) If the sum does not match: correct start_value to match. 5) Set sv_verified: true in your response. Do not return final_score without completing this check.
+  * RULE 11 — SKILL UNCERTAINTY: If uncertain what skill was performed, do not guess the most common skill for that apparatus. Instead: describe in skill_name what you actually observed, set skill_confidence to "low", set difficulty_value to the lower of two possible values, describe what you saw in the reason field. Certainty is required before crediting any bonus or difficulty value above the minimum.
   * Each deduction must be for a DISTINCT fault. "bent knees" is ONE deduction per skill, not one per frame.
   * Vault is ONE skill — total vault deductions should be moderate for a completed vault without falls.
   * BALANCE BEAM WOBBLES are NOT separate skills. A wobble is a deduction ON the preceding skill.
@@ -723,15 +736,18 @@ export const COMPACT_CONFIG = {
             fall_detected: { type: "boolean" },
             narrative: { type: "string" },
             injury_signal: { type: "string" },
+            skill_confidence: { type: "string", enum: ["high", "medium", "low"] },
           },
-          required: ["skill_name", "total_deduction", "deductions", "fall_detected", "narrative", "injury_signal"],
+          required: ["skill_name", "total_deduction", "deductions", "fall_detected", "narrative", "injury_signal", "skill_confidence"],
         },
       },
       coaching_summary: { type: "string" },
       top_3_fixes: { type: "array", items: { type: "string" } },
       celebrations: { type: "array", items: { type: "string" } },
+      primary_athlete_confidence: { type: "string", enum: ["high", "medium", "low"] },
+      sv_verified: { type: "boolean" },
     },
-    required: ["start_value", "final_score", "deduction_log", "coaching_summary"],
+    required: ["start_value", "final_score", "deduction_log", "coaching_summary", "primary_athlete_confidence", "sv_verified"],
   },
 };
 
@@ -808,12 +824,13 @@ export const PASS1_CONFIG = {
             fall_detected: { type: "boolean" },
             narrative: { type: "string" },
             injury_signal: { type: "string" },
+            skill_confidence: { type: "string", enum: ["high", "medium", "low"] },
           },
           required: [
             "skill_name", "skill_order", "timestamp_start", "timestamp_end",
             "executed_successfully", "difficulty_value", "total_deduction",
             "deductions", "quality_grade", "reason", "is_celebration",
-            "fall_detected", "narrative", "injury_signal",
+            "fall_detected", "narrative", "injury_signal", "skill_confidence",
           ],
         },
       },
@@ -845,11 +862,14 @@ export const PASS1_CONFIG = {
       coaching_summary: { type: "string" },
       top_3_fixes: { type: "array", items: { type: "string" } },
       celebrations: { type: "array", items: { type: "string" } },
+      primary_athlete_confidence: { type: "string", enum: ["high", "medium", "low"] },
+      sv_verified: { type: "boolean" },
     },
     required: [
       "start_value", "final_score", "deduction_log", "special_requirements",
       "artistry", "total_execution_deductions", "total_artistry_deductions",
       "score_range", "confidence", "coaching_summary", "top_3_fixes", "celebrations",
+      "primary_athlete_confidence", "sv_verified",
     ],
   },
 };

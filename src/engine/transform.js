@@ -59,7 +59,7 @@ const PLACEHOLDER = "—";
  * @returns {Object} - Shape compatible with existing ResultsScreen / SkillCard props
  */
 export function transformForUI(pipelineResult, extras = {}) {
-  const { routine_summary, skills, special_requirements, training_plan, mental_performance, nutrition_note, levelProgressionAnalysis, _meta } = pipelineResult;
+  const { routine_summary, skills, special_requirements, training_plan, mental_performance, nutrition_note, levelProgressionAnalysis, primary_athlete_confidence, sv_verified, _meta } = pipelineResult;
 
   // ── Transform skills to SkillCard-compatible shape ────────────────────────
   const gradedSkills = skills.map((skill, idx) => transformSkill(skill, idx));
@@ -267,6 +267,10 @@ export function transformForUI(pipelineResult, extras = {}) {
     // ── Level progression (Section IV) ──
     levelProgressionAnalysis: levelProgressionAnalysis || null,
 
+    // ── Verification fields ──
+    primaryAthleteConfidence: primary_athlete_confidence || 'high',
+    svVerified: !!sv_verified,
+
     // ── Biomechanical signals (soft, parsed from Gemini text) ──
     biomechanicalSignals: parseBioSignals(skills, routine_summary),
 
@@ -417,6 +421,9 @@ function transformSkill(skill, idx) {
 
     // ── Injury signal (proactive, every skill) ──
     injurySignal: skill.injury_signal || null,
+
+    // ── Skill confidence ──
+    skillConfidence: skill.skill_confidence || 'high',
   };
 }
 
