@@ -53,7 +53,7 @@ export async function generateMastermindPlan(athleteProfile, recentAnalyses, upc
     const topStrength = getTopStrength(recentAnalyses);
     const latestEvent = recentAnalyses?.[0]?.event || '';
     const res = await fetch('/api/mastermind', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Strive-Token': process.env.REACT_APP_STRIVE_TOKEN || '' },
       body: JSON.stringify({
         type: 'mental',
         athleteProfile: { ...athleteProfile, topStrength },
@@ -75,7 +75,7 @@ export async function generateMastermindPlan(athleteProfile, recentAnalyses, upc
     try {
       const latestEvent = recentAnalyses?.[0]?.event || '';
       const res = await fetch('/api/mastermind', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Strive-Token': process.env.REACT_APP_STRIVE_TOKEN || '' },
         body: JSON.stringify({
           type: 'nutrition',
           athleteProfile,

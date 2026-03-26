@@ -14,7 +14,7 @@ const TARGET_SHORT_SIDE = 360;
 const TARGET_BITRATE = 800_000;     // 800kbps video
 const AUDIO_BITRATE = 64_000;       // 64kbps audio (mono, analysis only)
 const OUTPUT_FPS = 30;
-const COMPRESS_THRESHOLD_MB = 20;   // Only compress if > 20MB
+const COMPRESS_THRESHOLD_MB = 30;   // Only compress if > 30MB (22s compress vs raw upload tradeoff)
 
 /**
  * Main compression function.

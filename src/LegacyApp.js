@@ -18,6 +18,7 @@ import SkillCard from "./components/ui/SkillCard";
 import { canSeeWhatIf, canSeeSessionDiagnostics, getUpgradeCTA, hasReachedAnalysisCap, getMonthlyAnalysisCap } from './engine/tierGates';
 import { useTier, TIERS } from './context/TierContext';
 import LockedFeature from './components/LockedFeature';
+import { LEVEL_SKILLS, DEDUCTION_CATEGORIES } from './data/constants';
 import { loadPoseDetector, detectPose } from './analysis/poseDetector';
 import ScoreCardExport from './components/ui/ScoreCardExport';
 import ScoringCaveatBanner from './components/ui/ScoringCaveatBanner';
@@ -750,49 +751,6 @@ const DEDUCTION_SCALE = {
   fall: { range: "0.50 (DP) / 1.00 (FIG)", color: "#dc2626" },
 };
 
-const DEDUCTION_CATEGORIES = {
-  execution: [
-    { fault: "Bent arms", deduction: "up to 0.30", category: "small-large" },
-    { fault: "Bent knees / legs", deduction: "up to 0.30", category: "small-large" },
-    { fault: "Leg separation", deduction: "up to 0.20", category: "small-medium" },
-    { fault: "Flexed / sickled feet", deduction: "0.05 each", category: "small" },
-    { fault: "Insufficient height / amplitude", deduction: "up to 0.30", category: "small-large" },
-    { fault: "Body alignment deviation", deduction: "up to 0.20", category: "small-medium" },
-    { fault: "Pike / arch in body position", deduction: "up to 0.30", category: "small-large" },
-    { fault: "Incomplete turn / twist", deduction: "up to 0.30", category: "small-large" },
-    { fault: "Insufficient extension", deduction: "up to 0.30", category: "small-large" },
-    { fault: "Head position error", deduction: "up to 0.10", category: "small" },
-  ],
-  landing: [
-    { fault: "Small step (foot movement)", deduction: "0.05", category: "small" },
-    { fault: "Small step-close", deduction: "0.05 – 0.10", category: "small" },
-    { fault: "Medium step", deduction: "0.10 – 0.15", category: "medium" },
-    { fault: "Large step / lunge", deduction: "0.20 – 0.30", category: "large" },
-    { fault: "Squat on landing", deduction: "up to 0.30", category: "large" },
-    { fault: "Deep squat (below 90°)", deduction: "0.30", category: "large" },
-    { fault: "Hands on floor (no fall)", deduction: "0.30", category: "large" },
-    { fault: "Fall on landing", deduction: "0.50", category: "fall" },
-    { fault: "Incorrect body posture on landing", deduction: "up to 0.20", category: "medium" },
-    { fault: "Absence of extension before landing", deduction: "up to 0.30", category: "large" },
-  ],
-  artistry: [
-    { fault: "Lack of confidence / hesitation", deduction: "up to 0.10", category: "small" },
-    { fault: "Insufficient use of space (FX)", deduction: "up to 0.10", category: "small" },
-    { fault: "Poor musicality / rhythm (FX)", deduction: "up to 0.20", category: "medium" },
-    { fault: "Lack of personal style / expression", deduction: "up to 0.10", category: "small" },
-    { fault: "Insufficient amplitude in dance", deduction: "up to 0.20", category: "medium" },
-    { fault: "Lack of variation in tempo", deduction: "up to 0.10", category: "small" },
-  ],
-  neutral: [
-    { fault: "Out of bounds (one body part)", deduction: "0.10", category: "small" },
-    { fault: "Out of bounds (two+ body parts)", deduction: "0.30", category: "large" },
-    { fault: "Overtime (beam/floor 90s limit)", deduction: "0.10", category: "small" },
-    { fault: "Missing special requirement", deduction: "0.50 each", category: "fall" },
-    { fault: "Failure to salute judge", deduction: "0.10", category: "small" },
-    { fault: "Coach on floor without cause", deduction: "0.30", category: "large" },
-  ],
-};
-
 const DRILLS_DATABASE = {
   "Bent arms": [
     { name: "Wall Handstand Holds", duration: "3 × 30 sec", description: "Press to handstand against wall focusing on locked elbows. Squeeze triceps and push through shoulders.", yt: "https://www.youtube.com/results?search_query=gymnastics+wall+handstand+hold+drill+straight+arms" },
@@ -1221,24 +1179,7 @@ function ScoreBenchmark({ score, level }) {
 }
 
 // ─── SKILLS REQUIRED CARD ────────────────────────────────────────────
-const LEVEL_SKILLS = {
-  "Level 1": { vault: "Straight jump off springboard", bars: "Pullover, back hip circle", beam: "Walks, relevé, stretch jump", floor: "Forward roll, backward roll, cartwheel" },
-  "Level 2": { vault: "Straight jump to flat back on mats", bars: "Pullover, back hip circle, underswing dismount", beam: "Walks, arabesque, cartwheel", floor: "Handstand, bridge, round-off" },
-  "Level 3": { vault: "Handstand flat back on mats", bars: "Pullover, cast, back hip circle, underswing dismount", beam: "Leap, relevé turn, cartwheel", floor: "Handstand forward roll, round-off, backward roll to push-up" },
-  "Level 4": { vault: "Handstand flat back onto mats", bars: "Kip (attempt), cast, back hip circle, underswing dismount", beam: "Cartwheel, full turn, split jump, straight jump dismount", floor: "Round-off back handspring, front limber, full turn" },
-  "Level 5": { vault: "Handspring over vault", bars: "Kip, cast to horizontal+, back hip circle, squat-on, underswing dismount or flyaway", beam: "Back walkover, split leap 120°+, full turn, cartwheel/BHS dismount", floor: "Round-off BHS back tuck, front handspring, straddle jump, full turn" },
-  "Level 6": { vault: "Handspring vault", bars: "Kip, cast to 45° above horizontal, any B circling skill, underswing/flyaway dismount", beam: "B acro skill, 150°+ leap/jump, full turn, B dismount", floor: "B tumbling pass, 150°+ leap, full turn, B second pass" },
-  "Level 7": { vault: "Handspring vault (higher amplitude required)", bars: "Kip, cast to handstand, B+ circling/release, flyaway or better dismount", beam: "B acro series (2 skills), 150°+ split leap, full turn, C dismount", floor: "B+B tumbling, 180° split leap, 1.5 turn, 2 tumbling passes" },
-  "Level 8": { vault: "Yurchenko or Tsukahara entry vaults", bars: "Cast handstand, B release or pirouette, C dismount", beam: "Acro series w/ flight, 180° leap, full turn, C dismount", floor: "C tumbling, dance series w/ 180° split, 3+ saltos, C final pass" },
-  "Level 9": { vault: "Yurchenko layout or higher", bars: "Cast handstand, C release/pirouette, D dismount", beam: "Flight acro series, 180° split leap, 1+ turn, C+ dismount", floor: "D tumbling pass, 180° leap series, multiple saltos, C+ final" },
-  "Level 10": { vault: "Yurchenko full or higher (D+ value)", bars: "D+ skills, release + pirouette, D/E dismount", beam: "C+C acro series, dance series, D+ dismount", floor: "D+ tumbling, E connections, 3 saltos min, D+ final pass" },
-  "Xcel Bronze": { vault: "Run, hurdle, jump to land on mat", bars: "Pullover, cast, back hip circle", beam: "Mount, walks, jumps, stretch jump off", floor: "Forward roll, cartwheel, bridge, stretch jump" },
-  "Xcel Silver": { vault: "Handspring to mat stack", bars: "Pullover, cast, back hip circle, dismount", beam: "Mount, leap, turn, cartwheel, jump off", floor: "Round-off, handstand, backward roll, leap" },
-  "Xcel Gold": { vault: "Handspring vault", bars: "Kip, cast, back hip circle, A+B skills, dismount", beam: "Acro skill, 120°+ leap, turn, dismount", floor: "Round-off BHS, leap/jump, turn, second pass" },
-  "Xcel Platinum": { vault: "Handspring or Tsukahara", bars: "B circling, cast horizontal+, B release/dismount", beam: "B acro, 150°+ leap, full turn, B dismount", floor: "B tumbling pass, 150°+ leap, turn, B second pass" },
-  "Xcel Diamond": { vault: "Yurchenko or Tsukahara", bars: "Cast handstand, C skill, C dismount", beam: "Acro series, 180° leap, C dismount", floor: "C tumbling, 180° dance series, C final pass" },
-  "Xcel Sapphire": { vault: "Yurchenko layout+", bars: "D release/pirouette, D dismount", beam: "Flight series, D acro/dismount", floor: "D tumbling, 180° dance, D final pass" },
-};
+// LEVEL_SKILLS and DEDUCTION_CATEGORIES imported from src/data/constants.js
 
 function SkillsRequiredCard({ profile }) {
   const [expanded, setExpanded] = useState(false);

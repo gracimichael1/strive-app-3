@@ -221,7 +221,7 @@ const UpgradeModal = React.memo(function UpgradeModal({ currentTier, onClose }) 
     try {
       const res = await fetch('/api/create-checkout', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-Strive-Token': process.env.REACT_APP_STRIVE_TOKEN || '' },
         body: JSON.stringify({ tier: tierId, interval }),
       });
 
