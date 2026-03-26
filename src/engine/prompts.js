@@ -20,6 +20,7 @@
  */
 
 import { getProgression } from './usag-progression';
+import { LEVEL_SKILLS } from '../data/constants';
 
 export const PROMPT_VERSION = "v15_ip_compliant";
 
@@ -410,6 +411,24 @@ export function buildPass1Prompt(profile, event) {
     parts.push(EVENT_RULES[eventKey]);
   }
 
+  // Inject level-specific skill taxonomy as validation constraint
+  const lvlLabel = profile.level || levelKey.replace(/_/g, ' ');
+  const evtLabel = event === 'Auto-detect' ? null : event;
+  const evtLower = evtLabel ? evtLabel.toLowerCase().replace(/[^a-z]/g, '') : null;
+  const evtField = evtLower === 'floor' || evtLower === 'floorexercise' ? 'floor'
+    : evtLower === 'beam' || evtLower === 'balancebeam' ? 'beam'
+    : evtLower === 'bars' || evtLower === 'unevenbars' ? 'bars'
+    : evtLower === 'vault' ? 'vault' : null;
+  const skillList = LEVEL_SKILLS[lvlLabel]?.[evtField] || LEVEL_SKILLS[profile.level]?.[evtField];
+  if (skillList) {
+    parts.push(`
+## VALID SKILLS FOR THIS ROUTINE (${lvlLabel} ${evtLabel || ''})
+Expected skills at this level: ${skillList}
+
+Use this list to guide skill identification. If you detect a skill not consistent with this level, set skill_confidence to "low". Do NOT invent skills not present in the video. A shorter, accurate skill list is always better than a longer hallucinated one.
+`);
+  }
+
   // Calibration block
   parts.push(`
 ## CALIBRATION — CRITICAL (THIS OVERRIDES ALL OTHER DEDUCTION LOGIC)
@@ -704,7 +723,7 @@ Raw JSON only. No markdown. Begin with { end with }.`;
 }
 
 export const COMPACT_CONFIG = {
-  temperature: 0.1,
+  temperature: 0,
   maxOutputTokens: 8192,
   responseMimeType: "application/json",
   responseSchema: {
@@ -772,7 +791,7 @@ export const COMPACT_CONFIG = {
  * Thinking budget: medium — prompt quality drives accuracy more than max thinking.
  */
 export const PASS1_CONFIG = {
-  temperature: 0.1,
+  temperature: 0,
   topP: 0.95,
   maxOutputTokens: 16384,
   responseMimeType: "application/json",
@@ -890,7 +909,7 @@ export const PASS1_CONFIG = {
  * Thinking budget: medium.
  */
 export const PASS2_CONFIG = {
-  temperature: 0.2,
+  temperature: 0,
   maxOutputTokens: 16384,
   responseMimeType: "application/json",
   thinkingConfig: {

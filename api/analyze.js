@@ -170,6 +170,7 @@ export default async function handler(req, res) {
       model: "gemini-2.5-flash-preview-04-17",
       config: {
         systemInstruction: SYSTEM_INSTRUCTION,
+        temperature: 0,
         thinkingConfig: { thinkingBudget: 8000 },
         responseMimeType: "application/json",
         responseSchema: RESPONSE_SCHEMA,

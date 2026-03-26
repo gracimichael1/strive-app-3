@@ -78,7 +78,7 @@ describe("prompts.js", () => {
 
   describe("configs", () => {
     test("PASS1_CONFIG has required fields", () => {
-      expect(PASS1_CONFIG.temperature).toBe(0.1);
+      expect(PASS1_CONFIG.temperature).toBe(0);
       expect(PASS1_CONFIG.maxOutputTokens).toBeGreaterThanOrEqual(16384);
       expect(PASS1_CONFIG.responseMimeType).toBe("application/json");
     });
@@ -89,7 +89,7 @@ describe("prompts.js", () => {
     });
 
     test("PASS2_CONFIG has required fields and thinking budget", () => {
-      expect(PASS2_CONFIG.temperature).toBe(0.2);
+      expect(PASS2_CONFIG.temperature).toBe(0);
       expect(PASS2_CONFIG.maxOutputTokens).toBeGreaterThanOrEqual(16384);
       expect(PASS2_CONFIG.thinkingConfig).toBeDefined();
     });

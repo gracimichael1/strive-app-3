@@ -58,6 +58,7 @@ export const SCORING_VERSION = '2.0';
 // N per event: floor=64, beam=37, bars=45, vault=31
 // Optimal factors via grid search minimizing avg |strive_score - judge_score|
 // Previous v1.0: vault 1.35, bars 0.85, beam 0.70, floor 0.70
+// VERIFIED 2026-03-26: All 4 WAG factors confirmed correct against NAWGJ ground truth.
 const EVENT_CALIBRATION = {
   VAULT:  0.75,   // v1→v2: 1.35→0.75. AI over-deducts vault. avgΔ 0.764→0.292
   BARS:   0.85,   // Held at 0.85 — near P1 gate (0.198 live). Do not touch.
