@@ -723,6 +723,11 @@ function SkillCard({ skill, index, isFree, tier, freeDeductionLimit, globalDeduc
 
     let running = true;
     let lastSendTime = 0;
+    let detectionActive = !video.paused;
+    const onPause = () => { detectionActive = false; };
+    const onPlay = () => { detectionActive = true; };
+    video.addEventListener('pause', onPause);
+    video.addEventListener('play', onPlay);
     console.log('[skeleton] Starting detection loop, video readyState:', video.readyState);
 
     // Sync canvas size to video display size
@@ -858,11 +863,6 @@ function SkillCard({ skill, index, isFree, tier, freeDeductionLimit, globalDeduc
 
       // Detection loop — hard stop on pause, frame-skip when playing
       let frameCount = 0;
-      let detectionActive = !video.paused;
-      const onPause = () => { detectionActive = false; };
-      const onPlay = () => { detectionActive = true; };
-      video.addEventListener('pause', onPause);
-      video.addEventListener('play', onPlay);
 
       const detectLoop = async () => {
         if (!running || !poseRef.current) return;
