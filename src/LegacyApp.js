@@ -1639,9 +1639,10 @@ export default function LegacyApp() {
               setScreen("legal-disclaimer");
               return;
             }
-            // COPPA gate: block analysis for under-13 without confirmed consent on profile
+            // COPPA gate: check profile (persistent) OR sessionStorage (current session)
             const athleteAge = profile?.age ? parseInt(profile.age) : (profile?.dateOfBirth ? Math.floor((Date.now() - new Date(profile.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000)) : null);
-            if (athleteAge !== null && athleteAge < 13 && !profile?.consentConfirmed) {
+            const consentOk = profile?.consentConfirmed || sessionStorage.getItem('strive-consent-status') === 'confirmed';
+            if (athleteAge !== null && athleteAge < 13 && !consentOk) {
               setPendingAnalyzeData(data);
               setShowCoppaGate(true);
               return;
@@ -1754,7 +1755,8 @@ export default function LegacyApp() {
           onSave={(p) => {
             // COPPA gate on profile save: if age < 13 and no consent, show consent modal
             const age = p?.age ? parseInt(p.age) : (p?.dateOfBirth ? Math.floor((Date.now() - new Date(p.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000)) : null);
-            if (age !== null && age < 13 && !p?.consentConfirmed) {
+            const consentOk = p?.consentConfirmed || sessionStorage.getItem('strive-consent-status') === 'confirmed';
+            if (age !== null && age < 13 && !consentOk) {
               setPendingAnalyzeData(null); // Not resuming analysis, just gating profile save
               setCoppaEmail(p?.parentEmail || '');
               setShowCoppaGate(true);
@@ -1937,9 +1939,10 @@ export default function LegacyApp() {
             if (pendingAnalyzeData) {
               const data = pendingAnalyzeData;
 
-              // COPPA gate after legal disclaimer — check profile, not sessionStorage
+              // COPPA gate after legal disclaimer — check profile OR sessionStorage
               const athleteAge = profile?.age ? parseInt(profile.age) : (profile?.dateOfBirth ? Math.floor((Date.now() - new Date(profile.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000)) : null);
-              if (athleteAge !== null && athleteAge < 13 && !profile?.consentConfirmed) {
+              const consentOk = profile?.consentConfirmed || sessionStorage.getItem('strive-consent-status') === 'confirmed';
+              if (athleteAge !== null && athleteAge < 13 && !consentOk) {
                 setShowCoppaGate(true);
                 return;
               }
@@ -1988,7 +1991,8 @@ export default function LegacyApp() {
                   body: JSON.stringify({ parentEmail, athleteNickname: profile?.name || 'your child' }),
                 });
               } catch {}
-              // Persist consent on profile (survives across sessions in localStorage)
+              // Persist consent in BOTH sessionStorage (immediate) and profile (persistent)
+              try { sessionStorage.setItem('strive-consent-status', 'confirmed'); } catch {}
               setShowCoppaGate(false);
               // Case 1: Profile save was pending (Settings flow)
               if (window.__pendingCoppaProfile) {
@@ -3522,7 +3526,7 @@ const UploadScreen = React.memo(function UploadScreen({ profile, onBack, onAnaly
       try {
         const resp = await fetch("/api/gemini", {
           method: "POST",
-          headers: { "Content-Type": "application/json", "X-Strive-Token": (process.env.REACT_APP_STRIVE_TOKEN || "strive-2026-launch") },
+          headers: { "Content-Type": "application/json", "X-Strive-Token": (process.env.REACT_APP_STRIVE_TOKEN || "") },
           body: JSON.stringify({ action: "pollFile", fileName: "files/__healthcheck__" }),
         });
         // Any response (even file-not-found) means the proxy is up and has the key
@@ -4784,10 +4788,10 @@ IMPORTANT: The deduction_log must contain ONE entry per distinct skill or transi
 
   // ── Main analysis orchestrator — single pass ─────────────────────
   const analyzeWithAI = useCallback(async (extractedFrames) => {
-    // COPPA: Block analysis if under-13 consent is pending
-    // COPPA: check profile-stored consent (not sessionStorage)
+    // COPPA: check profile (persistent) OR sessionStorage (current session)
     const athleteAge = profile?.age ? parseInt(profile.age) : null;
-    if (athleteAge !== null && athleteAge < 13 && !profile?.consentConfirmed) {
+    const consentOk = profile?.consentConfirmed || sessionStorage.getItem('strive-consent-status') === 'confirmed';
+    if (athleteAge !== null && athleteAge < 13 && !consentOk) {
       setStatus("Parental consent required — complete consent in Settings before analyzing.");
       setProgress(0);
       return;
@@ -4861,7 +4865,7 @@ IMPORTANT: The deduction_log must contain ONE entry per distinct skill or transi
         const videoBase64 = btoa(String.fromCharCode(...new Uint8Array(videoBuffer)));
         const proxyResp = await fetch("/api/analyze", {
           method: "POST",
-          headers: { "Content-Type": "application/json", "X-Strive-Token": (process.env.REACT_APP_STRIVE_TOKEN || "strive-2026-launch") },
+          headers: { "Content-Type": "application/json", "X-Strive-Token": (process.env.REACT_APP_STRIVE_TOKEN || "") },
           body: JSON.stringify({
             videoBase64,
             mimeType: uploadData.video.type || "video/mp4",
@@ -5339,7 +5343,7 @@ IMPORTANT: The deduction_log must contain ONE entry per distinct skill or transi
         };
         const coachRes = await fetch("/api/coach", {
           method: "POST",
-          headers: { "Content-Type": "application/json", "X-Strive-Token": (process.env.REACT_APP_STRIVE_TOKEN || "strive-2026-launch") },
+          headers: { "Content-Type": "application/json", "X-Strive-Token": (process.env.REACT_APP_STRIVE_TOKEN || "") },
           body: JSON.stringify({
             auditData: auditPayload,
             athleteLevel: profile.level,
@@ -8386,7 +8390,7 @@ const SettingsScreen = React.memo(function SettingsScreen({ profile, onSave, onB
           try {
             const res = await fetch("/api/account?action=export", {
               method: "POST",
-              headers: { "Content-Type": "application/json", "X-Strive-Token": (process.env.REACT_APP_STRIVE_TOKEN || "strive-2026-launch") },
+              headers: { "Content-Type": "application/json", "X-Strive-Token": (process.env.REACT_APP_STRIVE_TOKEN || "") },
               body: JSON.stringify({ profile, analysisHistory: [], tier: "free" }),
             });
             const data = await res.json();
