@@ -260,8 +260,21 @@ async function handleGenerate(req, res, apiKey) {
   const data = await genRes.json();
   const parts = data.candidates?.[0]?.content?.parts || [];
   // Filter out "thought" parts (Gemini internal reasoning)
-  const text = parts.filter(p => p.text && !p.thought).map(p => p.text).join('\n')
-    || parts.map(p => p.text || '').join('\n');
+  const nonThought = parts.filter(p => p.text && !p.thought).map(p => p.text).join('\n');
+  // Fallback: if filtered result is empty or doesn't look like JSON, try all parts
+  let text = nonThought;
+  if (!text || (!text.trim().startsWith('{') && !text.trim().startsWith('['))) {
+    const allText = parts.map(p => p.text || '').join('\n');
+    // Extract JSON from mixed thought+output: find first { to last }
+    const firstBrace = allText.indexOf('{');
+    const lastBrace = allText.lastIndexOf('}');
+    if (firstBrace !== -1 && lastBrace > firstBrace) {
+      text = allText.slice(firstBrace, lastBrace + 1);
+      console.log('[gemini] Extracted JSON from mixed thought+output:', text.length, 'chars');
+    } else {
+      text = allText;
+    }
+  }
 
   // ── Truncation detection logging ──
   const finishReason = data.candidates?.[0]?.finishReason;

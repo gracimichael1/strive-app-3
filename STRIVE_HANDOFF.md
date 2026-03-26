@@ -2,7 +2,7 @@
 
 ## Current Commit
 ```
-77dc5dd feat(architecture): dual-layer biomechanics, mastermind personalization, judge narrative +1, skeleton fix, injury signal consistency, level up fix, data export
+PENDING — Sprint 2B commit (push via GitHub Desktop)
 ```
 
 ## Test Suite
@@ -19,6 +19,8 @@ Tests:       65 passed, 65 total
 | Beam  | 0.3756 |
 | Bars  | 0.4604 |
 
+Note: re-run live bars analysis after deploy to confirm Cast constraint and Rules 8-11 impact
+
 ## Calibration Factors
 | Event | Factor |
 |-------|--------|
@@ -33,8 +35,14 @@ Tests:       65 passed, 65 total
 - **Local:** /Users/mgraci/Desktop/StriveGymnastics
 
 ## Sprint Status
-- **Completed:** Sprint 1 (77dc5dd) — dual-layer biomechanics, mastermind personalization, judge narrative, skeleton, injury signal, level up, data export
-- **Queued Next:** Sprint 2A — scoring accuracy hardening
+- **Completed:** Sprint 1 (77dc5dd) — dual-layer biomechanics, mastermind, narrative, skeleton, injury signal, level up, data export
+- **Completed:** Sprint 2A (1e27cd0) — bars hardening, rules 8-11, skill confidence schema+UI, primary athlete verification
+- **Completed:** Sprint 2B — parser regression, scores-400, cast-constraint, acro-category, biomechanics-verified, skeleton-hard-stop, injury-signal, level-up, mastermind-verified
+- **Queued Next:** Sprint 2C — CI lint fix (standalone)
+
+## Known Issues
+- Run live Xcel Gold bars video after deploy to verify Cast to Handstand no longer appears
+- Push pending commits via GitHub Desktop (terminal auth not configured)
 
 ## Open Founder Actions
 - [ ] Add Stripe env vars to Vercel
@@ -65,4 +73,4 @@ Tests:       65 passed, 65 total
 3. **Push every commit immediately, no batching**
 
 ---
-UPDATED: 2026-03-25T00:00:00Z
+UPDATED: 2026-03-26T03:00:00Z

@@ -440,6 +440,7 @@ export default function ResultsScreen({ result, profile, previousResult, onBack,
                   judgeScores: JSON.parse(localStorage.getItem('strive_judge_scores') || '[]'),
                   biomechanics: [],
                   flaggedSkills: JSON.parse(localStorage.getItem('strive_skill_corrections') || '[]'),
+                  skillConfirmations: JSON.parse(localStorage.getItem('strive_skill_confirmations') || '[]'),
                 };
                 const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
                 const url = URL.createObjectURL(blob);
@@ -855,20 +856,29 @@ function SkillCard({ skill, index, isFree, tier, freeDeductionLimit, globalDeduc
         }
       }
 
-      // Detection loop — runs during playback AND sends frames when paused (on seek)
+      // Detection loop — hard stop on pause, frame-skip when playing
       let frameCount = 0;
+      let detectionActive = !video.paused;
+      const onPause = () => { detectionActive = false; };
+      const onPlay = () => { detectionActive = true; };
+      video.addEventListener('pause', onPause);
+      video.addEventListener('play', onPlay);
+
       const detectLoop = async () => {
         if (!running || !poseRef.current) return;
+        // Hard stop when paused — zero frames processed
+        if (!detectionActive) {
+          if (running) rafRef.current = requestAnimationFrame(detectLoop);
+          return;
+        }
         frameCount++;
-        // Frame-skip: only process every 3rd frame during playback to reduce CPU
-        if (!video.paused && frameCount % 3 !== 0) {
+        // Frame-skip: only process every 3rd frame to reduce CPU
+        if (frameCount % 3 !== 0) {
           if (running) rafRef.current = requestAnimationFrame(detectLoop);
           return;
         }
         const now = Date.now();
-        // Throttle: ~10fps during playback (every 3rd frame), 1fps when paused
-        const interval = video.paused ? 1000 : 33;
-        if (now - lastSendTime >= interval && video.readyState >= 2) {
+        if (now - lastSendTime >= 33 && video.readyState >= 2) {
           syncCanvasSize();
           lastSendTime = now;
           try { await poseRef.current.send({ image: video }); } catch {}
@@ -904,6 +914,8 @@ function SkillCard({ skill, index, isFree, tier, freeDeductionLimit, globalDeduc
       running = false;
       if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
       video.removeEventListener('seeked', onSeeked);
+      video.removeEventListener('pause', onPause);
+      video.removeEventListener('play', onPlay);
     };
   }, [showSkeleton, open, tab, videoUrl]);
 
@@ -1028,7 +1040,7 @@ function SkillCard({ skill, index, isFree, tier, freeDeductionLimit, globalDeduc
               background: category === 'DANCE' || category === 'TURN' || category === 'LEAP' ? 'rgba(96,165,250,0.12)' : 'rgba(255,255,255,0.04)',
               color: category === 'DANCE' || category === 'TURN' || category === 'LEAP' ? T.blue : T.textMuted,
               textTransform: 'uppercase', letterSpacing: 0.5,
-            }}>{category === 'DANCE' || category === 'TURN' || category === 'LEAP' ? 'DANCE' : 'ACRO'}</span>
+            }}>{category === 'DANCE' || category === 'TURN' || category === 'LEAP' ? 'DANCE' : category || 'ACRO'}</span>
           </div>
           <div style={{ fontSize: 11, color: T.textMuted, fontFamily: T.sans, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {ts && <span style={{ fontFamily: T.mono, marginRight: 6 }}>{ts}</span>}

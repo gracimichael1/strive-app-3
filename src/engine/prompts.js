@@ -156,6 +156,15 @@ Start Value: 10.0
 At this level, evaluate whether the routine demonstrates strong skill variety across acro, dance, turns, and connections. Leaps and splits should show competitive amplitude — deduct progressively for visibly insufficient splits. Casts on bars should reach the horizontal plane — deduct progressively for lower casts, with larger deductions for significantly low casts. At State Championship level, rhythm deductions are applied aggressively, form errors are deducted without leniency, and flat or unexpressive performance receives artistry deductions.
 
 XCEL GOLD FLOOR SKILL COUNT: A Gold routine has 1-2 tumbling passes. If you identify more than 2, recount. A tumbling pass ends when the gymnast's feet return to the floor and she takes a step or pause.
+
+XCEL GOLD BARS — SKILL IDENTIFICATION CONSTRAINTS:
+The following skills CANNOT appear in Xcel Gold. When you observe something resembling them, use the correct Xcel Gold equivalent instead:
+- Cast to Handstand → "Cast". A cast in Xcel Gold does not reach vertical handstand. If gymnast casts and does not reach handstand position, call it "Cast" — not "Cast to Handstand". Only identify Cast to Handstand if gymnast demonstrably reaches vertical.
+- Giant → "Clear Hip Circle" or "Free Hip Circle"
+- Release moves (Tkatchev, Jaeger) → "Long Hang Kip" or "Squat On"
+- Pirouette / Bail → not present in Xcel Gold
+SKILLS THAT DO APPEAR IN XCEL GOLD BARS: Glide Kip, Cast, Back Hip Circle, Mill Circle, Long Hang Kip, Squat On, Clear Hip Circle, Sole Circle, Underswing Dismount, Flyaway Dismount. Identify only from this list for Xcel Gold bars.
+
 SR VERIFICATION: Only credit a requirement as MET if you clearly see the skill performed. If absent from the video, mark NOT_MET regardless of level expectations.
 `,
   XCEL_PLATINUM: `
@@ -647,7 +656,8 @@ export function buildCompactPrompt(profile, event) {
   const level = profile.level || "Level 6";
   const athleteName = profile.name || "the gymnast";
 
-  const system = `You are an expert gymnastics execution judge. Score this routine. Be concise. Output ONLY raw JSON — no markdown, no fences, no prose. Begin with { and end with }.`;
+  const system = `You are an expert gymnastics execution judge. Score this routine. Be concise. Output ONLY raw JSON — no markdown, no fences, no prose. Begin with { and end with }.
+RULES: Every deduction must be attached to a named skill (no aggregates). Deduction amounts: 0.05, 0.10, 0.20, 0.30, or 0.50 only. Minimum 0.10 deduction per skill for sub-elite routines. When uncertain between two amounts, apply the higher one. Falls = mandatory 0.50. Analyze ONLY the primary performing athlete. Set skill_confidence to "low" if uncertain about a skill name.`;
 
   const user = `Score this ${level} ${gender} ${event || ""} routine for ${athleteName}.
 

@@ -64,6 +64,10 @@ function validateAppToken(req) {
 const VALID_EVENTS = [
   "Vault", "Uneven Bars", "Balance Beam", "Floor Exercise",
   "High Bar", "Parallel Bars", "Rings", "Pommel Horse",
+  // Accept Gemini-format event names (lowercase, abbreviated)
+  "vault", "bars", "beam", "floor", "floor_exercise",
+  "uneven_bars", "balance_beam", "high_bar", "parallel_bars",
+  "rings", "pommel_horse",
 ];
 
 function validateRecord(body) {
@@ -72,8 +76,10 @@ function validateRecord(body) {
   if (!body.videoId || typeof body.videoId !== "string") {
     errors.push("videoId: required string");
   }
-  if (!body.event || !VALID_EVENTS.includes(body.event)) {
-    errors.push(`event: must be one of ${VALID_EVENTS.join(", ")}`);
+  if (!body.event || typeof body.event !== "string") {
+    errors.push("event: required string");
+  } else if (!VALID_EVENTS.some(v => v.toLowerCase() === body.event.toLowerCase())) {
+    errors.push(`event: must be a valid gymnastics event, got '${body.event}'`);
   }
   if (!body.level || typeof body.level !== "string") {
     errors.push("level: required string");
