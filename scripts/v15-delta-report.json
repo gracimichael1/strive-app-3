@@ -1,0 +1,52 @@
+{
+  "timestamp": "2026-03-26T18:53:34.250Z",
+  "model": "gemini-2.5-flash",
+  "promptVersion": "v15_ip_compliant",
+  "scoringVersion": "2.0",
+  "results": [
+    {
+      "event": "Vault",
+      "level": "Level 6",
+      "ai": null,
+      "judge": 8.85,
+      "delta": null,
+      "pass": false,
+      "status": "SKIPPED"
+    },
+    {
+      "event": "Uneven Bars",
+      "level": "Level 6",
+      "ai": null,
+      "judge": 8.525,
+      "delta": null,
+      "pass": false,
+      "status": "SKIPPED"
+    },
+    {
+      "event": "Balance Beam",
+      "level": "Level 6",
+      "ai": null,
+      "judge": 8.85,
+      "delta": null,
+      "pass": false,
+      "status": "SKIPPED"
+    },
+    {
+      "event": "Floor Exercise",
+      "level": "Level 6",
+      "ai": null,
+      "judge": 8.925,
+      "delta": null,
+      "pass": false,
+      "status": "SKIPPED"
+    }
+  ],
+  "avgDelta": null,
+  "passRate": 0,
+  "preSprintBaseline": {
+    "vault": 0.2924,
+    "floor": 0.3635,
+    "beam": 0.3756,
+    "bars": 0.4604
+  }
+}
