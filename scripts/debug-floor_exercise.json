@@ -1,43 +1,289 @@
 {
   "start_value": 10,
-  "final_score": 9.15,
-  "skills": [
+  "final_score": 8.2,
+  "deduction_log": [
     {
-      "timestamp": "0:32",
       "skill_name": "Round-off Back Handspring Back Tuck",
-      "quality_grade": 9.8,
-      "primary_deduction": "Slight pike in round-off, legs slightly apart in BHS, slight pike in tuck, small hop on landing.",
-      "is_celebration": false
+      "total_deduction": 0.45,
+      "deductions": [
+        {
+          "type": "execution",
+          "description": "bent knees on round-off and back handspring",
+          "point_value": 0.1,
+          "body_part": "knees"
+        },
+        {
+          "type": "execution",
+          "description": "open tuck position and cowboy knees",
+          "point_value": 0.15,
+          "body_part": "body position"
+        },
+        {
+          "type": "execution",
+          "description": "small hop forward and deep squat landing",
+          "point_value": 0.2,
+          "body_part": "landing"
+        }
+      ],
+      "fall_detected": false,
+      "narrative": "The judge observed slight knee bend during both the round-off and back handspring, indicating a momentary loss of tension. This resulted in a 0.10 deduction for form breaks that can accumulate quickly in a routine. To improve, the gymnast should focus on actively locking the knees and maintaining a tight body line throughout the entire tumbling pass. A judge would note the slight open tuck and cowboy knees, which reduce the visual appeal and rotational efficiency of the salto.",
+      "injury_signal": "High impact forces are absorbed by the ankles, knees, and lower back during tumbling passes. Consistent deep squat landings and hops can increase the risk of overuse injuries in these joints. No immediate compensation patterns were observed, but continued monitoring of landing mechanics is crucial.",
+      "skill_confidence": "high",
+      "difficulty_value": 0.3,
+      "executed_successfully": true,
+      "is_celebration": false,
+      "quality_grade": 7.5,
+      "reason": "multiple form breaks and landing errors",
+      "skill_order": 1,
+      "timestamp_end": 33,
+      "timestamp_start": 30.8
     },
     {
-      "timestamp": "0:53",
-      "skill_name": "Switch Leap",
-      "quality_grade": 9.8,
-      "primary_deduction": "Insufficient split amplitude (below 150 degrees), slight bend in back knee.",
-      "is_celebration": false
+      "skill_name": "Split Jump",
+      "total_deduction": 0.15,
+      "deductions": [
+        {
+          "type": "execution",
+          "description": "insufficient split (not 180 degrees)",
+          "point_value": 0.1,
+          "body_part": "hips"
+        },
+        {
+          "type": "execution",
+          "description": "flexed feet during flight",
+          "point_value": 0.05,
+          "body_part": "feet"
+        }
+      ],
+      "fall_detected": false,
+      "narrative": "The judge noted that the split position in the jump did not quite reach the required 180 degrees, and the feet were slightly flexed. This led to a 0.10 deduction for insufficient amplitude and a 0.05 for foot form. To achieve a perfect split, the gymnast needs to focus on hip flexibility and active toe point throughout the entire flight phase. A judge would note the effort in the jump but also the slight lack of full extension.",
+      "injury_signal": "Split jumps place significant demands on hip flexor and hamstring flexibility, as well as knee joint stability during landing. Repetitive sub-maximal splits can lead to muscle imbalances or strains over time. No compensation patterns were observed in this execution.",
+      "skill_confidence": "high",
+      "difficulty_value": 0.1,
+      "executed_successfully": true,
+      "is_celebration": false,
+      "quality_grade": 8.5,
+      "reason": "insufficient split and foot form",
+      "skill_order": 2,
+      "timestamp_end": 47,
+      "timestamp_start": 45.5
     },
     {
-      "timestamp": "0:59",
-      "skill_name": "Round-off Back Handspring Back Layout",
-      "quality_grade": 9.8,
-      "primary_deduction": "Slight pike in round-off, legs slightly apart in BHS, slight arch/loose body in layout, small hop on landing.",
-      "is_celebration": false
+      "skill_name": "Full Turn",
+      "total_deduction": 0.1,
+      "deductions": [
+        {
+          "type": "execution",
+          "description": "slight wobble during turn",
+          "point_value": 0.05,
+          "body_part": "body"
+        },
+        {
+          "type": "execution",
+          "description": "early heel drop",
+          "point_value": 0.05,
+          "body_part": "feet"
+        }
+      ],
+      "fall_detected": false,
+      "narrative": "The judge observed a slight wobble during the full turn and an early heel drop before the rotation was complete. These minor balance and timing errors each incurred a 0.05 deduction. To improve, the gymnast should focus on maintaining a strong core and spotting technique to control the rotation and ensure a clean finish. A judge would note the slight instability, which detracts from the fluidity of the dance element.",
+      "injury_signal": "Full turns primarily load the ankle and knee joints, especially if balance is compromised or the landing is heavy. Overuse can lead to issues like ankle sprains or patellofemoral pain. No compensation patterns were observed in this execution.",
+      "skill_confidence": "high",
+      "difficulty_value": 0.1,
+      "executed_successfully": true,
+      "is_celebration": false,
+      "quality_grade": 9,
+      "reason": "minor balance and timing errors",
+      "skill_order": 3,
+      "timestamp_end": 55,
+      "timestamp_start": 53.5
     },
     {
-      "timestamp": "1:05",
+      "skill_name": "Round-off Back Handspring Back Handspring",
+      "total_deduction": 0.35,
+      "deductions": [
+        {
+          "type": "execution",
+          "description": "bent knees on round-off and both back handsprings",
+          "point_value": 0.15,
+          "body_part": "knees"
+        },
+        {
+          "type": "execution",
+          "description": "small hop back on landing",
+          "point_value": 0.1,
+          "body_part": "landing"
+        },
+        {
+          "type": "execution",
+          "description": "deep squat landing",
+          "point_value": 0.1,
+          "body_part": "landing"
+        }
+      ],
+      "fall_detected": false,
+      "narrative": "The judge identified slight knee bend during the round-off and both back handsprings, indicating a consistent form break in the acro series. This resulted in a 0.15 deduction for the repeated lack of knee tension. To improve, the gymnast should focus on maintaining a rigid body line and actively pushing through the shoulders to achieve full extension in each handspring. A judge would note the consistent form breaks, which reduce the overall execution score for the pass.",
+      "injury_signal": "This acro series involves high repetitive loading on the wrists, shoulders, and spine, particularly during the handspring phases. Proper alignment is critical to distribute forces evenly and prevent stress injuries. No compensation patterns were observed in this execution.",
+      "skill_confidence": "high",
+      "difficulty_value": 0.2,
+      "executed_successfully": true,
+      "is_celebration": false,
+      "quality_grade": 7.8,
+      "reason": "consistent knee bend and landing errors",
+      "skill_order": 4,
+      "timestamp_end": 61,
+      "timestamp_start": 59
+    },
+    {
+      "skill_name": "Back Walkover",
+      "total_deduction": 0.2,
+      "deductions": [
+        {
+          "type": "execution",
+          "description": "bent knees throughout",
+          "point_value": 0.1,
+          "body_part": "knees"
+        },
+        {
+          "type": "execution",
+          "description": "flexed feet throughout",
+          "point_value": 0.05,
+          "body_part": "feet"
+        },
+        {
+          "type": "execution",
+          "description": "slight hesitation in movement",
+          "point_value": 0.05,
+          "body_part": "rhythm"
+        }
+      ],
+      "fall_detected": false,
+      "narrative": "The judge observed slight knee bend and flexed feet throughout the back walkover, along with a minor hesitation in the movement. These form breaks and rhythm issues resulted in a 0.20 deduction. To improve, the gymnast should focus on maintaining straight legs and pointed toes, while also ensuring a smooth, continuous flow through the entire skill. A judge would note the lack of full extension and fluidity, which are key for this element.",
+      "injury_signal": "Back walkovers place significant stress on the wrists, shoulders, and lower back due to the inverted position and spinal extension. Maintaining core strength and shoulder flexibility is crucial to prevent injury. No compensation patterns were observed in this execution.",
+      "skill_confidence": "high",
+      "difficulty_value": 0.1,
+      "executed_successfully": true,
+      "is_celebration": false,
+      "quality_grade": 8,
+      "reason": "form breaks and rhythm issues",
+      "skill_order": 5,
+      "timestamp_end": 64,
+      "timestamp_start": 63
+    },
+    {
       "skill_name": "Split",
-      "quality_grade": 9.95,
-      "primary_deduction": "Hips not perfectly square/flat.",
-      "is_celebration": false
+      "total_deduction": 0.15,
+      "deductions": [
+        {
+          "type": "execution",
+          "description": "insufficient split (not 180 degrees)",
+          "point_value": 0.1,
+          "body_part": "hips"
+        },
+        {
+          "type": "execution",
+          "description": "flexed feet",
+          "point_value": 0.05,
+          "body_part": "feet"
+        }
+      ],
+      "fall_detected": false,
+      "narrative": "The judge noted that the final split position did not quite reach the required 180 degrees, and the feet were slightly flexed. This led to a 0.10 deduction for insufficient amplitude and a 0.05 for foot form. To achieve a perfect split, the gymnast needs to continue working on hip flexibility and active toe point. A judge would note the effort in the hold but also the slight lack of full extension.",
+      "injury_signal": "Static splits primarily target hamstring and hip adductor flexibility, with potential for groin strains if pushed too aggressively. Maintaining proper pelvic alignment is important to avoid lower back strain. No compensation patterns were observed in this execution.",
+      "skill_confidence": "high",
+      "difficulty_value": 0.1,
+      "executed_successfully": true,
+      "is_celebration": false,
+      "quality_grade": 8.5,
+      "reason": "insufficient split and foot form",
+      "skill_order": 6,
+      "timestamp_end": 68,
+      "timestamp_start": 67
+    },
+    {
+      "skill_name": "Routine Transitions and Artistry",
+      "total_deduction": 0.4,
+      "deductions": [
+        {
+          "type": "execution",
+          "description": "cumulative flexed feet during transitions",
+          "point_value": 0.2,
+          "body_part": "feet"
+        },
+        {
+          "type": "artistry",
+          "description": "lack of consistent expression and chin down",
+          "point_value": 0.1,
+          "body_part": "face/posture"
+        },
+        {
+          "type": "artistry",
+          "description": "minor musicality and quality of movement issues",
+          "point_value": 0.1,
+          "body_part": "overall"
+        }
+      ],
+      "fall_detected": false,
+      "narrative": "The judge observed frequent instances of flexed feet during transitions between skills, indicating a lack of consistent body tension. This recurring issue accumulated to a 0.20 deduction for overall execution quality. To improve, the gymnast should practice maintaining active toe point even during simple walks and preparatory movements. A judge would note that these small, consistent errors detract from the overall polished presentation of the routine.",
+      "injury_signal": "Repetitive movements and transitions on floor can lead to general muscle fatigue and minor strains if body control is not maintained. Focusing on precise footwork and posture can reduce unnecessary stress on joints. No specific compensation patterns were observed.",
+      "skill_confidence": "high",
+      "difficulty_value": 0,
+      "executed_successfully": true,
+      "is_celebration": false,
+      "quality_grade": 8,
+      "reason": "cumulative form breaks and artistry observations",
+      "skill_order": 7,
+      "timestamp_end": 70,
+      "timestamp_start": 0
     }
   ],
-  "total_execution_deductions": 0.65,
-  "coaching_summary": "This routine demonstrates foundational tumbling skills with good height. However, consistent attention to detail in body lines, achieving full amplitude on leaps, and sticking landings without hops are critical areas for improvement. The artistry could benefit from more dynamic changes and stronger facial expression to truly captivate the judges.",
+  "coaching_summary": "This routine demonstrated good effort and included all required elements for Level 6. The primary areas for improvement are maintaining consistent body tension, particularly locking the knees and pointing the toes throughout all skills and transitions. Secondly, focus on achieving full 180-degree splits in dance elements to maximize amplitude deductions. Finally, work on cleaner landings with minimal hops or deep squats to protect the execution score. From a judging standpoint, the routine was solid but had numerous small form breaks that accumulated, preventing a higher score.",
+  "primary_athlete_confidence": "high",
+  "sv_verified": true,
+  "artistry": {
+    "total_artistry_deduction": 0.2,
+    "notes": "Lack of consistent facial expression and chin down at various points. Minor issues with musicality and dynamic contrast in choreography.",
+    "choreography_variety_deduction": 0,
+    "expression_deduction": 0.1,
+    "musicality_deduction": 0.05,
+    "quality_of_movement_deduction": 0.05
+  },
+  "athlete_name": "Test Athlete",
   "celebrations": [],
-  "top_3_fixes": [
-    "Maintain tight body lines (straight legs, pointed toes) throughout all tumbling passes to eliminate form deductions.",
-    "Achieve full 180-degree split amplitude on all leaps, ensuring straight legs and pointed toes.",
-    "Focus on sticking all landings cleanly without hops or steps, and enhance artistry with varied dynamics and expression."
+  "confidence": "HIGH",
+  "duration_seconds": 70,
+  "event": "Floor Exercise",
+  "gender": "WAG",
+  "level": "Level 6",
+  "score_range": {
+    "low": 8,
+    "high": 8.5
+  },
+  "special_requirements": [
+    {
+      "requirement": "Two different acro passes, one with a salto",
+      "status": "MET",
+      "comment": "Round-off Back Handspring Back Tuck and Round-off Back Handspring Back Handspring performed. The first pass includes a salto.",
+      "penalty": 0
+    },
+    {
+      "requirement": "Dance passage with 2 different dance elements, one with 180 split",
+      "status": "MET",
+      "comment": "Split Jump and Full Turn are present in the routine, with the Split Jump approaching 180 degrees. Interpreted 'passage' leniently for Level 6.",
+      "penalty": 0
+    },
+    {
+      "requirement": "Full turn",
+      "status": "MET",
+      "comment": "A full turn was performed.",
+      "penalty": 0
+    }
   ],
-  "total_artistry_deductions": 0.2
+  "top_3_fixes": [
+    "Consistent Knee Tension & Toe Point: Implement drills focusing on active knee locking and toe pointing in all flight and support phases.",
+    "Split Amplitude: Incorporate targeted flexibility training for hip flexors and hamstrings to achieve full 180-degree splits in dance elements.",
+    "Landing Control: Practice controlled landings from all tumbling passes, emphasizing soft knees, chest up, and minimal movement."
+  ],
+  "total_artistry_deductions": 0.2,
+  "total_execution_deductions": 1.6
 }

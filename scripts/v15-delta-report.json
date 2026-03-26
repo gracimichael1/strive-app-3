@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-03-26T18:53:34.250Z",
+  "timestamp": "2026-03-26T22:49:26.860Z",
   "model": "gemini-2.5-flash",
   "promptVersion": "v15_ip_compliant",
   "scoringVersion": "2.0",
@@ -7,41 +7,49 @@
     {
       "event": "Vault",
       "level": "Level 6",
-      "ai": null,
+      "ai": 9.7,
       "judge": 8.85,
-      "delta": null,
+      "delta": 0.8499999999999996,
       "pass": false,
-      "status": "SKIPPED"
+      "status": "OK",
+      "source": "ai_holistic",
+      "factor": 0.75
     },
     {
       "event": "Uneven Bars",
       "level": "Level 6",
-      "ai": null,
+      "ai": 8.1,
       "judge": 8.525,
-      "delta": null,
+      "delta": 0.4250000000000007,
       "pass": false,
-      "status": "SKIPPED"
+      "status": "OK",
+      "source": "ai_holistic",
+      "factor": 0.85
     },
     {
       "event": "Balance Beam",
       "level": "Level 6",
-      "ai": null,
+      "ai": 8.35,
       "judge": 8.85,
-      "delta": null,
+      "delta": 0.5,
       "pass": false,
-      "status": "SKIPPED"
+      "status": "OK",
+      "source": "ai_holistic",
+      "factor": 0.91
     },
     {
       "event": "Floor Exercise",
       "level": "Level 6",
-      "ai": null,
+      "ai": 8.2,
       "judge": 8.925,
-      "delta": null,
+      "delta": 0.7250000000000014,
       "pass": false,
-      "status": "SKIPPED"
+      "status": "OK",
+      "source": "ai_holistic",
+      "factor": 0.92
     }
   ],
-  "avgDelta": null,
+  "avgDelta": 0.6250000000000004,
   "passRate": 0,
   "preSprintBaseline": {
     "vault": 0.2924,

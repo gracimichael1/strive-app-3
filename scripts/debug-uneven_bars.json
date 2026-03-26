@@ -1,153 +1,339 @@
 {
   "start_value": 10,
-  "final_score": 8.55,
-  "skills": [
+  "final_score": 8.1,
+  "deduction_log": [
     {
-      "timestamp": "00:01",
-      "skill_name": "Cast to Handstand",
-      "quality_grade": 9.6,
-      "primary_deduction": "Legs apart (0.10), Arch (0.10), Handstand angle (0.20)",
-      "is_celebration": false
+      "skill_name": "Jump to Low Bar",
+      "total_deduction": 0.1,
+      "deductions": [
+        {
+          "type": "execution",
+          "description": "general form and tension",
+          "point_value": 0.1,
+          "body_part": "body"
+        }
+      ],
+      "fall_detected": false,
+      "narrative": "The judge observed a slight lack of overall body tension during the jump to the low bar, which is a foundational element for setting rhythm. This triggered a 0.10 deduction, as even basic movements require precise form to avoid accumulating small errors. To improve, focus on actively engaging the core and squeezing the glutes to maintain a rigid body line from the start. A judge would note the initial setup lacked the crispness expected for competitive execution.",
+      "injury_signal": "This skill involves a low-impact jump and grip. Monitor for wrist discomfort from initial bar contact over time. No compensation patterns observed in this execution.",
+      "skill_confidence": "high",
+      "difficulty_value": 0.1,
+      "executed_successfully": true,
+      "is_celebration": false,
+      "reason": "minor form breaks",
+      "skill_order": 1,
+      "timestamp_end": 3,
+      "timestamp_start": 2
     },
     {
-      "timestamp": "00:02",
-      "skill_name": "Clear Hip to Handstand",
-      "quality_grade": 9.6,
-      "primary_deduction": "Legs apart (0.10), Arch (0.10), Handstand angle (0.20)",
-      "is_celebration": false
+      "skill_name": "Glide Kip",
+      "total_deduction": 0.2,
+      "deductions": [
+        {
+          "type": "execution",
+          "description": "piked hips during kip",
+          "point_value": 0.1,
+          "body_part": "hips"
+        },
+        {
+          "type": "execution",
+          "description": "slight knee bend at end of kip",
+          "point_value": 0.1,
+          "body_part": "knees"
+        }
+      ],
+      "fall_detected": false,
+      "narrative": "The judge noted piked hips during the glide kip, indicating a break in the hollow-arch-hollow shape, and slight knee bend at the completion of the kip. These form breaks each incurred a 0.10 deduction, as maintaining a straight body line is crucial for efficient momentum transfer. To correct this, emphasize a strong hollow body position before the glide and actively squeeze the glutes to extend the hips fully. A judge would note the early pike reduces the power generated for the kip.",
+      "injury_signal": "The glide kip places significant load on the shoulders and wrists during the swing and pull. Monitor for shoulder impingement or wrist pain with high repetitions. No compensation patterns observed in this execution.",
+      "skill_confidence": "high",
+      "difficulty_value": 0.1,
+      "executed_successfully": true,
+      "is_celebration": false,
+      "reason": "piked hips and bent knees",
+      "skill_order": 2,
+      "timestamp_end": 5,
+      "timestamp_start": 3
     },
     {
-      "timestamp": "00:03",
-      "skill_name": "Overshoot",
-      "quality_grade": 9.9,
-      "primary_deduction": "Slight pike in hips (0.10)",
-      "is_celebration": false
+      "skill_name": "Cast",
+      "total_deduction": 0.2,
+      "deductions": [
+        {
+          "type": "execution",
+          "description": "amplitude below horizontal",
+          "point_value": 0.1,
+          "body_part": "body"
+        },
+        {
+          "type": "execution",
+          "description": "slight knee bend",
+          "point_value": 0.1,
+          "body_part": "knees"
+        }
+      ],
+      "fall_detected": false,
+      "narrative": "The judge observed the cast failed to reach the required horizontal line, indicating insufficient amplitude, and slight knee bend during the movement. The amplitude deduction of 0.10 and knee bend deduction of 0.10 reflect the importance of full extension and height in casts. To improve, focus on a powerful hip drive away from the bar and maintaining a tight, straight body throughout the cast. A judge would note the consistent lack of amplitude limits the flow into subsequent skills.",
+      "injury_signal": "Casts involve dynamic shoulder and core engagement. Monitor for shoulder stability issues or lower back strain from repetitive arching. No compensation patterns observed in this execution.",
+      "skill_confidence": "high",
+      "difficulty_value": 0.1,
+      "executed_successfully": true,
+      "is_celebration": false,
+      "reason": "low amplitude and bent knees",
+      "skill_order": 3,
+      "timestamp_end": 6,
+      "timestamp_start": 5
     },
     {
-      "timestamp": "00:04",
-      "skill_name": "Cast (Low Bar)",
-      "quality_grade": 10,
-      "primary_deduction": "None",
-      "is_celebration": true,
-      "strength_note": "Clean execution with good body tension."
+      "skill_name": "Back Hip Circle",
+      "total_deduction": 0.1,
+      "deductions": [
+        {
+          "type": "execution",
+          "description": "slight knee bend throughout rotation",
+          "point_value": 0.1,
+          "body_part": "knees"
+        }
+      ],
+      "fall_detected": false,
+      "narrative": "The judge saw slight knee bend during the entire rotation of the back hip circle, breaking the straight-body line required. This triggered a 0.10 deduction, as maintaining a tight, extended body is fundamental for clean execution. In practice, focus on actively pressing the knees straight and squeezing the quadriceps before initiating the circle. A judge would note the lack of tension through the legs, which is a common form break.",
+      "injury_signal": "Back hip circles load the wrists and shoulders, particularly during the support phase. Monitor for wrist pain or shoulder discomfort from repetitive compression. No compensation patterns observed in this execution.",
+      "skill_confidence": "high",
+      "difficulty_value": 0.1,
+      "executed_successfully": true,
+      "is_celebration": false,
+      "reason": "bent knees",
+      "skill_order": 4,
+      "timestamp_end": 8,
+      "timestamp_start": 6
     },
     {
-      "timestamp": "00:05",
-      "skill_name": "Squat On",
-      "quality_grade": 10,
-      "primary_deduction": "None",
-      "is_celebration": true,
-      "strength_note": "Well-controlled and precise placement."
+      "skill_name": "Cast",
+      "total_deduction": 0.2,
+      "deductions": [
+        {
+          "type": "execution",
+          "description": "amplitude below horizontal",
+          "point_value": 0.1,
+          "body_part": "body"
+        },
+        {
+          "type": "execution",
+          "description": "slight knee bend",
+          "point_value": 0.1,
+          "body_part": "knees"
+        }
+      ],
+      "fall_detected": false,
+      "narrative": "The judge observed the cast failed to reach the required horizontal line, indicating insufficient amplitude, and slight knee bend during the movement. The amplitude deduction of 0.10 and knee bend deduction of 0.10 reflect the importance of full extension and height in casts. To improve, focus on a powerful hip drive away from the bar and maintaining a tight, straight body throughout the cast. A judge would note the consistent lack of amplitude limits the flow into subsequent skills.",
+      "injury_signal": "Casts involve dynamic shoulder and core engagement. Monitor for shoulder stability issues or lower back strain from repetitive arching. No compensation patterns observed in this execution.",
+      "skill_confidence": "high",
+      "difficulty_value": 0.1,
+      "executed_successfully": true,
+      "is_celebration": false,
+      "reason": "low amplitude and bent knees",
+      "skill_order": 5,
+      "timestamp_end": 9,
+      "timestamp_start": 8
     },
     {
-      "timestamp": "00:06",
-      "skill_name": "Cast to Handstand",
-      "quality_grade": 9.6,
-      "primary_deduction": "Legs apart (0.10), Arch (0.10), Handstand angle (0.20)",
-      "is_celebration": false
+      "skill_name": "Squat On to High Bar",
+      "total_deduction": 0.1,
+      "deductions": [
+        {
+          "type": "execution",
+          "description": "flexed feet on contact",
+          "point_value": 0.1,
+          "body_part": "feet"
+        }
+      ],
+      "fall_detected": false,
+      "narrative": "The judge observed flexed feet upon contact with the high bar during the squat on, which breaks the ideal pointed-toe line. This triggered a 0.10 deduction, as pointed toes are a fundamental form requirement in gymnastics. To correct this, actively focus on extending the ankles and pointing the toes throughout the entire movement, especially at the moment of contact. A judge would note the lack of attention to detail in foot position.",
+      "injury_signal": "Squat-ons involve significant wrist and shoulder loading during the catch and support phase. Monitor for wrist pain or shoulder discomfort, especially with repetitive impact. No compensation patterns observed in this execution.",
+      "skill_confidence": "high",
+      "difficulty_value": 0.1,
+      "executed_successfully": true,
+      "is_celebration": false,
+      "reason": "flexed feet",
+      "skill_order": 6,
+      "timestamp_end": 11,
+      "timestamp_start": 9
     },
     {
-      "timestamp": "00:07",
-      "skill_name": "Giant 1",
-      "quality_grade": 9.9,
-      "primary_deduction": "Slight pike at bottom of swing (0.10)",
-      "is_celebration": false
+      "skill_name": "Cast",
+      "total_deduction": 0.2,
+      "deductions": [
+        {
+          "type": "execution",
+          "description": "amplitude below horizontal",
+          "point_value": 0.1,
+          "body_part": "body"
+        },
+        {
+          "type": "execution",
+          "description": "slight knee bend",
+          "point_value": 0.1,
+          "body_part": "knees"
+        }
+      ],
+      "fall_detected": false,
+      "narrative": "The judge observed the cast failed to reach the required horizontal line, indicating insufficient amplitude, and slight knee bend during the movement. The amplitude deduction of 0.10 and knee bend deduction of 0.10 reflect the importance of full extension and height in casts. To improve, focus on a powerful hip drive away from the bar and maintaining a tight, straight body throughout the cast. A judge would note the consistent lack of amplitude limits the flow into subsequent skills.",
+      "injury_signal": "Casts involve dynamic shoulder and core engagement. Monitor for shoulder stability issues or lower back strain from repetitive arching. No compensation patterns observed in this execution.",
+      "skill_confidence": "high",
+      "difficulty_value": 0.1,
+      "executed_successfully": true,
+      "is_celebration": false,
+      "reason": "low amplitude and bent knees",
+      "skill_order": 7,
+      "timestamp_end": 13,
+      "timestamp_start": 11
     },
     {
-      "timestamp": "00:08",
-      "skill_name": "Cast to Handstand",
-      "quality_grade": 9.6,
-      "primary_deduction": "Legs apart (0.10), Arch (0.10), Handstand angle (0.20)",
-      "is_celebration": false
+      "skill_name": "Back Hip Circle",
+      "total_deduction": 0.1,
+      "deductions": [
+        {
+          "type": "execution",
+          "description": "slight knee bend throughout rotation",
+          "point_value": 0.1,
+          "body_part": "knees"
+        }
+      ],
+      "fall_detected": false,
+      "narrative": "The judge saw slight knee bend during the entire rotation of the back hip circle, breaking the straight-body line required. This triggered a 0.10 deduction, as maintaining a tight, extended body is fundamental for clean execution. In practice, focus on actively pressing the knees straight and squeezing the quadriceps before initiating the circle. A judge would note the lack of tension through the legs, which is a common form break.",
+      "injury_signal": "Back hip circles load the wrists and shoulders, particularly during the support phase. Monitor for wrist pain or shoulder discomfort from repetitive compression. No compensation patterns observed in this execution.",
+      "skill_confidence": "high",
+      "difficulty_value": 0.1,
+      "executed_successfully": true,
+      "is_celebration": false,
+      "reason": "bent knees",
+      "skill_order": 8,
+      "timestamp_end": 15,
+      "timestamp_start": 13
     },
     {
-      "timestamp": "00:09",
-      "skill_name": "Giant 2",
-      "quality_grade": 9.9,
-      "primary_deduction": "Slight pike at bottom of swing (0.10)",
-      "is_celebration": false
+      "skill_name": "Cast",
+      "total_deduction": 0.2,
+      "deductions": [
+        {
+          "type": "execution",
+          "description": "amplitude below horizontal",
+          "point_value": 0.1,
+          "body_part": "body"
+        },
+        {
+          "type": "execution",
+          "description": "slight knee bend",
+          "point_value": 0.1,
+          "body_part": "knees"
+        }
+      ],
+      "fall_detected": false,
+      "narrative": "The judge observed the cast failed to reach the required horizontal line, indicating insufficient amplitude, and slight knee bend during the movement. The amplitude deduction of 0.10 and knee bend deduction of 0.10 reflect the importance of full extension and height in casts. To improve, focus on a powerful hip drive away from the bar and maintaining a tight, straight body throughout the cast. A judge would note the consistent lack of amplitude limits the flow into subsequent skills.",
+      "injury_signal": "Casts involve dynamic shoulder and core engagement. Monitor for shoulder stability issues or lower back strain from repetitive arching. No compensation patterns observed in this execution.",
+      "skill_confidence": "high",
+      "difficulty_value": 0.1,
+      "executed_successfully": true,
+      "is_celebration": false,
+      "reason": "low amplitude and bent knees",
+      "skill_order": 9,
+      "timestamp_end": 17,
+      "timestamp_start": 15
     },
     {
-      "timestamp": "00:10",
-      "skill_name": "Cast to Handstand",
-      "quality_grade": 9.6,
-      "primary_deduction": "Legs apart (0.10), Arch (0.10), Handstand angle (0.20)",
-      "is_celebration": false
-    },
-    {
-      "timestamp": "00:11",
-      "skill_name": "Giant 3",
-      "quality_grade": 9.9,
-      "primary_deduction": "Slight pike at bottom of swing (0.10)",
-      "is_celebration": false
-    },
-    {
-      "timestamp": "00:12",
-      "skill_name": "Cast to Handstand",
-      "quality_grade": 9.6,
-      "primary_deduction": "Legs apart (0.10), Arch (0.10), Handstand angle (0.20)",
-      "is_celebration": false
-    },
-    {
-      "timestamp": "00:13",
-      "skill_name": "Giant 4",
-      "quality_grade": 9.9,
-      "primary_deduction": "Slight pike at bottom of swing (0.10)",
-      "is_celebration": false
-    },
-    {
-      "timestamp": "00:14",
-      "skill_name": "Cast to Handstand",
-      "quality_grade": 9.6,
-      "primary_deduction": "Legs apart (0.10), Arch (0.10), Handstand angle (0.20)",
-      "is_celebration": false
-    },
-    {
-      "timestamp": "00:15",
-      "skill_name": "Giant 5",
-      "quality_grade": 9.9,
-      "primary_deduction": "Slight pike at bottom of swing (0.10)",
-      "is_celebration": false
-    },
-    {
-      "timestamp": "00:16",
-      "skill_name": "Cast to Handstand",
-      "quality_grade": 9.6,
-      "primary_deduction": "Legs apart (0.10), Arch (0.10), Handstand angle (0.20)",
-      "is_celebration": false
-    },
-    {
-      "timestamp": "00:17",
-      "skill_name": "Giant 6",
-      "quality_grade": 9.9,
-      "primary_deduction": "Slight pike at bottom of swing (0.10)",
-      "is_celebration": false
-    },
-    {
-      "timestamp": "00:18",
-      "skill_name": "Cast to Handstand",
-      "quality_grade": 9.6,
-      "primary_deduction": "Legs apart (0.10), Arch (0.10), Handstand angle (0.20)",
-      "is_celebration": false
-    },
-    {
-      "timestamp": "00:19",
-      "skill_name": "Flyaway Dismount",
-      "quality_grade": 9.7,
-      "primary_deduction": "Significant pike in body (0.20), Small hop on landing (0.10)",
-      "is_celebration": false
+      "skill_name": "Tuck Flyaway Dismount",
+      "total_deduction": 0.3,
+      "deductions": [
+        {
+          "type": "execution",
+          "description": "knees apart in tuck",
+          "point_value": 0.1,
+          "body_part": "knees"
+        },
+        {
+          "type": "execution",
+          "description": "small hop forward on landing",
+          "point_value": 0.1,
+          "body_part": "feet"
+        },
+        {
+          "type": "execution",
+          "description": "chest slightly down on landing",
+          "point_value": 0.1,
+          "body_part": "torso"
+        }
+      ],
+      "fall_detected": false,
+      "narrative": "The judge observed knees apart during the tuck position of the flyaway, a small hop forward on landing, and the chest slightly down at impact. These form breaks and landing errors each incurred a 0.10 deduction, as a tight tuck and controlled landing are essential for dismounts. To improve, focus on squeezing the knees together in the air and driving the chest up on landing to stick the dismount. A judge would note the lack of control on landing, which is a common deduction point.",
+      "injury_signal": "Dismounts place high impact forces on the ankles, knees, and lower back. Monitor for joint pain or soreness, especially after repetitive landings. No compensation patterns observed in this execution.",
+      "skill_confidence": "high",
+      "difficulty_value": 0.2,
+      "executed_successfully": true,
+      "is_celebration": false,
+      "reason": "form breaks in tuck and landing errors",
+      "skill_order": 10,
+      "timestamp_end": 19,
+      "timestamp_start": 17
     }
   ],
-  "total_execution_deductions": 1.45,
-  "coaching_summary": "This routine demonstrates good rhythm and a solid understanding of the required skills. However, consistent form deductions, particularly in handstand positions and giant swings, are significantly impacting the overall score. The handstands consistently show leg separation, arching, and are not reaching true vertical. Giants exhibit a slight pike at the bottom of the swing. The dismount, while executed without a fall, had a noticeable pike and a small hop. Addressing these recurring form issues will be crucial for higher scores.",
-  "celebrations": [
-    "Clean Cast on Low Bar",
-    "Well-controlled Squat On"
+  "coaching_summary": "The gymnast demonstrates a complete Level 6 bars routine with good rhythm between most skills. The primary areas for improvement are consistent body tension, particularly locking the knees and fully extending the hips throughout all elements, and achieving better amplitude on casts. The consistent slight knee bend and piked hips in the kip and casts are recurring deductions that accumulate quickly. From a judging standpoint, the routine shows potential but needs significant refinement in fundamental body shaping and amplitude to achieve higher scores.",
+  "primary_athlete_confidence": "high",
+  "sv_verified": true,
+  "artistry": {
+    "total_artistry_deduction": 0.2,
+    "notes": "The routine showed some minor rhythm breaks and a general lack of dynamic quality in movement, contributing to artistry deductions. Body tension could be more consistent.",
+    "choreography_variety_deduction": 0,
+    "expression_deduction": 0,
+    "musicality_deduction": 0,
+    "quality_of_movement_deduction": 0.2
+  },
+  "athlete_name": "Test Athlete",
+  "celebrations": [],
+  "confidence": "HIGH",
+  "duration_seconds": 19,
+  "event": "Uneven Bars",
+  "gender": "WAG",
+  "level": "Level 6",
+  "score_range": {
+    "low": 7.8,
+    "high": 8.4
+  },
+  "special_requirements": [
+    {
+      "requirement": "Kip",
+      "status": "MET",
+      "comment": "Glide Kip performed.",
+      "penalty": 0
+    },
+    {
+      "requirement": "Cast to horizontal",
+      "status": "MET",
+      "comment": "Multiple casts performed, though amplitude was consistently low.",
+      "penalty": 0
+    },
+    {
+      "requirement": "Dismount",
+      "status": "MET",
+      "comment": "Tuck Flyaway performed.",
+      "penalty": 0
+    },
+    {
+      "requirement": "Minimum 2 different B skills OR 1 B skill and 1 C skill",
+      "status": "MET",
+      "comment": "Tuck Flyaway is a B skill.",
+      "penalty": 0
+    },
+    {
+      "requirement": "Minimum 5 skills",
+      "status": "MET",
+      "comment": "10 skills performed.",
+      "penalty": 0
+    }
   ],
   "top_3_fixes": [
-    "Focus on achieving true vertical handstands with tight body lines (no arch, no leg separation).",
-    "Maintain a hollow body position throughout the entire giant swing, eliminating the pike at the bottom.",
-    "Work on a tighter, more extended body shape during the flyaway dismount and stick the landing."
+    "Cast Amplitude: Focus on driving the hips up and away from the bar to achieve a true horizontal line in casts, maintaining a tight body.",
+    "Knee Tension: Actively lock the knees and point the toes on every skill, especially during kips, casts, and the dismount tuck.",
+    "Hip Extension: Ensure full hip extension at the top of the kip and throughout the back hip circles to avoid piked positions."
   ],
-  "total_artistry_deductions": 0
+  "total_artistry_deductions": 0.2,
+  "total_execution_deductions": 1.7
 }

@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>STRIVE — Outage Fix + Infrastructure Remediation</title>
+<style>
+  :root {
+    --bg: #070c16;
+    --surface: #0d1422;
+    --surface2: #121b2d;
+    --border: #1e2d42;
+    --gold: #e8962a;
+    --gold-light: #ffc15a;
+    --green: #22c55e;
+    --orange: #e06820;
+    --red: #dc2626;
+    --blue: #3b82f6;
+    --purple: #8b5cf6;
+    --text: #e6edf3;
+    --muted: #8b9ab0;
+    --dimmed: #4a5568;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 0 0 80px;
+  }
+
+  /* HEADER */
+  .header {
+    background: linear-gradient(135deg, #0d1422 0%, #070c16 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 32px 40px 24px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+  }
+  .header-top { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+  .logo { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; color: var(--gold); }
+  .logo span { color: var(--text); font-weight: 300; }
+  .header-title { font-size: 16px; color: var(--muted); font-weight: 400; }
+  .progress-bar-wrap { background: var(--border); border-radius: 4px; height: 6px; overflow: hidden; }
+  .progress-bar-fill { height: 100%; background: linear-gradient(90deg, var(--red), var(--gold), var(--green)); border-radius: 4px; transition: width 0.4s ease; width: 0%; }
+  .progress-label { font-size: 11px; color: var(--muted); margin-top: 6px; }
+
+  /* LAYOUT */
+  .container { max-width: 960px; margin: 0 auto; padding: 0 24px; }
+
+  /* ALERT BANNERS */
+  .alert-critical {
+    background: linear-gradient(135deg, rgba(220,38,38,0.15) 0%, rgba(220,38,38,0.05) 100%);
+    border: 1px solid rgba(220,38,38,0.5);
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin: 28px 0 8px;
+  }
+  .alert-critical-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .badge-critical { background: var(--red); color: #fff; font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 4px; letter-spacing: 0.5px; }
+  .alert-critical h3 { font-size: 15px; color: #fca5a5; }
+  .alert-critical p { color: var(--muted); font-size: 13px; line-height: 1.7; }
+  .alert-critical strong { color: var(--text); }
+
+  .alert-info {
+    background: linear-gradient(135deg, rgba(59,130,246,0.12) 0%, rgba(59,130,246,0.05) 100%);
+    border: 1px solid rgba(59,130,246,0.3);
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin: 16px 0;
+  }
+  .alert-info p { color: #93c5fd; font-size: 13px; line-height: 1.7; }
+  .alert-info strong { color: var(--text); }
+
+  /* TRACK MAP */
+  .track-map { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 28px 0; }
+  .track-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .track-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+  .track-card.red::before { background: var(--red); }
+  .track-card.orange::before { background: var(--orange); }
+  .track-card.gold::before { background: var(--gold); }
+  .track-card.green::before { background: var(--green); }
+  .track-number { font-size: 11px; color: var(--muted); font-weight: 600; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .track-label { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+  .track-sub { font-size: 11px; color: var(--muted); }
+  .track-time { font-size: 10px; color: var(--dimmed); margin-top: 8px; font-family: 'SF Mono', monospace; }
+
+  /* SECTION */
+  .section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin: 20px 0;
+    overflow: hidden;
+  }
+  .section-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .section-icon {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .section-icon.red { background: rgba(220,38,38,0.15); }
+  .section-icon.orange { background: rgba(224,104,32,0.15); }
+  .section-icon.gold { background: rgba(232,150,42,0.15); }
+  .section-icon.green { background: rgba(34,197,94,0.15); }
+  .section-icon.purple { background: rgba(139,92,246,0.15); }
+  .section-meta { flex: 1; }
+  .section-meta h2 { font-size: 16px; font-weight: 700; color: var(--text); }
+  .section-meta p { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .section-badge {
+    font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 20px; letter-spacing: 0.5px;
+  }
+  .badge-red { background: rgba(220,38,38,0.2); color: #fca5a5; border: 1px solid rgba(220,38,38,0.3); }
+  .badge-orange { background: rgba(224,104,32,0.2); color: #fdba74; border: 1px solid rgba(224,104,32,0.3); }
+  .badge-gold { background: rgba(232,150,42,0.2); color: var(--gold-light); border: 1px solid rgba(232,150,42,0.3); }
+  .badge-green { background: rgba(34,197,94,0.2); color: #86efac; border: 1px solid rgba(34,197,94,0.3); }
+  .badge-blue { background: rgba(59,130,246,0.2); color: #93c5fd; border: 1px solid rgba(59,130,246,0.3); }
+  .badge-purple { background: rgba(139,92,246,0.2); color: #c4b5fd; border: 1px solid rgba(139,92,246,0.3); }
+
+  /* STEPS */
+  .steps { padding: 0; }
+  .step {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+  }
+  .step:last-child { border-bottom: none; }
+  .step-check {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    flex-shrink: 0;
+    margin-top: 2px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+  }
+  .step-check:hover { border-color: var(--gold); }
+  .step-check.done { background: var(--green); border-color: var(--green); color: #000; }
+  .step-content { flex: 1; }
+  .step-title { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+  .step-desc { font-size: 13px; color: var(--muted); line-height: 1.7; margin-bottom: 12px; }
+  .step-desc strong { color: var(--text); }
+  .step-desc code { background: var(--surface2); padding: 1px 5px; border-radius: 3px; font-family: 'SF Mono', monospace; font-size: 12px; color: var(--gold-light); }
+
+  /* ENV VAR TABLE */
+  .env-table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
+  .env-table th { text-align: left; padding: 8px 12px; color: var(--muted); font-weight: 600; font-size: 11px; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); }
+  .env-table td { padding: 10px 12px; border-bottom: 1px solid rgba(30,45,66,0.5); vertical-align: top; }
+  .env-table tr:last-child td { border-bottom: none; }
+  .env-name { font-family: 'SF Mono', monospace; color: var(--gold-light); font-size: 12px; }
+  .env-action { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 3px; white-space: nowrap; }
+  .env-new { background: rgba(220,38,38,0.2); color: #fca5a5; }
+  .env-verify { background: rgba(34,197,94,0.2); color: #86efac; }
+  .env-auto { background: rgba(100,116,139,0.2); color: var(--muted); }
+
+  /* PROMPT BOX */
+  .prompt-wrap { margin: 12px 0 4px; }
+  .prompt-header {
+    display: flex; align-items: center; justify-content: space-between;
+    background: #0a1628; border: 1px solid var(--border); border-bottom: none;
+    padding: 8px 14px; border-radius: 8px 8px 0 0;
+  }
+  .prompt-header-left { display: flex; align-items: center; gap: 8px; }
+  .prompt-label { font-size: 11px; color: var(--muted); font-weight: 600; letter-spacing: 0.5px; }
+  .prompt-tag { font-size: 10px; padding: 2px 7px; border-radius: 3px; font-weight: 700; }
+  .tag-terminal { background: rgba(34,197,94,0.15); color: #86efac; border: 1px solid rgba(34,197,94,0.25); }
+  .tag-browser { background: rgba(59,130,246,0.15); color: #93c5fd; border: 1px solid rgba(59,130,246,0.25); }
+  .tag-manual { background: rgba(232,150,42,0.15); color: var(--gold-light); border: 1px solid rgba(232,150,42,0.25); }
+  .copy-btn {
+    background: rgba(232,150,42,0.15);
+    border: 1px solid rgba(232,150,42,0.3);
+    color: var(--gold);
+    padding: 5px 14px;
+    border-radius: 5px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.3px;
+  }
+  .copy-btn:hover { background: rgba(232,150,42,0.25); border-color: var(--gold); }
+  .copy-btn.copied { background: rgba(34,197,94,0.2); border-color: var(--green); color: var(--green); }
+  .prompt-body {
+    background: #060b14;
+    border: 1px solid var(--border);
+    border-radius: 0 0 8px 8px;
+    padding: 16px;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    color: #c9d1d9;
+    white-space: pre-wrap;
+    max-height: 380px;
+    overflow-y: auto;
+  }
+  .prompt-body .comment { color: #4a5568; }
+  .prompt-body .keyword { color: var(--gold-light); }
+  .prompt-body .string { color: #86efac; }
+
+  /* FINDINGS TABLE */
+  .findings-table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 12px 0; }
+  .findings-table th { text-align: left; padding: 8px 12px; color: var(--muted); font-size: 11px; font-weight: 600; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); }
+  .findings-table td { padding: 10px 12px; border-bottom: 1px solid rgba(30,45,66,0.5); vertical-align: top; }
+  .findings-table tr:last-child td { border-bottom: none; }
+  .findings-table code { font-family: 'SF Mono', monospace; font-size: 11px; color: var(--gold-light); background: var(--surface2); padding: 1px 5px; border-radius: 3px; }
+  .status-pass { color: #86efac; font-weight: 700; font-size: 11px; }
+  .status-fail { color: #fca5a5; font-weight: 700; font-size: 11px; }
+  .status-warn { color: var(--gold-light); font-weight: 700; font-size: 11px; }
+
+  /* DIVIDER */
+  .divider { border: none; border-top: 1px solid var(--border); margin: 8px 0; }
+
+  /* FOOTER */
+  .footer { text-align: center; padding: 40px 20px; color: var(--dimmed); font-size: 12px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="container">
+    <div class="header-top">
+      <div class="logo">STRIVE <span>/ Outage Fix + Remediation</span></div>
+      <div class="header-title">Production restore → Code cleanup → Validation pipeline</div>
+    </div>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="mainProgress" style="width:0%"></div>
+    </div>
+    <div class="progress-label" id="progressLabel">0 of 4 tracks complete</div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- CRITICAL ALERT -->
+  <div class="alert-critical">
+    <div class="alert-critical-header">
+      <span class="badge-critical">🔴 PRODUCTION DOWN</span>
+      <h3>App returning 500 on all analysis calls</h3>
+    </div>
+    <p><strong>Root cause:</strong> Sprint 3A removed the hardcoded <code>strive-2026-launch</code> token fallback from the server (correct security fix), but <code>STRIVE_APP_TOKEN</code> was never added to Vercel's environment variables. Every API call now hits the new hard-fail check and returns 500.</p>
+    <p style="margin-top:8px"><strong>Secondary:</strong> The client-side code still has 6 hardcoded <code>strive-2026-launch</code> fallbacks that also need removal. Sentry blocked by CSP. Users trapped on frozen analyzing screen with no retry.</p>
+  </div>
+
+  <!-- TRACK MAP -->
+  <div class="track-map">
+    <div class="track-card red">
+      <div class="track-number">TRACK 1</div>
+      <div class="track-label">Vercel Dashboard</div>
+      <div class="track-sub">Set missing env vars</div>
+      <div class="track-time">⏱ 2 min · Browser only</div>
+    </div>
+    <div class="track-card orange">
+      <div class="track-number">TRACK 2</div>
+      <div class="track-label">Verify Service</div>
+      <div class="track-sub">Confirm app restored</div>
+      <div class="track-time">⏱ 2 min · Browser test</div>
+    </div>
+    <div class="track-card gold">
+      <div class="track-number">TRACK 3</div>
+      <div class="track-label">Code Sprint</div>
+      <div class="track-sub">6 fallbacks + CSP + retry</div>
+      <div class="track-time">⏱ 15 min · Terminal</div>
+    </div>
+    <div class="track-card green">
+      <div class="track-number">TRACK 4</div>
+      <div class="track-label">QA Verify</div>
+      <div class="track-sub">Confirm clean codebase</div>
+      <div class="track-time">⏱ 2 min · Terminal</div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- TRACK 1: VERCEL DASHBOARD                       -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon red">🔴</div>
+      <div class="section-meta">
+        <h2>Track 1 — Vercel Dashboard</h2>
+        <p>Set missing environment variables · Browser only · ~2 minutes</p>
+      </div>
+      <span class="section-badge badge-red">DO FIRST</span>
+    </div>
+    <div class="steps">
+
+      <div class="step">
+        <div class="step-check" onclick="toggleCheck(this)"></div>
+        <div class="step-content">
+          <div class="step-title">Open Vercel Environment Variables</div>
+          <div class="step-desc">
+            Go to <strong>vercel.com → strive-app → Settings → Environment Variables</strong><br>
+            You need to add 2 new variables and verify 5 existing ones.
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-check" onclick="toggleCheck(this)"></div>
+        <div class="step-content">
+          <div class="step-title">Add the 2 Missing Variables (CRITICAL)</div>
+          <div class="step-desc">
+            Click <strong>Add New</strong> for each. Set scope to <strong>Production + Preview + Development</strong> for both.
+          </div>
+          <table class="env-table">
+            <thead>
+              <tr>
+                <th>Variable Name</th>
+                <th>Value</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code class="env-name">STRIVE_APP_TOKEN</code></td>
+                <td style="color:var(--muted);font-size:12px">Any secure string — e.g. <code>strive-prod-2026</code><br>⚠️ Write this value down — you'll need it for the next row</td>
+                <td><span class="env-action env-new">ADD NEW</span></td>
+              </tr>
+              <tr>
+                <td><code class="env-name">REACT_APP_STRIVE_TOKEN</code></td>
+                <td style="color:var(--muted);font-size:12px"><strong>Exact same value</strong> as STRIVE_APP_TOKEN above<br>The client and server token must match</td>
+                <td><span class="env-action env-new">ADD NEW</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-check" onclick="toggleCheck(this)"></div>
+        <div class="step-content">
+          <div class="step-title">Verify These 7 Variables Already Exist</div>
+          <div class="step-desc">These should already be there. Confirm each is present and not blank.</div>
+          <table class="env-table">
+            <thead>
+              <tr><th>Variable</th><th>Purpose</th><th>Action</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code class="env-name">GEMINI_API_KEY</code></td>
+                <td style="color:var(--muted);font-size:12px">Video analysis — app is dead without this</td>
+                <td><span class="env-action env-verify">VERIFY</span></td>
+              </tr>
+              <tr>
+                <td><code class="env-name">ANTHROPIC_API_KEY</code></td>
+                <td style="color:var(--muted);font-size:12px">Coach notes and mental performance</td>
+                <td><span class="env-action env-verify">VERIFY</span></td>
+              </tr>
+              <tr>
+                <td><code class="env-name">RESEND_API_KEY</code></td>
+                <td style="color:var(--muted);font-size:12px">COPPA consent emails</td>
+                <td><span class="env-action env-verify">VERIFY</span></td>
+              </tr>
+              <tr>
+                <td><code class="env-name">REACT_APP_SENTRY_DSN</code></td>
+                <td style="color:var(--muted);font-size:12px">Error reporting (non-critical)</td>
+                <td><span class="env-action env-verify">VERIFY</span></td>
+              </tr>
+              <tr>
+                <td><code class="env-name">REACT_APP_POSTHOG_KEY</code></td>
+                <td style="color:var(--muted);font-size:12px">Analytics (non-critical)</td>
+                <td><span class="env-action env-verify">VERIFY</span></td>
+              </tr>
+              <tr>
+                <td><code class="env-name">STRIPE_SECRET_KEY</code></td>
+                <td style="color:var(--muted);font-size:12px">Billing checkout — if not set, upgrades fail</td>
+                <td><span class="env-action env-verify">VERIFY</span></td>
+              </tr>
+              <tr>
+                <td><code class="env-name">STRIPE_WEBHOOK_SECRET</code></td>
+                <td style="color:var(--muted);font-size:12px">Stripe webhook processing</td>
+                <td><span class="env-action env-verify">VERIFY</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-check" onclick="toggleCheck(this)"></div>
+        <div class="step-content">
+          <div class="step-title">Save and Wait for Redeploy</div>
+          <div class="step-desc">
+            Click <strong>Save</strong>. Vercel auto-redeploys in ~90 seconds.<br>
+            Watch the Deployments tab — wait for the new deployment to show <strong style="color:var(--green)">● Ready</strong> before testing.
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- TRACK 2: VERIFY SERVICE                         -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon orange">🧪</div>
+      <div class="section-meta">
+        <h2>Track 2 — Verify Service Restored</h2>
+        <p>Quick browser test to confirm the 500 is gone · ~2 minutes</p>
+      </div>
+      <span class="section-badge badge-orange">VERIFY</span>
+    </div>
+    <div class="steps">
+
+      <div class="step">
+        <div class="step-check" onclick="toggleCheck(this)"></div>
+        <div class="step-content">
+          <div class="step-title">Open the App and Upload a Video</div>
+          <div class="step-desc">
+            Go to <strong>strive-app-amber.vercel.app</strong><br>
+            Upload any gymnastics video and start an analysis.<br>
+            <strong>Expected:</strong> Analysis completes and shows a score.<br>
+            <strong>If still 500:</strong> The Vercel env var may not have saved — go back to Track 1.
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-check" onclick="toggleCheck(this)"></div>
+        <div class="step-content">
+          <div class="step-title">Check Console for 500 Errors</div>
+          <div class="step-desc">
+            Open browser DevTools (F12) → Console tab.<br>
+            <strong>Expected:</strong> No <code>POST /api/gemini 500</code> errors.<br>
+            <strong>You may still see:</strong> Sentry CSP warnings — these are fixed in Track 3 and are non-blocking.<br>
+            <strong>If analysis works:</strong> Proceed to Track 3.
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- TRACK 3: CODE SPRINT                            -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon gold">⚡</div>
+      <div class="section-meta">
+        <h2>Track 3 — Code Sprint</h2>
+        <p>Remove 6 hardcoded token fallbacks · Fix Sentry CSP · Add analysis retry UX</p>
+      </div>
+      <span class="section-badge badge-gold">TERMINAL</span>
+    </div>
+    <div class="steps">
+
+      <div class="step">
+        <div class="step-check" onclick="toggleCheck(this)"></div>
+        <div class="step-content">
+          <div class="step-title">What This Sprint Fixes</div>
+          <div class="step-desc">
+            The agent audit found 3 remaining issues after the Vercel env var fix:
+          </div>
+          <table class="findings-table">
+            <thead><tr><th>Issue</th><th>Location</th><th>Impact</th></tr></thead>
+            <tbody>
+              <tr>
+                <td style="color:var(--text)">Hardcoded <code>strive-2026-launch</code> fallback</td>
+                <td style="color:var(--muted);font-size:12px"><code>pipeline.js:58</code><br><code>LegacyApp.js:3507,4847,5325,8372</code><br><code>JudgeScoreInput.js:14</code></td>
+                <td style="color:var(--muted);font-size:12px">6 locations still sending old token — security risk if token rotated</td>
+              </tr>
+              <tr>
+                <td style="color:var(--text)">Sentry blocked by CSP</td>
+                <td style="color:var(--muted);font-size:12px"><code>vercel.json</code> connect-src</td>
+                <td style="color:var(--muted);font-size:12px">All production errors silently dropped — flying blind</td>
+              </tr>
+              <tr>
+                <td style="color:var(--text)">No retry after failed analysis</td>
+                <td style="color:var(--muted);font-size:12px"><code>LegacyApp.js:5496-5509</code></td>
+                <td style="color:var(--muted);font-size:12px">User trapped on frozen screen with no path forward</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-check" onclick="toggleCheck(this)"></div>
+        <div class="step-content">
+          <div class="step-title">Open Terminal and Run Claude</div>
+          <div class="step-desc">
+            Open a new terminal window in your project directory and run:<br>
+            <code>claude --dangerously-skip-permissions</code>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-check" onclick="toggleCheck(this)"></div>
+        <div class="step-content">
+          <div class="step-title">Paste the Sprint Prompt</div>
+          <div class="prompt-wrap">
+            <div class="prompt-header">
+              <div class="prompt-header-left">
+                <span class="prompt-label">SPRINT PROMPT</span>
+                <span class="prompt-tag tag-terminal">TERMINAL</span>
+              </div>
+              <button class="copy-btn" onclick="copyPrompt(this, 'sprint3fix')">COPY PROMPT</button>
+            </div>
+            <div class="prompt-body" id="sprint3fix">You are working on the Strive gymnastics app at /Users/mgraci/Desktop/StriveGymnastics.
+Read CLAUDE.md before making changes.
+
+CONTEXT: A security sprint removed hardcoded token fallbacks from API files but missed
+the client-side code. The app is now restored via Vercel env vars. This sprint removes
+the remaining client-side hardcoded tokens and fixes two UX/monitoring issues.
+
+FIX 1 — Remove ALL hardcoded "strive-2026-launch" fallbacks from frontend (6 locations)
+Run first: grep -rn "strive-2026-launch" src/
+Fix every match. Change || "strive-2026-launch" to || "" in ALL of:
+  - src/engine/pipeline.js line ~58
+  - src/LegacyApp.js lines ~3507, ~4847, ~5325, ~8372
+  - src/components/ui/JudgeScoreInput.js line ~14
+For each: change || "strive-2026-launch" or || 'strive-2026-launch' to || ""
+The client must send empty string when REACT_APP_STRIVE_TOKEN is not set.
+
+FIX 2 — Add Sentry to CSP connect-src in vercel.json
+File: vercel.json
+Find the Content-Security-Policy header connect-src directive.
+Add https://*.sentry.io to the end of the connect-src list (before the semicolon).
+Sentry is initialized but currently blocked — all production errors are silently dropped.
+
+FIX 3 — Add auto-retry after failed analysis
+File: src/LegacyApp.js
+Find the catch block around lines 5496-5509 where analysis fails and sets
+the status to "Analysis didn't complete — please try again."
+After setting the status message, add:
+  setTimeout(() => setScreen('upload'), 3000);
+This returns the user to the upload screen after 3 seconds so they can try again.
+Do NOT remove the status message — it should display for 3 seconds before the redirect.
+
+SELF-AUDIT (run all before committing):
+1. Run: grep -rn "strive-2026-launch" src/ — MUST return empty
+2. Run: grep -n "sentry.io" vercel.json — must show match in connect-src
+3. Run: grep -n "setScreen.*upload\|upload.*3000" src/LegacyApp.js — confirm retry exists
+4. Run: npm test -- --watchAll=false — 65/65 must pass
+5. Run: npm run build — must exit 0
+
+COMMIT AND PUSH:
+git add -A && git commit -m "fix(security): remove all client-side token fallbacks; add Sentry CSP; add analysis retry" && git push origin main
+
+CONSTRAINTS:
+- Only touch: pipeline.js, LegacyApp.js, JudgeScoreInput.js, vercel.json
+- Do NOT change any api/ files
+- Do NOT change calibration factors or scoring logic
+- Build must pass. Tests must pass. Push via GitHub Desktop if terminal push fails.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-check" onclick="toggleCheck(this)"></div>
+        <div class="step-content">
+          <div class="step-title">Push via GitHub Desktop if Needed</div>
+          <div class="step-desc">
+            If terminal shows <code>fatal: Device not configured</code>, open <strong>GitHub Desktop → Fetch Origin → Push Origin</strong>.
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- TRACK 4: QA VERIFY                              -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon green">✅</div>
+      <div class="section-meta">
+        <h2>Track 4 — QA Verify</h2>
+        <p>Final confirmation that all client-side token fallbacks are gone · ~2 minutes</p>
+      </div>
+      <span class="section-badge badge-green">TERMINAL</span>
+    </div>
+    <div class="steps">
+
+      <div class="step">
+        <div class="step-check" onclick="toggleCheck(this)"></div>
+        <div class="step-content">
+          <div class="step-title">Run the Three-Line Verify</div>
+          <div class="step-desc">Paste into any terminal (not Claude — just your regular terminal):</div>
+          <div class="prompt-wrap">
+            <div class="prompt-header">
+              <div class="prompt-header-left">
+                <span class="prompt-label">TERMINAL COMMAND</span>
+                <span class="prompt-tag tag-terminal">TERMINAL</span>
+              </div>
+              <button class="copy-btn" onclick="copyPrompt(this, 'qaVerify')">COPY</button>
+            </div>
+            <div class="prompt-body" id="qaVerify">cd /Users/mgraci/Desktop/StriveGymnastics && grep -rn "strive-2026-launch" src/ && echo "FAIL - fallbacks still present" || echo "PASS - all fallbacks removed"</div>
+          </div>
+          <div class="step-desc" style="margin-top:10px">
+            <strong style="color:var(--green)">Expected output:</strong> <code>PASS - all fallbacks removed</code><br>
+            <strong style="color:var(--red)">If it shows file:line matches:</strong> The sprint missed some — re-run Track 3.
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-check" onclick="toggleCheck(this)"></div>
+        <div class="step-content">
+          <div class="step-title">Run the Full QA Audit Prompt</div>
+          <div class="step-desc">Paste this into <code>claude --dangerously-skip-permissions</code> for a complete verification:</div>
+          <div class="prompt-wrap">
+            <div class="prompt-header">
+              <div class="prompt-header-left">
+                <span class="prompt-label">FULL QA AUDIT</span>
+                <span class="prompt-tag tag-terminal">TERMINAL</span>
+              </div>
+              <button class="copy-btn" onclick="copyPrompt(this, 'fullQA')">COPY PROMPT</button>
+            </div>
+            <div class="prompt-body" id="fullQA">You are a QA auditor for the Strive gymnastics app at /Users/mgraci/Desktop/StriveGymnastics.
+Verify all outage fixes. Run each check and report PASS/FAIL with evidence:
+
+OUTAGE FIX (Track 1-3):
+1. grep -rn "strive-2026-launch" src/ → must be EMPTY (0 matches)
+2. grep -n "sentry.io" vercel.json → must show match in connect-src
+3. grep -n "setScreen.*upload\|setTimeout.*upload\|upload.*3000" src/LegacyApp.js → must have match
+4. grep -n "REACT_APP_STRIVE_TOKEN" src/engine/pipeline.js → must NOT have || "strive-2026-launch"
+5. grep -n "REACT_APP_STRIVE_TOKEN" src/components/ui/JudgeScoreInput.js → must NOT have hardcoded fallback
+
+SECURITY (still intact from Wave 1):
+6. grep -r "strive-2026-launch" api/ → must be EMPTY
+7. grep -n "rateLimitMap\|checkRateLimit" api/analyze.js → must have matches
+8. grep -n "maxDuration" vercel.json → must show 3+ entries
+
+BUILD:
+9. npm test -- --watchAll=false → ALL TESTS PASS
+10. npm run build → ZERO ERRORS
+
+If all 10 checks pass: report "OUTAGE FIX COMPLETE. CODEBASE CLEAN."
+If any check fails: report exactly what failed and the precise fix required.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- APPENDIX: VALIDATION PIPELINE                   -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon purple">📊</div>
+      <div class="section-meta">
+        <h2>Next: Validation Pipeline — P1 Gate Decision</h2>
+        <p>Run live-test.mjs to measure accuracy delta and decide on 350 videos · Do after outage fix</p>
+      </div>
+      <span class="section-badge badge-purple">NEXT SESSION</span>
+    </div>
+    <div class="steps">
+
+      <div class="step">
+        <div class="step-check" onclick="toggleCheck(this)"></div>
+        <div class="step-content">
+          <div class="step-title">Check for Videos on Desktop</div>
+          <div class="step-desc">
+            The validation script reads from <code>~/Desktop/videos/</code>. Check if you have gymnastics videos there with known judge scores:
+          </div>
+          <div class="prompt-wrap">
+            <div class="prompt-header">
+              <div class="prompt-header-left">
+                <span class="prompt-label">TERMINAL COMMAND</span>
+                <span class="prompt-tag tag-terminal">TERMINAL</span>
+              </div>
+              <button class="copy-btn" onclick="copyPrompt(this, 'checkVideos')">COPY</button>
+            </div>
+            <div class="prompt-body" id="checkVideos">ls ~/Desktop/videos/ 2>/dev/null && echo "Videos found" || echo "Folder empty or missing — add videos with known judge scores"</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-check" onclick="toggleCheck(this)"></div>
+        <div class="step-content">
+          <div class="step-title">Update KNOWN_SCORES in live-test.mjs</div>
+          <div class="step-desc">
+            Open <code>scripts/live-test.mjs</code>. Find the <code>KNOWN_SCORES</code> object at the top. Update it with the actual judge scores for your test videos:<br><br>
+            <code>vault.mp4 → 9.10</code> &nbsp;|&nbsp; <code>bars.mp4 → 8.60</code> &nbsp;|&nbsp; <code>beam.mp4 → 8.45</code> &nbsp;|&nbsp; <code>floor.mp4 → 9.05</code><br><br>
+            File names must match exactly what's in <code>~/Desktop/videos/</code>.
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-check" onclick="toggleCheck(this)"></div>
+        <div class="step-content">
+          <div class="step-title">Run the Validation Script</div>
+          <div class="prompt-wrap">
+            <div class="prompt-header">
+              <div class="prompt-header-left">
+                <span class="prompt-label">VALIDATION RUNNER</span>
+                <span class="prompt-tag tag-terminal">TERMINAL</span>
+              </div>
+              <button class="copy-btn" onclick="copyPrompt(this, 'runValidation')">COPY</button>
+            </div>
+            <div class="prompt-body" id="runValidation">cd /Users/mgraci/Desktop/StriveGymnastics && node scripts/live-test.mjs</div>
+          </div>
+          <div class="step-desc" style="margin-top:10px">
+            Results saved to <code>scripts/v15-delta-report.json</code><br>
+            Paste the delta table into the Claude chat to get the P1 Gate decision and 350-video answer.
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-check" onclick="toggleCheck(this)"></div>
+        <div class="step-content">
+          <div class="step-title">Run the Opus Research Task (Separate Browser Tab)</div>
+          <div class="step-desc">
+            This builds a dataset of NAWGJ YouTube videos with verified scores. Run in a <strong>separate claude.ai browser tab</strong> (not terminal) — select Claude Opus model.<br><br>
+            Open <code>/Users/mgraci/Desktop/STRIVE_Handoff_Prompt.md</code>, copy the full contents, paste into a new Opus conversation. Let it run overnight.<br><br>
+            Expected output: Excel spreadsheet with 250–400 verified video+score pairs for ongoing validation.
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- APPENDIX: AUDIT SUMMARY                         -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon blue">📋</div>
+      <div class="section-meta">
+        <h2>Infrastructure Audit Summary</h2>
+        <p>Full 4-agent audit findings — March 26, 2026</p>
+      </div>
+      <span class="section-badge badge-blue">REFERENCE</span>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-check" onclick="toggleCheck(this)" style="display:none"></div>
+        <div class="step-content" style="width:100%">
+          <table class="findings-table">
+            <thead>
+              <tr><th>Area</th><th>Finding</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="color:var(--text);font-weight:700">Speed</td>
+                <td style="color:var(--muted);font-size:12px">Compression threshold raised 20→30MB. Cache verified wired. -656 dead LOC removed. Pipeline: 100–200s total.</td>
+                <td><span class="status-pass">✓ FIXED (Sprint 3D)</span></td>
+              </tr>
+              <tr>
+                <td style="color:var(--text);font-weight:700">Security</td>
+                <td style="color:var(--muted);font-size:12px">Hardcoded token removed from API. Rate limits added. COPPA wired. Account deletion real. Tier fails down.</td>
+                <td><span class="status-pass">✓ FIXED (Sprint 3A/3C)</span></td>
+              </tr>
+              <tr>
+                <td style="color:var(--text);font-weight:700">Token Fallbacks</td>
+                <td style="color:var(--muted);font-size:12px">6 client-side hardcoded <code>strive-2026-launch</code> fallbacks remain in src/. Env var missing in Vercel.</td>
+                <td><span class="status-fail">⚠ THIS SPRINT</span></td>
+              </tr>
+              <tr>
+                <td style="color:var(--text);font-weight:700">Accuracy</td>
+                <td style="color:var(--muted);font-size:12px">LEVEL_SKILLS injected. Temperature locked to 0. Event rules confirmed wired. Calibration verified.</td>
+                <td><span class="status-pass">✓ FIXED (Sprint 3B)</span></td>
+              </tr>
+              <tr>
+                <td style="color:var(--text);font-weight:700">200 Videos</td>
+                <td style="color:var(--muted);font-size:12px">Were one-time calibration runs, not a corpus. Gemini doesn't retain them. Calibration factors derived from them.</td>
+                <td><span class="status-warn">ℹ CONFIRMED (not an issue)</span></td>
+              </tr>
+              <tr>
+                <td style="color:var(--text);font-weight:700">350 Videos</td>
+                <td style="color:var(--muted);font-size:12px">Don't order yet. Run live-test.mjs first to measure post-v15 delta. Make the decision with real data.</td>
+                <td><span class="status-warn">⏳ PENDING (validation first)</span></td>
+              </tr>
+              <tr>
+                <td style="color:var(--text);font-weight:700">Dead Code</td>
+                <td style="color:var(--muted);font-size:12px">-656 LOC removed. VideoAnalyzer.js and analysisPipeline.js deleted. LEVEL_SKILLS deduplicated.</td>
+                <td><span class="status-pass">✓ FIXED (Sprint 3D)</span></td>
+              </tr>
+              <tr>
+                <td style="color:var(--text);font-weight:700">Sentry CSP</td>
+                <td style="color:var(--muted);font-size:12px">Sentry ingest URL blocked by CSP. All production errors silently dropped. Flying blind on prod errors.</td>
+                <td><span class="status-fail">⚠ THIS SPRINT</span></td>
+              </tr>
+              <tr>
+                <td style="color:var(--text);font-weight:700">UX on 500 Error</td>
+                <td style="color:var(--muted);font-size:12px">User frozen on analyzing screen. No retry button. No path forward. 3-second auto-redirect needed.</td>
+                <td><span class="status-fail">⚠ THIS SPRINT</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">
+  STRIVE — Infrastructure Audit &amp; Outage Fix · March 26, 2026<br>
+  4-agent audit: Performance · Security · Accuracy · Complexity
+</div>
+
+<script>
+  function toggleCheck(el) {
+    el.classList.toggle('done');
+    el.textContent = el.classList.contains('done') ? '✓' : '';
+    updateProgress();
+  }
+
+  function updateProgress() {
+    const all = document.querySelectorAll('.step-check');
+    const done = document.querySelectorAll('.step-check.done');
+    const pct = Math.round((done.length / all.length) * 100);
+    document.getElementById('mainProgress').style.width = pct + '%';
+    const tracks = Math.floor(done.length / (all.length / 4));
+    document.getElementById('progressLabel').textContent = `${done.length} of ${all.length} steps complete`;
+  }
+
+  function copyPrompt(btn, id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    navigator.clipboard.writeText(el.textContent.trim()).then(() => {
+      btn.textContent = '✓ COPIED';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = 'COPY PROMPT';
+        btn.classList.remove('copied');
+      }, 2000);
+    });
+  }
+</script>
+</body>
+</html>

@@ -1,155 +1,404 @@
 {
   "start_value": 10,
-  "final_score": 8.5,
-  "skills": [
+  "final_score": 8.35,
+  "deduction_log": [
     {
-      "timestamp": "00:04",
-      "skill_name": "Jump to straddle sit mount",
-      "quality_grade": 9.7,
-      "primary_deduction": "Bent knees on landing (0.10), slight adjustment (0.10), lack of full extension (0.10).",
-      "is_celebration": false
+      "skill_name": "Jump to Beam Mount",
+      "total_deduction": 0,
+      "deductions": [],
+      "fall_detected": false,
+      "narrative": "The judge observed a clean jump to the beam with good control upon landing. This solid start sets a positive tone for the routine and avoids early balance deductions. To maintain this, focus on a strong two-foot push-off and precise foot placement. A judge would note the confident and stable entry onto the apparatus.",
+      "injury_signal": "Landing on the beam involves impact forces on the ankles and knees; consistent controlled landings help mitigate repetitive stress. No compensation patterns observed in this execution.",
+      "skill_confidence": "high",
+      "difficulty_value": 0,
+      "executed_successfully": true,
+      "is_celebration": true,
+      "reason": "clean execution",
+      "skill_order": 1,
+      "timestamp_end": 6,
+      "timestamp_start": 4
     },
     {
-      "timestamp": "00:06",
-      "skill_name": "Full turn (on one foot)",
-      "quality_grade": 9.8,
-      "primary_deduction": "Minor balance check (0.10), slight arm movement (0.10).",
-      "is_celebration": false
+      "skill_name": "Back Walkover",
+      "total_deduction": 0.1,
+      "deductions": [
+        {
+          "type": "execution",
+          "description": "small balance check with arm wave",
+          "point_value": 0.05,
+          "body_part": "arms"
+        },
+        {
+          "type": "execution",
+          "description": "slight knee bend on landing leg",
+          "point_value": 0.05,
+          "body_part": "knees"
+        }
+      ],
+      "fall_detected": false,
+      "narrative": "The judge observed a well-extended back walkover, but there was a small balance check with an arm wave upon completion. This minor instability resulted in a 0.05 deduction, indicating a slight loss of control. To improve, focus on maintaining core tension throughout the entire skill, especially during the transition to standing. A judge would note the good body line during the inversion, but the slight hesitation at the end.",
+      "injury_signal": "Back walkovers place significant load on the wrists and lumbar spine during the handstand phase and arch. Consistent core strength and wrist flexibility are crucial for injury prevention. No compensation patterns observed in this execution.",
+      "skill_confidence": "high",
+      "difficulty_value": 0.1,
+      "executed_successfully": true,
+      "is_celebration": false,
+      "reason": "minor form breaks",
+      "skill_order": 2,
+      "timestamp_end": 10,
+      "timestamp_start": 6
     },
     {
-      "timestamp": "00:08",
-      "skill_name": "Back walkover",
-      "quality_grade": 9.8,
-      "primary_deduction": "Slight arch in back (0.10), minor leg separation (0.10).",
-      "is_celebration": false
+      "skill_name": "Split Leap",
+      "total_deduction": 0.15,
+      "deductions": [
+        {
+          "type": "execution",
+          "description": "insufficient split angle (slightly under 180 degrees)",
+          "point_value": 0.1,
+          "body_part": "legs"
+        },
+        {
+          "type": "execution",
+          "description": "slight knee bend on landing",
+          "point_value": 0.05,
+          "body_part": "knees"
+        }
+      ],
+      "fall_detected": false,
+      "narrative": "The judge observed a split leap with good height, but the split angle was slightly under the required 180 degrees at its apex. This form break resulted in a 0.10 deduction for insufficient amplitude. To improve, focus on active hip flexor stretching and oversplits to achieve the full 180-degree split in the air. A judge would note the effort in height but the clear lack of full extension in the split.",
+      "injury_signal": "Split leaps involve dynamic stretching of the hip flexors and hamstrings; inadequate warm-up or flexibility can increase risk of muscle strains. No compensation patterns observed in this execution.",
+      "skill_confidence": "high",
+      "difficulty_value": 0.1,
+      "executed_successfully": true,
+      "is_celebration": false,
+      "reason": "minor form breaks",
+      "skill_order": 3,
+      "timestamp_end": 17,
+      "timestamp_start": 12
     },
     {
-      "timestamp": "00:11",
-      "skill_name": "Back handspring step-out",
-      "quality_grade": 9.8,
-      "primary_deduction": "Heavy landing (0.10), slight knee bend (0.10).",
-      "is_celebration": false
+      "skill_name": "Full Turn",
+      "total_deduction": 0.05,
+      "deductions": [
+        {
+          "type": "execution",
+          "description": "slight balance check at completion of turn",
+          "point_value": 0.05,
+          "body_part": "body"
+        }
+      ],
+      "fall_detected": false,
+      "narrative": "The gymnast performed a full turn with good initial control, but a slight balance check was observed at the completion of the rotation. This minor instability resulted in a 0.05 deduction for a balance error. To improve, focus on spotting a fixed point and maintaining a tight core throughout the entire rotation. A judge would note the controlled rotation but the slight loss of equilibrium at the end.",
+      "injury_signal": "Turns on beam require strong ankle stability and proprioception; repetitive wobbles can contribute to ankle sprains or instability over time. No compensation patterns observed in this execution.",
+      "skill_confidence": "high",
+      "difficulty_value": 0.1,
+      "executed_successfully": true,
+      "is_celebration": false,
+      "reason": "minor form breaks",
+      "skill_order": 4,
+      "timestamp_end": 20,
+      "timestamp_start": 17
     },
     {
-      "timestamp": "00:14",
-      "skill_name": "Back handspring step-out",
-      "quality_grade": 9.7,
-      "primary_deduction": "Noticeable balance check (0.10), arm swing (0.10), rhythm/flow deduction from previous skill (0.10).",
-      "is_celebration": false
+      "skill_name": "Back Handspring",
+      "total_deduction": 0.15,
+      "deductions": [
+        {
+          "type": "execution",
+          "description": "slight knee bend in flight",
+          "point_value": 0.1,
+          "body_part": "knees"
+        },
+        {
+          "type": "execution",
+          "description": "slightly flexed feet in flight",
+          "point_value": 0.05,
+          "body_part": "feet"
+        }
+      ],
+      "fall_detected": false,
+      "narrative": "The judge observed a back handspring with good amplitude and rhythm, but there was a slight knee bend and flexed feet visible during the flight phase. These minor form breaks resulted in a 0.15 deduction for execution. To improve, focus on actively pushing through the floor and maintaining a tight, hollow body position with pointed toes throughout the entire skill. A judge would note the power generated but the lack of full body tension.",
+      "injury_signal": "Back handsprings involve high impact on wrists and shoulders, as well as significant lumbar extension; proper technique is crucial to prevent wrist sprains, shoulder impingement, and lower back pain. No compensation patterns observed in this execution.",
+      "skill_confidence": "high",
+      "difficulty_value": 0.2,
+      "executed_successfully": true,
+      "is_celebration": false,
+      "reason": "minor form breaks",
+      "skill_order": 5,
+      "timestamp_end": 25,
+      "timestamp_start": 20
     },
     {
-      "timestamp": "00:17",
-      "skill_name": "Back handspring step-out",
-      "quality_grade": 9.6,
-      "primary_deduction": "Significant balance check (0.20), wide arm swing (0.10), rhythm/flow deduction from previous skill (0.10).",
-      "is_celebration": false
+      "skill_name": "Back Tuck",
+      "total_deduction": 0.2,
+      "deductions": [
+        {
+          "type": "execution",
+          "description": "early pike before tucking",
+          "point_value": 0.1,
+          "body_part": "hips"
+        },
+        {
+          "type": "execution",
+          "description": "small hop on landing",
+          "point_value": 0.05,
+          "body_part": "feet"
+        },
+        {
+          "type": "execution",
+          "description": "slightly flexed feet in flight",
+          "point_value": 0.05,
+          "body_part": "feet"
+        }
+      ],
+      "fall_detected": false,
+      "narrative": "The judge observed a back tuck with good height, but the gymnast showed an early pike before initiating the tuck, and a small hop on landing. The early pike indicates a slight loss of body shape control, resulting in a 0.10 deduction, and the hop adds another 0.05. To improve, focus on maintaining a straight body line longer before initiating the tuck and driving the chest up on landing for a stuck finish. A judge would note the good rotation but the premature body shape change and landing adjustment.",
+      "injury_signal": "Back tucks involve significant compression forces on the spine during landing and dynamic loading of the knees and ankles; proper body alignment and controlled landings are essential to minimize injury risk. No compensation patterns observed in this execution.",
+      "skill_confidence": "high",
+      "difficulty_value": 0.2,
+      "executed_successfully": true,
+      "is_celebration": false,
+      "reason": "minor form breaks",
+      "skill_order": 6,
+      "timestamp_end": 29,
+      "timestamp_start": 25
     },
     {
-      "timestamp": "00:20",
-      "skill_name": "Back handspring step-out",
-      "quality_grade": 9.6,
-      "primary_deduction": "Significant balance check (0.20), wide arm swing (0.10), rhythm/flow deduction from previous skill (0.10).",
-      "is_celebration": false
+      "skill_name": "Split Jump",
+      "total_deduction": 0.15,
+      "deductions": [
+        {
+          "type": "execution",
+          "description": "insufficient split angle (slightly under 180 degrees)",
+          "point_value": 0.1,
+          "body_part": "legs"
+        },
+        {
+          "type": "execution",
+          "description": "slight knee bend on landing",
+          "point_value": 0.05,
+          "body_part": "knees"
+        }
+      ],
+      "fall_detected": false,
+      "narrative": "The judge observed a split jump with good height, but the split angle was slightly under the required 180 degrees at its apex. This form break resulted in a 0.10 deduction for insufficient amplitude. To improve, focus on active hip flexor stretching and oversplits to achieve the full 180-degree split in the air. A judge would note the effort in height but the clear lack of full extension in the split.",
+      "injury_signal": "Split jumps involve dynamic stretching of the hip flexors and hamstrings; inadequate warm-up or flexibility can increase risk of muscle strains. No compensation patterns observed in this execution.",
+      "skill_confidence": "high",
+      "difficulty_value": 0.1,
+      "executed_successfully": true,
+      "is_celebration": false,
+      "reason": "minor form breaks",
+      "skill_order": 7,
+      "timestamp_end": 32,
+      "timestamp_start": 29
     },
     {
-      "timestamp": "00:23",
-      "skill_name": "Back handspring step-out",
-      "quality_grade": 9.6,
-      "primary_deduction": "Significant balance check (0.20), wide arm swing (0.10), rhythm/flow deduction from previous skill (0.10).",
-      "is_celebration": false
+      "skill_name": "Scale (Arabesque)",
+      "total_deduction": 0.05,
+      "deductions": [
+        {
+          "type": "execution",
+          "description": "slight balance check during hold",
+          "point_value": 0.05,
+          "body_part": "body"
+        }
+      ],
+      "fall_detected": false,
+      "narrative": "The gymnast executed a scale with good extension, but a slight balance check was observed during the hold. This minor instability resulted in a 0.05 deduction for a balance error. To improve, focus on engaging the core and finding a focal point to maintain a steady position. A judge would note the good body line but the slight loss of control.",
+      "injury_signal": "Static balance elements like scales require strong core and hip stabilizing muscles; imbalances can lead to compensatory movements and potential strain on the lower back or hips. No compensation patterns observed in this execution.",
+      "skill_confidence": "high",
+      "difficulty_value": 0,
+      "executed_successfully": true,
+      "is_celebration": false,
+      "reason": "minor form breaks",
+      "skill_order": 8,
+      "timestamp_end": 36,
+      "timestamp_start": 32
     },
     {
-      "timestamp": "00:26",
-      "skill_name": "Back handspring step-out",
-      "quality_grade": 9.6,
-      "primary_deduction": "Significant balance check (0.20), wide arm swing (0.10), rhythm/flow deduction from previous skill (0.10).",
-      "is_celebration": false
+      "skill_name": "Back Handspring",
+      "total_deduction": 0.15,
+      "deductions": [
+        {
+          "type": "execution",
+          "description": "slight knee bend in flight",
+          "point_value": 0.1,
+          "body_part": "knees"
+        },
+        {
+          "type": "execution",
+          "description": "slightly flexed feet in flight",
+          "point_value": 0.05,
+          "body_part": "feet"
+        }
+      ],
+      "fall_detected": false,
+      "narrative": "The judge observed a back handspring with good amplitude, but there was a slight knee bend and flexed feet visible during the flight phase. These minor form breaks resulted in a 0.15 deduction for execution. To improve, focus on actively pushing through the floor and maintaining a tight, hollow body position with pointed toes throughout the entire skill. A judge would note the power generated but the lack of full body tension.",
+      "injury_signal": "Back handsprings involve high impact on wrists and shoulders, as well as significant lumbar extension; proper technique is crucial to prevent wrist sprains, shoulder impingement, and lower back pain. No compensation patterns observed in this execution.",
+      "skill_confidence": "high",
+      "difficulty_value": 0.2,
+      "executed_successfully": true,
+      "is_celebration": false,
+      "reason": "minor form breaks",
+      "skill_order": 9,
+      "timestamp_end": 40,
+      "timestamp_start": 36
     },
     {
-      "timestamp": "00:29",
-      "skill_name": "Back handspring step-out",
-      "quality_grade": 9.6,
-      "primary_deduction": "Significant balance check (0.20), wide arm swing (0.10), rhythm/flow deduction from previous skill (0.10).",
-      "is_celebration": false
+      "skill_name": "Split Leap",
+      "total_deduction": 0.15,
+      "deductions": [
+        {
+          "type": "execution",
+          "description": "insufficient split angle (slightly under 180 degrees)",
+          "point_value": 0.1,
+          "body_part": "legs"
+        },
+        {
+          "type": "execution",
+          "description": "slight knee bend on landing",
+          "point_value": 0.05,
+          "body_part": "knees"
+        }
+      ],
+      "fall_detected": false,
+      "narrative": "The judge observed a split leap with good height, but the split angle was slightly under the required 180 degrees at its apex. This form break resulted in a 0.10 deduction for insufficient amplitude. To improve, focus on active hip flexor stretching and oversplits to achieve the full 180-degree split in the air. A judge would note the effort in height but the clear lack of full extension in the split.",
+      "injury_signal": "Split leaps involve dynamic stretching of the hip flexors and hamstrings; inadequate warm-up or flexibility can increase risk of muscle strains. No compensation patterns observed in this execution.",
+      "skill_confidence": "high",
+      "difficulty_value": 0.1,
+      "executed_successfully": true,
+      "is_celebration": false,
+      "reason": "minor form breaks",
+      "skill_order": 10,
+      "timestamp_end": 44,
+      "timestamp_start": 40
     },
     {
-      "timestamp": "00:32",
-      "skill_name": "Back handspring step-out",
-      "quality_grade": 9.6,
-      "primary_deduction": "Significant balance check (0.20), wide arm swing (0.10), rhythm/flow deduction from previous skill (0.10).",
-      "is_celebration": false
+      "skill_name": "Back Handspring",
+      "total_deduction": 0.15,
+      "deductions": [
+        {
+          "type": "execution",
+          "description": "slight knee bend in flight",
+          "point_value": 0.1,
+          "body_part": "knees"
+        },
+        {
+          "type": "execution",
+          "description": "slightly flexed feet in flight",
+          "point_value": 0.05,
+          "body_part": "feet"
+        }
+      ],
+      "fall_detected": false,
+      "narrative": "The judge observed a back handspring with good amplitude and rhythm, but there was a slight knee bend and flexed feet visible during the flight phase. These minor form breaks resulted in a 0.15 deduction for execution. To improve, focus on actively pushing through the floor and maintaining a tight, hollow body position with pointed toes throughout the entire skill. A judge would note the power generated but the lack of full body tension.",
+      "injury_signal": "Back handsprings involve high impact on wrists and shoulders, as well as significant lumbar extension; proper technique is crucial to prevent wrist sprains, shoulder impingement, and lower back pain. No compensation patterns observed in this execution.",
+      "skill_confidence": "high",
+      "difficulty_value": 0.2,
+      "executed_successfully": true,
+      "is_celebration": false,
+      "reason": "minor form breaks",
+      "skill_order": 11,
+      "timestamp_end": 48,
+      "timestamp_start": 44
     },
     {
-      "timestamp": "00:35",
-      "skill_name": "Back handspring step-out",
-      "quality_grade": 9.6,
-      "primary_deduction": "Significant balance check (0.20), wide arm swing (0.10), rhythm/flow deduction from previous skill (0.10).",
-      "is_celebration": false
-    },
-    {
-      "timestamp": "00:38",
-      "skill_name": "Back handspring step-out",
-      "quality_grade": 9.6,
-      "primary_deduction": "Significant balance check (0.20), wide arm swing (0.10), rhythm/flow deduction from previous skill (0.10).",
-      "is_celebration": false
-    },
-    {
-      "timestamp": "00:41",
-      "skill_name": "Back handspring step-out",
-      "quality_grade": 9.6,
-      "primary_deduction": "Significant balance check (0.20), wide arm swing (0.10), rhythm/flow deduction from previous skill (0.10).",
-      "is_celebration": false
-    },
-    {
-      "timestamp": "00:44",
-      "skill_name": "Back handspring step-out",
-      "quality_grade": 9.6,
-      "primary_deduction": "Significant balance check (0.20), wide arm swing (0.10), rhythm/flow deduction from previous skill (0.10).",
-      "is_celebration": false
-    },
-    {
-      "timestamp": "00:47",
-      "skill_name": "Back handspring step-out",
-      "quality_grade": 9.6,
-      "primary_deduction": "Significant balance check (0.20), wide arm swing (0.10), rhythm/flow deduction from previous skill (0.10).",
-      "is_celebration": false
-    },
-    {
-      "timestamp": "00:50",
-      "skill_name": "Back handspring step-out",
-      "quality_grade": 9.6,
-      "primary_deduction": "Significant balance check (0.20), wide arm swing (0.10), rhythm/flow deduction from previous skill (0.10).",
-      "is_celebration": false
-    },
-    {
-      "timestamp": "00:53",
-      "skill_name": "Back handspring step-out",
-      "quality_grade": 9.6,
-      "primary_deduction": "Significant balance check (0.20), wide arm swing (0.10), rhythm/flow deduction from previous skill (0.10).",
-      "is_celebration": false
-    },
-    {
-      "timestamp": "00:56",
-      "skill_name": "Back handspring step-out",
-      "quality_grade": 9.6,
-      "primary_deduction": "Significant balance check (0.20), wide arm swing (0.10), rhythm/flow deduction from previous skill (0.10).",
-      "is_celebration": false
-    },
-    {
-      "timestamp": "00:57",
-      "skill_name": "Back tuck dismount",
-      "quality_grade": 9.6,
-      "primary_deduction": "Large step on landing (0.30), chest down (0.10).",
-      "is_celebration": false
+      "skill_name": "Back Layout Dismount",
+      "total_deduction": 0.2,
+      "deductions": [
+        {
+          "type": "execution",
+          "description": "slight arch in layout position",
+          "point_value": 0.1,
+          "body_part": "body"
+        },
+        {
+          "type": "execution",
+          "description": "small hop on landing",
+          "point_value": 0.05,
+          "body_part": "feet"
+        },
+        {
+          "type": "execution",
+          "description": "slightly flexed feet in flight",
+          "point_value": 0.05,
+          "body_part": "feet"
+        }
+      ],
+      "fall_detected": false,
+      "narrative": "The judge observed a back layout dismount with good height, but there was a slight arch in the layout position and a small hop on landing. The arch indicates a minor loss of body tension, resulting in a 0.10 deduction, and the hop adds another 0.05. To improve, focus on maintaining a tight hollow body position throughout the layout and driving the chest up for a stuck landing. A judge would note the good rotation but the slight form break and landing adjustment.",
+      "injury_signal": "Layout dismounts involve high impact forces on the ankles, knees, and hips upon landing; consistent practice of controlled landings with proper absorption mechanics is vital for long-term joint health. No compensation patterns observed in this execution.",
+      "skill_confidence": "high",
+      "difficulty_value": 0.3,
+      "executed_successfully": true,
+      "is_celebration": false,
+      "reason": "minor form breaks",
+      "skill_order": 12,
+      "timestamp_end": 52,
+      "timestamp_start": 48
     }
   ],
-  "total_execution_deductions": 1.5,
-  "coaching_summary": "This routine demonstrates a commendable effort, particularly with the extensive series of back handsprings. However, consistency in execution and control, especially in landings and balance, is a significant area for improvement. The repeated balance checks throughout the back handspring series indicate a need for stronger core engagement and beam awareness. While the amplitude was generally good, the lack of precision in form and control accumulated substantial deductions. Focus on clean, controlled landings and maintaining a tight body position will elevate the overall score.",
-  "celebrations": [],
-  "top_3_fixes": [
-    "Improve landing control on all skills, especially the dismount, to minimize steps and balance checks.",
-    "Strengthen core and beam awareness to reduce balance checks and arm swings during the back handspring series.",
-    "Refine body tension and form throughout skills, addressing minor knee bends and leg separations."
+  "coaching_summary": "This routine demonstrates a solid foundation of Level 6 skills with good amplitude on most acro elements. The primary area for improvement is maintaining consistent body tension and extension throughout flight elements and dance skills, specifically addressing slight knee bends and flexed feet. Additionally, refining landing control for both acro skills and the dismount will significantly reduce deductions. From a judging standpoint, this routine was well-paced and executed without major errors, but accumulated minor deductions prevented a higher score.",
+  "primary_athlete_confidence": "high",
+  "sv_verified": true,
+  "artistry": {
+    "total_artistry_deduction": 0.1,
+    "notes": "The routine had a generally good flow and rhythm, but lacked dynamic expression and consistent body tension in some transitions, leading to a minor artistry deduction.",
+    "choreography_variety_deduction": 0,
+    "expression_deduction": 0.05,
+    "musicality_deduction": 0,
+    "quality_of_movement_deduction": 0.05
+  },
+  "athlete_name": "Test Athlete",
+  "celebrations": [
+    "Clean Jump to Beam Mount"
   ],
-  "total_artistry_deductions": 0
+  "confidence": "HIGH",
+  "duration_seconds": 52,
+  "event": "BALANCE BEAM",
+  "gender": "WAG",
+  "level": "Level 6",
+  "score_range": {
+    "low": 8,
+    "high": 8.5
+  },
+  "special_requirements": [
+    {
+      "requirement": "Acro series (2+ flight elements)",
+      "status": "MET",
+      "comment": "Back Handspring + Back Tuck performed.",
+      "penalty": 0
+    },
+    {
+      "requirement": "Dance series (2+ dance elements, one 180 split)",
+      "status": "MET",
+      "comment": "Split Leap + Split Jump performed, meeting the series requirement despite slight split angle deduction.",
+      "penalty": 0
+    },
+    {
+      "requirement": "Acro element (B or higher)",
+      "status": "MET",
+      "comment": "Multiple B and C elements performed (Back Handspring, Back Tuck, Back Layout).",
+      "penalty": 0
+    },
+    {
+      "requirement": "Dance element (A or higher)",
+      "status": "MET",
+      "comment": "Multiple A elements performed (Split Leap, Split Jump).",
+      "penalty": 0
+    },
+    {
+      "requirement": "Dismount (A or higher)",
+      "status": "MET",
+      "comment": "Back Layout (C) dismount performed.",
+      "penalty": 0
+    }
+  ],
+  "top_3_fixes": [
+    "Focus on maintaining locked knees and pointed toes throughout all flight elements (Back Handsprings, Back Tuck, Layout Dismount) to eliminate minor form breaks.",
+    "Improve split angle on all leaps and jumps to achieve a full 180-degree split at the apex of the skill through dedicated flexibility and active stretching.",
+    "Practice sticking landings for all acro skills and the dismount by driving the chest up and engaging the core upon contact with the beam/mat, reducing hops and steps."
+  ],
+  "total_artistry_deductions": 0.1,
+  "total_execution_deductions": 1.55
 }
