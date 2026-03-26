@@ -320,6 +320,7 @@ export default function ResultsScreen({ result, profile, previousResult, onBack,
               videoUrl={videoUrl}
               showSkeleton={showSkeleton}
               setShowSkeleton={setShowSkeleton}
+              eventName={event}
             />
           ))}
         </div>
@@ -681,7 +682,7 @@ function PrimaryAthleteBanner({ confidence }) {
   );
 }
 
-function SkillCard({ skill, index, isFree, tier, freeDeductionLimit, globalDeductionIndex, onJumpToTimestamp, onUpgrade, videoUrl, showSkeleton, setShowSkeleton }) {
+function SkillCard({ skill, index, isFree, tier, freeDeductionLimit, globalDeductionIndex, onJumpToTimestamp, onUpgrade, videoUrl, showSkeleton, setShowSkeleton, eventName }) {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState('what');
   const [playbackRate, setPlaybackRate] = useState(1);
@@ -782,6 +783,18 @@ function SkillCard({ skill, index, isFree, tier, freeDeductionLimit, globalDeduc
 
       if (results.poseLandmarks) {
         const lm = results.poseLandmarks;
+
+        // Only filter on Beam/Bars — elevated events. Floor/Vault
+        // gymnasts are at ground level so Y filtering would incorrectly exclude them.
+        const isElevated = /beam|bar/i.test(eventName || '');
+        if (isElevated && lm[11] && lm[12] && lm[23] && lm[24]) {
+          const avgY = (lm[11].y + lm[12].y + lm[23].y + lm[24].y) / 4;
+          if (avgY > 0.85) {
+            console.log(`[skeleton] Background athlete filtered (Y: ${avgY.toFixed(2)})`);
+            return; // skip drawing — this is a background athlete
+          }
+        }
+
         // Draw connectors (white lines between joints)
         if (window.drawConnectors && window.POSE_CONNECTIONS) {
           window.drawConnectors(ctx, lm, window.POSE_CONNECTIONS, { color: 'rgba(255,255,255,0.4)', lineWidth: 2 });

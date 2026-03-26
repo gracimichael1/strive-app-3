@@ -775,10 +775,32 @@ function extractJSON(raw) {
       partial += '}'.repeat(Math.max(0, braces));
       return JSON.parse(partial);
     }
-  } catch { /* all passes failed */ }
+  } catch { /* pass 5 failed */ }
+
+  // ── Pass 6: Schema-aware truncation recovery (Pass 2 responses) ──
+  // Pass 2 schema: { skill_details: [...], training_plan: [...], mental_performance: {...}, nutrition_note: "..." }
+  // When Gemini truncates mid-string inside skill_details, find last complete skill object and stub the rest.
+  try {
+    const firstBrace = raw.indexOf('{');
+    if (firstBrace !== -1 && raw.includes('skill_details')) {
+      let partial = raw.slice(firstBrace);
+      // Find the last complete object boundary inside skill_details: }, or },\n
+      const lastCompleteObj = partial.lastIndexOf('},');
+      if (lastCompleteObj > 0) {
+        let repaired = partial.slice(0, lastCompleteObj + 1); // up to and including the }
+        repaired += ']'; // close skill_details array
+        // Stub remaining top-level fields with safe defaults
+        repaired += ', "training_plan": [], "mental_performance": {}, "nutrition_note": ""';
+        repaired += '}'; // close outer object
+        const result = JSON.parse(repaired);
+        console.log('[extractJSON] Pass 6 truncation recovery succeeded —', (result.skill_details?.length || 0), 'skills recovered');
+        return result;
+      }
+    }
+  } catch { /* pass 6 failed */ }
 
   // ── All passes failed ─────────────────────────────────
-  console.error('[extractJSON] All 5 passes failed. Raw preview:',
+  console.error('[extractJSON] All 6 passes failed. Raw preview:',
     raw.slice(0, 200));
   return null;
 }
