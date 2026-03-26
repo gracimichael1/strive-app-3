@@ -98,7 +98,7 @@ export function TierProvider({ children }) {
         const email = profile.email || profile.parentEmail;
         if (email) {
           try {
-            const token = process.env.REACT_APP_STRIVE_TOKEN || 'strive-2026-launch';
+            const token = process.env.REACT_APP_STRIVE_TOKEN || '';
             const res = await fetch(`/api/account?action=subscription&email=${encodeURIComponent(email)}`, {
               headers: { 'X-Strive-Token': token }
             });
@@ -116,8 +116,10 @@ export function TierProvider({ children }) {
             }
             // status === 'none' → keep cached tier from localStorage (line 80)
           } catch (err) {
-            // Network failure — keep cached tier, don't lock users out
-            console.warn('STRIVE: tier hydration failed, using cache', err.message);
+            // Network failure — fail DOWN to free (never grant paid tier from stale cache)
+            console.warn('STRIVE: tier hydration failed, falling to free', err.message);
+            setTier(TIERS.FREE);
+            await storage.delete('strive-tier');
           }
         }
       } catch {}

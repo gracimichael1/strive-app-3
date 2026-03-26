@@ -1410,6 +1410,8 @@ export default function LegacyApp() {
   const tierCtx = useTier();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showGoalSetup, setShowGoalSetup] = useState(false);
+  const [showCoppaGate, setShowCoppaGate] = useState(false);
+  const [coppaEmail, setCoppaEmail] = useState('');
   const [pendingAnalyzeData, setPendingAnalyzeData] = useState(null);
 
   // ── Feature flags for new screen components ──
@@ -1696,6 +1698,15 @@ export default function LegacyApp() {
               setScreen("legal-disclaimer");
               return;
             }
+            // COPPA gate: block analysis for under-13 without confirmed consent
+            const athleteAge = profile?.age ? parseInt(profile.age) : (profile?.dateOfBirth ? Math.floor((Date.now() - new Date(profile.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000)) : null);
+            const consentConfirmed = sessionStorage.getItem('strive-consent-status') === 'confirmed';
+            if (athleteAge !== null && athleteAge < 13 && !consentConfirmed) {
+              setPendingAnalyzeData(data);
+              setShowCoppaGate(true);
+              return;
+            }
+
             // Revoke previous blob URL if any
             if (videoBlobRef.current) { try { URL.revokeObjectURL(videoBlobRef.current); } catch {} }
             // Store File and create a single stable blob URL that persists across all screens
@@ -1973,6 +1984,15 @@ export default function LegacyApp() {
             // Resume the analysis flow with pending data
             if (pendingAnalyzeData) {
               const data = pendingAnalyzeData;
+
+              // COPPA gate after legal disclaimer
+              const athleteAge = profile?.age ? parseInt(profile.age) : (profile?.dateOfBirth ? Math.floor((Date.now() - new Date(profile.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000)) : null);
+              const consentConfirmed = sessionStorage.getItem('strive-consent-status') === 'confirmed';
+              if (athleteAge !== null && athleteAge < 13 && !consentConfirmed) {
+                setShowCoppaGate(true);
+                return;
+              }
+
               setPendingAnalyzeData(null);
               if (videoBlobRef.current) { try { URL.revokeObjectURL(videoBlobRef.current); } catch {} }
               if (data.video) {
@@ -1988,6 +2008,61 @@ export default function LegacyApp() {
           }}
           onBack={() => setScreen("upload")}
         />
+      )}
+
+      {/* ── COPPA Consent Gate ── */}
+      {showCoppaGate && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+          <div style={{ maxWidth: 420, background: '#0d1422', borderRadius: 16, border: '1px solid rgba(232,150,42,0.2)', padding: 28, textAlign: 'center' }}>
+            <div style={{ fontSize: 18, fontWeight: 700, color: '#e8962a', fontFamily: "'Outfit', sans-serif", marginBottom: 12 }}>
+              Parental Consent Required
+            </div>
+            <div style={{ fontSize: 14, color: '#E2E8F0', lineHeight: 1.6, fontFamily: "'Outfit', sans-serif", marginBottom: 16 }}>
+              Federal law (COPPA) requires parental consent before analyzing video of athletes under 13. A parent or guardian must confirm before proceeding.
+            </div>
+            {!profile?.parentEmail && (
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: 12, color: '#8890AB', marginBottom: 6, fontFamily: "'Outfit', sans-serif" }}>Parent/Guardian Email</div>
+                <input type="email" value={coppaEmail} onChange={e => setCoppaEmail(e.target.value)} placeholder="parent@example.com"
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', color: '#E2E8F0', fontSize: 14, fontFamily: "'Outfit', sans-serif", boxSizing: 'border-box' }} />
+              </div>
+            )}
+            <button onClick={async () => {
+              const parentEmail = profile?.parentEmail || coppaEmail;
+              if (!parentEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(parentEmail)) return;
+              try {
+                await fetch('/api/consent', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ parentEmail, athleteNickname: profile?.name || 'your child' }),
+                });
+              } catch {}
+              sessionStorage.setItem('strive-consent-status', 'confirmed');
+              setShowCoppaGate(false);
+              // Resume analysis with pending data
+              if (pendingAnalyzeData) {
+                const data = pendingAnalyzeData;
+                setPendingAnalyzeData(null);
+                if (videoBlobRef.current) { try { URL.revokeObjectURL(videoBlobRef.current); } catch {} }
+                if (data.video) { videoFileRef.current = data.video; videoBlobRef.current = URL.createObjectURL(data.video); }
+                setLiveVideoUrl(videoBlobRef.current || data.videoUrl);
+                setUploadData(data);
+                setScreen("analyzing");
+              }
+            }} style={{
+              width: '100%', padding: 14, borderRadius: 12, border: 'none', cursor: 'pointer',
+              background: 'linear-gradient(135deg, #e8962a, #ffc15a)', color: '#070c16',
+              fontSize: 15, fontWeight: 700, fontFamily: "'Outfit', sans-serif", minHeight: 48,
+            }}>
+              Parent/Guardian Confirms Consent
+            </button>
+            <button onClick={() => { setShowCoppaGate(false); setPendingAnalyzeData(null); }} style={{
+              marginTop: 10, background: 'none', border: 'none', color: '#8890AB', fontSize: 13, cursor: 'pointer', fontFamily: "'Outfit', sans-serif",
+            }}>
+              Cancel
+            </button>
+          </div>
+        </div>
       )}
 
       {/* ── Upgrade Modal ── */}
@@ -8390,11 +8465,18 @@ const SettingsScreen = React.memo(function SettingsScreen({ profile, onSave, onB
               <button className="btn-outline" onClick={() => setShowConfirm(false)} style={{ flex: 1 }}>Cancel</button>
               <button onClick={async () => {
                 try {
+                  const token = process.env.REACT_APP_STRIVE_TOKEN || '';
                   await fetch("/api/account", {
                     method: "DELETE",
-                    headers: { "Content-Type": "application/json", "X-Strive-Token": (process.env.REACT_APP_STRIVE_TOKEN || "strive-2026-launch") },
+                    headers: { "Content-Type": "application/json", "X-Strive-Token": token },
                     body: JSON.stringify({ userId: "local-user", reason: "user_request" }),
                   });
+                } catch {}
+                // Full client-side data purge (CCPA compliance)
+                try {
+                  Object.keys(localStorage).filter(k => k.startsWith('strive')).forEach(k => localStorage.removeItem(k));
+                  localStorage.setItem('strive-account-deleted', Date.now().toString());
+                  sessionStorage.clear();
                 } catch {}
                 onReset();
               }} style={{

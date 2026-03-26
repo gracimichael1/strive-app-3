@@ -188,6 +188,8 @@ export default async function handler(req, res) {
       ok: true,
       message: "Account deletion initiated. All data will be permanently removed.",
       cascade_status: "pre_supabase",
+      purgeTimestamp: Date.now(),
+      cleared: true,
     });
   }
 
