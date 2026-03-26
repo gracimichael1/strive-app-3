@@ -253,6 +253,10 @@ const AgeGate = React.memo(function AgeGate({ onComplete, onBack }) {
           </div>
         </div>
 
+        <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 4, lineHeight: 1.5 }}>
+          Age is used to ensure COPPA compliance for athletes under 13 and to personalize feedback.
+        </p>
+
         <button
           style={{
             ...styles.button,
