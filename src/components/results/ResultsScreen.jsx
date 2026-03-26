@@ -4,6 +4,7 @@ import { canSeeJudgeNarrative, canSeeDrills, canSeeBiomechanics, canSeeInjuryAwa
 import LockedFeature from '../LockedFeature';
 import ScoreCardExport from '../ui/ScoreCardExport';
 import ScoringCaveatBanner from '../ui/ScoringCaveatBanner';
+import JudgeScoreInput from '../ui/JudgeScoreInput';
 
 // ── Design Tokens ───────────────────────────────────────────────────────────
 const T = {
@@ -249,6 +250,9 @@ export default function ResultsScreen({ result, profile, previousResult, onBack,
 
         {/* Scoring Caveat Banner — Beam/Vault/Floor only */}
         <ScoringCaveatBanner event={result?.event || result?.summary?.event} />
+
+        {/* ═══ JUDGE SCORE INPUT — all tiers ═══ */}
+        <JudgeScoreInput result={result} profile={profile} />
 
         {/* ═══ RESULTS TAB BAR (Analysis / Level Up) ═══ */}
         <div style={{ display: 'flex', gap: 0, margin: '14px 16px 0', borderRadius: 10, overflow: 'hidden', border: `1px solid ${T.border}` }}>

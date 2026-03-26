@@ -53,6 +53,32 @@ function JudgeScoreInput({ result, profile }) {
       // Still show success — data logged client-side at minimum
       setSubmitted(true);
     }
+
+    // Persist judgeScore to localStorage alongside recent analyses
+    try {
+      const recentRaw = localStorage.getItem('strive_recent_analyses');
+      if (recentRaw) {
+        const recent = JSON.parse(recentRaw);
+        if (Array.isArray(recent) && recent.length > 0) {
+          // Tag the most recent analysis with the judge score
+          recent[0].judgeScore = parsed;
+          localStorage.setItem('strive_recent_analyses', JSON.stringify(recent));
+        }
+      }
+      // Also store in a dedicated key for calibration pipeline
+      const scores = JSON.parse(localStorage.getItem('strive_judge_scores') || '[]');
+      scores.push({
+        judgeScore: parsed,
+        aiScore: result?.finalScore || 0,
+        event: result?.event || '',
+        level: profile?.level || '',
+        timestamp: new Date().toISOString(),
+      });
+      localStorage.setItem('strive_judge_scores', JSON.stringify(scores));
+    } catch (e) {
+      console.warn('[JudgeScoreInput] localStorage save failed:', e);
+    }
+
     setSubmitting(false);
   }, [score, result, profile]);
 
