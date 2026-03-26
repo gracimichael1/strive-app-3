@@ -3,9 +3,11 @@
   "outputDirectory": "build",
   "framework": "create-react-app",
   "functions": {
-    "api/gemini.js": {
-      "maxDuration": 120
-    }
+    "api/gemini.js": { "maxDuration": 120 },
+    "api/analyze.js": { "maxDuration": 120 },
+    "api/mastermind.js": { "maxDuration": 60 },
+    "api/coach.js": { "maxDuration": 60 },
+    "api/webhook.js": { "maxDuration": 60 }
   },
   "rewrites": [
     { "source": "/goog-upload/(.*)", "destination": "https://generativelanguage.googleapis.com/$1" },

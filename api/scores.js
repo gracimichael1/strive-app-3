@@ -53,10 +53,12 @@ function setCorsHeaders(req, res) {
   res.setHeader("Vary", "Origin");
 }
 
-function validateAppToken(req) {
-  const token = req.headers["x-strive-token"];
-  const expected = process.env.STRIVE_APP_TOKEN || "strive-2026-launch";
-  return token === expected;
+function validateAppToken(req, res) {
+  if (!process.env.STRIVE_APP_TOKEN) {
+    res.status(500).json({ error: "Server misconfigured" });
+    return false;
+  }
+  return req.headers["x-strive-token"] === process.env.STRIVE_APP_TOKEN;
 }
 
 // ─── Validation ─────────────────────────────────────────────────────────────
@@ -111,8 +113,9 @@ export default async function handler(req, res) {
   if (!isAllowedOrigin(req.headers.origin)) {
     return res.status(403).json({ error: "Forbidden" });
   }
-  if (!validateAppToken(req)) {
-    return res.status(401).json({ error: "Unauthorized" });
+  if (!validateAppToken(req, res)) {
+    if (!res.headersSent) return res.status(401).json({ error: "Unauthorized" });
+    return;
   }
 
   if (req.method === "POST") {

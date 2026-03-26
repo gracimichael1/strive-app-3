@@ -58,8 +58,8 @@ export default async function handler(req, res) {
   // ── Route: GET ?action=subscription ───────────────────────────────────────
   if (req.method === "GET" && req.query.action === "subscription") {
     const token = req.headers['x-strive-token'];
-    const validToken = process.env.STRIVE_APP_TOKEN || 'strive-2026-launch';
-    if (token !== validToken) return res.status(401).json({ error: 'Unauthorized' });
+    if (!process.env.STRIVE_APP_TOKEN) return res.status(500).json({ error: 'Server misconfigured' });
+    if (token !== process.env.STRIVE_APP_TOKEN) return res.status(401).json({ error: 'Unauthorized' });
 
     const { email } = req.query;
     if (!email) return res.status(400).json({ error: 'Email required' });
@@ -85,7 +85,8 @@ export default async function handler(req, res) {
   // ── Route: POST ?action=export (CCPA) ─────────────────────────────────────
   if (req.method === "POST" && req.query.action === "export") {
     const token = req.headers["x-strive-token"];
-    if (token !== (process.env.STRIVE_APP_TOKEN || "strive-2026-launch")) {
+    if (!process.env.STRIVE_APP_TOKEN) return res.status(500).json({ error: "Server misconfigured" });
+    if (token !== process.env.STRIVE_APP_TOKEN) {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
@@ -126,7 +127,8 @@ export default async function handler(req, res) {
   // ── Route: DELETE /api/account ─────────────────────────────────────────────
   if (req.method === "DELETE") {
     const token = req.headers["x-strive-token"];
-    if (token !== (process.env.STRIVE_APP_TOKEN || "strive-2026-launch")) {
+    if (!process.env.STRIVE_APP_TOKEN) return res.status(500).json({ error: "Server misconfigured" });
+    if (token !== process.env.STRIVE_APP_TOKEN) {
       return res.status(401).json({ error: "Unauthorized" });
     }
 

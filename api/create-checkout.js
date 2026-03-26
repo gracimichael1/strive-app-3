@@ -11,7 +11,7 @@ function setCorsHeaders(req, res) {
     res.setHeader('Access-Control-Allow-Origin', origin);
   }
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Strive-Token');
   res.setHeader('Vary', 'Origin');
 }
 
@@ -36,6 +36,13 @@ module.exports = async function handler(req, res) {
 
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  // Token validation — soft check (client does not yet send token for checkout)
+  if (process.env.STRIVE_APP_TOKEN && req.headers['x-strive-token']) {
+    if (req.headers['x-strive-token'] !== process.env.STRIVE_APP_TOKEN) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
   }
 
   if (!process.env.STRIPE_SECRET_KEY) {

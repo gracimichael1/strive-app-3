@@ -23,10 +23,17 @@ module.exports = async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', origin);
   }
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Strive-Token');
   res.setHeader('Vary', 'Origin');
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+  // Token validation — soft check (client does not yet send token for mastermind)
+  if (process.env.STRIVE_APP_TOKEN && req.headers['x-strive-token']) {
+    if (req.headers['x-strive-token'] !== process.env.STRIVE_APP_TOKEN) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+  }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
@@ -42,6 +49,17 @@ module.exports = async function handler(req, res) {
   }
 
   const { type, athleteProfile, recentScores, upcomingMeet, topFaults, event, level } = req.body || {};
+
+  // Input validation
+  const VALID_TYPES = ['mental', 'nutrition'];
+  if (!type || !VALID_TYPES.includes(type)) {
+    return res.status(400).json({ error: `Invalid type — must be one of: ${VALID_TYPES.join(', ')}` });
+  }
+
+  // Sanitize athlete name — trim, limit 50 chars, strip non-alphanumeric (allow spaces/hyphens/apostrophes)
+  if (athleteProfile?.name) {
+    athleteProfile.name = (athleteProfile.name || '').trim().slice(0, 50).replace(/[^a-zA-Z0-9 \-']/g, '');
+  }
 
   try {
     if (type === 'mental') {
