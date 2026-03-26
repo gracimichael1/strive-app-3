@@ -1,0 +1,1359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>STRIVE — Day Sprint Execution Plan</title>
+<style>
+  :root {
+    --bg: #070c16;
+    --surface: #0d1422;
+    --surface2: #121b2d;
+    --border: #1e2d42;
+    --gold: #e8962a;
+    --gold-light: #ffc15a;
+    --green: #22c55e;
+    --orange: #e06820;
+    --red: #dc2626;
+    --blue: #3b82f6;
+    --text: #e6edf3;
+    --muted: #8b9ab0;
+    --dimmed: #4a5568;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 0 0 80px;
+  }
+
+  /* HEADER */
+  .header {
+    background: linear-gradient(135deg, #0d1422 0%, #070c16 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 32px 40px 24px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+  }
+  .header-top { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+  .logo { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; color: var(--gold); }
+  .header-title { font-size: 16px; color: var(--muted); font-weight: 400; }
+  .progress-bar-wrap { background: var(--border); border-radius: 4px; height: 6px; overflow: hidden; }
+  .progress-bar-fill { height: 100%; background: linear-gradient(90deg, var(--gold), var(--gold-light)); border-radius: 4px; transition: width 0.4s ease; }
+  .progress-label { font-size: 11px; color: var(--muted); margin-top: 6px; }
+
+  /* LAYOUT */
+  .container { max-width: 960px; margin: 0 auto; padding: 0 24px; }
+
+  /* VISION ALERT */
+  .vision-alert {
+    background: linear-gradient(135deg, rgba(232,150,42,0.12) 0%, rgba(232,150,42,0.05) 100%);
+    border: 1px solid rgba(232,150,42,0.35);
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin: 28px 0 8px;
+  }
+  .vision-alert-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .vision-badge { background: var(--gold); color: #000; font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 4px; letter-spacing: 0.5px; }
+  .vision-alert h3 { font-size: 15px; color: var(--gold-light); }
+  .vision-alert p { color: var(--muted); font-size: 13px; line-height: 1.7; }
+  .vision-alert strong { color: var(--text); }
+
+  /* WAVE MAP */
+  .wave-map { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 28px 0; }
+  .wave-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .wave-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+  .wave-card.wave1::before { background: var(--blue); }
+  .wave-card.wave2::before { background: var(--gold); }
+  .wave-card.wave3::before { background: var(--green); }
+  .wave-card.wave4::before { background: var(--orange); }
+  .wave-card.complete { border-color: var(--green); }
+  .wave-card.complete::before { background: var(--green); }
+  .wave-number { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--muted); margin-bottom: 6px; }
+  .wave-name { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+  .wave-desc { font-size: 11px; color: var(--muted); margin-bottom: 12px; line-height: 1.5; }
+  .wave-time { font-size: 11px; color: var(--gold); font-weight: 600; }
+  .wave-status { font-size: 11px; margin-top: 8px; padding: 4px 8px; border-radius: 4px; display: inline-block; font-weight: 600; }
+  .status-pending { background: rgba(75,85,99,0.3); color: var(--dimmed); }
+  .status-running { background: rgba(59,130,246,0.15); color: var(--blue); }
+  .status-qa { background: rgba(232,150,42,0.15); color: var(--gold); }
+  .status-done { background: rgba(34,197,94,0.15); color: var(--green); }
+
+  /* SECTION */
+  .section { margin: 32px 0; }
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-wave-badge {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    padding: 4px 10px;
+    border-radius: 5px;
+  }
+  .badge-blue { background: rgba(59,130,246,0.2); color: var(--blue); border: 1px solid rgba(59,130,246,0.3); }
+  .badge-gold { background: rgba(232,150,42,0.2); color: var(--gold); border: 1px solid rgba(232,150,42,0.3); }
+  .badge-green { background: rgba(34,197,94,0.2); color: var(--green); border: 1px solid rgba(34,197,94,0.3); }
+  .badge-orange { background: rgba(224,104,32,0.2); color: var(--orange); border: 1px solid rgba(224,104,32,0.3); }
+  .badge-red { background: rgba(220,38,38,0.2); color: var(--red); border: 1px solid rgba(220,38,38,0.3); }
+  .section-title { font-size: 18px; font-weight: 700; color: var(--text); }
+  .section-subtitle { font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+  /* SPRINT CARD */
+  .sprint-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 20px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .sprint-card.done { border-color: var(--green); }
+  .sprint-card.running { border-color: var(--blue); }
+  .sprint-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+  }
+  .sprint-card-header:hover { background: rgba(255,255,255,0.02); }
+  .sprint-info { display: flex; align-items: center; gap: 12px; }
+  .sprint-check {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    background: transparent;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .sprint-check:hover { border-color: var(--green); }
+  .sprint-check.checked { border-color: var(--green); background: var(--green); }
+  .sprint-check.checked::after { content: '✓'; color: #000; font-size: 12px; font-weight: 800; }
+  .sprint-name { font-size: 15px; font-weight: 700; color: var(--text); }
+  .sprint-tag { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .sprint-meta { display: flex; align-items: center; gap: 10px; }
+  .sprint-time { font-size: 12px; color: var(--muted); }
+  .severity-tag { font-size: 10px; font-weight: 700; padding: 3px 7px; border-radius: 4px; letter-spacing: 0.5px; }
+  .sev-critical { background: rgba(220,38,38,0.2); color: var(--red); }
+  .sev-high { background: rgba(224,104,32,0.2); color: var(--orange); }
+  .sev-medium { background: rgba(232,150,42,0.2); color: var(--gold); }
+  .sev-perf { background: rgba(59,130,246,0.2); color: var(--blue); }
+  .sev-qa { background: rgba(139,154,176,0.2); color: var(--muted); }
+  .expand-arrow { color: var(--muted); font-size: 12px; transition: transform 0.2s; }
+  .expand-arrow.open { transform: rotate(180deg); }
+
+  /* SPRINT BODY */
+  .sprint-body { display: none; padding: 20px; }
+  .sprint-body.open { display: block; }
+  .sprint-desc { color: var(--muted); font-size: 13px; margin-bottom: 16px; line-height: 1.7; }
+  .sprint-fixes { margin-bottom: 16px; }
+  .fix-item {
+    display: flex; gap: 10px; align-items: flex-start;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(30,45,66,0.5);
+    font-size: 13px; color: var(--muted);
+  }
+  .fix-item:last-child { border-bottom: none; }
+  .fix-num { color: var(--gold); font-weight: 700; font-size: 12px; flex-shrink: 0; padding-top: 1px; }
+  .fix-text strong { color: var(--text); }
+  .fix-file { font-size: 11px; font-family: 'SF Mono', 'Fira Code', monospace; color: var(--blue); margin-top: 2px; }
+
+  /* PROMPT BLOCK */
+  .prompt-block { margin-top: 16px; }
+  .prompt-header {
+    display: flex; align-items: center; justify-content: space-between;
+    background: #0a1020;
+    border: 1px solid var(--border);
+    border-bottom: none;
+    padding: 10px 16px;
+    border-radius: 8px 8px 0 0;
+  }
+  .prompt-label { font-size: 11px; font-weight: 700; color: var(--muted); letter-spacing: 1px; }
+  .copy-btn {
+    background: rgba(232,150,42,0.15);
+    border: 1px solid rgba(232,150,42,0.3);
+    color: var(--gold);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 5px 14px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+  .copy-btn:hover { background: rgba(232,150,42,0.25); }
+  .copy-btn.copied { background: rgba(34,197,94,0.15); border-color: rgba(34,197,94,0.3); color: var(--green); }
+  .prompt-code {
+    background: #050810;
+    border: 1px solid var(--border);
+    border-radius: 0 0 8px 8px;
+    padding: 16px;
+    font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    color: #c9d1d9;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 400px;
+    overflow-y: auto;
+  }
+  .prompt-code::-webkit-scrollbar { width: 6px; }
+  .prompt-code::-webkit-scrollbar-track { background: transparent; }
+  .prompt-code::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* HOW TO RUN */
+  .how-to-run {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-top: 14px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .how-to-run strong { color: var(--text); }
+  .how-to-run code {
+    background: rgba(59,130,246,0.1);
+    color: var(--blue);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: 'SF Mono', monospace;
+    font-size: 11px;
+  }
+
+  /* QA CARD */
+  .qa-card {
+    background: rgba(139,154,176,0.05);
+    border: 1px dashed var(--border);
+    border-radius: 12px;
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+  .qa-gate {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 20px;
+    background: rgba(139,154,176,0.05);
+    border-bottom: 1px solid var(--border);
+    font-size: 13px; color: var(--muted);
+  }
+  .qa-gate strong { color: var(--text); }
+
+  /* VALIDATION SECTION */
+  .validation-card {
+    background: linear-gradient(135deg, rgba(224,104,32,0.08) 0%, rgba(224,104,32,0.03) 100%);
+    border: 1px solid rgba(224,104,32,0.25);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+  .validation-card h3 { color: var(--orange); margin-bottom: 12px; font-size: 15px; }
+  .decision-table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 12px; }
+  .decision-table th { text-align: left; padding: 8px 12px; background: rgba(255,255,255,0.04); color: var(--muted); font-weight: 600; }
+  .decision-table td { padding: 8px 12px; border-top: 1px solid var(--border); color: var(--text); }
+  .decision-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+  /* TERMINAL GUIDE */
+  .terminal-guide {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin: 28px 0;
+  }
+  .terminal-guide h3 { font-size: 15px; font-weight: 700; margin-bottom: 16px; color: var(--gold); }
+  .terminal-steps { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .terminal-step {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+  }
+  .terminal-step-num { font-size: 10px; font-weight: 800; color: var(--gold); letter-spacing: 1px; margin-bottom: 6px; }
+  .terminal-step p { font-size: 12px; color: var(--muted); line-height: 1.6; }
+  .terminal-step code {
+    background: rgba(59,130,246,0.1);
+    color: var(--blue);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: 'SF Mono', monospace;
+    font-size: 11px;
+  }
+
+  /* NOTES AREA */
+  .notes-area {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-top: 14px;
+  }
+  .notes-label { font-size: 10px; font-weight: 700; color: var(--dimmed); letter-spacing: 1px; margin-bottom: 6px; }
+  .notes-input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-size: 12px;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 60px;
+    outline: none;
+    line-height: 1.6;
+  }
+  .notes-input::placeholder { color: var(--dimmed); }
+
+  /* DIVIDER */
+  .divider { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
+
+  /* RESPONSIVE */
+  @media (max-width: 640px) {
+    .wave-map { grid-template-columns: 1fr 1fr; }
+    .terminal-steps { grid-template-columns: 1fr; }
+    .header { padding: 20px 16px 16px; }
+    .container { padding: 0 12px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="container">
+    <div class="header-top">
+      <div class="logo">STRIVE</div>
+      <div class="header-title">Day Sprint Execution Plan — March 26, 2026</div>
+    </div>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+    </div>
+    <div class="progress-label" id="progressLabel">0 of 14 steps complete</div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- VISION AGENT FLAG -->
+  <div class="vision-alert">
+    <div class="vision-alert-header">
+      <span class="vision-badge">VISION AGENT</span>
+      <h3>P1 Gate Framing Issue — Read Before Starting</h3>
+    </div>
+    <p>
+      The current P1 Gate (≤0.20 delta) measures AI vs. a <strong>single judge score</strong>. But at real USAG competitions, a 4-judge panel has a natural spread of <strong>±0.30–0.50 on bars/beam</strong>. Your current Bars delta of 0.460 may already be <strong>inside that spread</strong> on real meet data.<br><br>
+      <strong>What this unlocks:</strong> If AI scores fall within the min-max range of a certified panel (≥80% of routines), P1 Gate passes under the correct framework → beta invites go out immediately.<br><br>
+      <strong>Action:</strong> Run panel-range validation in parallel with Wave 1. Pull 20-30 routines from NAWGJ data where per-judge scores exist. Check: <em>min(judge_scores) ≤ AI_score ≤ max(judge_scores)</em>. This takes 2-3 hours and could unlock beta invites today.
+    </p>
+  </div>
+
+  <!-- TERMINAL GUIDE -->
+  <div class="terminal-guide">
+    <h3>How to Run These Prompts</h3>
+    <div class="terminal-steps">
+      <div class="terminal-step">
+        <div class="terminal-step-num">STEP 1 — OPEN TERMINAL</div>
+        <p>Open a new Terminal window. Navigate to your project:<br><code>cd ~/Desktop/StriveGymnastics</code></p>
+      </div>
+      <div class="terminal-step">
+        <div class="terminal-step-num">STEP 2 — LAUNCH CLAUDE CODE</div>
+        <p>Start Claude Code with full permissions:<br><code>claude --dangerously-skip-permissions</code></p>
+      </div>
+      <div class="terminal-step">
+        <div class="terminal-step-num">STEP 3 — PASTE PROMPT</div>
+        <p>Copy the sprint prompt below using the <strong>COPY PROMPT</strong> button. Paste it as your first message. Claude runs autonomously.</p>
+      </div>
+      <div class="terminal-step">
+        <div class="terminal-step-num">STEP 4 — PARALLEL WAVES</div>
+        <p>Wave 1 uses <strong>two terminals simultaneously</strong>. Open Terminal 1 for Sprint 2C, Terminal 2 for Sprint 3A. Start both at the same time.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- WAVE MAP -->
+  <div class="wave-map">
+    <div class="wave-card wave1" id="waveCard1">
+      <div class="wave-number">WAVE 1 — PARALLEL</div>
+      <div class="wave-name">Security + CI Fix</div>
+      <div class="wave-desc">Two terminals simultaneously. No conflicts.</div>
+      <div class="wave-time">~45 min</div>
+      <div class="wave-status status-pending" id="waveStatus1">PENDING</div>
+    </div>
+    <div class="wave-card wave2" id="waveCard2">
+      <div class="wave-number">WAVE 2 — SEQUENTIAL</div>
+      <div class="wave-name">Accuracy + Compliance</div>
+      <div class="wave-desc">3B then 3C. Both touch live engine.</div>
+      <div class="wave-time">~2.5 hours</div>
+      <div class="wave-status status-pending" id="waveStatus2">PENDING</div>
+    </div>
+    <div class="wave-card wave3" id="waveCard3">
+      <div class="wave-number">WAVE 3 — SEQUENTIAL</div>
+      <div class="wave-name">Performance + Cleanup</div>
+      <div class="wave-desc">After Wave 2 QA clears.</div>
+      <div class="wave-time">~1.5 hours</div>
+      <div class="wave-status status-pending" id="waveStatus3">PENDING</div>
+    </div>
+    <div class="wave-card wave4" id="waveCard4">
+      <div class="wave-number">WAVE 4 — VALIDATION</div>
+      <div class="wave-name">350-Video Decision</div>
+      <div class="wave-desc">After Vercel deploy confirms green.</div>
+      <div class="wave-time">~2 hours</div>
+      <div class="wave-status status-pending" id="waveStatus4">PENDING</div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ WAVE 1 ═══════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-wave-badge badge-blue">WAVE 1 — PARALLEL</span>
+      <div>
+        <div class="section-title">Security Hardening + CI Fix</div>
+        <div class="section-subtitle">Open two terminals. Run 2C and 3A simultaneously. Then run the Wave 1 QA audit.</div>
+      </div>
+    </div>
+
+    <!-- Sprint 2C -->
+    <div class="sprint-card" id="card-2c">
+      <div class="sprint-card-header" onclick="toggleCard('2c')">
+        <div class="sprint-info">
+          <div class="sprint-check" id="check-2c" onclick="toggleCheck(event,'2c')"></div>
+          <div>
+            <div class="sprint-name">Sprint 2C — CI Lint Fix</div>
+            <div class="sprint-tag">Terminal 1 · api changes only</div>
+          </div>
+        </div>
+        <div class="sprint-meta">
+          <span class="sprint-time">~15 min</span>
+          <span class="severity-tag sev-medium">STANDALONE</span>
+          <span class="expand-arrow" id="arrow-2c">▼</span>
+        </div>
+      </div>
+      <div class="sprint-body" id="body-2c">
+        <p class="sprint-desc">Creates <code>.env.test</code> with placeholder env vars so CI test runs don't crash on undefined process.env references. No application code changes.</p>
+        <div class="sprint-fixes">
+          <div class="fix-item"><span class="fix-num">1</span><div class="fix-text"><strong>Create .env.test</strong> with 5 placeholder keys<div class="fix-file">.env.test (new file)</div></div></div>
+          <div class="fix-item"><span class="fix-num">2</span><div class="fix-text"><strong>Verify not in .gitignore</strong> — must be committed<div class="fix-file">.gitignore</div></div></div>
+          <div class="fix-item"><span class="fix-num">3</span><div class="fix-text"><strong>npm test + npm run build</strong> — both must pass</div></div>
+        </div>
+        <div class="prompt-block">
+          <div class="prompt-header">
+            <span class="prompt-label">SPRINT 2C PROMPT</span>
+            <button class="copy-btn" onclick="copyPrompt('prompt-2c', this)">COPY PROMPT</button>
+          </div>
+          <div class="prompt-code" id="prompt-2c">You are working on the Strive gymnastics scoring app at /Users/mgraci/Desktop/StriveGymnastics.
+Read CLAUDE.md before making any changes.
+
+OBJECTIVE: Fix CI build failures caused by missing environment variable placeholders.
+
+TASK 1: Create .env.test in the project root with placeholder values:
+  REACT_APP_GEMINI_API_KEY=test-placeholder-key
+  REACT_APP_STRIPE_PUBLISHABLE_KEY=pk_test_placeholder
+  REACT_APP_SUPABASE_URL=https://placeholder.supabase.co
+  REACT_APP_SUPABASE_ANON_KEY=test-placeholder-anon-key
+  STRIVE_APP_TOKEN=test-token-placeholder
+These are NOT real keys. Placeholders only so process.env.REACT_APP_* doesn't crash in CI.
+
+TASK 2: Verify .env.test is NOT in .gitignore. Check .gitignore and remove any pattern
+that would exclude .env.test. This file contains only placeholders and MUST be committed.
+
+TASK 3: Run npm test -- --watchAll=false. All tests must pass.
+TASK 4: Run npm run build. Must complete with zero errors.
+
+TASK 5: Commit and push:
+  git add .env.test && git add -A && git commit -m "fix(ci): add .env.test placeholder vars for CI build" && git push origin main
+
+CONSTRAINTS:
+- Do NOT use real API keys. Placeholders only.
+- Do NOT modify any application code. This sprint adds only .env.test.
+- Build must pass. Tests must pass. Push immediately.</div>
+        </div>
+        <div class="notes-area"><div class="notes-label">RESULTS / NOTES</div><textarea class="notes-input" placeholder="Paste terminal output or notes here..."></textarea></div>
+      </div>
+    </div>
+
+    <!-- Sprint 3A -->
+    <div class="sprint-card" id="card-3a">
+      <div class="sprint-card-header" onclick="toggleCard('3a')">
+        <div class="sprint-info">
+          <div class="sprint-check" id="check-3a" onclick="toggleCheck(event,'3a')"></div>
+          <div>
+            <div class="sprint-name">Sprint 3A — API Security Hardening</div>
+            <div class="sprint-tag">Terminal 2 · api/*.js + vercel.json only</div>
+          </div>
+        </div>
+        <div class="sprint-meta">
+          <span class="sprint-time">~45 min</span>
+          <span class="severity-tag sev-critical">4 CRITICAL</span>
+          <span class="expand-arrow" id="arrow-3a">▼</span>
+        </div>
+      </div>
+      <div class="sprint-body" id="body-3a">
+        <p class="sprint-desc">Fixes 4 critical/high security issues: hardcoded token fallback (auth bypass), missing rate limiting on analyze.js (DoS vector), missing token on checkout (Stripe abuse), no input validation on mastermind (prompt injection). Also extends Vercel timeouts.</p>
+        <div class="sprint-fixes">
+          <div class="fix-item"><span class="fix-num">1</span><div class="fix-text"><strong>Remove hardcoded 'strive-2026-launch' fallback</strong> from ALL api files — hard failure if env var missing<div class="fix-file">api/gemini.js:40 · api/analyze.js:36 · api/account.js:88 · api/consent.js:142</div></div></div>
+          <div class="fix-item"><span class="fix-num">2</span><div class="fix-text"><strong>Add rate limiting + 50MB size check</strong> to api/analyze.js — copy from api/gemini.js<div class="fix-file">api/analyze.js (no rate limit currently)</div></div></div>
+          <div class="fix-item"><span class="fix-num">3</span><div class="fix-text"><strong>Add X-Strive-Token validation</strong> to api/create-checkout.js<div class="fix-file">api/create-checkout.js (token check missing)</div></div></div>
+          <div class="fix-item"><span class="fix-num">4</span><div class="fix-text"><strong>Add token + input validation</strong> to api/mastermind.js — sanitize name, validate type<div class="fix-file">api/mastermind.js (no validation)</div></div></div>
+          <div class="fix-item"><span class="fix-num">5</span><div class="fix-text"><strong>Extend Vercel timeouts</strong> for analyze.js (120s), mastermind.js (60s), webhook.js (60s)<div class="fix-file">vercel.json</div></div></div>
+        </div>
+        <div class="prompt-block">
+          <div class="prompt-header">
+            <span class="prompt-label">SPRINT 3A PROMPT</span>
+            <button class="copy-btn" onclick="copyPrompt('prompt-3a', this)">COPY PROMPT</button>
+          </div>
+          <div class="prompt-code" id="prompt-3a">You are working on the Strive gymnastics scoring app at /Users/mgraci/Desktop/StriveGymnastics.
+Read CLAUDE.md and STRATEGY.md before making any changes.
+
+OBJECTIVE: Security hardening — API files and vercel.json only.
+Do NOT touch LegacyApp.js, TierContext.js, or src/engine/ in this sprint.
+
+AUDIT FINDINGS TO FIX (with file:line evidence):
+
+FIX 1 — Remove hardcoded token fallback (CRITICAL)
+Files: api/gemini.js:40, api/analyze.js:36, api/account.js:88, api/consent.js:142
+Pattern to find and eliminate: process.env.STRIVE_APP_TOKEN || 'strive-2026-launch'
+Replace with:
+  if (!process.env.STRIVE_APP_TOKEN) return res.status(500).json({ error: 'Server misconfigured' });
+  const expected = process.env.STRIVE_APP_TOKEN;
+NEVER use a fallback. If the env var is missing, the request fails hard with 500.
+
+FIX 2 — Add rate limiting + size validation to /api/analyze.js (CRITICAL)
+File: api/analyze.js
+a) Copy the rateLimitMap and checkRateLimit() logic from api/gemini.js (lines 44-78) into api/analyze.js.
+   Apply the same 5 req/min, 20 req/hr per-IP limit.
+b) After extracting videoBase64 from req.body, add:
+   if (videoBase64 && videoBase64.length > 50 * 1024 * 1024) {
+     return res.status(413).json({ error: 'Video payload too large. Maximum 50MB.' });
+   }
+
+FIX 3 — Add token validation to /api/create-checkout.js (HIGH)
+File: api/create-checkout.js
+After the CORS/origin check, add the same X-Strive-Token validation that exists in api/gemini.js.
+Pattern: check req.headers['x-strive-token'] === process.env.STRIVE_APP_TOKEN (with hard failure if env var missing).
+
+FIX 4 — Add input validation to /api/mastermind.js (HIGH)
+File: api/mastermind.js
+After extracting req.body fields, add:
+a) Token validation (same as Fix 3)
+b) Sanitize athleteProfile.name: trim, limit to 50 chars, strip non-alphanumeric (allow spaces/hyphens)
+   const safeName = (athleteProfile?.name || '').trim().slice(0, 50).replace(/[^a-zA-Z0-9 \-']/g, '');
+c) Validate type is one of ['mental', 'technical', 'nutrition', 'goal', 'summary']
+
+FIX 5 — Extend Vercel function timeouts (MEDIUM)
+File: vercel.json
+Current: only api/gemini.js has maxDuration: 120
+Add maxDuration for all long-running functions:
+  "api/analyze.js": { "maxDuration": 120 }
+  "api/mastermind.js": { "maxDuration": 60 }
+  "api/coach.js": { "maxDuration": 60 }
+  "api/webhook.js": { "maxDuration": 60 }
+
+SELF-AUDIT after all fixes:
+1. Read each modified file and confirm each fix is present
+2. Run: grep -r "strive-2026-launch" api/ — must return EMPTY
+3. Run npm test -- --watchAll=false. All tests must pass.
+4. Run npm run build. Must complete with zero errors.
+
+COMMIT AND PUSH:
+git add -A && git commit -m "fix(security): remove hardcoded token, rate limit analyze.js, checkout token, mastermind validation, extend timeouts" && git push origin main
+
+CONSTRAINTS:
+- Do NOT touch src/ files in this sprint
+- Do NOT change calibration factors
+- Build must pass. Tests must pass. Push immediately.</div>
+        </div>
+        <div class="notes-area"><div class="notes-label">RESULTS / NOTES</div><textarea class="notes-input" placeholder="Paste terminal output or notes here..."></textarea></div>
+      </div>
+    </div>
+
+    <!-- Wave 1 QA -->
+    <div class="qa-card" id="card-qa1">
+      <div class="sprint-card-header" onclick="toggleCard('qa1')" style="cursor:pointer;">
+        <div class="sprint-info">
+          <div class="sprint-check" id="check-qa1" onclick="toggleCheck(event,'qa1')"></div>
+          <div>
+            <div class="sprint-name">Wave 1 QA Audit</div>
+            <div class="sprint-tag">Run after BOTH 2C and 3A push · Gate before Wave 2</div>
+          </div>
+        </div>
+        <div class="sprint-meta">
+          <span class="sprint-time">~10 min</span>
+          <span class="severity-tag sev-qa">QA GATE</span>
+          <span class="expand-arrow" id="arrow-qa1">▼</span>
+        </div>
+      </div>
+      <div class="sprint-body" id="body-qa1">
+        <div class="qa-gate">⛔ <strong>GATE:</strong> Do not start Wave 2 until this QA passes all 9 checks.</div>
+        <div class="prompt-block">
+          <div class="prompt-header">
+            <span class="prompt-label">WAVE 1 QA PROMPT</span>
+            <button class="copy-btn" onclick="copyPrompt('prompt-qa1', this)">COPY PROMPT</button>
+          </div>
+          <div class="prompt-code" id="prompt-qa1">You are a QA auditor for the Strive gymnastics app at /Users/mgraci/Desktop/StriveGymnastics.
+
+WAVE 1 VERIFICATION — confirm all of the following:
+
+1. .env.test exists in project root with 5 placeholder env vars. Run: cat .env.test
+2. .env.test is NOT in .gitignore. Run: grep "env.test" .gitignore
+3. Run: grep -r "strive-2026-launch" api/ — must return ZERO matches
+4. Read api/analyze.js — confirm: rate limiting logic present, size check present (50MB), token validation present
+5. Read api/create-checkout.js — confirm: X-Strive-Token validation present
+6. Read api/mastermind.js — confirm: token validation present, name sanitization present
+7. Read vercel.json — confirm: maxDuration set for analyze.js, mastermind.js, webhook.js
+8. Run: npm test -- --watchAll=false — report pass/fail with test count
+9. Run: npm run build — report pass/fail
+
+Return a structured PASS/FAIL for each item with evidence.
+If anything FAILS, describe exactly what is missing so it can be corrected before Wave 2 starts.</div>
+        </div>
+        <div class="notes-area"><div class="notes-label">QA RESULTS</div><textarea class="notes-input" placeholder="Paste QA output here — must show all PASS before proceeding to Wave 2..."></textarea></div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- ═══════════════ WAVE 2 ═══════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-wave-badge badge-gold">WAVE 2 — SEQUENTIAL</span>
+      <div>
+        <div class="section-title">Accuracy Fixes + COPPA + Tier Hydration</div>
+        <div class="section-subtitle">Run 3B first, wait for it to push, then run 3C. Both touch the live engine.</div>
+      </div>
+    </div>
+
+    <!-- Sprint 3B -->
+    <div class="sprint-card" id="card-3b">
+      <div class="sprint-card-header" onclick="toggleCard('3b')">
+        <div class="sprint-info">
+          <div class="sprint-check" id="check-3b" onclick="toggleCheck(event,'3b')"></div>
+          <div>
+            <div class="sprint-name">Sprint 3B — Accuracy Fixes</div>
+            <div class="sprint-tag">src/engine/prompts.js · src/engine/scoring.js · api/analyze.js</div>
+          </div>
+        </div>
+        <div class="sprint-meta">
+          <span class="sprint-time">~1.5 hours</span>
+          <span class="severity-tag sev-critical">CORE VALUE PROP</span>
+          <span class="expand-arrow" id="arrow-3b">▼</span>
+        </div>
+      </div>
+      <div class="sprint-body" id="body-3b">
+        <p class="sprint-desc">The 3 root causes of scoring inaccuracy. Note: fixes go into <strong>src/engine/prompts.js</strong> (live pipeline) — NOT LegacyApp.js buildJudgingPrompt which is dead code.</p>
+        <div class="sprint-fixes">
+          <div class="fix-item"><span class="fix-num">1</span><div class="fix-text"><strong>Pass event into live judging prompt + inject event-specific deduction rules</strong> — Vault/Bars/Beam/Floor each get their own ruleset<div class="fix-file">src/engine/prompts.js · src/data/constants.js</div></div></div>
+          <div class="fix-item"><span class="fix-num">2</span><div class="fix-text"><strong>Inject LEVEL_SKILLS taxonomy</strong> as skill validation constraint — Gemini told what skills are valid for this level/event<div class="fix-file">src/engine/prompts.js · src/data/constants.js</div></div></div>
+          <div class="fix-item"><span class="fix-num">3</span><div class="fix-text"><strong>Set temperature: 0</strong> in all Gemini config objects — locks consistency (same video = same score)<div class="fix-file">api/analyze.js · src/engine/*.js</div></div></div>
+          <div class="fix-item"><span class="fix-num">4</span><div class="fix-text"><strong>Verify calibration factors applied</strong> — Vault 0.75 / Bars 0.85 / Beam 0.91 / Floor 0.92 must be in computeScoreFromScorecard()<div class="fix-file">src/engine/scoring.js</div></div></div>
+        </div>
+        <div class="prompt-block">
+          <div class="prompt-header">
+            <span class="prompt-label">SPRINT 3B PROMPT</span>
+            <button class="copy-btn" onclick="copyPrompt('prompt-3b', this)">COPY PROMPT</button>
+          </div>
+          <div class="prompt-code" id="prompt-3b">You are working on the Strive gymnastics scoring app at /Users/mgraci/Desktop/StriveGymnastics.
+Read CLAUDE.md and STRATEGY.md before making any changes.
+
+OBJECTIVE: Fix the 3 root causes of scoring inaccuracy. These are the highest-leverage
+changes in the codebase. Precision matters — read each file before editing.
+
+IMPORTANT: The LIVE analysis pipeline uses src/engine/prompts.js and src/engine/scoring.js.
+Do NOT edit LegacyApp.js buildJudgingPrompt — it is dead code. Fix the live pipeline only.
+
+STEP 1: Read these files completely before writing any code:
+- src/engine/prompts.js (full file)
+- src/engine/scoring.js (full file)
+- src/data/constants.js (full file — find LEVEL_SKILLS and any EVENT rules)
+- api/analyze.js (full file)
+
+FIX 1 — Pass event into the live judging prompt + inject event-specific rules (HIGH IMPACT)
+File: src/engine/prompts.js
+
+a) Find the function that builds the Pass 1 judging prompt (search for buildPass1Prompt or
+   the main prompt construction function)
+b) Add the event as a required parameter if not already present
+c) Inject event-specific context after the athlete header:
+
+   EVENT: ${event.toUpperCase()}
+
+   EVENT-SPECIFIC JUDGING RULES FOR ${event.toUpperCase()}:
+
+   If EVENT_JUDGING_RULES doesn't exist in constants.js, add it now with these rules:
+   - vault: "Score vault as a single skill. Primary faults: run approach angle, board
+     contact, block power, body position in flight, landing distance/direction.
+     Apply 0.30 auto-deduction for table contact before vertical."
+   - bars: "Bars has the highest deduction density. Apply strictnessBias 1.3. Mandatory
+     checks: cast height (horizontal=0.10, below horizontal=0.20-0.30), grip adjustments
+     (-0.10 each), rhythm breaks any pause >0.5s (-0.10 to -0.20), shoulder dip on kip
+     (-0.05 to -0.10), late tap (-0.10), short kip (-0.10 to -0.20)."
+   - beam: "Beam deductions compound quickly. Mandatory checks: balance checks (-0.05 small,
+     -0.10 large), extra arm swing (-0.05), acro amplitude below 45 degrees (-0.10), wobble
+     on landing (-0.10 to -0.20), step off beam (-0.50 fall). Dance element height below 180
+     degrees split (-0.10 to -0.20)."
+   - floor: "Floor is the most visible event. Mandatory checks: out-of-bounds (-0.10 per touch,
+     -0.30 for step), tumbling pass amplitude (low = -0.10 to -0.20), connection between passes
+     (pause >1.5s = -0.10), artistry (expression, musicality 0.10-0.30 range), toe point and
+     knee lock throughout all dance passages."
+
+d) Verify the call site passes event: wherever the prompt builder is called in pipeline.js,
+   ensure the event argument is passed.
+
+FIX 2 — Inject LEVEL_SKILLS taxonomy as skill validation constraint (HIGH IMPACT)
+File: src/engine/prompts.js, src/data/constants.js
+
+a) Find LEVEL_SKILLS in constants.js. Confirm it exists with skills per level per event.
+b) In the judging prompt, add after the event rules:
+
+   VALID SKILLS FOR THIS ROUTINE (${level} ${event}):
+   ${LEVEL_SKILLS[level]?.[event] || 'Use standard USAG skill progression for this level'}
+
+   Use this list to guide skill identification. If you detect a skill not consistent with
+   this level, flag it with skillConfidence below 0.6. Do NOT invent skills not present
+   in the video.
+
+c) After Gemini returns skills, add post-processing in pipeline.js or scoring.js:
+   For each returned skill, if no keyword from LEVEL_SKILLS[level][event] matches,
+   add: skill.taxonomyWarning = true (flag only, do not remove the skill).
+
+FIX 3 — Lock temperature to 0 in Gemini config (CONSISTENCY)
+File: api/analyze.js lines 119-142, and any other Gemini config in src/engine/
+
+Find every generateContent() call config object.
+Add: temperature: 0
+Do NOT change thinkingBudget or other settings.
+
+FIX 4 — Verify calibration factors are applied in scoring.js
+File: src/engine/scoring.js
+
+a) Read computeScoreFromScorecard() completely
+b) Verify event-specific calibration: Vault 0.75 / Bars 0.85 / Beam 0.91 / Floor 0.92
+c) If present and correct: add comment confirming verified
+d) If MISSING or WRONG: add/fix the calibration map:
+   const CALIBRATION = { vault: 0.75, bars: 0.85, beam: 0.91, floor: 0.92 };
+   const factor = CALIBRATION[event?.toLowerCase()] || 1.0;
+   const finalScore = Math.max(0, Math.min(10, startValue - (totalDeductions * factor)));
+   DO NOT change existing correct values.
+
+SELF-AUDIT after all fixes:
+1. Read src/engine/prompts.js — confirm event and LEVEL_SKILLS injected into prompt
+2. Read api/analyze.js — confirm temperature: 0 is set
+3. Read src/engine/scoring.js — confirm calibration factors applied with correct values
+4. Run: grep -n "temperature" api/analyze.js src/engine/*.js — should show 0 everywhere
+5. Run npm test -- --watchAll=false. All tests must pass.
+6. Run npm run build. Must complete with zero errors.
+
+COMMIT AND PUSH:
+git add -A && git commit -m "fix(accuracy): inject event+level skills into prompt, temperature=0, verify calibration" && git push origin main
+
+CONSTRAINTS:
+- Do NOT change calibration factor values (Vault 0.75/Beam 0.91/Floor 0.92/Bars 0.85)
+- Do NOT touch LegacyApp.js buildJudgingPrompt (dead code)
+- Do NOT modify thinkingBudget
+- Build must pass. Tests must pass. Push immediately.</div>
+        </div>
+        <div class="notes-area"><div class="notes-label">RESULTS / NOTES</div><textarea class="notes-input" placeholder="Paste terminal output or notes here..."></textarea></div>
+      </div>
+    </div>
+
+    <!-- Sprint 3C -->
+    <div class="sprint-card" id="card-3c">
+      <div class="sprint-card-header" onclick="toggleCard('3c')">
+        <div class="sprint-info">
+          <div class="sprint-check" id="check-3c" onclick="toggleCheck(event,'3c')"></div>
+          <div>
+            <div class="sprint-name">Sprint 3C — COPPA + Account + Tier Hydration</div>
+            <div class="sprint-tag">Run after 3B pushes · LegacyApp.js · api/account.js · TierContext.js</div>
+          </div>
+        </div>
+        <div class="sprint-meta">
+          <span class="sprint-time">~1.5 hours</span>
+          <span class="severity-tag sev-critical">LAUNCH BLOCKER</span>
+          <span class="expand-arrow" id="arrow-3c">▼</span>
+        </div>
+      </div>
+      <div class="sprint-body" id="body-3c">
+        <p class="sprint-desc">Wires COPPA consent gate (the backend is already built — api/consent.js is complete), implements real account deletion (currently fake), and fixes tier hydration to fail-down to Free on error instead of keeping a cached elevated tier.</p>
+        <div class="sprint-fixes">
+          <div class="fix-item"><span class="fix-num">1</span><div class="fix-text"><strong>Wire COPPA consent gate</strong> before analysis — check age &lt;13 + consent not confirmed, show blocking modal<div class="fix-file">src/LegacyApp.js (pre-analysis trigger)</div></div></div>
+          <div class="fix-item"><span class="fix-num">2</span><div class="fix-text"><strong>Implement real account deletion</strong> — clear all strive-* localStorage keys client-side after API confirms<div class="fix-file">api/account.js · LegacyApp.js (deletion handler)</div></div></div>
+          <div class="fix-item"><span class="fix-num">3</span><div class="fix-text"><strong>Tier hydration fail-down</strong> — on catch/error, set tier to FREE (not keep cached value)<div class="fix-file">src/context/TierContext.js (catch block)</div></div></div>
+        </div>
+        <div class="prompt-block">
+          <div class="prompt-header">
+            <span class="prompt-label">SPRINT 3C PROMPT</span>
+            <button class="copy-btn" onclick="copyPrompt('prompt-3c', this)">COPY PROMPT</button>
+          </div>
+          <div class="prompt-code" id="prompt-3c">You are working on the Strive gymnastics scoring app at /Users/mgraci/Desktop/StriveGymnastics.
+Read CLAUDE.md and STRATEGY.md before making any changes.
+
+OBJECTIVE: Wire COPPA consent, fix account deletion, fix tier hydration fail-down.
+
+STEP 1: Read these files completely before writing any code:
+- api/consent.js (full file — backend is already built)
+- api/account.js (full file — find the DELETE handler)
+- src/context/TierContext.js (full file)
+- src/LegacyApp.js lines 4750-4900 (find analysis trigger)
+- src/LegacyApp.js lines 1200-1500 (find athlete profile state and age field)
+
+FIX 1 — Wire COPPA consent gate before analysis (CRITICAL / LAUNCH BLOCKER)
+File: src/LegacyApp.js
+
+The backend (api/consent.js) is fully built. The frontend has no gate.
+
+a) Find the function or event handler that triggers video analysis
+b) Before analysis begins, add this check:
+
+   const athleteAge = profile?.age ? parseInt(profile.age) : null;
+   const consentConfirmed = sessionStorage.getItem('strive-consent-status') === 'confirmed';
+
+   if (athleteAge !== null && athleteAge < 13 && !consentConfirmed) {
+     setScreen('coppa-consent'); // or show consent modal
+     return; // block analysis
+   }
+
+c) If a coppa-consent screen or modal doesn't exist, create a minimal blocking modal:
+   - Text: "Parental consent required for athletes under 13. A parent or guardian must
+     review and accept our Privacy Policy before your athlete's video can be analyzed."
+   - Button: "Parent/Guardian Confirms Consent"
+   - On button click: POST to /api/consent with { athleteAge, parentEmail: profile.parentEmail }
+     then set sessionStorage.setItem('strive-consent-status', 'confirmed')
+     then proceed with analysis
+   - If no parentEmail in profile: prompt for parent email before continuing
+
+FIX 2 — Implement real account deletion (HIGH / CCPA)
+File: api/account.js + src/LegacyApp.js
+
+a) In api/account.js DELETE handler: add { purgeTimestamp: Date.now(), cleared: true } to response
+b) In LegacyApp.js, find where account deletion is initiated (search DELETE to /api/account)
+c) After a successful DELETE response, add client-side cleanup:
+
+   const striveKeys = Object.keys(localStorage).filter(k => k.startsWith('strive'));
+   striveKeys.forEach(k => localStorage.removeItem(k));
+   localStorage.setItem('strive-account-deleted', Date.now().toString());
+   sessionStorage.clear();
+   setProfile(null);
+   setTier('free');
+   setScreen('splash');
+
+FIX 3 — Tier hydration: fail DOWN to Free on error (MEDIUM)
+File: src/context/TierContext.js
+
+a) Find the tier hydration useEffect (async function that fetches subscription status)
+b) Find the catch block
+c) Change behavior: on ANY catch/error, set tier to TIERS.FREE:
+   setTier(TIERS.FREE);
+   await storage.remove('strive-tier');
+d) On successful hydration returning no active subscription:
+   await storage.remove('strive-tier');
+   setTier(TIERS.FREE);
+
+SELF-AUDIT after all fixes:
+1. Read the analysis trigger in LegacyApp.js — confirm age < 13 + consent check exists before analysis
+2. Read api/account.js DELETE handler — confirm it returns purgeTimestamp
+3. Read LegacyApp.js account deletion flow — confirm localStorage cleared after successful deletion
+4. Read TierContext.js catch block — confirm it sets TIERS.FREE not keeps cached tier
+5. Run npm test -- --watchAll=false. All tests must pass.
+6. Run npm run build. Must complete with zero errors.
+
+COMMIT AND PUSH:
+git add -A && git commit -m "fix(compliance): wire COPPA consent gate, implement account deletion, tier hydration fail-down" && git push origin main
+
+CONSTRAINTS:
+- Do NOT remove any existing COPPA-related UI or consent UI
+- Do NOT change calibration factors
+- Build must pass. Tests must pass. Push immediately.</div>
+        </div>
+        <div class="notes-area"><div class="notes-label">RESULTS / NOTES</div><textarea class="notes-input" placeholder="Paste terminal output or notes here..."></textarea></div>
+      </div>
+    </div>
+
+    <!-- Wave 2 QA -->
+    <div class="qa-card" id="card-qa2">
+      <div class="sprint-card-header" onclick="toggleCard('qa2')" style="cursor:pointer;">
+        <div class="sprint-info">
+          <div class="sprint-check" id="check-qa2" onclick="toggleCheck(event,'qa2')"></div>
+          <div>
+            <div class="sprint-name">Wave 2 QA Audit</div>
+            <div class="sprint-tag">Run after BOTH 3B and 3C push · Gate before Wave 3</div>
+          </div>
+        </div>
+        <div class="sprint-meta">
+          <span class="sprint-time">~10 min</span>
+          <span class="severity-tag sev-qa">QA GATE</span>
+          <span class="expand-arrow" id="arrow-qa2">▼</span>
+        </div>
+      </div>
+      <div class="sprint-body" id="body-qa2">
+        <div class="qa-gate">⛔ <strong>GATE:</strong> Do not start Wave 3 until this QA passes all 11 checks.</div>
+        <div class="prompt-block">
+          <div class="prompt-header">
+            <span class="prompt-label">WAVE 2 QA PROMPT</span>
+            <button class="copy-btn" onclick="copyPrompt('prompt-qa2', this)">COPY PROMPT</button>
+          </div>
+          <div class="prompt-code" id="prompt-qa2">You are a QA auditor for the Strive gymnastics app at /Users/mgraci/Desktop/StriveGymnastics.
+
+WAVE 2 VERIFICATION — confirm all of the following with file:line evidence:
+
+ACCURACY (Sprint 3B):
+1. Read src/engine/prompts.js — confirm event is a parameter in the main prompt builder
+2. Read src/engine/prompts.js — confirm event-specific rules (bars/beam/floor/vault) injected
+3. Read src/engine/prompts.js — confirm LEVEL_SKILLS or skill taxonomy injected in prompt
+4. Run: grep -n "temperature" api/analyze.js src/engine/*.js
+   All Gemini generateContent calls must show temperature: 0
+5. Read src/engine/scoring.js — confirm calibration factors vault:0.75, bars:0.85,
+   beam:0.91, floor:0.92 are applied in score computation
+
+COMPLIANCE (Sprint 3C):
+6. Read the analysis trigger in LegacyApp.js — confirm age < 13 && consent check
+   exists BEFORE analysis starts (not after)
+7. Read api/account.js DELETE handler — confirm it returns purgeTimestamp in response
+8. Read LegacyApp.js account deletion handler — confirm localStorage keys starting with
+   'strive' are cleared after successful deletion
+9. Read TierContext.js catch block — confirm tier is set to FREE (not kept) on error
+
+BUILD:
+10. Run: npm test -- --watchAll=false — report pass/fail with test count
+11. Run: npm run build — report pass/fail
+
+Return PASS/FAIL per item. Any FAIL blocks Wave 3 from starting.</div>
+        </div>
+        <div class="notes-area"><div class="notes-label">QA RESULTS</div><textarea class="notes-input" placeholder="Paste QA output here — must show all PASS before proceeding to Wave 3..."></textarea></div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- ═══════════════ WAVE 3 ═══════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-wave-badge badge-green">WAVE 3 — SEQUENTIAL</span>
+      <div>
+        <div class="section-title">Performance + Dead Code Removal</div>
+        <div class="section-subtitle">Only after Wave 2 QA passes. Cuts ~1,800 lines of dead code and speeds up video processing.</div>
+      </div>
+    </div>
+
+    <!-- Sprint 3D -->
+    <div class="sprint-card" id="card-3d">
+      <div class="sprint-card-header" onclick="toggleCard('3d')">
+        <div class="sprint-info">
+          <div class="sprint-check" id="check-3d" onclick="toggleCheck(event,'3d')"></div>
+          <div>
+            <div class="sprint-name">Sprint 3D — Performance + Dead Code</div>
+            <div class="sprint-tag">src/engine/ · VideoAnalyzer.js (delete) · analysisPipeline.js (delete) · package.json</div>
+          </div>
+        </div>
+        <div class="sprint-meta">
+          <span class="sprint-time">~1.5 hours</span>
+          <span class="severity-tag sev-perf">PERF + CLEANUP</span>
+          <span class="expand-arrow" id="arrow-3d">▼</span>
+        </div>
+      </div>
+      <div class="sprint-body" id="body-3d">
+        <p class="sprint-desc">Cuts 60–120 seconds from video processing (compression threshold), wires the cache that was computed but never checked, and removes ~1,800 lines of confirmed dead code. Zero behavior changes for users.</p>
+        <div class="sprint-fixes">
+          <div class="fix-item"><span class="fix-num">1</span><div class="fix-text"><strong>Raise compression threshold 20MB → 50MB</strong> — saves 60-120s for 70% of mobile users<div class="fix-file">src/engine/videoCompressor.js (COMPRESS_THRESHOLD_MB)</div></div></div>
+          <div class="fix-item"><span class="fix-num">2</span><div class="fix-text"><strong>Wire response cache lookup before Gemini call</strong> — fingerprint computed but never checked<div class="fix-file">src/engine/pipeline.js:123-134</div></div></div>
+          <div class="fix-item"><span class="fix-num">3</span><div class="fix-text"><strong>Delete VideoAnalyzer.js</strong> — 481 lines, never rendered in any screen<div class="fix-file">src/components/VideoAnalyzer.js</div></div></div>
+          <div class="fix-item"><span class="fix-num">4</span><div class="fix-text"><strong>Delete src/analysis/analysisPipeline.js</strong> — 110 lines, only imported by dead VideoAnalyzer<div class="fix-file">src/analysis/analysisPipeline.js</div></div></div>
+          <div class="fix-item"><span class="fix-num">5</span><div class="fix-text"><strong>Remove @vercel/kv from package.json</strong> — installed but never imported<div class="fix-file">package.json</div></div></div>
+          <div class="fix-item"><span class="fix-num">6</span><div class="fix-text"><strong>Deduplicate LEVEL_SKILLS + DEDUCTION_CATEGORIES</strong> — defined in 2 files, consolidate to constants.js<div class="fix-file">src/LegacyApp.js · src/data/constants.js</div></div></div>
+        </div>
+        <div class="prompt-block">
+          <div class="prompt-header">
+            <span class="prompt-label">SPRINT 3D PROMPT</span>
+            <button class="copy-btn" onclick="copyPrompt('prompt-3d', this)">COPY PROMPT</button>
+          </div>
+          <div class="prompt-code" id="prompt-3d">You are working on the Strive gymnastics scoring app at /Users/mgraci/Desktop/StriveGymnastics.
+Read CLAUDE.md before making any changes.
+
+OBJECTIVE: Cut processing time, remove ~1800 lines of dead code, fix cache, clean deps.
+This sprint makes the codebase leaner and faster without changing any behavior.
+
+STEP 1: Read these files before writing any code:
+- src/engine/videoCompressor.js (find COMPRESS_THRESHOLD_MB constant)
+- src/engine/pipeline.js lines 100-180 (find session cache logic)
+- package.json (find @vercel/kv)
+- Run: ls src/analysis/ and ls src/components/ (find analysisPipeline.js and VideoAnalyzer.js)
+
+FIX 1 — Raise compression threshold from 20MB to 50MB (PERFORMANCE)
+File: src/engine/videoCompressor.js
+Find COMPRESS_THRESHOLD_MB or equivalent constant (search for "20" near "MB" or "compress").
+Change value from 20 to 50.
+This saves 60-120 seconds for ~70% of mobile users.
+
+FIX 2 — Wire the response cache lookup BEFORE Gemini call (PERFORMANCE + COST)
+File: src/engine/pipeline.js
+The cache key (fingerprint) is computed but the lookup is inconsistent.
+a) Find where the fingerprint/cacheKey is computed
+b) Immediately after computing cacheKey, add:
+   const cached = sessionStorage.getItem(cacheKey);
+   if (cached) {
+     try {
+       const result = JSON.parse(cached);
+       console.log('[pipeline] cache hit, skipping Gemini call');
+       return result;
+     } catch { /* cache corrupt, proceed normally */ }
+   }
+c) After successful Gemini response and validation, add:
+   try { sessionStorage.setItem(cacheKey, JSON.stringify(pipelineResult)); } catch { /* quota */ }
+
+FIX 3 — Delete VideoAnalyzer.js (DEAD CODE — 481 lines, never rendered)
+a) First confirm it is never imported: grep -r "VideoAnalyzer" src/
+   If it appears ONLY in its own file definition, delete it.
+b) Delete the file.
+c) If anything imports it, remove that import only.
+
+FIX 4 — Delete src/analysis/analysisPipeline.js (DEAD CODE — 110 lines)
+a) Confirm: grep -r "analysisPipeline" src/
+   Should only appear in VideoAnalyzer.js (just deleted) or itself.
+b) Delete src/analysis/analysisPipeline.js
+c) If any remaining file imports it, remove that import.
+
+FIX 5 — Remove @vercel/kv from package.json (UNUSED DEP)
+a) Confirm: grep -r "@vercel/kv" src/ api/ — must return zero results
+b) If zero results: remove "@vercel/kv" from dependencies in package.json
+c) Run: npm install to update package-lock.json
+
+FIX 6 — Deduplicate LEVEL_SKILLS and DEDUCTION_CATEGORIES (CLEANUP)
+a) Run: grep -n "LEVEL_SKILLS\|DEDUCTION_CATEGORIES" src/LegacyApp.js
+b) If defined in BOTH LegacyApp.js AND src/data/constants.js:
+   - Remove the duplicate definition from LegacyApp.js
+   - Add import at top of LegacyApp.js: import { LEVEL_SKILLS, DEDUCTION_CATEGORIES } from './data/constants';
+c) If only in one place, skip this fix.
+
+SELF-AUDIT after all fixes:
+1. Read src/engine/videoCompressor.js — confirm threshold is 50 (not 20)
+2. Read src/engine/pipeline.js cache section — confirm lookup happens before Gemini call
+3. Run: ls src/components/VideoAnalyzer.js — should return error (file deleted)
+4. Run: ls src/analysis/analysisPipeline.js — should return error (file deleted)
+5. Run: grep "@vercel/kv" package.json — should return nothing
+6. Run: grep -c "LEVEL_SKILLS" src/LegacyApp.js — should be 0 or just import reference
+7. Run npm test -- --watchAll=false. All tests must pass.
+8. Run npm run build. Must complete with zero errors.
+
+COMMIT AND PUSH:
+git add -A && git commit -m "perf(pipeline): compress threshold 50MB, wire cache, delete dead VideoAnalyzer+analysisPipeline, remove unused vercel/kv" && git push origin main
+
+CONSTRAINTS:
+- Do NOT delete any file unless grep confirms zero imports from active code
+- Do NOT change calibration factors
+- Do NOT touch api/ files (handled in Wave 1)
+- Build must pass. Tests must pass. Push immediately.</div>
+        </div>
+        <div class="notes-area"><div class="notes-label">RESULTS / NOTES</div><textarea class="notes-input" placeholder="Paste terminal output or notes here..."></textarea></div>
+      </div>
+    </div>
+
+    <!-- Wave 3 QA (Final Integration) -->
+    <div class="qa-card" id="card-qa3">
+      <div class="sprint-card-header" onclick="toggleCard('qa3')" style="cursor:pointer;">
+        <div class="sprint-info">
+          <div class="sprint-check" id="check-qa3" onclick="toggleCheck(event,'qa3')"></div>
+          <div>
+            <div class="sprint-name">Wave 3 Final Integration QA</div>
+            <div class="sprint-tag">Verifies ALL 14 fixes across all waves · Clears for deploy</div>
+          </div>
+        </div>
+        <div class="sprint-meta">
+          <span class="sprint-time">~15 min</span>
+          <span class="severity-tag sev-qa">FINAL GATE</span>
+          <span class="expand-arrow" id="arrow-qa3">▼</span>
+        </div>
+      </div>
+      <div class="sprint-body" id="body-qa3">
+        <div class="qa-gate">✅ <strong>FINAL GATE:</strong> All 20 checks pass = deployment clear. Vercel auto-deploys in ~90 seconds after push.</div>
+        <div class="prompt-block">
+          <div class="prompt-header">
+            <span class="prompt-label">FINAL INTEGRATION QA PROMPT</span>
+            <button class="copy-btn" onclick="copyPrompt('prompt-qa3', this)">COPY PROMPT</button>
+          </div>
+          <div class="prompt-code" id="prompt-qa3">You are a QA auditor for the Strive gymnastics app at /Users/mgraci/Desktop/StriveGymnastics.
+This is the FINAL integration QA. Verify all 14 code fixes across all waves.
+
+Run each check and report PASS/FAIL with evidence:
+
+SECURITY (Wave 1 — Sprint 3A):
+1. grep -r "strive-2026-launch" api/ → must be EMPTY
+2. grep -n "rateLimitMap\|checkRateLimit" api/analyze.js → must have matches
+3. grep -n "413\|payload too large\|50 \* 1024" api/analyze.js → must have match
+4. grep -n "x-strive-token\|STRIVE_APP_TOKEN" api/create-checkout.js → must have match
+5. grep -n "safeName\|trim.*50\|replace.*alphanumeric" api/mastermind.js → must have match
+6. grep -n "maxDuration" vercel.json → must show 3+ entries
+
+ACCURACY (Wave 2 — Sprint 3B):
+7. grep -n "event\|EVENT" src/engine/prompts.js → confirm event injected in prompt
+8. grep -n "LEVEL_SKILLS\|valid.*skill\|skill.*list" src/engine/prompts.js → must have match
+9. grep -n "temperature.*0\|temperature: 0" api/analyze.js → must show 0
+10. grep -n "vault.*0.75\|bars.*0.85\|beam.*0.91\|floor.*0.92" src/engine/scoring.js → all 4 must match
+
+COMPLIANCE (Wave 2 — Sprint 3C):
+11. grep -n "athleteAge.*13\|age.*13\|coppa\|consent" src/LegacyApp.js → must have match near analysis trigger
+12. grep -n "purgeTimestamp\|strive.*removeItem\|localStorage.*clear" src/LegacyApp.js → must have match
+13. grep -n "TIERS.FREE\|setTier.*free" src/context/TierContext.js → must have match in catch block
+
+PERFORMANCE (Wave 3 — Sprint 3D):
+14. grep -n "50\|COMPRESS_THRESHOLD" src/engine/videoCompressor.js → must show 50
+15. grep -n "sessionStorage.getItem.*cacheKey\|cache hit" src/engine/pipeline.js → must have match
+16. ls src/components/VideoAnalyzer.js → must return error (file deleted)
+17. ls src/analysis/analysisPipeline.js → must return error (file deleted)
+18. grep "@vercel/kv" package.json → must be EMPTY
+
+FINAL BUILD:
+19. npm test -- --watchAll=false → ALL TESTS PASS
+20. npm run build → ZERO ERRORS
+
+If all 20 checks pass: report "WAVE 1-3 COMPLETE. ALL FIXES VERIFIED. CLEAR FOR DEPLOY."
+If any check fails: report exactly what failed and the precise fix required.</div>
+        </div>
+        <div class="notes-area"><div class="notes-label">QA RESULTS</div><textarea class="notes-input" placeholder="Paste final QA output here. All 20 must PASS before considering this day complete..."></textarea></div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- ═══════════════ WAVE 4 ═══════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-wave-badge badge-orange">WAVE 4 — VALIDATION</span>
+      <div>
+        <div class="section-title">Panel-Range Validation + 350-Video Decision</div>
+        <div class="section-subtitle">After Vercel deploy confirms green (~90s after final push). This is the data that decides whether to order the 350 videos.</div>
+      </div>
+    </div>
+
+    <div class="validation-card">
+      <h3>Panel-Range P1 Gate Validation (run in parallel with Waves 1-3)</h3>
+      <p style="font-size:13px; color:var(--muted); margin-bottom:16px; line-height:1.7;">
+        The current P1 Gate measures AI vs. one judge. The correct measurement is AI vs. the range of a 4-judge panel (±0.30–0.50 natural spread on bars/beam). Pull routines from NAWGJ data where per-judge scores exist. Check: <strong style="color:var(--text);">min(judge_scores) ≤ AI_score ≤ max(judge_scores)</strong>.
+      </p>
+      <table class="decision-table">
+        <thead>
+          <tr><th>Result</th><th>Action</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>≥80% of routines within panel range on ALL events</td><td style="color:var(--green);">P1 Gate PASSES · Send 10 beta invites · Wire Stripe env vars</td></tr>
+          <tr><td>≥80% on Vault/Floor, &lt;80% on Bars/Beam</td><td style="color:var(--gold);">Partial pass · Order 50 videos for Bars/Beam calibration only · Hold invites 1 week</td></tr>
+          <tr><td>&lt;80% across the board</td><td style="color:var(--red);">Accuracy problem remains · Do NOT order 350 videos · Investigate prompt fixes landed correctly</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Wave 4 Prompt -->
+    <div class="sprint-card" id="card-4a">
+      <div class="sprint-card-header" onclick="toggleCard('4a')">
+        <div class="sprint-info">
+          <div class="sprint-check" id="check-4a" onclick="toggleCheck(event,'4a')"></div>
+          <div>
+            <div class="sprint-name">Scoring Accuracy Analysis Prompt</div>
+            <div class="sprint-tag">Paste with your delta table after running 20-30 test videos</div>
+          </div>
+        </div>
+        <div class="sprint-meta">
+          <span class="sprint-time">~2 hours</span>
+          <span class="severity-tag sev-orange" style="background:rgba(224,104,32,0.2);color:var(--orange);">DECISION</span>
+          <span class="expand-arrow" id="arrow-4a">▼</span>
+        </div>
+      </div>
+      <div class="sprint-body" id="body-4a">
+        <p class="sprint-desc">Run 20-30 test videos (5 per event minimum). Record AI score vs. known judge score for each. Then paste this prompt WITH your delta table to get the 350-video decision.</p>
+        <div class="prompt-block">
+          <div class="prompt-header">
+            <span class="prompt-label">WAVE 4 SCORING ANALYSIS PROMPT</span>
+            <button class="copy-btn" onclick="copyPrompt('prompt-4a', this)">COPY PROMPT</button>
+          </div>
+          <div class="prompt-code" id="prompt-4a">SCORING ACCURACY ANALYSIS — POST-SPRINT VALIDATION
+
+You are analyzing Strive's scoring accuracy after the Wave 1-3 sprint fixes.
+
+PASTE YOUR DELTA TABLE BELOW IN THIS FORMAT:
+Event | Level | AI Score | Judge Score | Delta
+vault | L6 | 8.75 | 9.10 | 0.35
+bars  | XG | 8.20 | 8.60 | 0.40
+[... continue for all 20-30 routines ...]
+
+CALCULATE:
+1. Average delta per event (mean absolute error)
+2. % of routines within 0.10 of judge score
+3. % of routines within 0.20 of judge score
+4. % of routines where AI falls within [panel_min, panel_max] (if you have per-judge data)
+5. Worst-case delta per event
+6. Direction of bias: is AI consistently HIGH or consistently LOW per event?
+
+COMPARE TO PRE-SPRINT BASELINE (from STRIVE_HANDOFF.md):
+  Vault: 0.2924 | Floor: 0.3635 | Beam: 0.3756 | Bars: 0.4604
+
+DECISION RULES:
+- If average delta improved by >30% on any event → fixes are working, proceed to invite beta users
+- If average delta is <0.20 on all events → single-judge P1 Gate passes, order 350 videos for validation
+- If average delta is <0.30 on all events AND you have panel data showing >80% within range → P1 Gate passes (panel definition), order 350 videos
+- If average delta is UNCHANGED → prompt fixes didn't land correctly, investigate before spending $500
+- If AI is consistently HIGH (scoring better than judges): reduce calibration factors slightly
+- If AI is consistently LOW (scoring worse than judges): increase calibration factors slightly
+
+REPORT FORMAT:
+1. Summary table: Event | Before | After | Change | Pass/Fail
+2. P1 Gate status under both definitions (single-judge 0.20 / panel-range 80%)
+3. Clear YES/NO on ordering 350 videos with specific reason
+4. If YES: specify what those videos should validate (all events? specific levels?)
+5. If NO: specify what to fix first</div>
+        </div>
+        <div class="notes-area"><div class="notes-label">VALIDATION RESULTS + DECISION</div><textarea class="notes-input" placeholder="Paste your delta table and analysis results here. Record the 350-video decision..."></textarea></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<script>
+// ── State ──────────────────────────────────────────────
+const CHECKS = ['2c','3a','qa1','3b','3c','qa2','3d','qa3','4a'];
+const TOTAL = CHECKS.length;
+
+function saveState() {
+  const state = {};
+  CHECKS.forEach(id => {
+    state['check_'+id] = document.getElementById('check-'+id)?.classList.contains('checked') || false;
+    const notesEl = document.querySelector('#body-'+id+' .notes-input');
+    if (notesEl) state['notes_'+id] = notesEl.value;
+  });
+  localStorage.setItem('strive_sprint_state', JSON.stringify(state));
+}
+
+function loadState() {
+  try {
+    const state = JSON.parse(localStorage.getItem('strive_sprint_state') || '{}');
+    CHECKS.forEach(id => {
+      if (state['check_'+id]) {
+        const el = document.getElementById('check-'+id);
+        if (el) el.classList.add('checked');
+      }
+      const notesEl = document.querySelector('#body-'+id+' .notes-input');
+      if (notesEl && state['notes_'+id]) notesEl.value = state['notes_'+id];
+    });
+  } catch(e) {}
+  updateProgress();
+}
+
+// ── Toggle Card ────────────────────────────────────────
+function toggleCard(id) {
+  const body = document.getElementById('body-'+id);
+  const arrow = document.getElementById('arrow-'+id);
+  if (!body) return;
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  if (arrow) arrow.classList.toggle('open', !isOpen);
+}
+
+// ── Toggle Check ───────────────────────────────────────
+function toggleCheck(e, id) {
+  e.stopPropagation();
+  const el = document.getElementById('check-'+id);
+  if (!el) return;
+  el.classList.toggle('checked');
+  const card = document.getElementById('card-'+id);
+  if (card) card.classList.toggle('done', el.classList.contains('checked'));
+  updateProgress();
+  saveState();
+}
+
+// ── Progress ───────────────────────────────────────────
+function updateProgress() {
+  let done = 0;
+  CHECKS.forEach(id => {
+    if (document.getElementById('check-'+id)?.classList.contains('checked')) done++;
+  });
+  const pct = Math.round((done / TOTAL) * 100);
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = done + ' of ' + TOTAL + ' steps complete';
+
+  // Wave status
+  const w1 = ['2c','3a'].every(id => document.getElementById('check-'+id)?.classList.contains('checked'));
+  const w1qa = document.getElementById('check-qa1')?.classList.contains('checked');
+  const w2 = ['3b','3c'].every(id => document.getElementById('check-'+id)?.classList.contains('checked'));
+  const w2qa = document.getElementById('check-qa2')?.classList.contains('checked');
+  const w3 = document.getElementById('check-3d')?.classList.contains('checked');
+  const w3qa = document.getElementById('check-qa3')?.classList.contains('checked');
+  const w4 = document.getElementById('check-4a')?.classList.contains('checked');
+
+  setWaveStatus(1, w1qa ? 'done' : w1 ? 'qa' : (document.getElementById('check-2c')?.classList.contains('checked') || document.getElementById('check-3a')?.classList.contains('checked')) ? 'running' : 'pending');
+  setWaveStatus(2, w2qa ? 'done' : w2 ? 'qa' : w1qa ? 'running' : 'pending');
+  setWaveStatus(3, w3qa ? 'done' : w3 ? 'qa' : w2qa ? 'running' : 'pending');
+  setWaveStatus(4, w4 ? 'done' : w3qa ? 'running' : 'pending');
+}
+
+function setWaveStatus(n, state) {
+  const el = document.getElementById('waveStatus'+n);
+  const card = document.getElementById('waveCard'+n);
+  if (!el || !card) return;
+  const labels = { pending:'PENDING', running:'IN PROGRESS', qa:'AWAITING QA', done:'COMPLETE' };
+  const classes = { pending:'status-pending', running:'status-running', qa:'status-qa', done:'status-done' };
+  el.textContent = labels[state];
+  el.className = 'wave-status ' + classes[state];
+  card.classList.toggle('complete', state === 'done');
+}
+
+// ── Copy Prompt ────────────────────────────────────────
+function copyPrompt(id, btn) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  navigator.clipboard.writeText(el.textContent).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = 'COPIED ✓';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 2000);
+  }).catch(() => {
+    const range = document.createRange();
+    range.selectNode(el);
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+    document.execCommand('copy');
+    window.getSelection().removeAllRanges();
+    btn.textContent = 'COPIED ✓';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'COPY PROMPT'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+// ── Save notes on input ────────────────────────────────
+document.addEventListener('input', e => {
+  if (e.target.classList.contains('notes-input')) saveState();
+});
+
+// ── Open first card of each wave by default ────────────
+window.addEventListener('DOMContentLoaded', () => {
+  loadState();
+  toggleCard('2c');
+  toggleCard('3a');
+});
+</script>
+</body>
+</html>
