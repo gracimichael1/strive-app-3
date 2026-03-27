@@ -627,7 +627,7 @@ ${event === "Auto-detect" ? "\nAuto-detect which apparatus/event this is from th
  * @param {string} event - Event name
  * @returns {{ system: string, user: string }}
  */
-export function buildPass2Prompt(pass1Result, profile, event) {
+export function buildPass2Prompt(pass1Result, profile, event, landmarkData = null) {
   const gender = (profile.gender || "female").toLowerCase() === "male" ? "MAG" : "WAG";
   const levelDisplay = profile.level || "Level 6";
   const athleteName = profile.name || "the gymnast";
@@ -664,10 +664,13 @@ CRITICAL OUTPUT FORMAT: Respond with raw JSON only. No markdown. No code fences.
     return `- "${s.skill_name}" at ${s.timestamp_start}s-${s.timestamp_end}s (total deduction: ${s.total_deduction}, faults: ${dedList || s.reason || "none"})`;
   }).join("\n");
 
+  // ── Build landmark block if available ──────────────────────────────────
+  const landmarkBlock = buildLandmarkBlock(landmarkData);
+
   const user = `Re-watch the attached video. The following skills were identified in the initial judging pass:
 
 ${skillList}
-
+${landmarkBlock}
 For EACH skill listed above, provide the full specialist analysis.
 Match skills by name and timestamp.
 
@@ -676,6 +679,42 @@ Then provide the routine-level training plan (top 3 drills), mental performance 
 Respond ONLY in the JSON schema provided. Raw JSON only — no markdown, no code fences, no backticks.`;
 
   return { system, user };
+}
+
+
+/**
+ * Build the landmark injection block for Pass 2.
+ * Returns empty string if no landmark data is available.
+ */
+function buildLandmarkBlock(landmarkData) {
+  if (!landmarkData || !landmarkData.frames || landmarkData.frames.length === 0) {
+    return '';
+  }
+
+  const lines = landmarkData.frames.map(f => {
+    const a = f.angles;
+    const parts = [
+      `t=${f.timestamp_seconds}s`,
+      `L-hip=${a.left_hip}°`,
+      `R-hip=${a.right_hip}°`,
+      `L-knee=${a.left_knee}°`,
+      `R-knee=${a.right_knee}°`,
+    ];
+    if (a.left_shoulder != null) parts.push(`L-sh=${a.left_shoulder}°`);
+    if (a.right_shoulder != null) parts.push(`R-sh=${a.right_shoulder}°`);
+    if (a.trunk_lean_from_vertical != null) parts.push(`trunk=${a.trunk_lean_from_vertical}°`);
+    if (a.leg_separation != null) parts.push(`leg-sep=${a.leg_separation}°`);
+    return parts.join(' | ');
+  });
+
+  return `
+
+BIOMECHANICAL MEASUREMENTS (extracted via skeletal tracking):
+Use these measured angles to verify or correct your visual observations. When a measured angle contradicts your visual estimate, trust the measurement.
+
+${lines.join('\n')}
+
+`;
 }
 
 

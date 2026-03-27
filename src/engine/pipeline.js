@@ -27,6 +27,7 @@ import { validatePipelineResult, snapToUSAG, gradeFromQuality, parseTimestamp, f
 import { computeScoreFromScorecard, SCORING_VERSION } from "./scoring";
 import { transformForUI } from "./transform";
 import { compressVideo, needsCompression, formatMB } from "./videoCompressor";
+import { serializeLandmarksForPrompt } from "./landmarkSerializer";
 
 // ─── Analysis metadata — version traceability for calibration ────────────────
 const ANALYSIS_METADATA = {
@@ -270,6 +271,30 @@ export async function runAnalysisPipeline({ videoFile, profile, event, tier, onP
     `Art: -${scoring.artistry_total} | SR: -${scoring.sr_total} | ` +
     `Skills: ${scorecard.deduction_log.length} | AI said: ${scorecard.final_score} (diff: ${scoring.score_diff})`);
 
+  // ── Resolve tier early — needed for landmark extraction gate + Pass 2 ────
+  const effectiveTier = tier || (() => { try { return localStorage.getItem("strive-tier") || "free"; } catch { return "free"; } })();
+
+  // ── MediaPipe landmark extraction (runs in background, ready for Pass 2) ──
+  // Uses the compressed/original video file — separate from Gemini File API path.
+  // If extraction fails, landmarkData stays null and Pass 2 works without it.
+  let landmarkData = null;
+  const landmarkPromise = (() => {
+    if (effectiveTier === 'free') return Promise.resolve(null);
+    return serializeLandmarksForPrompt(fileToUpload).then(data => {
+      landmarkData = data;
+      if (data) {
+        log.info("landmarks", `Extracted ${data.metadata.valid_frames}/${data.metadata.total_frames_extracted} frames, ` +
+          `${data.metadata.frames_in_prompt} in prompt (${data.metadata.extraction_ms}ms)`);
+      } else {
+        log.warn("landmarks", "No valid landmark frames extracted");
+      }
+      return data;
+    }).catch(e => {
+      log.warn("landmarks", `Landmark extraction failed (non-fatal): ${e.message}`);
+      return null;
+    });
+  })();
+
   // ── Build pass1-only result (no biomechanics yet) ────────────────────────
   const pass1Skills = mergeSkills(scorecard, null);
 
@@ -313,6 +338,8 @@ export async function runAnalysisPipeline({ videoFile, profile, event, tier, onP
         model: "gemini-2.5-flash",
         pass1_skills: scorecard.deduction_log?.length || 0,
         pass2_success: !!pass2Result,
+        landmarks_injected: !!landmarkData,
+        landmark_frames: landmarkData?.metadata?.frames_in_prompt || 0,
         score_breakdown: {
           start_value: startValue,
           d_score: scoring.d_score,
@@ -363,6 +390,8 @@ export async function runAnalysisPipeline({ videoFile, profile, event, tier, onP
       rawExecution: scoring.calibration?.raw_execution,
       scaledExecution: scoring.calibration?.scaled_execution,
       skillCount: scorecard.deduction_log?.length || 0,
+      landmarkMetadata: landmarkData?.metadata || null,
+      landmarkFrames: landmarkData?.frames || null,
     });
   } catch (e) {
     log.warn("training", `Training data log failed: ${e.message}`);
@@ -375,14 +404,14 @@ export async function runAnalysisPipeline({ videoFile, profile, event, tier, onP
   // Biomechanics, injury, drills, mental, nutrition
   // Free tier: skip entirely (they can't see biomechanics)
   // ══════════════════════════════════════════════════════════════════════════
-  const effectiveTier = tier || (() => { try { return localStorage.getItem("strive-tier") || "free"; } catch { return "free"; } })();
-
   if (effectiveTier !== 'free' && onPass2Complete) {
     // Fire and forget — never blocks the UI
     (async () => {
       try {
-        log.info("pass2", "Starting background pass2 enrichment...");
-        const { system: sys2, user: usr2 } = buildPass2Prompt(scorecard, profile, event);
+        // Wait for landmark extraction to complete before building Pass 2 prompt
+        await landmarkPromise;
+        log.info("pass2", `Starting background pass2 enrichment...${landmarkData ? ` (${landmarkData.metadata.frames_in_prompt} landmark frames)` : ' (no landmarks)'}`);
+        const { system: sys2, user: usr2 } = buildPass2Prompt(scorecard, profile, event, landmarkData);
         const pass2Raw = await callGemini(fileRef, sys2, usr2, PASS2_CONFIG, "pass2");
         const pass2Result = parseJSON(pass2Raw, "pass2");
         log.info("pass2", `Enriched ${(pass2Result.skill_details || []).length} skills with biomechanics`);
