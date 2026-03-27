@@ -785,12 +785,25 @@ function SkillCard({ skill, index, isFree, tier, freeDeductionLimit, globalDeduc
         const lm = results.poseLandmarks;
 
         // Only filter on Beam/Bars — elevated events. Floor/Vault
-        // gymnasts are at ground level so Y filtering would incorrectly exclude them.
-        const isElevated = /beam|bar/i.test(eventName || '');
+        // Universal confidence filter: background detections have low landmark visibility.
+        // Apply before any event-specific checks — cheap and catches most wrong-person cases.
+        if (lm[11] && lm[12] && lm[23] && lm[24]) {
+          const avgVis = ((lm[11].visibility || 0) + (lm[12].visibility || 0) +
+                          (lm[23].visibility || 0) + (lm[24].visibility || 0)) / 4;
+          if (avgVis < 0.65) {
+            console.log(`[skeleton] Low-confidence detection filtered (visibility: ${avgVis.toFixed(2)})`);
+            return; // skip — background person, not the gymnast
+          }
+        }
+
+        // Y-position filter: gymnasts on elevated apparatus should appear in upper portion of frame.
+        // Also applies to vault (elevated during post-flight). Ground events (floor) are exempt
+        // because the gymnast IS on the ground and a high avgY is normal.
+        const isElevated = /beam|bar|vault/i.test(eventName || '');
         if (isElevated && lm[11] && lm[12] && lm[23] && lm[24]) {
           const avgY = (lm[11].y + lm[12].y + lm[23].y + lm[24].y) / 4;
           if (avgY > 0.85) {
-            console.log(`[skeleton] Background athlete filtered (Y: ${avgY.toFixed(2)})`);
+            console.log(`[skeleton] Background athlete filtered by Y (event: ${eventName}, Y: ${avgY.toFixed(2)})`);
             return; // skip drawing — this is a background athlete
           }
         }
@@ -960,7 +973,10 @@ function SkillCard({ skill, index, isFree, tier, freeDeductionLimit, globalDeduc
       return `This isn't about something that happened in this routine — it's about what repeated execution of this pattern can cause over time. The note below is what a sports medicine professional would flag.`;
     }
     if (tabId === 'video') {
-      return `The video below starts at the moment this skill begins. Toggle the skeleton to see joint positions highlighted in real time — green joints are on target, red shows where the deduction came from.`;
+      if (/vault/i.test(eventName || '')) {
+        return `The video shows the full vault. Toggle the skeleton ON, then scrub to the landing — any foot movement after the first contact is a deduction. The joint dots will turn red at exactly the moment judges mark a form break.`;
+      }
+      return `The video below starts at the moment this skill begins. Toggle the skeleton ON to see joint positions highlighted in real time — green joints are on target, red shows exactly where the deduction came from.`;
     }
     if (tabId === 'fix') {
       if (!sk.drillRecommendation) return null;
@@ -1393,17 +1409,25 @@ function SkillCard({ skill, index, isFree, tier, freeDeductionLimit, globalDeduc
 
                     <div style={{ padding: '12px' }}>
                       {/* What you're seeing */}
-                      <div style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.65)', lineHeight: 1.7, fontFamily: T.sans, marginBottom: 12 }}>
-                        The colored dots on the video track your gymnast's <strong style={{ color: T.text }}>joint positions in real time</strong> — the same positions judges evaluate from their seat.
-                        Pause the video to see exact angle measurements at each joint.
+                      <div style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.65)', lineHeight: 1.7, fontFamily: T.sans, marginBottom: 8 }}>
+                        The colored dots track your gymnast's <strong style={{ color: T.text }}>joint positions in real time</strong> — the same positions judges evaluate from their seat.
+                        {/vault/i.test(eventName || '') ? (
+                          <> On vault, judges focus most on <strong style={{ color: T.text }}>body form during post-flight</strong> (are knees bent? legs together?) and the <strong style={{ color: T.text }}>landing</strong> (any foot movement = deduction). Pause during the landing moment to see exact joint readings.</>
+                        ) : /beam/i.test(eventName || '') ? (
+                          <> On beam, judges watch for <strong style={{ color: T.text }}>knee and hip alignment</strong> throughout each skill. Any bend that breaks the line deducts. Pause mid-skill for the clearest angle reading.</>
+                        ) : /bar/i.test(eventName || '') ? (
+                          <> On bars, judges check <strong style={{ color: T.text }}>body tightness through swings</strong> — piked hips or bent knees during handstand or giant mean deductions. Pause at the top of each swing for the clearest reading.</>
+                        ) : (
+                          <> Pause the video to freeze exact angle measurements at any moment of the skill.</>
+                        )}
                       </div>
 
                       {/* Color key */}
                       <div style={{ display: 'flex', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
                         {[
-                          { color: T.green, label: 'On target', desc: 'Within 5° of ideal — no deduction' },
-                          { color: '#ffc15a', label: 'Slight deviation', desc: '5–15° off — possible 0.05' },
-                          { color: T.red, label: 'Form break', desc: '15°+ off — this is the deduction' },
+                          { color: T.green, label: 'On target', desc: /vault/i.test(eventName || '') ? 'Body line clean — no deduction' : 'Within 5° of ideal — no deduction' },
+                          { color: '#ffc15a', label: 'Slight deviation', desc: 'Minor form break — possible 0.05' },
+                          { color: T.red, label: 'Form break', desc: 'Clear fault — this is the deduction' },
                         ].map(c => (
                           <div key={c.label} style={{ display: 'flex', alignItems: 'flex-start', gap: 6, flex: '1 1 140px' }}>
                             <div style={{ width: 10, height: 10, borderRadius: '50%', background: c.color, flexShrink: 0, marginTop: 3 }} />
@@ -1428,9 +1452,15 @@ function SkillCard({ skill, index, isFree, tier, freeDeductionLimit, globalDeduc
                           </div>
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
                             {Object.entries(liveAngles).map(([joint, angle]) => {
+                              // Ideal angles vary by event and phase.
+                              // Vault: landing knees should be ~160–170° (slight bend to absorb),
+                              //        post-flight may show natural deviation. Use wider tolerance.
+                              const isVault = /vault/i.test(eventName || '');
+                              const tolerance1 = isVault ? 12 : 5;   // green threshold
+                              const tolerance2 = isVault ? 25 : 15;  // amber threshold
                               const diff = Math.abs(angle - 180);
-                              const c = diff <= 5 ? T.green : diff <= 15 ? '#ffc15a' : T.red;
-                              const status = diff <= 5 ? 'Good' : diff <= 15 ? 'Watch' : 'Deduction';
+                              const c = diff <= tolerance1 ? T.green : diff <= tolerance2 ? '#ffc15a' : T.red;
+                              const status = diff <= tolerance1 ? 'Clean' : diff <= tolerance2 ? 'Watch' : 'Flag';
                               return (
                                 <div key={joint} style={{ padding: '6px 8px', borderRadius: 6, background: 'rgba(255,255,255,0.02)' }}>
                                   <div style={{ fontSize: 9, color: T.textMuted, fontFamily: T.sans }}>{joint}</div>
@@ -1440,6 +1470,11 @@ function SkillCard({ skill, index, isFree, tier, freeDeductionLimit, globalDeduc
                               );
                             })}
                           </div>
+                          {/vault/i.test(eventName || '') && (
+                            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 8, fontFamily: T.sans, lineHeight: 1.5 }}>
+                              Note: vault joint angles vary naturally across phases (pre-flight, post-flight, landing). Pause specifically during the landing for the most judge-relevant readings.
+                            </div>
+                          )}
                         </div>
                       )}
 

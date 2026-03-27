@@ -309,11 +309,25 @@ ANTI-STACKING: Foot placement adjustments on beam (small shifts to stay centered
 `,
   VAULT: `
 ## EVENT SPECIFICS: VAULT
-- Pre-flight: tight hollow or arch depending on vault type.
-- Block: hands must leave table before hips pass vertical.
-- Post-flight height: low salto warrants a small-to-moderate deduction.
-- Landing: deduct progressively — small step (small) < hop (small) < large step (moderate) < fall (largest single deduction).
-ANTI-STACKING: Vault is ONE skill with ONE total deduction. Do NOT list pre-flight, block, post-flight, and landing as separate deductions. Instead, assess the vault holistically: identify the 1-2 most significant faults (e.g., "low post-flight" and "step on landing") and assign ONE combined deduction that reflects the overall quality. A completed vault without a fall should have total deductions in the small-to-moderate range (typically 0.10-0.30). If your vault deductions exceed 0.40, you are over-deducting.
+
+Vault is ONE skill. All deductions go in ONE deduction_log entry. List each fault as a separate item in the deductions array — do not combine them.
+
+REQUIRED FAULT CHECKLIST — evaluate ALL 5 before scoring:
+1. PRE-FLIGHT: Was the body tight (hollow or arch)? Loose/piked pre-flight = small deduction.
+2. TABLE CONTACT: Did hands leave the table before hips passed vertical? Late block = small deduction.
+3. POST-FLIGHT HEIGHT: Did the gymnast achieve sufficient amplitude? Low post-flight = moderate deduction. Very low = large deduction.
+4. BODY FORM IN FLIGHT: Were knees straight? Arms tight? Legs together? Each clear form break = small-to-moderate deduction.
+5. LANDING: THIS IS MANDATORY. Inspect the landing frame-by-frame. Any foot movement after initial contact = a deduction. Small step: 0.10. Hop or bounce: 0.10. Large step or stagger: 0.20. Two or more steps: 0.30. Fall: 0.50.
+
+LANDING RULE: If you observe any foot displacement after initial board contact with the floor, you MUST deduct. A gymnast who takes even a small step has not stuck the landing. Do not skip this deduction.
+
+CALIBRATION — vault total deductions by quality:
+- Near-perfect vault (9.4+): 0.10–0.30 total
+- Good vault (9.0–9.3): 0.30–0.60 total
+- Average vault (8.5–8.9): 0.60–1.00 total
+- Rough vault (<8.5): 1.00–1.50+ total
+
+ANTI-STACKING: Vault is ONE skill entry, not multiple. Do not create separate entries for run, hurdle, pre-flight, table, and post-flight. One skill_name (e.g., "Handspring Vault"), one deduction_log entry, multiple deduction items inside it.
 `,
   HIGH_BAR: `
 ## EVENT SPECIFICS: HIGH BAR (MAG)
