@@ -5526,6 +5526,8 @@ IMPORTANT: The deduction_log must contain ONE entry per distinct skill or transi
             : (err.message || 'please try again.');
           setStatus(`Analysis didn't complete — ${safeMsg}`);
         }
+        // Auto-retry: return to upload screen after 3s so user can try again
+        setTimeout(() => setScreen('upload'), 3000);
         // Do NOT show demo data as if it were a real result
       }
     })();
