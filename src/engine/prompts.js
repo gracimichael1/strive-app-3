@@ -354,6 +354,40 @@ ANTI-STACKING: Vault is ONE skill entry, not multiple. Do not create separate en
 `,
 };
 
+// ─── Gymnast Location Description (for prompt injection) ────────────────────
+
+/**
+ * Convert normalized (0-1) center + bbox into a human-readable description
+ * that Gemini can use to find the correct person in the video.
+ */
+function describeFrameRegion(center, bbox) {
+  if (!center) return 'center of the frame';
+
+  // Horizontal position
+  const x = center.x;
+  const hPos = x < 0.33 ? 'left' : x > 0.67 ? 'right' : 'center';
+
+  // Vertical position
+  const y = center.y;
+  const vPos = y < 0.33 ? 'upper' : y > 0.67 ? 'lower' : 'middle';
+
+  // Size hint from bbox
+  let sizeHint = '';
+  if (bbox) {
+    const area = (bbox.w || 0) * (bbox.h || 0);
+    if (area < 0.03) sizeHint = ' (appears small/distant in frame)';
+    else if (area > 0.25) sizeHint = ' (appears large/close in frame)';
+  }
+
+  if (hPos === 'center' && vPos === 'middle') {
+    return `center of the frame${sizeHint}`;
+  }
+  if (vPos === 'middle') return `${hPos} side of the frame${sizeHint}`;
+  if (hPos === 'center') return `${vPos}-center area of the frame${sizeHint}`;
+  return `${vPos}-${hPos} area of the frame${sizeHint}`;
+}
+
+
 // ─── Level Key Mapping ──────────────────────────────────────────────────────
 
 function getLevelKey(level, levelCategory) {
@@ -405,7 +439,7 @@ function getEventKey(event) {
  * @param {string} event - Event name or "Auto-detect"
  * @returns {{ system: string, user: string }}
  */
-export function buildPass1Prompt(profile, event) {
+export function buildPass1Prompt(profile, event, gymnastSelection = null) {
   const levelKey = getLevelKey(profile.level, profile.levelCategory);
   const eventKey = getEventKey(event);
   const gender = (profile.gender || "female").toLowerCase() === "male" ? "MAG" : "WAG";
@@ -415,6 +449,19 @@ export function buildPass1Prompt(profile, event) {
 
   // Build system instruction
   const parts = [CORE_JUDGE_INSTRUCTION];
+
+  // ── Gymnast location targeting (from user tap-to-select) ──────────────
+  if (gymnastSelection && gymnastSelection.center) {
+    const regionDesc = describeFrameRegion(gymnastSelection.center, gymnastSelection.bbox);
+    parts.push(`
+## ATHLETE LOCATION IN FRAME — CRITICAL
+The parent has identified their gymnast's position in the video frame.
+The gymnast to evaluate is located in the ${regionDesc} of the frame.
+There are multiple people visible (other gymnasts, coaches, judges, spectators).
+ONLY analyze the gymnast in the identified region. Ignore all other people.
+If you see a person performing skills in a different part of the frame, that is NOT the target gymnast.
+`);
+  }
 
   parts.push(`\n## GENDER: ${gender} (${genderFull}). Apply ${gender} scoring framework.\n`);
 
@@ -723,13 +770,17 @@ ${lines.join('\n')}
 // Produces a smaller JSON response with only essential scoring data
 // ═══════════════════════════════════════════════════════════════════════════════
 
-export function buildCompactPrompt(profile, event) {
+export function buildCompactPrompt(profile, event, gymnastSelection = null) {
   const gender = (profile.gender || "female").toLowerCase() === "male" ? "MAG" : "WAG";
   const level = profile.level || "Level 6";
   const athleteName = profile.name || "the gymnast";
 
+  const locationHint = gymnastSelection?.center
+    ? ` The gymnast to analyze is in the ${describeFrameRegion(gymnastSelection.center, gymnastSelection.bbox)} of the frame — ignore all other people.`
+    : '';
+
   const system = `You are an expert gymnastics execution judge. Score this routine. Be concise. Output ONLY raw JSON — no markdown, no fences, no prose. Begin with { and end with }.
-RULES: Every deduction must be attached to a named skill (no aggregates). Deduction amounts: 0.05, 0.10, 0.20, 0.30, or 0.50 only. Minimum 0.10 deduction per skill for sub-elite routines. When uncertain between two amounts, apply the higher one. Falls = mandatory 0.50. Analyze ONLY the primary performing athlete. Set skill_confidence to "low" if uncertain about a skill name.`;
+RULES: Every deduction must be attached to a named skill (no aggregates). Deduction amounts: 0.05, 0.10, 0.20, 0.30, or 0.50 only. Minimum 0.10 deduction per skill for sub-elite routines. When uncertain between two amounts, apply the higher one. Falls = mandatory 0.50. Analyze ONLY the primary performing athlete. Set skill_confidence to "low" if uncertain about a skill name.${locationHint}`;
 
   const user = `Score this ${level} ${gender} ${event || ""} routine for ${athleteName}.
 

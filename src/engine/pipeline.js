@@ -91,7 +91,7 @@ async function geminiProxy(body) {
  * @param {function} params.onProgress - Progress callback ({ stage, pct, label })
  * @returns {Promise<Object>} - UI-ready result (transformForUI output)
  */
-export async function runAnalysisPipeline({ videoFile, profile, event, tier, onProgress = () => {}, onPass2Complete }) {
+export async function runAnalysisPipeline({ videoFile, profile, event, tier, gymnastSelection = null, onProgress = () => {}, onPass2Complete }) {
   const startTime = Date.now();
 
   if (!videoFile) throw new Error("No video file provided.");
@@ -197,7 +197,7 @@ export async function runAnalysisPipeline({ videoFile, profile, event, tier, onP
   // PASS 1: JUDGING — Skills, deductions (per-skill), grades, celebrations
   // ══════════════════════════════════════════════════════════════════════════
   onProgress({ stage: "pass1", pct: 40, label: "Judging routine — identifying skills and deductions..." });
-  const { system: sys1, user: usr1 } = buildPass1Prompt(profile, event);
+  const { system: sys1, user: usr1 } = buildPass1Prompt(profile, event, gymnastSelection);
   console.log("DIAGNOSTIC: PIPELINE EVENT:", event, "| LEVEL:", profile.level, "| LEVEL_CATEGORY:", profile.levelCategory);
   log.info("pass1", `Prompt: ${usr1.length} chars | Level: ${profile.level} | Event: ${event}`);
 
@@ -228,7 +228,7 @@ export async function runAnalysisPipeline({ videoFile, profile, event, tier, onP
     onProgress({ stage: "pass1", pct: 55, label: "Retrying with optimized prompt..." });
 
     try {
-      const { system: compSys, user: compUsr } = buildCompactPrompt(profile, event);
+      const { system: compSys, user: compUsr } = buildCompactPrompt(profile, event, gymnastSelection);
       const compactRaw = await callGemini(fileRef, compSys, compUsr, COMPACT_CONFIG, "pass1-compact");
       scorecard = parseJSON(compactRaw, "pass1-compact");
       rawGeminiResponse = compactRaw;
@@ -280,7 +280,7 @@ export async function runAnalysisPipeline({ videoFile, profile, event, tier, onP
   let landmarkData = null;
   const landmarkPromise = (() => {
     if (effectiveTier === 'free') return Promise.resolve(null);
-    return serializeLandmarksForPrompt(fileToUpload).then(data => {
+    return serializeLandmarksForPrompt(fileToUpload, null, gymnastSelection).then(data => {
       landmarkData = data;
       if (data) {
         log.info("landmarks", `Extracted ${data.metadata.valid_frames}/${data.metadata.total_frames_extracted} frames, ` +

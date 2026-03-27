@@ -22,6 +22,7 @@ import { LEVEL_SKILLS, DEDUCTION_CATEGORIES } from './data/constants';
 import { loadPoseDetector, detectPose } from './analysis/poseDetector';
 import ScoreCardExport from './components/ui/ScoreCardExport';
 import ScoringCaveatBanner from './components/ui/ScoringCaveatBanner';
+import GymnastSelector from './components/GymnastSelector';
 
 // ─── BUILD INFO ──
 const BUILD_VERSION = "1.0.0";
@@ -3512,6 +3513,8 @@ const UploadScreen = React.memo(function UploadScreen({ profile, onBack, onAnaly
   const [compressProgress, setCompressProgress] = useState(0);
   const [originalSize, setOriginalSize] = useState(0);
   const [event, setEvent] = useState("");
+  const [gymnastSelection, setGymnastSelection] = useState(null); // { center: {x,y}, bbox: {x,y,w,h} } or null
+  const [gymnastSelectorDone, setGymnastSelectorDone] = useState(false); // true = selected or skipped
   const [notes, setNotes] = useState("");
   const [meetName, setMeetName] = useState("");
   const [meetLocation, setMeetLocation] = useState("");
@@ -3691,6 +3694,8 @@ const UploadScreen = React.memo(function UploadScreen({ profile, onBack, onAnaly
     setVideo(processedFile);
     setVideoUrl(url);
     setVideoReady(false);
+    setGymnastSelection(null);
+    setGymnastSelectorDone(false);
   };
 
   // Verify the video actually loads and can be played
@@ -3876,7 +3881,7 @@ const UploadScreen = React.memo(function UploadScreen({ profile, onBack, onAnaly
               )}
             </div>
             <button
-              onClick={() => { setVideo(null); setVideoUrl(null); setVideoReady(false); setVideoError(null); }}
+              onClick={() => { setVideo(null); setVideoUrl(null); setVideoReady(false); setVideoError(null); setGymnastSelection(null); setGymnastSelectorDone(false); }}
               style={{
                 background: "rgba(255,255,255,0.06)", border: "none", borderRadius: 8,
                 padding: "6px 14px", color: "#e8962a", fontSize: 12, fontWeight: 600,
@@ -3898,6 +3903,21 @@ const UploadScreen = React.memo(function UploadScreen({ profile, onBack, onAnaly
             </div>
           )}
         </div>
+      )}
+
+      {/* Gymnast Selector — shows when video loaded and multiple people detected */}
+      {video && videoReady && !gymnastSelectorDone && (
+        <GymnastSelector
+          videoFile={video}
+          onSelect={(selection) => {
+            setGymnastSelection(selection);
+            setGymnastSelectorDone(true);
+          }}
+          onSkip={() => {
+            setGymnastSelection(null);
+            setGymnastSelectorDone(true);
+          }}
+        />
       )}
 
       {/* Event Selection */}
@@ -4192,7 +4212,7 @@ const UploadScreen = React.memo(function UploadScreen({ profile, onBack, onAnaly
         )}
         <button
           className="btn-gold"
-          onClick={() => onAnalyze({ video, videoUrl, event, notes, meetName, meetLocation, meetDate })}
+          onClick={() => onAnalyze({ video, videoUrl, event, notes, meetName, meetLocation, meetDate, gymnastSelection })}
           disabled={!video || !event || compressing}
           style={{
             width: "100%", fontSize: 17, padding: 18, height: 56,
@@ -5494,6 +5514,7 @@ IMPORTANT: The deduction_log must contain ONE entry per distinct skill or transi
             levelCategory: profile.levelCategory || "optional",
           },
           event: uploadData.event || "Floor Exercise",
+          gymnastSelection: uploadData.gymnastSelection || null,
           onProgress: ({ pct, label }) => {
             setProgress(pct);
             setStatus(label);

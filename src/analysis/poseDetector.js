@@ -16,6 +16,7 @@ import {
 } from '@mediapipe/tasks-vision';
 
 let landmarker = null;
+let multiLandmarker = null; // Separate instance for multi-person detection
 
 // Indices we care about
 const JOINT_MAP = {
@@ -56,19 +57,67 @@ export async function loadPoseDetector() {
 
 /**
  * Detect pose for a single canvas frame.
- * Returns a named joints object + raw landmarks array.
+ * When targetCenter is provided (from gymnast selector), detects multiple
+ * people and returns the one closest to the target location.
  *
  * @param {HTMLCanvasElement} canvas
+ * @param {{ x: number, y: number }} [targetCenter] - Normalized (0-1) target position
  * @returns {{ landmarks: Array, joints: Object } | null}
  */
-export async function detectPose(canvas) {
+export async function detectPose(canvas, targetCenter = null) {
   if (!landmarker) throw new Error('Call loadPoseDetector() first');
 
-  const result = landmarker.detect(canvas);
+  let raw;
 
-  if (!result.landmarks || result.landmarks.length === 0) return null;
+  if (targetCenter) {
+    // Multi-person mode — detect all people, pick closest to target
+    if (!multiLandmarker) {
+      const vision = await FilesetResolver.forVisionTasks(
+        'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm'
+      );
+      multiLandmarker = await PoseLandmarker.createFromOptions(vision, {
+        baseOptions: {
+          modelAssetPath:
+            'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task',
+          delegate: 'GPU',
+        },
+        runningMode: 'IMAGE',
+        numPoses: 6,
+      });
+    }
 
-  const raw = result.landmarks[0]; // [{x, y, z, visibility}]
+    const result = multiLandmarker.detect(canvas);
+    if (!result.landmarks || result.landmarks.length === 0) return null;
+
+    // Find person closest to target center (using torso midpoint)
+    let bestIdx = 0;
+    let bestDist = Infinity;
+
+    for (let i = 0; i < result.landmarks.length; i++) {
+      const lms = result.landmarks[i];
+      // Torso center from shoulders + hips
+      const torsoPoints = [lms[11], lms[12], lms[23], lms[24]].filter(
+        l => l && (l.visibility || 0) > 0.3
+      );
+      if (torsoPoints.length === 0) continue;
+
+      const cx = torsoPoints.reduce((s, l) => s + l.x, 0) / torsoPoints.length;
+      const cy = torsoPoints.reduce((s, l) => s + l.y, 0) / torsoPoints.length;
+      const dist = Math.hypot(cx - targetCenter.x, cy - targetCenter.y);
+
+      if (dist < bestDist) {
+        bestDist = dist;
+        bestIdx = i;
+      }
+    }
+
+    raw = result.landmarks[bestIdx];
+  } else {
+    // Single-person mode (original behavior)
+    const result = landmarker.detect(canvas);
+    if (!result.landmarks || result.landmarks.length === 0) return null;
+    raw = result.landmarks[0];
+  }
 
   // Build named joints map (coordinates are 0-1 normalized)
   const joints = {};
@@ -112,16 +161,17 @@ export async function detectPose(canvas) {
  *
  * @param {Array<{timestamp: number, canvas: HTMLCanvasElement}>} frames
  * @param {function} onProgress
+ * @param {{ x: number, y: number }} [targetCenter] - From gymnast selector
  * @returns {Promise<Array<{timestamp: number, joints: Object, landmarks: Array}>>}
  */
-export async function detectPosesForFrames(frames, onProgress = null) {
+export async function detectPosesForFrames(frames, onProgress = null, targetCenter = null) {
   const poseFrames = [];
 
   for (let i = 0; i < frames.length; i++) {
     const { timestamp, canvas } = frames[i];
 
     try {
-      const pose = await detectPose(canvas);
+      const pose = await detectPose(canvas, targetCenter);
       if (pose) {
         poseFrames.push({ timestamp, ...pose });
       }

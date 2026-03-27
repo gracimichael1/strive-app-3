@@ -57,7 +57,7 @@ const MAX_PROMPT_FRAMES = 60;
  *   }
  * }
  */
-export async function serializeLandmarksForPrompt(videoFile, onProgress = null) {
+export async function serializeLandmarksForPrompt(videoFile, onProgress = null, gymnastSelection = null) {
   const startMs = Date.now();
 
   // ── Create a video element from the file ─────────────────────────────────
@@ -95,7 +95,8 @@ export async function serializeLandmarksForPrompt(videoFile, onProgress = null) 
       const { timestamp, canvas } = rawFrames[i];
 
       try {
-        const pose = await detectPose(canvas);
+        const targetCenter = gymnastSelection?.center || null;
+        const pose = await detectPose(canvas, targetCenter);
         if (!pose || !pose.joints) continue;
 
         const angles = computePromptAngles(pose.joints, pose.landmarks);
