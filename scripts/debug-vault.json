@@ -1,50 +1,68 @@
 {
   "start_value": 10,
-  "final_score": 9.7,
+  "final_score": 9.4,
   "deduction_log": [
     {
-      "skill_name": "Handspring Flat Back",
-      "total_deduction": 0.25,
+      "skill_name": "Handspring Vault",
+      "total_deduction": 0.55,
       "deductions": [
         {
           "type": "execution",
-          "description": "Slight pike in hips during post-flight",
+          "description": "Slight pike in pre-flight",
           "point_value": 0.1,
           "body_part": "hips"
         },
         {
           "type": "execution",
-          "description": "Small hop forward on landing",
+          "description": "Late block off table",
+          "point_value": 0.1,
+          "body_part": "arms/hips"
+        },
+        {
+          "type": "execution",
+          "description": "Slight knee bend in post-flight",
+          "point_value": 0.1,
+          "body_part": "knees"
+        },
+        {
+          "type": "execution",
+          "description": "Flexed feet in post-flight",
+          "point_value": 0.05,
+          "body_part": "feet"
+        },
+        {
+          "type": "execution",
+          "description": "Small step on landing",
           "point_value": 0.1,
           "body_part": "feet"
         },
         {
           "type": "execution",
-          "description": "Flexed feet on landing",
-          "point_value": 0.05,
-          "body_part": "feet"
+          "description": "Torso forward on landing",
+          "point_value": 0.1,
+          "body_part": "torso"
         }
       ],
       "fall_detected": false,
-      "narrative": "The judge observed a slight pike in the hips during the post-flight phase of the Handspring Flat Back, indicating a momentary break in the straight body line. This form break, combined with slightly flexed feet and a small hop on landing, resulted in a total deduction of 0.25 for execution. To improve, the gymnast should focus on maintaining a tight hollow body position throughout the post-flight and actively pointing the toes through the landing. A judge would note the strong block and good height, but the minor form breaks in the air and on landing prevented a perfectly clean score.",
-      "injury_signal": "Vaulting places significant impact loading on the ankles, knees, hips, and spine during the landing phase, as well as wrist and shoulder compression during the block. The controlled landing with a small hop suggests good absorption, but consistent monitoring of joint health, especially ankles and knees, is crucial for high-repetition vault training.",
+      "narrative": "The judge observed a slight pike in the gymnast's hips during the pre-flight phase, which compromises the ideal hollow body shape for maximum repulsion. This triggered a 0.10 deduction, as maintaining a tight body line is crucial for power and form. To improve, the gymnast should focus on actively engaging the core to maintain a strong hollow position from the hurdle through board contact. A judge would note the slight loss of kinetic chain efficiency due to the early hip break.",
+      "injury_signal": "Vaulting places significant impact stress on the ankles, knees, and lower back during the landing phase, and shoulder/wrist loading during the block. No obvious compensation patterns were observed in this execution, but consistent monitoring for joint pain is advised with high-repetition vault training.",
       "skill_confidence": "high",
-      "difficulty_value": 10,
+      "difficulty_value": 1,
       "executed_successfully": true,
       "is_celebration": false,
-      "quality_grade": 8.5,
-      "reason": "minor form breaks and landing adjustment",
+      "quality_grade": 9.4,
+      "reason": "Minor form breaks and landing adjustment",
       "skill_order": 1,
-      "timestamp_end": 10,
-      "timestamp_start": 8
+      "timestamp_end": 9.5,
+      "timestamp_start": 7
     }
   ],
-  "coaching_summary": "The athlete demonstrated a solid Handspring Flat Back vault with good power and height. The primary areas for refinement are maintaining a perfectly straight body line in the post-flight and achieving a stuck landing. Consistent attention to toe point and knee tension will elevate the execution score. From a judging standpoint, the vault was well-executed for the level, but minor form breaks were present.",
+  "coaching_summary": "The gymnast performed a solid handspring vault with good power. Key areas for improvement include maintaining a tighter hollow body position during the pre-flight phase to maximize repulsion from the board, ensuring an earlier and more aggressive block off the table, and focusing on sticking the landing with a perfectly vertical chest. From a judging standpoint, the minor form breaks in flight and the landing step were the primary factors preventing a higher score.",
   "primary_athlete_confidence": "high",
   "sv_verified": true,
   "artistry": {
     "total_artistry_deduction": 0.05,
-    "notes": "Minor deduction for overall body tension and presentation during the vault.",
+    "notes": "Minor deduction for overall presentation and control during the vault, specifically in the landing phase where a slight adjustment was needed.",
     "choreography_variety_deduction": 0,
     "expression_deduction": 0,
     "musicality_deduction": 0,
@@ -53,27 +71,27 @@
   "athlete_name": "Test Athlete",
   "celebrations": [],
   "confidence": "HIGH",
-  "duration_seconds": 10,
+  "duration_seconds": 9.5,
   "event": "VAULT",
   "gender": "WAG",
   "level": "Level 6",
   "score_range": {
-    "low": 9.5,
-    "high": 9.8
+    "low": 9,
+    "high": 9.5
   },
   "special_requirements": [
     {
       "requirement": "Perform a vault",
       "status": "MET",
-      "comment": "A Handspring Flat Back was performed.",
+      "comment": "A Handspring Vault was performed.",
       "penalty": 0
     }
   ],
   "top_3_fixes": [
-    "Maintain a tight hollow body position with locked knees and pointed toes throughout the entire post-flight phase to eliminate the slight hip pike.",
-    "Focus on a controlled, 'sticky' landing by driving the chest up and absorbing with bent knees, aiming to eliminate the small hop.",
-    "Actively point the toes on landing to avoid flexed feet deductions, which are easily visible to judges."
+    "Maintain a strong hollow body position throughout the pre-flight and hurdle phase to optimize board contact.",
+    "Focus on an aggressive, early block off the table, ensuring hands leave before hips pass vertical.",
+    "Practice 'stick it' landings, emphasizing a tight core and stacked body position over the feet to eliminate steps."
   ],
   "total_artistry_deductions": 0.05,
-  "total_execution_deductions": 0.25
+  "total_execution_deductions": 0.55
 }

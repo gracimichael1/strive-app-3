@@ -1507,7 +1507,7 @@ export default function LegacyApp() {
     // Track analysis count for free tier limit (3/month)
     try {
       const now = new Date();
-      const countKey = "strive-analysis-count";
+      const countKey = "strive-analyses-month"; // Unified with TierContext key
       const raw = localStorage.getItem(countKey);
       let data = raw ? JSON.parse(raw) : { count: 0, month: now.getMonth(), year: now.getFullYear() };
       // Reset if new month
@@ -2767,7 +2767,7 @@ const DashboardScreen = React.memo(function DashboardScreen({ profile, history, 
         if (!isPaidTier) {
           try {
             const now = new Date();
-            const raw = localStorage.getItem("strive-analysis-count");
+            const raw = localStorage.getItem("strive-analyses-month");
             if (raw) {
               const data = JSON.parse(raw);
               if (data.month === now.getMonth() && data.year === now.getFullYear()) {
@@ -4146,7 +4146,7 @@ const UploadScreen = React.memo(function UploadScreen({ profile, onBack, onAnaly
                 if (!inlineKey.trim()) return;
                 setKeySaving(true);
                 try {
-                  await storage.set("strive-gemini-key", inlineKey.trim());
+                  // Legacy: gemini-key storage removed — key managed server-side only
                   setHasApiKey(true);
                 } catch (e) { alert("Error: " + e.message); }
                 setKeySaving(false);
@@ -8138,7 +8138,7 @@ const SettingsScreen = React.memo(function SettingsScreen({ profile, onSave, onB
 
   useEffect(() => {
     (async () => {
-      try { const k = await storage.get("strive-gemini-key"); if (k) setGeminiKey(k.value); } catch {}
+      // Legacy gemini-key storage removed — key managed server-side only
     })();
   }, []);
 

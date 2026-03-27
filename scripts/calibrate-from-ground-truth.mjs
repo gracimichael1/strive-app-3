@@ -1,121 +1,140 @@
 #!/usr/bin/env node
 /**
- * calibrate-from-ground-truth.mjs
- *
- * Reads NAWGJ judge scoring data from the ground-truth directory,
- * computes average per-skill deductions per event, and suggests
- * calibration factors for scoring.js EVENT_CALIBRATION.
+ * calibrate-from-ground-truth.mjs (v2)
+ * Reads from pipeline-a/output/json/ (new format from extract.mjs v2).
+ * Computes judge score distributions and panel spread per event.
  */
 
 import { readdir, readFile, writeFile } from 'fs/promises';
-import { join } from 'path';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
 
-const GROUND_TRUTH_DIR = '/Users/mgraci/Desktop/strive-ground-truth/ground-truth/raw';
-const CURRENT_FACTORS = { bars: 0.85, beam: 0.70, vault: 1.35, floor: 0.70 };
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const JSON_DIR = join(__dirname, '..', 'pipeline-a', 'output', 'json');
+
+const CURRENT_FACTORS = { vault: 0.75, bars: 0.85, beam: 0.91, floor: 0.92 };
+
+function stdDev(arr) {
+  if (arr.length < 2) return 0;
+  const mean = arr.reduce((a, b) => a + b, 0) / arr.length;
+  return Math.sqrt(arr.reduce((s, x) => s + (x - mean) ** 2, 0) / arr.length);
+}
+
+function normalizeEvent(event) {
+  if (!event) return null;
+  const e = String(event).toLowerCase().trim();
+  if (e.includes('bar')) return 'bars';
+  if (e.includes('beam')) return 'beam';
+  if (e.includes('vault') || e === 'vt') return 'vault';
+  if (e.includes('floor') || e === 'fx') return 'floor';
+  return null;
+}
 
 async function loadRoutines() {
-  const files = await readdir(GROUND_TRUTH_DIR);
-  const dataFiles = files.filter(f => f.endsWith('.json .txt') || f.endsWith('.json') || f.endsWith('.txt'));
+  let files;
+  try { files = await readdir(JSON_DIR); } catch {
+    console.error(`ERROR: Cannot read ${JSON_DIR}`);
+    console.error('Run pipeline-a/extract.mjs first.');
+    process.exit(1);
+  }
+  const jsonFiles = files.filter(f => f.endsWith('.json'));
+  console.log(`Found ${jsonFiles.length} JSON files in pipeline-a/output/json/`);
   const routines = [];
-
-  for (const file of dataFiles) {
+  for (const file of jsonFiles) {
     try {
-      let content = await readFile(join(GROUND_TRUTH_DIR, file), 'utf-8');
-      // Handle Unicode Line Separator (U+2028) and Paragraph Separator (U+2029)
-      content = content.replace(/\u2028/g, ' ').replace(/\u2029/g, ' ');
-      const data = JSON.parse(content);
-      const items = Array.isArray(data) ? data : [data];
-      routines.push(...items);
-      console.log(`Loaded ${items.length} routines from ${file}`);
-    } catch (e) {
-      console.warn(`Skipping ${file}: ${e.message}`);
-    }
+      const d = JSON.parse(await readFile(join(JSON_DIR, file), 'utf-8'));
+      routines.push({ ...d, _file: file });
+    } catch (e) { console.warn(`  Skip ${file}: ${e.message}`); }
   }
   return routines;
 }
 
-function computeSkillDeductions(routine) {
-  // Judge rows: [score, exec_total, ...skill_deductions]
-  // Skill deductions start at index 2 (after score and exec total)
-  // Some entries have non-numeric values (text notes, null) — skip those
-  const perJudge = routine.judge_rows.map(row => {
-    let total = 0;
-    // Skip first 2 columns (score, exec total) — sum individual skill deductions
-    for (let i = 2; i < row.length; i++) {
-      const val = parseFloat(row[i]);
-      if (!isNaN(val)) total += val;
-    }
-    return total;
-  });
-
-  // Average across judges
-  return perJudge.reduce((sum, d) => sum + d, 0) / perJudge.length;
-}
-
 async function run() {
-  const routines = await loadRoutines();
-  console.log(`\nTotal routines loaded: ${routines.length}\n`);
+  const allRoutines = await loadRoutines();
+  const scored = allRoutines.filter(r => typeof r.final_score === 'number' && r.final_score > 0 && r.final_score <= 10.5);
+  console.log(`\nTotal files: ${allRoutines.length} | Scored: ${scored.length} | Skipped: ${allRoutines.length - scored.length}`);
 
-  const byEvent = {};
-
-  for (const routine of routines) {
-    const event = (routine.event || '').toLowerCase().trim();
-    if (!event) continue;
-    if (!byEvent[event]) byEvent[event] = [];
-
-    const avgSkillDeductions = computeSkillDeductions(routine);
-    // Ground truth: 10.0 - average_score = total deductions judges applied
-    const groundTruthTotal = 10.0 - routine.average_score;
-
-    byEvent[event].push({
-      label: routine.routine_label,
-      avgScore: routine.average_score,
-      groundTruthDeductions: groundTruthTotal,
-      avgSkillDeductions,
-      numJudges: routine.num_judges,
-    });
+  const byEvent = { floor: [], bars: [], beam: [], vault: [] };
+  for (const r of scored) {
+    const ev = normalizeEvent(r.event);
+    if (ev && byEvent[ev]) byEvent[ev].push(r);
   }
 
-  let report = `STRIVE CALIBRATION REPORT\nGenerated: ${new Date().toISOString()}\n`;
-  report += `Source: NAWGJ Education Committee scored practice judging videos\n\n`;
+  const EVENTS = ['floor', 'bars', 'beam', 'vault'];
+  let report = `STRIVE CALIBRATION REPORT — JUDGE SCORE DISTRIBUTIONS\nGenerated: ${new Date().toISOString()}\nSource: pipeline-a/output/json/ (${allRoutines.length} files, ${scored.length} scored)\n\n`;
 
-  report += `EVENT    | ROUTINES | AVG JUDGE SCORE | AVG DEDUCTIONS (10-score) | CURRENT FACTOR\n`;
-  report += `-`.repeat(90) + `\n`;
+  console.log('\n' + '='.repeat(110));
+  console.log('JUDGE SCORE DISTRIBUTIONS BY EVENT');
+  console.log('='.repeat(110));
+  const hdr = 'EVENT    | N    | W/ROWS   | AVG SCORE   | STD DEV   | RANGE            | CONFIDENCE   | CUR FACTOR';
+  console.log(hdr);
+  console.log('-'.repeat(110));
+  report += hdr + '\n' + '-'.repeat(110) + '\n';
 
-  for (const [event, data] of Object.entries(byEvent)) {
-    const avgScore = data.reduce((s, r) => s + r.avgScore, 0) / data.length;
-    const avgDeductions = data.reduce((s, r) => s + r.groundTruthDeductions, 0) / data.length;
-    const current = CURRENT_FACTORS[event] || 'N/A';
-
-    report += `${event.padEnd(8)} | ${String(data.length).padEnd(8)} | ${avgScore.toFixed(3).padEnd(15)} | ${avgDeductions.toFixed(3).padEnd(25)} | ${typeof current === 'number' ? current.toFixed(2) : current}\n`;
-
-    console.log(`${event}: ${data.length} routines`);
-    console.log(`  Avg judge score: ${avgScore.toFixed(3)}`);
-    console.log(`  Avg deductions (10-score): ${avgDeductions.toFixed(3)}`);
-    console.log(`  Current calibration factor: ${current}`);
-
-    // Per-routine detail
-    report += `\n  Per-routine detail:\n`;
-    for (const r of data) {
-      report += `    ${r.label.padEnd(25)} | Score: ${r.avgScore.toFixed(2)} | Deductions: ${r.groundTruthDeductions.toFixed(2)} | Skill ded avg: ${r.avgSkillDeductions.toFixed(2)} | Judges: ${r.numJudges}\n`;
-      console.log(`    ${r.label}: score=${r.avgScore}, ded=${r.groundTruthDeductions.toFixed(2)}, skill_avg=${r.avgSkillDeductions.toFixed(2)}`);
+  for (const event of EVENTS) {
+    const routines = byEvent[event];
+    if (routines.length === 0) {
+      const row = `${event.padEnd(8)} | 0    | —        | NO DATA`;
+      console.log(row); report += row + '\n'; continue;
     }
-    report += `\n`;
+    const scores = routines.map(r => r.final_score);
+    const withRows = routines.filter(r => Array.isArray(r.judge_rows) && r.judge_rows.length > 0);
+    const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+    const sd = stdDev(scores);
+    const conf = routines.length >= 20 ? 'HIGH' : routines.length >= 10 ? 'MEDIUM' : routines.length >= 5 ? 'LOW' : 'INSUFFICIENT';
+    const row = `${event.padEnd(8)} | ${String(routines.length).padEnd(4)} | ${String(withRows.length).padEnd(8)} | ${avg.toFixed(3).padEnd(11)} | ${sd.toFixed(3).padEnd(9)} | ${(Math.min(...scores).toFixed(2) + '-' + Math.max(...scores).toFixed(2)).padEnd(16)} | ${conf.padEnd(12)} | ${CURRENT_FACTORS[event]}`;
+    console.log(row); report += row + '\n';
   }
 
-  report += `\n═══════════════════════════════════════════════════════════════\n`;
-  report += `CALIBRATION ANALYSIS\n`;
-  report += `═══════════════════════════════════════════════════════════════\n\n`;
-  report += `Current factors represent the ratio of AI raw deductions to ground truth.\n`;
-  report += `Factor < 1.0 = AI over-deducts (scale down)\n`;
-  report += `Factor > 1.0 = AI under-deducts (scale up)\n\n`;
-  report += `NOTE: These factors should be updated once Strive has run analyses on\n`;
-  report += `these same videos. Compare Strive's raw AI deduction totals against the\n`;
-  report += `ground truth deductions above to compute empirical calibration factors.\n`;
-  report += `\nCurrent factors (from manual tuning): bars=${CURRENT_FACTORS.bars}, beam=${CURRENT_FACTORS.beam}, vault=${CURRENT_FACTORS.vault}, floor=${CURRENT_FACTORS.floor}\n`;
+  // Per-level breakdown
+  console.log('\n' + '='.repeat(80));
+  console.log('PER-LEVEL SCORE BREAKDOWN');
+  console.log('='.repeat(80));
+  report += '\n\nPER-LEVEL SCORE BREAKDOWN\n' + '='.repeat(80) + '\n';
 
-  await writeFile('scripts/calibration-report.txt', report);
-  console.log('\nReport saved to scripts/calibration-report.txt');
+  for (const event of EVENTS) {
+    const routines = byEvent[event];
+    if (routines.length === 0) continue;
+    console.log(`\n${event.toUpperCase()}:`);
+    report += `\n${event.toUpperCase()}:\n`;
+    const byLevel = {};
+    for (const r of routines) {
+      const lvl = r.level || r.declared_level || 'Unknown';
+      if (!byLevel[lvl]) byLevel[lvl] = [];
+      byLevel[lvl].push(r.final_score);
+    }
+    for (const [lvl, scores] of Object.entries(byLevel).sort()) {
+      const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+      const line = `  ${lvl.padEnd(22)} N=${String(scores.length).padEnd(3)} avg=${avg.toFixed(2)}  range ${Math.min(...scores).toFixed(2)}-${Math.max(...scores).toFixed(2)}`;
+      console.log(line); report += line + '\n';
+    }
+  }
+
+  // Panel spread
+  console.log('\n' + '='.repeat(80));
+  console.log('JUDGE PANEL SPREAD');
+  console.log('='.repeat(80));
+  report += '\n\nJUDGE PANEL SPREAD\n' + '='.repeat(80) + '\n';
+
+  for (const event of EVENTS) {
+    const spreadRoutines = byEvent[event].filter(r => Array.isArray(r.judge_scores) && r.judge_scores.filter(s => typeof s === 'number' && s > 0).length >= 3);
+    if (spreadRoutines.length === 0) {
+      console.log(`${event.toUpperCase().padEnd(8)}: no judge_scores data`);
+      report += `${event.toUpperCase().padEnd(8)}: no judge_scores data\n`;
+      continue;
+    }
+    const spreads = spreadRoutines.map(r => {
+      const valid = r.judge_scores.filter(s => typeof s === 'number' && s > 0);
+      return Math.max(...valid) - Math.min(...valid);
+    });
+    const avgSpread = spreads.reduce((a, b) => a + b, 0) / spreads.length;
+    const line = `${event.toUpperCase().padEnd(8)}: avg spread=${avgSpread.toFixed(3)} (±${(avgSpread / 2).toFixed(3)})  max=${Math.max(...spreads).toFixed(3)}  N=${spreadRoutines.length}`;
+    console.log(line); report += line + '\n';
+  }
+
+  report += '\nDO NOT change scoring.js factors until AI vs judge comparison is done.\n';
+  await writeFile(join(__dirname, 'calibration-report.txt'), report);
+  console.log('\nReport saved: scripts/calibration-report.txt');
 }
 
-run().catch(console.error);
+run().catch(e => { console.error('Fatal:', e.message); process.exit(1); });

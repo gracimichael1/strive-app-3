@@ -280,6 +280,7 @@ A typical optional floor routine contains exactly 2-3 tumbling passes. Before sc
 - Music: if vocals present, choreography must reflect mood. Noticeable mismatch warrants a small musicality deduction.
 ANTI-STACKING: Artistry and musicality are ROUTINE-LEVEL deductions, not per-skill. Assess artistry ONCE for the whole routine (small deduction if slightly flat, moderate if noticeably lacking). Do NOT also add per-skill artistry deductions on individual dance elements — that is double-counting the same fault.
 ANTI-STACKING: "Flexed feet during transitions" is ONE cumulative deduction for the entire routine (typically small-to-moderate total), NOT one deduction per transition. Count the occurrences, then assign ONE total deduction.
+FORBIDDEN SKILL ENTRY NAMES: Never create a deduction_log entry with a name like "Routine Transitions", "Transitions and Artistry", "Artistry", "General Execution", or any name that is not a specific named gymnastics skill (e.g. "Round-off Back Handspring", "Split Leap", "Full Turn"). If you identify form breaks during transitions, assign them to the nearest named skill. This is a Rule 2 violation — aggregates are forbidden.
 `,
   BARS: `
 ## EVENT SPECIFICS: UNEVEN BARS
@@ -900,7 +901,7 @@ export const PASS1_CONFIG = {
   maxOutputTokens: 16384,
   responseMimeType: "application/json",
   thinkingConfig: {
-    thinkingBudget: 8192,
+    thinkingBudget: 4096, // Reduced from 8192 — frees tokens for JSON response, fixes beam truncation
   },
   responseSchema: {
     type: "object",

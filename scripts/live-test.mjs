@@ -189,9 +189,9 @@ function computeCalibratedScore(scorecard, event) {
   const totalDed = calibratedExec + calibratedArt;
   const codeScore = Math.max(0, +(startValue - totalDed).toFixed(3));
 
-  // Blend: trust AI holistic if within 0.30 of code
+  // Blend: trust AI holistic if within 0.15 of code (tightened from 0.30)
   const aiScore = scorecard.final_score;
-  if (typeof aiScore === "number" && aiScore > 0 && Math.abs(codeScore - aiScore) <= 0.30) {
+  if (typeof aiScore === "number" && aiScore > 0 && Math.abs(codeScore - aiScore) <= 0.15) {
     return { finalScore: aiScore, source: "ai_holistic", codeScore, factor };
   }
   return { finalScore: codeScore, source: "code_override", codeScore, factor };

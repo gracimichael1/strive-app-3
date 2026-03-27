@@ -184,8 +184,8 @@ export function computeScoreFromScorecard(scorecard, startValue = 10.0, options 
   if (typeof aiScore === "number" && aiScore > 0) {
     scoreDiff = Math.abs(codeScore - aiScore);
 
-    if (scoreDiff <= 0.30) {
-      // Within bounds — AI has seen the video, trust its judgment
+    if (scoreDiff <= 0.15) {
+      // Tightened from 0.30 to 0.15: calibration factors apply unless Gemini is very close to code score
       final_score = roundTo3(aiScore);
       scoreSource = "ai_holistic";
     } else {
