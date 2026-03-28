@@ -572,11 +572,13 @@ async function callGemini(fileRef, systemPrompt, userPrompt, config, label) {
 function mergeSkills(scorecard, pass2Result, measuredBio = null, injuryPerSkill = null) {
   const skillDetails = pass2Result?.skill_details || [];
 
+  const norm = (s) => (s || "").trim().toLowerCase();
+
   return (scorecard.deduction_log || []).map((entry, i) => {
-    // Find matching Pass 2 enrichment by skill name or timestamp
+    // Find matching Pass 2 enrichment by skill name (case-insensitive) or timestamp
     const enrichment = skillDetails.find(sd =>
-      sd.skill_name === entry.skill_name ||
-      sd.skill_name === entry.skill ||
+      norm(sd.skill_name) === norm(entry.skill_name) ||
+      norm(sd.skill_name) === norm(entry.skill) ||
       (typeof sd.timestamp_start === "number" && sd.timestamp_start === entry.timestamp_start)
     ) || {};
 

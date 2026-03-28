@@ -256,6 +256,7 @@ export function validatePipelineResult(raw) {
       deduction_value: deductionValue,
       deductions,
       quality_grade: typeof s.quality_grade === "number" ? s.quality_grade : (10.0 - deductionValue),
+      narrative: typeof s.narrative === "string" ? s.narrative : "",
       reason: typeof s.reason === "string" ? s.reason : "",
       rule_reference: typeof s.rule_reference === "string" ? s.rule_reference : "",
       is_celebration: !!s.is_celebration,
