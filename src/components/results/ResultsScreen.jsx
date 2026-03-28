@@ -5,6 +5,7 @@ import LockedFeature from '../LockedFeature';
 import ScoreCardExport from '../ui/ScoreCardExport';
 import ScoringCaveatBanner from '../ui/ScoringCaveatBanner';
 import JudgeScoreInput from '../ui/JudgeScoreInput';
+import { getProgression } from '../../engine/usag-progression';
 
 // ── Design Tokens ───────────────────────────────────────────────────────────
 const T = {
@@ -561,6 +562,13 @@ function LevelUpPanel({ result, isFree, onUpgrade }) {
   const lpa = result?.levelProgressionAnalysis;
   const [expandedGap, setExpandedGap] = useState(null);
 
+  // Fetch USAG requirements for this level/event
+  const progression = useMemo(() => {
+    const level = result?.level || lpa?.currentLevel || '';
+    const event = result?.eventJudged || result?.event || '';
+    return getProgression(level, event);
+  }, [result?.level, result?.eventJudged, result?.event, lpa?.currentLevel]);
+
   // State A: no analysis or no progression data
   if (!lpa) {
     const level = result?.level || '';
@@ -585,6 +593,10 @@ function LevelUpPanel({ result, isFree, onUpgrade }) {
   const readinessColor = readinessColors[lpa.overallReadiness] || T.gold;
   const gaps = lpa.gaps || [];
   const strengths = lpa.strengthsCarryingOver || [];
+
+  // Match strengths to required skills for the checklist
+  const strengthsLower = strengths.map(s => s.toLowerCase());
+  const gapNamesLower = gaps.map(g => (g.gapName || '').toLowerCase());
 
   return (
     <div style={{ margin: '16px 16px 0' }}>
@@ -611,13 +623,89 @@ function LevelUpPanel({ result, isFree, onUpgrade }) {
           fontSize: 11, color: 'rgba(230,237,243,0.6)',
           lineHeight: 1.5, fontFamily: "'Outfit', sans-serif",
         }}>
-          ⚡ Level Up requirements for this division are being verified against the
+          Level Up requirements for this division are being verified against the
           official USAG Code of Points. Discuss with your coach before making
           training decisions based on these projections.
         </div>
       )}
 
-      {/* 2. SCORE PROJECTION */}
+      {/* 2. NEXT LEVEL REQUIREMENTS CHECKLIST */}
+      {progression && (
+        <div style={{ marginBottom: 12, borderRadius: 10, background: T.card, border: `1px solid ${T.border}`, overflow: 'hidden' }}>
+          <div style={{
+            padding: '10px 14px', background: 'rgba(96,165,250,0.06)',
+            borderBottom: `1px solid ${T.border}`,
+          }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: T.blue, letterSpacing: 0.5, textTransform: 'uppercase', fontFamily: T.sans }}>
+              {lpa.targetLevel} Requirements — {result?.eventJudged || result?.event || 'Event'}
+            </div>
+          </div>
+
+          {/* Required Skills */}
+          {progression.requiredSkills && progression.requiredSkills.length > 0 && (
+            <div style={{ padding: '12px 14px', borderBottom: `1px solid ${T.border}` }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: T.textMuted, letterSpacing: 0.5, textTransform: 'uppercase', fontFamily: T.sans, marginBottom: 8 }}>
+                Required Skills
+              </div>
+              {progression.requiredSkills.map((skill, i) => {
+                const skillLower = skill.toLowerCase();
+                const demonstrated = strengthsLower.some(s => skillLower.includes(s) || s.includes(skillLower));
+                const isGap = gapNamesLower.some(g => skillLower.includes(g) || g.includes(skillLower));
+                return (
+                  <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 6 }}>
+                    <span style={{
+                      fontSize: 13, flexShrink: 0, marginTop: 1,
+                      color: demonstrated ? T.green : isGap ? T.orange : T.textMuted,
+                    }}>
+                      {demonstrated ? '✓' : isGap ? '✗' : '○'}
+                    </span>
+                    <span style={{
+                      fontSize: 13, fontFamily: T.sans, lineHeight: 1.4,
+                      color: demonstrated ? T.green : isGap ? T.text : T.textSec,
+                      fontWeight: isGap ? 600 : 400,
+                    }}>
+                      {skill}
+                      {isGap && <span style={{ fontSize: 10, color: T.orange, marginLeft: 6 }}>NEEDS WORK</span>}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Special Requirements */}
+          {progression.srRequirements && progression.srRequirements.length > 0 && (
+            <div style={{ padding: '12px 14px', borderBottom: `1px solid ${T.border}` }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: T.textMuted, letterSpacing: 0.5, textTransform: 'uppercase', fontFamily: T.sans, marginBottom: 8 }}>
+                Special Requirements (SR)
+              </div>
+              {progression.srRequirements.map((req, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 4 }}>
+                  <span style={{ fontSize: 11, color: T.textMuted, flexShrink: 0 }}>•</span>
+                  <span style={{ fontSize: 12, color: T.textSec, fontFamily: T.sans, lineHeight: 1.4 }}>{req}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Execution Standards */}
+          {progression.executionStandards && progression.executionStandards.length > 0 && (
+            <div style={{ padding: '12px 14px' }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: T.textMuted, letterSpacing: 0.5, textTransform: 'uppercase', fontFamily: T.sans, marginBottom: 8 }}>
+                Execution Standards
+              </div>
+              {progression.executionStandards.map((std, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 4 }}>
+                  <span style={{ fontSize: 11, color: T.gold, flexShrink: 0 }}>▸</span>
+                  <span style={{ fontSize: 12, color: T.textSec, fontFamily: T.sans, lineHeight: 1.4 }}>{std}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 3. SCORE PROJECTION */}
       {typeof lpa.projectedScoreAtNextLevel === 'number' && lpa.projectedScoreAtNextLevel > 0 && (
         <div style={{
           padding: '12px 16px', borderRadius: 10, textAlign: 'center', marginBottom: 12,
@@ -632,11 +720,11 @@ function LevelUpPanel({ result, isFree, onUpgrade }) {
         </div>
       )}
 
-      {/* 3. GAP CARDS */}
+      {/* 4. GAP CARDS — What to fix to move up */}
       {gaps.length > 0 && (
         <div style={{ marginBottom: 12 }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, letterSpacing: 0.5, textTransform: 'uppercase', fontFamily: T.sans, marginBottom: 8 }}>
-            Gaps to close ({gaps.length})
+            What to fix to move up ({gaps.length} gaps)
           </div>
           {gaps.map((gap, i) => {
             const isExpanded = expandedGap === i;
@@ -670,18 +758,21 @@ function LevelUpPanel({ result, isFree, onUpgrade }) {
                 <div style={{ display: 'grid', gridTemplateRows: isExpanded ? '1fr' : '0fr', transition: 'grid-template-rows 0.25s ease' }}>
                   <div style={{ overflow: 'hidden' }}>
                     <div style={{ padding: '0 14px 14px' }}>
-                      <div style={{ borderLeft: `3px solid ${T.orange}`, padding: '8px 12px', marginBottom: 8, background: 'rgba(249,115,22,0.04)', borderRadius: '0 8px 8px 0' }}>
-                        <div style={{ fontSize: 10, fontWeight: 700, color: T.orange, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4, fontFamily: T.sans }}>Current</div>
-                        <div style={{ fontSize: 13, color: T.text, fontFamily: T.sans, lineHeight: 1.5 }}>{gap.currentState}</div>
-                      </div>
-                      <div style={{ borderLeft: `3px solid ${T.blue}`, padding: '8px 12px', marginBottom: 8, background: 'rgba(96,165,250,0.04)', borderRadius: '0 8px 8px 0' }}>
-                        <div style={{ fontSize: 10, fontWeight: 700, color: T.blue, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4, fontFamily: T.sans }}>Required at {lpa.targetLevel}</div>
-                        <div style={{ fontSize: 13, color: T.text, fontFamily: T.sans, lineHeight: 1.5 }}>{gap.nextLevelRequirement}</div>
+                      {/* Side-by-side comparison */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
+                        <div style={{ padding: '8px 10px', background: 'rgba(249,115,22,0.06)', borderRadius: 8, border: '1px solid rgba(249,115,22,0.15)' }}>
+                          <div style={{ fontSize: 9, fontWeight: 700, color: T.orange, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4, fontFamily: T.sans }}>Now</div>
+                          <div style={{ fontSize: 12, color: T.text, fontFamily: T.sans, lineHeight: 1.4 }}>{gap.currentState}</div>
+                        </div>
+                        <div style={{ padding: '8px 10px', background: 'rgba(96,165,250,0.06)', borderRadius: 8, border: '1px solid rgba(96,165,250,0.15)' }}>
+                          <div style={{ fontSize: 9, fontWeight: 700, color: T.blue, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4, fontFamily: T.sans }}>Need</div>
+                          <div style={{ fontSize: 12, color: T.text, fontFamily: T.sans, lineHeight: 1.4 }}>{gap.nextLevelRequirement}</div>
+                        </div>
                       </div>
                       {gap.drill && (
-                        <div style={{ borderLeft: `3px solid ${T.gold}`, padding: '8px 12px', marginBottom: 8, background: T.goldBg, borderRadius: '0 8px 8px 0' }}>
-                          <div style={{ fontSize: 10, fontWeight: 700, color: T.gold, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4, fontFamily: T.sans }}>Drill</div>
-                          <div style={{ fontSize: 13, color: T.text, fontFamily: T.sans, lineHeight: 1.5 }}>{gap.drill}</div>
+                        <div style={{ padding: '8px 12px', marginBottom: 8, background: T.goldBg, borderRadius: 8, border: `1px solid rgba(240,160,48,0.15)` }}>
+                          <div style={{ fontSize: 9, fontWeight: 700, color: T.gold, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4, fontFamily: T.sans }}>How to fix</div>
+                          <div style={{ fontSize: 12, color: T.text, fontFamily: T.sans, lineHeight: 1.4 }}>{gap.drill}</div>
                         </div>
                       )}
                       {gap.timelineEstimate && (
@@ -717,7 +808,7 @@ function LevelUpPanel({ result, isFree, onUpgrade }) {
         </div>
       )}
 
-      {/* 4. STRENGTHS */}
+      {/* 5. STRENGTHS */}
       {strengths.length > 0 && (
         <div>
           <div style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, letterSpacing: 0.5, textTransform: 'uppercase', fontFamily: T.sans, marginBottom: 8 }}>
