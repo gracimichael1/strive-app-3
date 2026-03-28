@@ -133,7 +133,8 @@ export async function runAnalysisPipeline({ videoFile, profile, event, tier, gym
 
   // ── Session cache — check before re-analyzing same video ──────────────────
   // Uses sessionStorage (cleared on tab close) — no PII persisted across sessions.
-  const cacheKey = `strive_session_${videoFile.name}_${videoFile.size}_${profile.level || ''}_${event}`;
+  // Includes athlete name to prevent cache collisions on shared devices.
+  const cacheKey = `strive_session_${profile.name || 'anon'}_${videoFile.name}_${videoFile.size}_${profile.level || ''}_${event}`;
   try {
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) {

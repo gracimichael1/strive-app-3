@@ -1437,8 +1437,14 @@ export default function LegacyApp() {
       try {
         const stored = await storage.get("strive-profile");
         if (stored) {
-          setProfile(JSON.parse(stored.value));
-          setScreen("dashboard");
+          try {
+            setProfile(JSON.parse(stored.value));
+            setScreen("dashboard");
+          } catch (jsonErr) {
+            console.warn("[storage] corrupt profile, resetting:", jsonErr.message);
+            await storage.delete("strive-profile").catch(() => {});
+            setScreen("splash");
+          }
         } else {
           setScreen("splash");
         }
@@ -1447,11 +1453,17 @@ export default function LegacyApp() {
       }
       try {
         const hist = await storage.get("strive-history");
-        if (hist) setHistory(JSON.parse(hist.value));
+        if (hist) {
+          try { setHistory(JSON.parse(hist.value)); }
+          catch { console.warn("[storage] corrupt history, clearing"); await storage.delete("strive-history").catch(() => {}); }
+        }
       } catch {}
       try {
         const sr = await storage.get("strive-saved-results");
-        if (sr) setSavedResults(JSON.parse(sr.value));
+        if (sr) {
+          try { setSavedResults(JSON.parse(sr.value)); }
+          catch { console.warn("[storage] corrupt saved-results, clearing"); await storage.delete("strive-saved-results").catch(() => {}); }
+        }
       } catch {}
     })();
   }, []);
@@ -1466,11 +1478,22 @@ export default function LegacyApp() {
     try { await storage.set("strive-history", JSON.stringify(h)); } catch {}
   };
 
-  const handleAnalysisComplete = (result, options = {}) => {
-    setAnalysisResult(result);
+  const currentAnalysisIdRef = useRef(null);
 
-    // Pass2 background update — only update result state, skip history/count/save
-    if (options.isPass2Update) return;
+  const handleAnalysisComplete = (result, options = {}) => {
+    // Pass2 background update — only apply if it matches the current analysis
+    if (options.isPass2Update) {
+      if (result._analysisId && result._analysisId !== currentAnalysisIdRef.current) {
+        console.log('[pipeline] stale pass2 update ignored (analysis changed)');
+        return;
+      }
+      setAnalysisResult(result);
+      return;
+    }
+
+    // New analysis — track its ID so stale Pass2 updates are rejected
+    currentAnalysisIdRef.current = result._analysisId || null;
+    setAnalysisResult(result);
 
     // ── Agent Delta: Save to athlete intelligence layer ──
     saveAnalysisToHistory(profile, result, uploadData);
@@ -5522,6 +5545,9 @@ IMPORTANT: The deduction_log must contain ONE entry per distinct skill or transi
     hasStarted.current = true;
 
     (async () => {
+      // Unique ID for this analysis run — prevents stale Pass2 updates from overwriting a newer analysis
+      const analysisId = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+
       try {
         if (!uploadData.video) throw new Error("No video file available.");
 
@@ -5543,6 +5569,7 @@ IMPORTANT: The deduction_log must contain ONE entry per distinct skill or transi
             // Pass2 finished in background — silently update result
             // User is already on results screen viewing pass1 data
             enrichedResult.videoUrl = uploadData.videoUrl;
+            enrichedResult._analysisId = analysisId;
             onComplete(enrichedResult, { isPass2Update: true });
             console.log('[pipeline] pass2 enrichment applied silently');
           },
@@ -5550,8 +5577,9 @@ IMPORTANT: The deduction_log must contain ONE entry per distinct skill or transi
 
         console.log('[pipeline] pass1 result:', result);
 
-        // Attach video URL for VideoReviewPlayer
+        // Attach video URL and analysis ID for VideoReviewPlayer and Pass2 matching
         result.videoUrl = uploadData.videoUrl;
+        result._analysisId = analysisId;
         setProgress(100);
         setStatus("Analysis complete!");
         setTimeout(() => onComplete(result), 800);
