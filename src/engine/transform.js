@@ -229,7 +229,10 @@ export function transformForUI(pipelineResult, extras = {}) {
     })),
 
     // ── Top 3 fixes (from Gemini) ──
-    top3Fixes: routine_summary.top_3_fixes || [],
+    top3Fixes: (Array.isArray(routine_summary.top_3_fixes) ? routine_summary.top_3_fixes : [])
+      .map(f => typeof f === 'string' ? f : (f && typeof f === 'object' ? (f.fix || f.description || JSON.stringify(f)) : String(f || '')))
+      .filter(Boolean)
+      .slice(0, 3),
 
     // ── Training (from Pass 2) ──
     trainingPlan: trainingPlanMapped,
