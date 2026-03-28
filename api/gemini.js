@@ -143,7 +143,7 @@ async function handleInitUpload(req, res, apiKey) {
   const { displayName, fileSize, mimeType } = req.body;
 
   const startRes = await fetch(
-    `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${encodeURIComponent(apiKey)}`,
     {
       method: 'POST',
       headers: {
@@ -174,7 +174,7 @@ async function handlePollFile(req, res, apiKey) {
   if (!fileName) return res.status(400).json({ error: 'fileName required' });
 
   const check = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/${fileName}?key=${apiKey}`
+    `https://generativelanguage.googleapis.com/v1beta/${fileName}?key=${encodeURIComponent(apiKey)}`
   );
 
   if (!check.ok) {
@@ -231,7 +231,7 @@ async function handleGenerate(req, res, apiKey) {
     fileUri: body.contents?.[0]?.parts?.[0]?.file_data?.file_uri || 'NONE',
   }, null, 2));
 
-  const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+  const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`;
 
   let genRes = await fetch(geminiUrl, {
     method: 'POST',
@@ -307,7 +307,7 @@ async function handleDeleteFile(req, res, apiKey) {
 
   try {
     await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/${fileName}?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/${fileName}?key=${encodeURIComponent(apiKey)}`,
       { method: 'DELETE' }
     );
   } catch {}

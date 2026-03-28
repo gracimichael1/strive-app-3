@@ -38,11 +38,9 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Token validation — soft check (client does not yet send token for checkout)
-  if (process.env.STRIVE_APP_TOKEN && req.headers['x-strive-token']) {
-    if (req.headers['x-strive-token'] !== process.env.STRIVE_APP_TOKEN) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
+  // Token validation
+  if (!process.env.STRIVE_APP_TOKEN || req.headers['x-strive-token'] !== process.env.STRIVE_APP_TOKEN) {
+    return res.status(401).json({ error: 'Unauthorized' });
   }
 
   if (!process.env.STRIPE_SECRET_KEY) {
