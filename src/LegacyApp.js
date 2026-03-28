@@ -1326,9 +1326,11 @@ export default function LegacyApp() {
     } catch {}
     return "beta-gate";
   });
-  // Auto-scroll to top on screen changes
+  // Auto-scroll to top on screen changes. Fallback to dashboard on unknown screens.
+  const VALID_SCREENS = ["share", "legal", "training", "beta-gate", "splash", "onboarding", "dashboard", "upload", "analyzing", "results", "drills", "meetfocus", "deductions", "settings", "progress", "meets", "mental", "goals", "legal-disclaimer"];
   const setScreen = useCallback((s) => {
-    setScreenRaw(s);
+    const target = VALID_SCREENS.includes(s) ? s : "dashboard";
+    setScreenRaw(target);
     window.scrollTo({ top: 0, behavior: "instant" });
   }, []);
   const [profile, setProfile] = useState(null);
