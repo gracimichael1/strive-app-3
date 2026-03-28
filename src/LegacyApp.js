@@ -2421,7 +2421,11 @@ function OnboardingScreen({ onComplete }) {
       <p style={{ color: "rgba(255,255,255,0.35)", marginBottom: 28, fontSize: 14 }}>
         {role === "parent" ? "We'll personalize everything for your child" : "We'll personalize your experience"}
       </p>
+      <label htmlFor="onboarding-name" className="sr-only">
+        {role === "parent" ? "Gymnast's name" : "Your name"}
+      </label>
       <input
+        id="onboarding-name"
         className="input-field"
         placeholder={role === "parent" ? "Enter gymnast's name" : "Enter your name"}
         value={name}
@@ -3995,7 +3999,7 @@ const UploadScreen = React.memo(function UploadScreen({ profile, onBack, onAnaly
           MEET DETAILS (optional)
         </label>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
-          <input className="input-field" placeholder="Meet name" value={meetName} onChange={e => setMeetName(e.target.value)} style={{ fontSize: 12, padding: "10px 12px" }} />
+          <input className="input-field" placeholder="Meet name" aria-label="Meet name" value={meetName} onChange={e => setMeetName(e.target.value)} style={{ fontSize: 12, padding: "10px 12px" }} />
           <input className="input-field" placeholder="Location" value={meetLocation} onChange={e => setMeetLocation(e.target.value)} style={{ fontSize: 12, padding: "10px 12px" }} />
           <input className="input-field" type="date" value={meetDate} onChange={e => setMeetDate(e.target.value)} style={{ fontSize: 12, padding: "10px 12px" }} />
         </div>
