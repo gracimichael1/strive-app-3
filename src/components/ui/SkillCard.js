@@ -517,6 +517,7 @@ function SkillCard({ skill, index, defaultExpanded, videoFile }) {
         >
           {/* ── Tab selector ── */}
           <div
+            role="tablist"
             style={{
               display: 'flex',
               gap: 2,
@@ -529,6 +530,8 @@ function SkillCard({ skill, index, defaultExpanded, videoFile }) {
             {cardTabs.map(t => (
               <button
                 key={t.id}
+                role="tab"
+                aria-selected={cardTab === t.id}
                 onClick={() => setCardTab(t.id)}
                 style={{
                   flex: 1,
@@ -542,7 +545,7 @@ function SkillCard({ skill, index, defaultExpanded, videoFile }) {
                   background: cardTab === t.id ? COLORS.gold : 'transparent',
                   color: cardTab === t.id ? '#070c16' : 'rgba(255,255,255,0.55)',
                   transition: 'all 0.15s',
-                  minHeight: 40,
+                  minHeight: 44,
                 }}
               >
                 {t.label}

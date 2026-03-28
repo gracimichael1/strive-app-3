@@ -11,8 +11,8 @@ const COLORS = {
   orange: '#e06820',
   red: '#dc2626',
   text: '#E2E8F0',
-  textSecondary: '#8890AB',
-  textMuted: '#8A90AA',
+  textSecondary: '#A0A8C0',
+  textMuted: '#9BA3BB',
   border: 'rgba(232, 150, 42, 0.12)',
 };
 
@@ -278,6 +278,7 @@ function DashboardScreen({ profile, tier, recentAnalyses, lastResult, onAnalyze,
           cursor: 'pointer',
         }}
         onClick={() => onNavigate && onNavigate('training')}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onNavigate && onNavigate('training'); } }}
         role="button"
         tabIndex={0}
         aria-label="View training program"

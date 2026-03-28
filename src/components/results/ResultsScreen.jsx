@@ -21,8 +21,8 @@ const T = {
   purple:      '#a855f7',
   blue:        '#60a5fa',
   text:        '#e6edf3',
-  textSec:     'rgba(230,237,243,0.6)',
-  textMuted:   'rgba(230,237,243,0.35)',
+  textSec:     'rgba(230,237,243,0.7)',
+  textMuted:   'rgba(230,237,243,0.5)',
   mono:        "'SF Mono', 'Fira Mono', monospace",
   sans:        "'Outfit', sans-serif",
 };
@@ -1243,12 +1243,12 @@ function SkillCard({ skill, index, isFree, tier, freeDeductionLimit, globalDeduc
             )}
 
             {/* Tab bar */}
-            <div style={{
+            <div role="tablist" style={{
               display: 'flex', gap: 0, borderRadius: 10, overflow: 'hidden',
               border: `1px solid ${T.border}`, marginBottom: 12,
             }}>
               {TABS.map((t, i) => (
-                <button key={t.id} onClick={() => setTab(t.id)} style={{
+                <button key={t.id} role="tab" aria-selected={tab === t.id} onClick={() => setTab(t.id)} style={{
                   flex: 1, padding: '8px 2px', fontSize: 10.5, fontWeight: 600,
                   fontFamily: T.sans, cursor: 'pointer', border: 'none', minHeight: 44,
                   background: tab === t.id ? 'rgba(240,160,48,0.1)' : 'transparent',
@@ -1312,7 +1312,7 @@ function SkillCard({ skill, index, isFree, tier, freeDeductionLimit, globalDeduc
                     alert('Thank you — this helps us improve skill detection.');
                   }}
                   style={{
-                    marginTop: 8, fontSize: 11, color: 'rgba(255,255,255,0.35)',
+                    marginTop: 8, fontSize: 11, color: 'rgba(255,255,255,0.55)',
                     background: 'none', border: '1px solid rgba(255,255,255,0.1)',
                     borderRadius: 6, padding: '4px 10px', cursor: 'pointer',
                     fontFamily: T.sans,
@@ -1512,7 +1512,7 @@ function SkillCard({ skill, index, isFree, tier, freeDeductionLimit, globalDeduc
                             <div style={{ width: 10, height: 10, borderRadius: '50%', background: c.color, flexShrink: 0, marginTop: 3 }} />
                             <div>
                               <div style={{ fontSize: 11, fontWeight: 700, color: c.color, fontFamily: T.sans }}>{c.label}</div>
-                              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontFamily: T.sans }}>{c.desc}</div>
+                              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.55)', fontFamily: T.sans }}>{c.desc}</div>
                             </div>
                           </div>
                         ))}
