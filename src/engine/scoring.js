@@ -175,14 +175,18 @@ export function computeScoreFromScorecard(scorecard, startValue = 10.0, options 
 
   const artFloor = roundTo3(rawArtistryTotal * BOUNDS.FLOOR);
   const artCeiling = roundTo3(rawArtistryTotal * BOUNDS.CEILING);
+  let artBoundsWarning = null;
   if (rawArtistryTotal > 0 && calibratedArtistry < artFloor) {
+    artBoundsWarning = `Artistry floor: ${calibratedArtistry} clamped up to ${artFloor}`;
     calibratedArtistry = artFloor;
   } else if (rawArtistryTotal > 0 && calibratedArtistry > artCeiling) {
+    artBoundsWarning = `Artistry ceiling: ${calibratedArtistry} clamped down to ${artCeiling}`;
     calibratedArtistry = artCeiling;
   }
 
   executionTotal = calibratedExecution;
   if (boundsWarning) console.log("DIAGNOSTIC: BOUNDS:", boundsWarning);
+  if (artBoundsWarning) console.log("DIAGNOSTIC: BOUNDS:", artBoundsWarning);
 
   // ── Total deductions ────────────────────────────────────────────────────
   const totalDeductions = executionTotal + srTotal + calibratedArtistry;
