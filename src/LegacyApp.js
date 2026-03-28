@@ -984,8 +984,19 @@ function OfflineBanner({ isOffline }) {
       padding: "8px 16px", textAlign: "center",
       fontFamily: "'Outfit', sans-serif", fontSize: 13, fontWeight: 600,
       boxShadow: "0 2px 12px rgba(0,0,0,0.3)",
+      display: "flex", alignItems: "center", justifyContent: "center", gap: 12,
     }}>
-      You are offline — showing last saved analysis
+      <span>You are offline — showing last saved analysis</span>
+      <button
+        onClick={() => window.location.reload()}
+        style={{
+          background: "rgba(0,0,0,0.15)", border: "1px solid rgba(0,0,0,0.2)",
+          borderRadius: 6, padding: "4px 12px", fontSize: 12, fontWeight: 700,
+          color: "#070c16", cursor: "pointer", fontFamily: "'Outfit', sans-serif",
+        }}
+      >
+        Retry
+      </button>
     </div>
   );
 }
