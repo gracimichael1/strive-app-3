@@ -220,8 +220,9 @@ const ParentalConsent = React.memo(function ParentalConsent({
   const [showBypass, setShowBypass] = useState(false);
   const [bypassCode, setBypassCode] = useState('');
 
-  // Show dev bypass after 10 seconds (not immediately visible to real users)
+  // Show dev bypass after 10 seconds — development only
   useEffect(() => {
+    if (process.env.NODE_ENV !== 'development') return;
     const timer = setTimeout(() => setShowBypass(true), 10000);
     return () => clearTimeout(timer);
   }, []);
