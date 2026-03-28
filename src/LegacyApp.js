@@ -1912,9 +1912,10 @@ export default function LegacyApp() {
                   onClick={() => setScreen(tab.id)}
                   style={{
                     display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
-                    padding: "8px 16px",
+                    padding: "10px 16px",
+                    minHeight: 44,
                     borderRadius: 14, border: "none", cursor: "pointer",
-                    fontFamily: "'Outfit', sans-serif", fontSize: 9, fontWeight: 600,
+                    fontFamily: "'Outfit', sans-serif", fontSize: 10, fontWeight: 600,
                     background: tab.primary ? "rgba(232,150,42,0.08)" : "transparent",
                     color,
                     transition: "all 0.15s", WebkitTapHighlightColor: "transparent",
