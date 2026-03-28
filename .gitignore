@@ -35,3 +35,6 @@ yarn-error.log*
 .env*.local
 debug-v13-*.json
 debug-*.json
+
+# Claude Code worktrees
+.claude/worktrees/
