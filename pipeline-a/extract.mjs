@@ -180,15 +180,15 @@ function downloadVideo(videoId) {
   const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
   try {
     execSync(
-      `${YTDLP} --cookies-from-browser chrome ` +
-      `-f "bestvideo[height<=720][ext=mp4]/bestvideo[height<=720]/best[height<=720]" ` +
+      `${YTDLP} --extractor-args "youtube:player_client=android_vr" ` +
+      `-f "best[height<=720]" ` +
       `-o "${outPath}" "${videoUrl}" 2>&1`,
       { maxBuffer: 5 * 1024 * 1024, encoding: 'utf-8', timeout: 300000 }
     );
   } catch {
     try {
       execSync(
-        `${YTDLP} --cookies-from-browser chrome -f "best[height<=720]" -o "${outPath}" "${videoUrl}" 2>&1`,
+        `${YTDLP} --extractor-args "youtube:player_client=android_vr" -f "best" -o "${outPath}" "${videoUrl}" 2>&1`,
         { maxBuffer: 5 * 1024 * 1024, encoding: 'utf-8', timeout: 300000 }
       );
     } catch (e2) {
