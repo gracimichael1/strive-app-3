@@ -38,3 +38,6 @@ debug-*.json
 
 # Claude Code worktrees
 .claude/worktrees/
+
+# Training data clips (large video files — keep in cloud storage, not git)
+pipeline-a/clips/

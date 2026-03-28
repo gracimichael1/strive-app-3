@@ -47,3 +47,76 @@ export function safeNum(val, fallback = 0, min = -Infinity, max = Infinity) {
   if (isNaN(n)) return fallback;
   return Math.max(min, Math.min(max, n));
 }
+
+// ─── localStorage QUOTA MONITORING ──────────────────────────────────────────
+
+const QUOTA_WARNING_BYTES = 4 * 1024 * 1024; // 4MB — warn before hitting 5MB browser limit
+const QUOTA_PRUNE_THRESHOLD = 0.80; // Prune old data when usage > 80%
+
+/**
+ * Estimate current localStorage usage in bytes.
+ * Returns { usedBytes, totalKeys, warning }
+ */
+export function checkStorageQuota() {
+  try {
+    let totalBytes = 0;
+    const totalKeys = localStorage.length;
+    for (let i = 0; i < totalKeys; i++) {
+      const key = localStorage.key(i);
+      const val = localStorage.getItem(key);
+      if (key && val) {
+        totalBytes += (key.length + val.length) * 2; // UTF-16 = 2 bytes per char
+      }
+    }
+    return {
+      usedBytes: totalBytes,
+      usedMB: Math.round(totalBytes / 1024 / 1024 * 100) / 100,
+      totalKeys,
+      warning: totalBytes > QUOTA_WARNING_BYTES
+        ? `Storage at ${Math.round(totalBytes / 1024 / 1024 * 100) / 100}MB — approaching 5MB limit`
+        : null,
+    };
+  } catch {
+    return { usedBytes: 0, usedMB: 0, totalKeys: 0, warning: null };
+  }
+}
+
+/**
+ * Prune old analyses from localStorage if quota exceeds threshold.
+ * Removes analyses older than maxAgeDays (default 180 = 6 months).
+ */
+export function pruneOldAnalyses(maxAgeDays = 180) {
+  try {
+    const quota = checkStorageQuota();
+    if (quota.usedBytes < QUOTA_WARNING_BYTES * QUOTA_PRUNE_THRESHOLD) return 0;
+
+    const cutoff = Date.now() - (maxAgeDays * 24 * 60 * 60 * 1000);
+    let pruned = 0;
+
+    // Prune from strive_recent_analyses
+    const recentKey = 'strive_recent_analyses';
+    const raw = localStorage.getItem(recentKey);
+    if (raw) {
+      try {
+        const analyses = JSON.parse(raw);
+        if (Array.isArray(analyses)) {
+          const kept = analyses.filter(a => {
+            const ts = a?.timestamp || a?.date || a?._meta?.timestamp;
+            return ts && ts > cutoff;
+          });
+          if (kept.length < analyses.length) {
+            pruned += analyses.length - kept.length;
+            localStorage.setItem(recentKey, JSON.stringify(kept));
+          }
+        }
+      } catch { /* corrupt data — leave it */ }
+    }
+
+    if (pruned > 0) {
+      log.info("storage", `Pruned ${pruned} old analyses (older than ${maxAgeDays} days)`);
+    }
+    return pruned;
+  } catch {
+    return 0;
+  }
+}

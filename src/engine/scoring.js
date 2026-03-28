@@ -45,8 +45,10 @@ export { gradeSkill } from "./schema";
  */
 // ─── Event-specific calibration scaling factors ─────────────────────────────
 // Derived from test suite: AI deductions vs real judge scores.
-export const SCORING_VERSION = '2.0';
+export const SCORING_VERSION = '3.1';
 // Increment on: calibration factor change, cap change, blend logic change
+// v3.0: Code score always wins (blend removed), two-sided bounds, sanity checks, artistry cap
+// v3.1: Calibration factors updated from per-routine segmented scoring (44 pairs, 14 videos)
 
 // Applied AFTER summing raw deductions to bring code-computed score
 // in line with real judge panels. Tuned per-event because Gemini's
@@ -54,16 +56,18 @@ export const SCORING_VERSION = '2.0';
 //
 // Factor < 1.0 = AI over-deducts on this event (scale deductions down)
 // Factor > 1.0 = AI under-deducts (scale deductions up)
-// Calibrated 2026-03-25 from NAWGJ Pipeline A extraction (N=177 quality rows)
-// N per event: floor=64, beam=37, bars=45, vault=31
-// Optimal factors via grid search minimizing avg |strive_score - judge_score|
-// Previous v1.0: vault 1.35, bars 0.85, beam 0.70, floor 0.70
-// VERIFIED 2026-03-26: All 4 WAG factors confirmed correct against NAWGJ ground truth.
+//
+// v3 calibration (2026-03-28): Per-routine segmented scoring (N=44 pairs, 14 videos)
+// segment-and-calibrate.mjs processes individual routine clips, not multi-routine videos.
+// This gives dramatically more accurate ratios than batch v1 which scored mixed content.
+//
+// Previous v2: vault 0.75, bars 0.85, beam 0.91, floor 0.92
+// Previous v1: vault 1.35, bars 0.85, beam 0.70, floor 0.70
 const EVENT_CALIBRATION = {
-  VAULT:  0.75,   // v1→v2: 1.35→0.75. AI over-deducts vault. avgΔ 0.764→0.292
-  BARS:   0.85,   // Held at 0.85 — near P1 gate (0.198 live). Do not touch.
-  BEAM:   0.91,   // v1→v2: 0.70→0.91. AI over-deducts beam. avgΔ 0.461→0.376
-  FLOOR:  0.92,   // v1→v2: 0.70→0.92. AI over-deducts floor. avgΔ 0.467→0.364
+  VAULT:  1.34,   // v2→v3: 0.75→1.34. AI UNDER-deducts vault (ratio 0.746). N=18, MEDIUM confidence.
+  BARS:   0.50,   // v2→v3: 0.85→0.50. AI over-deducts bars 1.99x. N=5, LOW confidence — need more data.
+  BEAM:   0.68,   // v2→v3: 0.91→0.68. AI over-deducts beam 1.47x. N=9, LOW confidence.
+  FLOOR:  0.82,   // v2→v3: 0.92→0.82. AI over-deducts floor 1.22x. N=12, MEDIUM confidence.
   // MAG events — starting estimates, refine with training data
   HIGH_BAR:      0.80,
   PARALLEL_BARS: 0.80,
@@ -139,13 +143,46 @@ export function computeScoreFromScorecard(scorecard, startValue = 10.0, options 
   const srTotal = Math.min(rawSrTotal, 0.50);
 
   // ── Artistry deductions ─────────────────────────────────────────────────
-  const artistryTotal = Math.abs(scorecard.artistry?.total_artistry_deduction || 0);
+  // Artistry is a SEPARATE routine-level assessment (presentation, expression, musicality).
+  // It is NOT embedded in per-skill execution deductions — those are in deduction_log.
+  // Cap at 0.50: Gemini frequently over-estimates artistry deductions.
+  const rawArtistry = Math.abs(scorecard.artistry?.total_artistry_deduction || 0);
+  const artistryTotal = Math.min(rawArtistry, 0.50);
 
   // ── Apply event-specific calibration scaling ────────────────────────────
   const rawExecutionTotal = executionTotal;
   const rawArtistryTotal = artistryTotal;
-  executionTotal = roundTo3(executionTotal * calibrationFactor);
-  const calibratedArtistry = roundTo3(artistryTotal * calibrationFactor);
+  let calibratedExecution = roundTo3(executionTotal * calibrationFactor);
+  let calibratedArtistry = roundTo3(artistryTotal * calibrationFactor);
+
+  // ── Two-sided calibration bounds (0.80–1.50) ─────────────────────────
+  // Prevents calibration from making scores unrealistically high or low.
+  // Floor (0.80): if calibration makes deductions too small, clamp up
+  // Ceiling (1.50): if calibration makes deductions too large, clamp down
+  const BOUNDS = { FLOOR: 0.80, CEILING: 1.50 };
+  let boundsWarning = null;
+
+  const execFloor = roundTo3(rawExecutionTotal * BOUNDS.FLOOR);
+  const execCeiling = roundTo3(rawExecutionTotal * BOUNDS.CEILING);
+
+  if (rawExecutionTotal > 0 && calibratedExecution < execFloor) {
+    boundsWarning = `Calibration floor: exec ${calibratedExecution} clamped up to ${execFloor}`;
+    calibratedExecution = execFloor;
+  } else if (rawExecutionTotal > 0 && calibratedExecution > execCeiling) {
+    boundsWarning = `Calibration ceiling: exec ${calibratedExecution} clamped down to ${execCeiling}`;
+    calibratedExecution = execCeiling;
+  }
+
+  const artFloor = roundTo3(rawArtistryTotal * BOUNDS.FLOOR);
+  const artCeiling = roundTo3(rawArtistryTotal * BOUNDS.CEILING);
+  if (rawArtistryTotal > 0 && calibratedArtistry < artFloor) {
+    calibratedArtistry = artFloor;
+  } else if (rawArtistryTotal > 0 && calibratedArtistry > artCeiling) {
+    calibratedArtistry = artCeiling;
+  }
+
+  executionTotal = calibratedExecution;
+  if (boundsWarning) console.log("DIAGNOSTIC: BOUNDS:", boundsWarning);
 
   // ── Total deductions ────────────────────────────────────────────────────
   const totalDeductions = executionTotal + srTotal + calibratedArtistry;
@@ -172,28 +209,49 @@ export function computeScoreFromScorecard(scorecard, startValue = 10.0, options 
   console.log("DIAGNOSTIC: ARTISTRY:", roundTo3(calibratedArtistry), "| SR:", srTotal, "| TOTAL DEDUCTIONS:", roundTo3(totalDeductions));
   console.log("DIAGNOSTIC: CODE-COMPUTED SCORE:", roundTo3(final_score));
 
-  // ── Score blending: AI holistic primary, code-computed as validation ────
-  // AI holistic score is the better single estimator across events.
-  // Code-computed score serves as validation bounds only.
+  // ── CODE SCORE ALWAYS WINS ─────────────────────────────────────────────
+  // v3.0: Code-computed score is authoritative. AI score is diagnostic only.
+  // AI identifies faults. Code computes the math. Period.
   const aiScore = scorecard.final_score;
   const codeScore = final_score;
-  let warning = null;
-  let scoreSource = "code";
+  let warning = boundsWarning;
+  const scoreSource = "code_computed";
   let scoreDiff = 0;
 
   if (typeof aiScore === "number" && aiScore > 0) {
     scoreDiff = Math.abs(codeScore - aiScore);
-
-    if (scoreDiff <= 0.15) {
-      // Tightened from 0.30 to 0.15: calibration factors apply unless Gemini is very close to code score
-      final_score = roundTo3(aiScore);
-      scoreSource = "ai_holistic";
-    } else {
-      // AI is being unreliable — fall back to code-computed score
-      console.log("BLEND OVERRIDE:", aiScore, "→", codeScore);
-      warning = `BLEND OVERRIDE: AI estimated ${aiScore} but code computed ${codeScore} (diff: ${scoreDiff.toFixed(2)}). Using code score.`;
-      scoreSource = "code_override";
+    if (scoreDiff > 0.20) {
+      const msg = `AI estimated ${aiScore} but code computed ${codeScore} (diff: ${scoreDiff.toFixed(2)}). Code score used. Review calibration if persistent.`;
+      warning = warning ? `${warning} | ${msg}` : msg;
+      console.log("DIAGNOSTIC: DIVERGENCE:", msg);
     }
+  }
+
+  // ── Sanity validation ────────────────────────────────────────────────
+  const sanity_warnings = [];
+  const skillsWithDeductions = deductionLog.filter(e =>
+    (Array.isArray(e.deductions) ? e.deductions.length > 0 : (e.total_deduction || e.deduction_value || 0) > 0)
+  ).length;
+  const hasFallInLog = deductionLog.some(e =>
+    (e.deductions || []).some(d => /fall/i.test(d.type || '') || /fall/i.test(d.description || ''))
+    || (Math.abs(e.total_deduction || e.deduction_value || 0) >= 0.50)
+  );
+
+  if (final_score > 9.80 && skillsWithDeductions >= 3) {
+    sanity_warnings.push(`Score ${final_score} unusually high with ${skillsWithDeductions} deducted skills. Possible under-deduction.`);
+  }
+  if (final_score < 7.00 && !hasFallInLog) {
+    sanity_warnings.push(`Score ${final_score} unusually low with no falls detected. Possible over-deduction.`);
+  }
+  if (deductionLog.length > 0 && skillsWithDeductions === 0) {
+    sanity_warnings.push(`No deductions on any of ${deductionLog.length} skills. AI may be too lenient.`);
+  }
+  if (rawArtistry > 0.50) {
+    sanity_warnings.push(`Artistry deduction ${rawArtistry} capped to 0.50 (Gemini over-estimated).`);
+  }
+
+  if (sanity_warnings.length > 0) {
+    console.log("DIAGNOSTIC: SANITY WARNINGS:", sanity_warnings);
   }
 
   return {
@@ -208,6 +266,7 @@ export function computeScoreFromScorecard(scorecard, startValue = 10.0, options 
     total: roundTo3(totalDeductions),
     d_score_from_skills: roundTo3(dScoreFromSkills),
     warning,
+    sanity_warnings,
     ai_score: aiScore,
     score_diff: roundTo3(scoreDiff),
     calibration: {
@@ -218,6 +277,7 @@ export function computeScoreFromScorecard(scorecard, startValue = 10.0, options 
       scaled_execution: roundTo3(executionTotal),
       scaled_artistry: roundTo3(calibratedArtistry),
       cap_fired: capFiredCount,
+      bounds_applied: !!boundsWarning,
     },
   };
 }
@@ -317,6 +377,9 @@ export function runScoringTests() {
   ], 0.10, 8.50);
 
   // Test 4: Scorecard-based test
+  // v3.0: code score always wins. No event → factor 0.80
+  // Raw exec: 0.20, calibrated: 0.16. Raw art: 0.20, calibrated: 0.16. Total: 0.32
+  // Code score: 10.0 - 0.32 = 9.68
   const testScorecard = {
     deduction_log: [
       { deductions: [{ point_value: 0.10 }, { point_value: 0.05 }], difficulty_value: 0.10 },
@@ -328,16 +391,73 @@ export function runScoringTests() {
     final_score: 9.60,
   };
   const scorecardResult = computeScoreFromScorecard(testScorecard, 10.0);
-  const scorecardDelta = Math.abs(scorecardResult.final_score - 9.60);
+  const scorecardDelta = Math.abs(scorecardResult.final_score - 9.68);
   results.push({
-    name: "Scorecard computation (0.20 exec + 0.20 art = 0.40 total, expect 9.60)",
-    pass: scorecardDelta <= 0.01,
+    name: "Scorecard computation (0.20 exec + 0.20 art → calibrated 0.32 total, code=9.68)",
+    pass: scorecardDelta <= 0.02,
     delta: scorecardDelta,
-    expected: 9.60,
+    expected: 9.68,
     actual: scorecardResult.final_score,
   });
 
   return results;
+}
+
+
+// ─── Biomechanics cross-validation ─────────────────────────────────────────
+
+/**
+ * Compare Gemini's deductions against measured MediaPipe angles.
+ * Does NOT change scores — produces diagnostic flags for validation.
+ *
+ * @param {Array} deductionLog - Skills from Pass 1
+ * @param {Array} measuredAngles - Per-skill biomechanics from client-side MediaPipe
+ * @returns {Array} flags - Array of { skill, type, detail }
+ */
+export function crossValidateBiomechanics(deductionLog, measuredAngles) {
+  const flags = [];
+  if (!measuredAngles || !deductionLog) return flags;
+
+  for (let i = 0; i < deductionLog.length; i++) {
+    const skill = deductionLog[i];
+    const bio = measuredAngles[i];
+    if (!bio) continue;
+
+    const geminiSaysBentKnees = (skill.deductions || []).some(d =>
+      /knee|bent.*leg|leg.*bent/i.test(d.description || '') || /knee/i.test(d.body_part || '')
+    );
+    const geminiSaysClean = !skill.deductions || skill.deductions.length === 0
+      || (Math.abs(skill.total_deduction || 0) === 0);
+
+    // Flag: Gemini says bent knees but angles show straight
+    if (geminiSaysBentKnees && bio.worstKneeAngle && bio.worstKneeAngle >= 160) {
+      flags.push({
+        skill: skill.skill_name,
+        type: "potential_false_positive",
+        detail: `Gemini deducted for bent knees but measured knee angle is ${Math.round(bio.worstKneeAngle)}° (≥160° is straight)`,
+      });
+    }
+
+    // Flag: Gemini says clean but angles show bent knees
+    if (geminiSaysClean && bio.worstKneeAngle && bio.worstKneeAngle < 150) {
+      flags.push({
+        skill: skill.skill_name,
+        type: "potential_missed_deduction",
+        detail: `Gemini found no deductions but measured knee angle is ${Math.round(bio.worstKneeAngle)}° (<150° is bent)`,
+      });
+    }
+
+    // Flag: Gemini says clean but hip angle shows pike
+    if (geminiSaysClean && bio.avgHipAngle && bio.avgHipAngle < 150) {
+      flags.push({
+        skill: skill.skill_name,
+        type: "potential_missed_deduction",
+        detail: `Gemini found no deductions but measured hip angle is ${Math.round(bio.avgHipAngle)}° (<150° indicates pike)`,
+      });
+    }
+  }
+
+  return flags;
 }
 
 

@@ -17,6 +17,17 @@
 import fs from "fs";
 import path from "path";
 
+// ── Vercel KV for durable storage ────────────────────────────────────────────
+let kv = null;
+async function getKV() {
+  if (kv) return kv;
+  try {
+    const mod = await import('@vercel/kv');
+    kv = mod.kv;
+    return kv;
+  } catch { return null; }
+}
+
 // On Vercel serverless, /tmp is writable but ephemeral per cold start.
 // For local dev, use project-root /logs/.
 const LOG_DIR = process.env.VERCEL ? "/tmp" : path.join(process.cwd(), "logs");
@@ -156,7 +167,22 @@ async function handlePost(req, res) {
 
   const line = JSON.stringify(record) + "\n";
 
-  // Write to local file
+  // Write to Vercel KV (durable) if available
+  const kvClient = await getKV();
+  if (kvClient) {
+    try {
+      const existing = await kvClient.get('training:scores') || [];
+      existing.push(record);
+      // Keep last 5000 records to prevent unbounded growth
+      if (existing.length > 5000) existing.splice(0, existing.length - 5000);
+      await kvClient.set('training:scores', existing);
+      console.log(`[scores] Stored in KV (${existing.length} total)`);
+    } catch (e) {
+      console.error("[scores] KV write failed:", e.message);
+    }
+  }
+
+  // Write to local file (fallback / local dev)
   try {
     ensureLogDir();
     fs.appendFileSync(LOG_FILE, line, "utf-8");
@@ -185,9 +211,17 @@ async function handlePost(req, res) {
 
 async function handleGet(req, res) {
   try {
+    // Try KV first (durable storage)
+    const kvClient = await getKV();
+    if (kvClient) {
+      const records = await kvClient.get('training:scores') || [];
+      return res.status(200).json({ records, count: records.length, source: 'kv' });
+    }
+
+    // Fallback to file
     ensureLogDir();
     if (!fs.existsSync(LOG_FILE)) {
-      return res.status(200).json({ records: [], count: 0 });
+      return res.status(200).json({ records: [], count: 0, source: 'file' });
     }
 
     const raw = fs.readFileSync(LOG_FILE, "utf-8");
@@ -200,7 +234,7 @@ async function handleGet(req, res) {
       })
       .filter(Boolean);
 
-    return res.status(200).json({ records, count: records.length });
+    return res.status(200).json({ records, count: records.length, source: 'file' });
   } catch (e) {
     return res.status(500).json({ error: e.message });
   }

@@ -91,23 +91,46 @@ export async function generateMastermindPlan(athleteProfile, recentAnalyses, upc
     } catch { plan.nutrition = nutritionFallback(); }
   }
 
-  // 4. INJURY (deterministic)
+  // 4. INJURY — prefer measured angle-based signals, fall back to text-matching
   const age = parseInt(athleteProfile?.age) || 12;
   const injuryFlags = [];
-  const allTypes = Object.keys(deductionFrequency);
-  Object.entries(INJURY_SIGNALS).forEach(([area, signal]) => {
-    if (signal.deductions.some(d => allTypes.some(t => t.includes(d)))) {
+  const latest = recentAnalyses?.[0];
+
+  // Check if latest analysis has measured injury signals (from injuryDetection.js)
+  const measuredInjury = latest?.injury_signals_measured || latest?.result?.injury_signals_measured;
+  if (measuredInjury && measuredInjury.summary?.total_signals > 0) {
+    // Use angle-based signals from biomechanics measurement
+    const areas = measuredInjury.summary.areas || {};
+    Object.entries(areas).forEach(([area, info]) => {
+      const severity = info.max_severity;
       injuryFlags.push({
-        area, flag: age < 12 ? 'prehab' : signal.flag,
-        note: age < 12 ? null : signal.note, prehab: signal.prehab,
+        area,
+        flag: age < 12 ? 'prehab' : (severity === 'high' ? 'amber' : 'yellow'),
+        note: age < 12 ? null : `${area.charAt(0).toUpperCase() + area.slice(1)} stress detected by motion analysis (${info.count} signal${info.count > 1 ? 's' : ''}).`,
+        prehab: (measuredInjury.routine_level || []).find(r => r.area === area)?.prehab
+          || INJURY_SIGNALS[area]?.prehab
+          || `Warm up ${area} area thoroughly before practice.`,
         disclaimer: 'STRIVE injury signals are not a medical diagnosis. Consult a qualified sports medicine professional.',
+        source: 'measured',
       });
-    }
-  });
+    });
+  } else {
+    // Fallback: text-matching from deduction descriptions
+    const allTypes = Object.keys(deductionFrequency);
+    Object.entries(INJURY_SIGNALS).forEach(([area, signal]) => {
+      if (signal.deductions.some(d => allTypes.some(t => t.includes(d)))) {
+        injuryFlags.push({
+          area, flag: age < 12 ? 'prehab' : signal.flag,
+          note: age < 12 ? null : signal.note, prehab: signal.prehab,
+          disclaimer: 'STRIVE injury signals are not a medical diagnosis. Consult a qualified sports medicine professional.',
+          source: 'text_match',
+        });
+      }
+    });
+  }
   plan.injury = { flags: injuryFlags, underAgeNote: age < 12 ? 'Showing prehab guidance only for athletes under 12.' : null };
 
   // 5. SKILLS (deterministic)
-  const latest = recentAnalyses?.[0];
   const latestSkills = latest?.gradedSkills || latest?.skills || [];
   const topSkills = [...latestSkills].sort((a, b) => skillDed(b) - skillDed(a)).slice(0, 3);
   plan.skills = {

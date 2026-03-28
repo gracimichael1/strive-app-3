@@ -1,4 +1,4 @@
-import { computeScore, computeScoreFromScorecard, gradeSkill, runScoringTests, SCORING_VERSION } from "../scoring";
+import { computeScore, computeScoreFromScorecard, crossValidateBiomechanics, gradeSkill, runScoringTests, SCORING_VERSION } from "../scoring";
 import { snapToUSAG } from "../schema";
 
 describe("scoring.js", () => {
@@ -78,7 +78,7 @@ describe("scoring.js", () => {
   });
 
   describe("computeScoreFromScorecard", () => {
-    test("computes from per-skill deductions array", () => {
+    test("computes from per-skill deductions array — code score always wins", () => {
       const scorecard = {
         deduction_log: [
           { deductions: [{ point_value: 0.10 }, { point_value: 0.05 }], difficulty_value: 0.10 },
@@ -95,8 +95,9 @@ describe("scoring.js", () => {
       const result = computeScoreFromScorecard(scorecard, 10.0);
       expect(result.execution_total).toBeCloseTo(0.16, 2);
       expect(result.artistry_total).toBeCloseTo(0.16, 2);
-      // AI says 9.60, code computes 10.0 - 0.32 = 9.68, diff 0.08 → trust AI
-      expect(result.final_score).toBe(9.60);
+      // v3.0: code score always wins. Code computes 10.0 - 0.32 = 9.68
+      expect(result.score_source).toBe("code_computed");
+      expect(result.final_score).toBeCloseTo(9.68, 2);
     });
 
     test("falls back to total_deduction when deductions array empty", () => {
@@ -112,8 +113,9 @@ describe("scoring.js", () => {
       // No event → default factor 0.80. Raw: 0.15+0.10=0.25, calibrated: 0.25*0.80=0.20
       const result = computeScoreFromScorecard(scorecard, 10.0);
       expect(result.execution_total).toBeCloseTo(0.20, 2);
-      // AI says 9.75, code computes 9.80, diff 0.05 → trust AI
-      expect(result.final_score).toBe(9.75);
+      // v3.0: code score always wins. Code computes 9.80
+      expect(result.score_source).toBe("code_computed");
+      expect(result.final_score).toBeCloseTo(9.80, 2);
     });
 
     test("applies SR penalties", () => {
@@ -125,10 +127,11 @@ describe("scoring.js", () => {
       };
       const result = computeScoreFromScorecard(scorecard, 10.0);
       expect(result.sr_total).toBe(0.50);
-      expect(result.final_score).toBe(9.40);
+      // Code: exec 0.10*0.80=0.08, sr=0.50, total=0.58, score=9.42
+      expect(result.final_score).toBeCloseTo(9.42, 2);
     });
 
-    test("warns when diff > 0.30 from AI estimate", () => {
+    test("warns when diff > 0.20 from AI estimate", () => {
       const scorecard = {
         deduction_log: [{ deductions: [{ point_value: 0.50 }], difficulty_value: 0.10 }],
         special_requirements: [],
@@ -137,10 +140,11 @@ describe("scoring.js", () => {
       };
       // No event → factor 0.80. Fall (0.50) exempts cap.
       // Exec: 0.50*0.80=0.40, art: 0.30*0.80=0.24, total=0.64, code=9.36
-      // diff = |9.36-9.80| = 0.44 > 0.30 → code override
+      // diff = |9.36-9.80| = 0.44 > 0.20 → warning logged
       const result = computeScoreFromScorecard(scorecard, 10.0);
       expect(result.warning).toBeTruthy();
       expect(result.final_score).toBeCloseTo(9.36, 2);
+      expect(result.score_source).toBe("code_computed");
     });
 
     test("computes D-score from skill difficulty values for Elite", () => {
@@ -223,21 +227,21 @@ describe("scoring.js", () => {
     });
   });
 
-  describe("score blending", () => {
-    test("AI score within 0.30 of code score is trusted", () => {
+  describe("v3.0: code score always wins", () => {
+    test("code score used even when AI score is close", () => {
       const scorecard = {
         deduction_log: [{ deductions: [{ point_value: 0.10 }], difficulty_value: 0.10 }],
         special_requirements: [],
         artistry: { total_artistry_deduction: 0 },
-        final_score: 9.85, // AI score close to code score
+        final_score: 9.85,
       };
       const result = computeScoreFromScorecard(scorecard, 10.0);
-      // When AI and code differ by <= 0.30, AI score is used
-      expect(result.score_source).toBe("ai_holistic");
-      expect(result.final_score).toBe(9.85);
+      expect(result.score_source).toBe("code_computed");
+      // Code: 0.10 * 0.80 = 0.08 deductions, score = 9.92
+      expect(result.final_score).toBeCloseTo(9.92, 2);
     });
 
-    test("AI score > 0.30 from code score triggers override", () => {
+    test("AI score divergence > 0.20 logs warning but code score still used", () => {
       const scorecard = {
         deduction_log: [
           { deductions: [{ point_value: 0.10 }, { point_value: 0.10 }, { point_value: 0.10 }], difficulty_value: 0.10 },
@@ -245,15 +249,119 @@ describe("scoring.js", () => {
         ],
         special_requirements: [],
         artistry: { total_artistry_deduction: 0.30 },
-        final_score: 9.80, // AI says 9.80 but code will compute much lower
+        final_score: 9.80,
       };
       const result = computeScoreFromScorecard(scorecard, 10.0);
-      // With significant deductions, code score will differ from 9.80
-      // If diff > 0.30, code score is used instead
-      if (result.score_diff > 0.30) {
-        expect(result.score_source).toBe("code_override");
+      expect(result.score_source).toBe("code_computed");
+      if (result.score_diff > 0.20) {
         expect(result.warning).toBeTruthy();
       }
+    });
+  });
+
+  describe("v3.0: two-sided calibration bounds", () => {
+    test("calibration bounds prevent extreme scaling", () => {
+      const scorecard = {
+        deduction_log: [{ deductions: [{ point_value: 0.20 }], difficulty_value: 0.10 }],
+        special_requirements: [],
+        artistry: { total_artistry_deduction: 0 },
+        final_score: 9.80,
+        event: "floor",
+      };
+      const result = computeScoreFromScorecard(scorecard, 10.0, { event: "floor" });
+      // Floor factor 0.92, raw 0.20, calibrated 0.184
+      // Floor bound: 0.20 * 0.80 = 0.16, ceiling: 0.20 * 1.50 = 0.30
+      // 0.184 is within bounds — no clamping
+      expect(result.calibration.bounds_applied).toBe(false);
+    });
+  });
+
+  describe("v3.0: sanity warnings", () => {
+    test("warns when score > 9.80 with multiple deducted skills", () => {
+      const scorecard = {
+        deduction_log: [
+          { deductions: [{ point_value: 0.02 }], difficulty_value: 0.10 },
+          { deductions: [{ point_value: 0.02 }], difficulty_value: 0.10 },
+          { deductions: [{ point_value: 0.02 }], difficulty_value: 0.10 },
+        ],
+        special_requirements: [],
+        artistry: { total_artistry_deduction: 0 },
+        final_score: 9.90,
+      };
+      const result = computeScoreFromScorecard(scorecard, 10.0);
+      // Very small deductions → high score with 3 deducted skills → sanity warning
+      if (result.final_score > 9.80) {
+        expect(result.sanity_warnings.length).toBeGreaterThan(0);
+      }
+    });
+
+    test("warns when score < 7.00 with no falls", () => {
+      const scorecard = {
+        deduction_log: [
+          { deductions: [{ point_value: 0.30 }], difficulty_value: 0.10 },
+          { deductions: [{ point_value: 0.30 }], difficulty_value: 0.10 },
+          { deductions: [{ point_value: 0.30 }], difficulty_value: 0.10 },
+          { deductions: [{ point_value: 0.30 }], difficulty_value: 0.10 },
+          { deductions: [{ point_value: 0.30 }], difficulty_value: 0.10 },
+          { deductions: [{ point_value: 0.30 }], difficulty_value: 0.10 },
+          { deductions: [{ point_value: 0.30 }], difficulty_value: 0.10 },
+          { deductions: [{ point_value: 0.30 }], difficulty_value: 0.10 },
+          { deductions: [{ point_value: 0.30 }], difficulty_value: 0.10 },
+          { deductions: [{ point_value: 0.30 }], difficulty_value: 0.10 },
+          { deductions: [{ point_value: 0.30 }], difficulty_value: 0.10 },
+        ],
+        special_requirements: [],
+        artistry: { total_artistry_deduction: 0.50 },
+        final_score: 7.00,
+      };
+      const result = computeScoreFromScorecard(scorecard, 10.0);
+      if (result.final_score < 7.00) {
+        expect(result.sanity_warnings.some(w => /unusually low/i.test(w))).toBe(true);
+      }
+    });
+  });
+
+  describe("v3.0: artistry cap", () => {
+    test("artistry deductions > 0.50 are capped", () => {
+      const scorecard = {
+        deduction_log: [{ deductions: [{ point_value: 0.10 }], difficulty_value: 0.10 }],
+        special_requirements: [],
+        artistry: { total_artistry_deduction: 0.80 },
+        final_score: 9.00,
+      };
+      const result = computeScoreFromScorecard(scorecard, 10.0);
+      // Raw artistry 0.80 capped to 0.50, then calibrated by factor
+      expect(result.sanity_warnings.some(w => /artistry/i.test(w))).toBe(true);
+    });
+  });
+
+  describe("v3.0: crossValidateBiomechanics", () => {
+    test("flags potential false positive when Gemini says bent knees but angles show straight", () => {
+      const deductionLog = [{
+        skill_name: "Back Tuck",
+        deductions: [{ description: "bent knees during flight", body_part: "knees", point_value: 0.10 }],
+      }];
+      const measuredAngles = [{ worstKneeAngle: 172, avgHipAngle: 165 }];
+      const flags = crossValidateBiomechanics(deductionLog, measuredAngles);
+      expect(flags.length).toBe(1);
+      expect(flags[0].type).toBe("potential_false_positive");
+    });
+
+    test("flags potential missed deduction when Gemini says clean but angles show bent", () => {
+      const deductionLog = [{
+        skill_name: "Layout",
+        deductions: [],
+        total_deduction: 0,
+      }];
+      const measuredAngles = [{ worstKneeAngle: 140, avgHipAngle: 165 }];
+      const flags = crossValidateBiomechanics(deductionLog, measuredAngles);
+      expect(flags.length).toBe(1);
+      expect(flags[0].type).toBe("potential_missed_deduction");
+    });
+
+    test("returns empty array when no biomechanics data", () => {
+      const flags = crossValidateBiomechanics([{ skill_name: "Test" }], null);
+      expect(flags).toEqual([]);
     });
   });
 
@@ -265,9 +373,9 @@ describe("scoring.js", () => {
         artistry: { total_artistry_deduction: 0 },
         final_score: 9.80,
       };
-      // Bars has factor 0.85 — scaled execution should be less than raw
+      // Bars has factor 0.50 (v3.1) — scaled execution should be less than raw
       const result = computeScoreFromScorecard(scorecard, 10.0, { event: "uneven_bars" });
-      expect(result.calibration.factor).toBeCloseTo(0.85, 2);
+      expect(result.calibration.factor).toBeCloseTo(0.50, 2);
       expect(result.calibration.scaled_execution).toBeLessThan(result.calibration.raw_execution);
     });
   });

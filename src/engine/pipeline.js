@@ -24,7 +24,8 @@
 
 import { buildPass1Prompt, buildPass2Prompt, buildCompactPrompt, PASS1_CONFIG, PASS2_CONFIG, COMPACT_CONFIG, PROMPT_VERSION } from "./prompts";
 import { validatePipelineResult, snapToUSAG, gradeFromQuality, parseTimestamp, formatTimestamp, emptyBiomechanics, emptyInjuryRisk, emptyCorrectiveDrill } from "./schema";
-import { computeScoreFromScorecard, SCORING_VERSION } from "./scoring";
+import { computeScoreFromScorecard, crossValidateBiomechanics, SCORING_VERSION } from "./scoring";
+import { detectInjurySignals } from "./injuryDetection";
 import { transformForUI } from "./transform";
 import { compressVideo, needsCompression, formatMB } from "./videoCompressor";
 import { serializeLandmarksForPrompt } from "./landmarkSerializer";
@@ -295,8 +296,25 @@ export async function runAnalysisPipeline({ videoFile, profile, event, tier, gym
     });
   })();
 
+  // ── Measure biomechanics per skill from landmark data ─────────────────────
+  // Uses the already-extracted landmark frames matched to skill timestamp windows.
+  // Runs before building pipeline result so measured angles are available for cross-validation.
+  const measuredBiomechanics = measureSkillBiomechanics(scorecard.deduction_log || [], landmarkData);
+
+  // ── Cross-validate Gemini deductions against measured angles ─────────────
+  const biomechanicsFlags = crossValidateBiomechanics(scorecard.deduction_log || [], measuredBiomechanics);
+  if (biomechanicsFlags.length > 0) {
+    log.info("crossval", `${biomechanicsFlags.length} biomechanics cross-validation flags:`, biomechanicsFlags);
+  }
+
+  // ── Angle-based injury detection from measured biomechanics ────────────────
+  const injurySignals = detectInjurySignals(scorecard.deduction_log || [], measuredBiomechanics);
+  if (injurySignals.summary.total_signals > 0) {
+    log.info("injury", `${injurySignals.summary.total_signals} injury signals detected:`, injurySignals.summary.areas);
+  }
+
   // ── Build pass1-only result (no biomechanics yet) ────────────────────────
-  const pass1Skills = mergeSkills(scorecard, null);
+  const pass1Skills = mergeSkills(scorecard, null, measuredBiomechanics, injurySignals.per_skill);
 
   function buildPipelineResult(skills, pass2Result) {
     return {
@@ -328,6 +346,10 @@ export async function runAnalysisPipeline({ videoFile, profile, event, tier, gym
         athlete_recommendations: "",
       },
       nutrition_note: pass2Result?.nutrition_note || "",
+      injury_signals_measured: injurySignals.summary.total_signals > 0 ? {
+        routine_level: injurySignals.routine_level,
+        summary: injurySignals.summary,
+      } : null,
       levelProgressionAnalysis: scorecard.levelProgressionAnalysis || null,
       primary_athlete_confidence: scorecard.primary_athlete_confidence || "high",
       sv_verified: !!scorecard.sv_verified,
@@ -354,7 +376,12 @@ export async function runAnalysisPipeline({ videoFile, profile, event, tier, gym
           final_score: finalScore,
           score_diff: scoring.score_diff,
           warning: scoring.warning,
+          sanity_warnings: scoring.sanity_warnings || [],
         },
+        biomechanics_cross_validation: biomechanicsFlags,
+        measured_biomechanics: measuredBiomechanics.filter(b => b !== null).length > 0
+          ? measuredBiomechanics : null,
+        injury_signals: injurySignals.summary.total_signals > 0 ? injurySignals : null,
       },
       analysis_metadata: {
         ...ANALYSIS_METADATA,
@@ -417,7 +444,7 @@ export async function runAnalysisPipeline({ videoFile, profile, event, tier, gym
         log.info("pass2", `Enriched ${(pass2Result.skill_details || []).length} skills with biomechanics`);
 
         // Rebuild with enriched data
-        const enrichedSkills = mergeSkills(scorecard, pass2Result);
+        const enrichedSkills = mergeSkills(scorecard, pass2Result, measuredBiomechanics, injurySignals.per_skill);
         const enrichedPipeline = buildPipelineResult(enrichedSkills, pass2Result);
         const { result: enrichedValidated } = validatePipelineResult(enrichedPipeline);
         const enrichedUI = transformForUI(enrichedValidated);
@@ -532,7 +559,7 @@ async function callGemini(fileRef, systemPrompt, userPrompt, config, label) {
 
 // ─── Merge Pass 1 (Scorecard) + Pass 2 (Deep Analysis) ─────────────────────
 
-function mergeSkills(scorecard, pass2Result) {
+function mergeSkills(scorecard, pass2Result, measuredBio = null, injuryPerSkill = null) {
   const skillDetails = pass2Result?.skill_details || [];
 
   return (scorecard.deduction_log || []).map((entry, i) => {
@@ -603,6 +630,74 @@ function mergeSkills(scorecard, pass2Result) {
         ? [`${enrichment.corrective_drill.name}: ${enrichment.corrective_drill.description} (${enrichment.corrective_drill.sets_reps})`]
         : [],
       gain_if_fixed: totalDeduction > 0 ? totalDeduction : 0,
+      // Measured biomechanics from client-side MediaPipe (real angle data)
+      biomechanics_measured: (measuredBio && measuredBio[i]) || null,
+      // Angle-based injury signals from measured biomechanics
+      injury_signals_measured: (injuryPerSkill && injuryPerSkill[i]) || [],
+    };
+  });
+}
+
+
+// ─── Biomechanics measurement: match landmark frames to skill windows ───────
+
+/**
+ * For each skill in the deduction log, find landmark frames that fall within
+ * the skill's timestamp window and compute aggregate biomechanics.
+ *
+ * @param {Array} deductionLog - Skills with timestamp_start/timestamp_end
+ * @param {Object|null} landmarkData - From serializeLandmarksForPrompt()
+ * @returns {Array} Per-skill measured biomechanics (same order as deductionLog)
+ */
+function measureSkillBiomechanics(deductionLog, landmarkData) {
+  if (!landmarkData || !landmarkData.frames || landmarkData.frames.length === 0) {
+    return deductionLog.map(() => null);
+  }
+
+  const frames = landmarkData.frames;
+
+  return deductionLog.map(skill => {
+    const start = skill.timestamp_start || 0;
+    const end = skill.timestamp_end || (start + 3); // default 3-second window
+
+    // Find frames within the skill window
+    const skillFrames = frames.filter(f =>
+      f.timestamp_seconds >= start && f.timestamp_seconds <= end
+    );
+
+    if (skillFrames.length === 0) return null;
+
+    // Compute aggregate angle stats across the skill window
+    const kneeAngles = skillFrames
+      .flatMap(f => [f.angles?.left_knee, f.angles?.right_knee])
+      .filter(a => a != null);
+    const hipAngles = skillFrames
+      .flatMap(f => [f.angles?.left_hip, f.angles?.right_hip])
+      .filter(a => a != null);
+    const shoulderAngles = skillFrames
+      .flatMap(f => [f.angles?.left_shoulder, f.angles?.right_shoulder])
+      .filter(a => a != null);
+    const trunkLeans = skillFrames
+      .map(f => f.angles?.trunk_lean_from_vertical)
+      .filter(a => a != null);
+    const legSeps = skillFrames
+      .map(f => f.angles?.leg_separation)
+      .filter(a => a != null);
+
+    const avg = arr => arr.length > 0 ? Math.round(arr.reduce((s, a) => s + a, 0) / arr.length * 10) / 10 : null;
+    const min = arr => arr.length > 0 ? Math.round(Math.min(...arr) * 10) / 10 : null;
+    const max = arr => arr.length > 0 ? Math.round(Math.max(...arr) * 10) / 10 : null;
+
+    return {
+      frames_analyzed: skillFrames.length,
+      worstKneeAngle: min(kneeAngles),
+      avgKneeAngle: avg(kneeAngles),
+      avgHipAngle: avg(hipAngles),
+      worstHipAngle: min(hipAngles),
+      avgShoulderAngle: avg(shoulderAngles),
+      maxTrunkLean: max(trunkLeans),
+      avgLegSeparation: avg(legSeps),
+      maxLegSeparation: max(legSeps),
     };
   });
 }

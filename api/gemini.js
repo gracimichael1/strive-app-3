@@ -43,10 +43,14 @@ function validateAppToken(req, res) {
   return req.headers['x-strive-token'] === process.env.STRIVE_APP_TOKEN;
 }
 
-// ── Rate Limiting (in-memory, Redis at Phase 3-A) ─────────────────────────
+// ── Rate Limiting ──────────────────────────────────────────────────────────
+// WARNING: In-memory Map resets on every Vercel cold start (serverless = stateless).
+// This provides minimal protection against rapid-fire abuse within a single
+// function instance, but does NOT persist across deployments or cold starts.
+// TODO Phase 3-A: Migrate to Vercel KV or Upstash Redis for durable rate limiting.
 import crypto from 'crypto';
 
-const rateLimitMap = new Map(); // key → [{ timestamp }]
+const rateLimitMap = new Map(); // In-memory only — resets on cold start
 const RATE_LIMITS = [
   { window: 60 * 1000, max: 5, label: '1min' },    // 5 per minute
   { window: 60 * 60 * 1000, max: 20, label: '1hr' }, // 20 per hour

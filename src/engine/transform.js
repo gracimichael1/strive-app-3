@@ -49,6 +49,17 @@ import { gradeSkill, formatTimestamp } from "./schema";
 
 const PLACEHOLDER = "—";
 
+// ─── Confidence mapping — use Gemini's signal, not hardcoded values ────────
+function mapConfidence(geminiConfidence) {
+  if (!geminiConfidence) return 0.85;
+  const c = String(geminiConfidence).toUpperCase();
+  if (c === "HIGH") return 0.95;
+  if (c === "MEDIUM") return 0.85;
+  if (c === "LOW") return 0.70;
+  if (typeof geminiConfidence === "number") return Math.min(1, Math.max(0, geminiConfidence));
+  return 0.85;
+}
+
 // ─── Main transform ────────────────────────────────────────────────────────
 
 /**
@@ -61,6 +72,9 @@ const PLACEHOLDER = "—";
 export function transformForUI(pipelineResult, extras = {}) {
   const { routine_summary, skills, special_requirements, training_plan, mental_performance, nutrition_note, levelProgressionAnalysis, primary_athlete_confidence, sv_verified, _meta } = pipelineResult;
 
+  // ── Routine-level confidence from Gemini (not hardcoded) ───────────────────
+  const routineConfidence = mapConfidence(routine_summary?.confidence);
+
   // ── Transform skills to SkillCard-compatible shape ────────────────────────
   const gradedSkills = skills.map((skill, idx) => transformSkill(skill, idx));
 
@@ -68,6 +82,7 @@ export function transformForUI(pipelineResult, extras = {}) {
   const executionDeductions = [];
   for (const s of skills) {
     if (s.deduction_value > 0) {
+      const skillConfidence = mapConfidence(s.skill_confidence || routine_summary?.confidence);
       // Emit one entry per individual deduction for granularity
       if (s.deductions && s.deductions.length > 0) {
         for (const d of s.deductions) {
@@ -80,7 +95,7 @@ export function transformForUI(pipelineResult, extras = {}) {
             engine: "Strive",
             category: "execution",
             severity: deductionSeverity(d.point_value),
-            confidence: 0.95,
+            confidence: skillConfidence,
             skeleton: null,
             correction: null,
           });
@@ -95,7 +110,7 @@ export function transformForUI(pipelineResult, extras = {}) {
           engine: "Strive",
           category: "execution",
           severity: deductionSeverity(s.deduction_value),
-          confidence: 0.95,
+          confidence: skillConfidence,
           skeleton: null,
           correction: null,
         });
@@ -424,6 +439,10 @@ function transformSkill(skill, idx) {
 
     // ── Skill confidence ──
     skillConfidence: skill.skill_confidence || 'high',
+
+    // ── Measured data from client-side MediaPipe ──
+    biomechanics_measured: skill.biomechanics_measured || null,
+    injury_signals_measured: skill.injury_signals_measured || [],
   };
 }
 

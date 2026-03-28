@@ -753,6 +753,51 @@ function SkillCard({ skill, index, defaultExpanded, videoFile }) {
                     );
                   })}
                 </div>
+              ) : skill.biomechanics_measured ? (
+                <div style={{ padding: 12 }}>
+                  <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginBottom: 8, letterSpacing: 1.2, textTransform: 'uppercase' }}>
+                    Measured by Motion Analysis
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                    {skill.biomechanics_measured.worstKneeAngle != null && (
+                      <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: '8px 10px' }}>
+                        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)' }}>Knee Angle</div>
+                        <div style={{ fontSize: 16, fontWeight: 700, color: skill.biomechanics_measured.worstKneeAngle >= 160 ? '#22c55e' : skill.biomechanics_measured.worstKneeAngle >= 150 ? '#f59e0b' : '#dc2626', fontFamily: "'Space Mono', monospace" }}>
+                          {skill.biomechanics_measured.worstKneeAngle}&deg;
+                          <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginLeft: 4 }}>/160&deg;</span>
+                        </div>
+                      </div>
+                    )}
+                    {skill.biomechanics_measured.avgHipAngle != null && (
+                      <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: '8px 10px' }}>
+                        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)' }}>Hip Angle</div>
+                        <div style={{ fontSize: 16, fontWeight: 700, color: skill.biomechanics_measured.avgHipAngle >= 160 ? '#22c55e' : skill.biomechanics_measured.avgHipAngle >= 150 ? '#f59e0b' : '#dc2626', fontFamily: "'Space Mono', monospace" }}>
+                          {skill.biomechanics_measured.avgHipAngle}&deg;
+                          <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginLeft: 4 }}>/160&deg;</span>
+                        </div>
+                      </div>
+                    )}
+                    {skill.biomechanics_measured.maxTrunkLean != null && (
+                      <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: '8px 10px' }}>
+                        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)' }}>Trunk Lean</div>
+                        <div style={{ fontSize: 16, fontWeight: 700, color: skill.biomechanics_measured.maxTrunkLean <= 15 ? '#22c55e' : '#f59e0b', fontFamily: "'Space Mono', monospace" }}>
+                          {skill.biomechanics_measured.maxTrunkLean}&deg;
+                        </div>
+                      </div>
+                    )}
+                    {skill.biomechanics_measured.maxLegSeparation != null && (
+                      <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: '8px 10px' }}>
+                        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)' }}>Leg Separation</div>
+                        <div style={{ fontSize: 16, fontWeight: 700, color: skill.biomechanics_measured.maxLegSeparation <= 10 ? '#22c55e' : '#f59e0b', fontFamily: "'Space Mono', monospace" }}>
+                          {skill.biomechanics_measured.maxLegSeparation}&deg;
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.25)', marginTop: 8 }}>
+                    Based on {skill.biomechanics_measured.frames_analyzed} frames analyzed via motion tracking
+                  </div>
+                </div>
               ) : (
                 <div style={{ padding: '20px 0', textAlign: 'center', fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>
                   No biomechanics data available for this skill.
@@ -764,24 +809,66 @@ function SkillCard({ skill, index, defaultExpanded, videoFile }) {
           {/* ═══ TAB: INJURY ═══ */}
           {cardTab === 'injury' && (
             <div>
-              {hasInjuryRisk ? (
+              {/* Measured injury signals from motion analysis (angle-based) */}
+              {skill.injury_signals_measured && skill.injury_signals_measured.length > 0 ? (
+                <div>
+                  {skill.injury_signals_measured.map((sig, si) => (
+                    <SectionBox
+                      key={si}
+                      borderColor={sig.severity === 'high' ? 'rgba(220,38,38,0.2)' : 'rgba(232,150,42,0.15)'}
+                      bgColor={sig.severity === 'high' ? 'rgba(220,38,38,0.08)' : 'rgba(232,150,42,0.04)'}
+                      style={{ borderLeft: `3px solid ${sig.severity === 'high' ? COLORS.red : COLORS.orange}`, marginBottom: 8 }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                        <SectionHeader color={sig.severity === 'high' ? COLORS.red : COLORS.orange}>
+                          {safeStr(sig.signal)}
+                        </SectionHeader>
+                        <span style={{
+                          fontSize: 9, fontWeight: 700, padding: '1px 6px', borderRadius: 4,
+                          background: sig.severity === 'high' ? 'rgba(220,38,38,0.15)' : 'rgba(232,150,42,0.12)',
+                          color: sig.severity === 'high' ? COLORS.red : COLORS.orange,
+                          fontFamily: "'Space Mono', monospace", textTransform: 'uppercase',
+                        }}>
+                          {sig.severity}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: 12, color: COLORS.text, fontFamily: "'Outfit', sans-serif", lineHeight: 1.5, marginBottom: 6 }}>
+                        {safeStr(sig.detail)}
+                      </div>
+                      {sig.prehab && (
+                        <div style={{
+                          fontSize: 12, color: COLORS.green, fontFamily: "'Outfit', sans-serif",
+                          lineHeight: 1.5, padding: '6px 8px', borderRadius: 6,
+                          background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.1)',
+                        }}>
+                          <span style={{ fontWeight: 600 }}>Prehab: </span>{safeStr(sig.prehab)}
+                        </div>
+                      )}
+                    </SectionBox>
+                  ))}
+                  <div style={{ fontSize: 10, color: COLORS.textMuted, marginTop: 4, fontFamily: "'Outfit', sans-serif", fontStyle: 'italic' }}>
+                    Measured by Motion Analysis
+                  </div>
+                </div>
+              ) : hasInjuryRisk ? (
                 <SectionBox
                   borderColor="rgba(220,38,38,0.2)"
                   bgColor="rgba(220,38,38,0.08)"
                   style={{ borderLeft: `3px solid ${COLORS.orange}` }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-                    <span style={{ fontSize: 14 }} aria-hidden="true">&#9888;&#65039;</span>
                     <SectionHeader color={COLORS.orange}>Injury Awareness</SectionHeader>
                   </div>
                   <div style={{ fontSize: 13, color: COLORS.text, fontFamily: "'Outfit', sans-serif", lineHeight: 1.6 }}>
                     {injuryText}
                   </div>
+                  <div style={{ fontSize: 10, color: COLORS.textMuted, marginTop: 4, fontFamily: "'Outfit', sans-serif", fontStyle: 'italic' }}>
+                    Identified by Video Analysis
+                  </div>
                 </SectionBox>
               ) : injurySignal ? (
                 <SectionBox borderColor="rgba(232,150,42,0.15)" bgColor="rgba(232,150,42,0.04)">
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-                    <span style={{ fontSize: 13 }} aria-hidden="true">&#128170;</span>
                     <SectionHeader color={COLORS.gold}>Physical Loading</SectionHeader>
                   </div>
                   <div style={{ fontSize: 13, color: COLORS.text, fontFamily: "'Outfit', sans-serif", lineHeight: 1.6 }}>
@@ -897,19 +984,30 @@ function SkillCard({ skill, index, defaultExpanded, videoFile }) {
                       const record = {
                         analysis_id: skill.analysisId || skill.id || 'unknown',
                         timestamp_sec: skill.timestampStart || skill.timestamp_start || 0,
-                        flagged_skill: skillName,
+                        skill_name: skillName,
                         suggested_correction: flagText.trim(),
                         video_id: skill.videoId || 'unknown',
-                        flagged_at: new Date().toISOString(),
+                        event: skill.event || '',
+                        level: skill.level || '',
                       };
+                      // Save to localStorage as backup
                       try {
                         const existing = JSON.parse(localStorage.getItem('strive_skill_corrections') || '[]');
-                        existing.push(record);
+                        existing.push({ ...record, flagged_at: new Date().toISOString() });
                         localStorage.setItem('strive_skill_corrections', JSON.stringify(existing));
-                        console.log('[SkillCard] Skill correction stored:', record);
-                      } catch (e) {
-                        console.warn('[SkillCard] Failed to store correction:', e);
-                      }
+                      } catch {}
+                      // POST to server for durable storage + training
+                      try {
+                        fetch('/api/feedback?action=flag', {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                            'X-Strive-Token': process.env.REACT_APP_STRIVE_TOKEN || '',
+                          },
+                          body: JSON.stringify(record),
+                        }).catch(() => {}); // fire and forget
+                        console.log('[SkillCard] Skill flag sent to server:', record);
+                      } catch {}
                       setFlagSubmitted(true);
                       setShowFlagSheet(false);
                     }}

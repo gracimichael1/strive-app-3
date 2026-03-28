@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo, lazy, Suspense } from "react";
-import { LineChart, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Line, ResponsiveContainer, RadarChart, Radar, PolarGrid, PolarAngleAxis, Cell, ReferenceLine } from "recharts";
+import { LineChart, XAxis, YAxis, CartesianGrid, Tooltip, Line, ResponsiveContainer, ReferenceLine } from "recharts";
 
 // ─── NEW COMPONENT IMPORTS ─────────────────────────────────────────
 const TrainingScreen = lazy(() => import("./screens/TrainingScreen"));
