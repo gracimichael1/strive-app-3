@@ -110,15 +110,23 @@ export async function runAnalysisPipeline({ videoFile, profile, event, tier, gym
     throw new Error("This video is too large for mobile analysis. Please trim it to under 3 minutes in your Photos app and try again.");
   }
 
-  // ── Video length gate: reject videos > 5 minutes ──────────────────────
+  // ── File type validation ────────────────────────────────────────────────
+  if (videoFile.type && !videoFile.type.startsWith('video/')) {
+    throw new Error("Please upload a video file (MP4, MOV, or WebM).");
+  }
+
+  // ── Video length gate: reject < 3 seconds or > 5 minutes ─────────────
   try {
     const duration = await getVideoDuration(videoFile);
+    if (duration < 3) {
+      throw new Error("This video is too short. Routines should be at least 3 seconds long.");
+    }
     if (duration > 300) {
       const mins = Math.ceil(duration / 60);
       throw new Error(`This video is ${mins} minutes long. STRIVE works best with routines under 5 minutes. Please trim to just the routine and try again.`);
     }
   } catch (e) {
-    if (e.message.includes("minutes long")) throw e;
+    if (e.message.includes("minutes long") || e.message.includes("too short")) throw e;
     // Duration check failed (e.g. unsupported format) — proceed anyway
     log.warn("gate", `Could not check video duration: ${e.message}`);
   }

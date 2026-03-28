@@ -160,10 +160,15 @@ export async function compressVideo(videoFile, onProgress = () => {}) {
   video.currentTime = 0;
   // Play at 1x speed — DO NOT speed up. Frame skipping destroys scoring accuracy.
   video.playbackRate = 1;
-  await video.play();
+  try {
+    await video.play();
+  } catch (e) {
+    throw new Error('Video playback failed — this can happen on iOS if the video format is unsupported. Try a different video.');
+  }
 
   // Draw each frame at requestAnimationFrame rate
   let lastProgress = 10;
+  let rafId = null;
   const drawFrame = () => {
     if (video.paused || video.ended) {
       if (recorder.state === 'recording') {
@@ -183,10 +188,10 @@ export async function compressVideo(videoFile, onProgress = () => {}) {
       onProgress(pct);
     }
 
-    requestAnimationFrame(drawFrame);
+    rafId = requestAnimationFrame(drawFrame);
   };
 
-  requestAnimationFrame(drawFrame);
+  rafId = requestAnimationFrame(drawFrame);
 
   // Handle video end
   video.onended = () => {
@@ -197,12 +202,14 @@ export async function compressVideo(videoFile, onProgress = () => {}) {
 
   // Safety timeout: stop recording after duration + 5s buffer
   const safetyTimeout = setTimeout(() => {
+    if (rafId) cancelAnimationFrame(rafId);
     if (recorder.state === 'recording') recorder.stop();
     video.pause();
   }, (originalDuration + 5) * 1000);
 
   const compressedBlob = await compressionPromise;
   clearTimeout(safetyTimeout);
+  if (rafId) cancelAnimationFrame(rafId);
 
   // Cleanup
   video.pause();
