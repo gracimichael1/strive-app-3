@@ -31,11 +31,8 @@ function setCorsHeaders(req, res) {
   res.setHeader('Vary', 'Origin');
 }
 
-function validateAppToken(req, res) {
-  if (!process.env.STRIVE_APP_TOKEN) {
-    res.status(500).json({ error: 'Server misconfigured' });
-    return false;
-  }
+function validateAppToken(req) {
+  if (!process.env.STRIVE_APP_TOKEN) return false;
   return req.headers['x-strive-token'] === process.env.STRIVE_APP_TOKEN;
 }
 
@@ -112,7 +109,7 @@ export default async function handler(req, res) {
   if (!isAllowedOrigin(req.headers.origin)) {
     return res.status(403).json({ error: 'Forbidden' });
   }
-  if (!validateAppToken(req, res)) {
+  if (!validateAppToken(req)) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
   if (req.method !== 'POST') {
