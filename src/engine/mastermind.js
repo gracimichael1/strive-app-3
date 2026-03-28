@@ -64,7 +64,11 @@ export async function generateMastermindPlan(athleteProfile, recentAnalyses, upc
         level: athleteProfile?.level || '',
       }),
     });
-    plan.mental = res.ok ? await res.json() : mentalFallback(athleteProfile);
+    if (res.ok) {
+      try { plan.mental = await res.json(); } catch { plan.mental = mentalFallback(athleteProfile); }
+    } else {
+      plan.mental = mentalFallback(athleteProfile);
+    }
   } catch { plan.mental = mentalFallback(athleteProfile); }
 
   // 3. NUTRITION (Claude API, cached 7 days)
@@ -85,14 +89,20 @@ export async function generateMastermindPlan(athleteProfile, recentAnalyses, upc
           level: athleteProfile?.level || '',
         }),
       });
-      const data = res.ok ? await res.json() : nutritionFallback();
+      let data;
+      if (res.ok) {
+        try { data = await res.json(); } catch { data = nutritionFallback(); }
+      } else {
+        data = nutritionFallback();
+      }
       plan.nutrition = data;
       cacheNutrition(data, athleteProfile?.goal);
     } catch { plan.nutrition = nutritionFallback(); }
   }
 
   // 4. INJURY — prefer measured angle-based signals, fall back to text-matching
-  const age = parseInt(athleteProfile?.age) || 12;
+  const parsedAge = parseInt(athleteProfile?.age);
+  const age = Number.isFinite(parsedAge) ? parsedAge : null;
   const injuryFlags = [];
   const latest = recentAnalyses?.[0];
 
@@ -105,8 +115,8 @@ export async function generateMastermindPlan(athleteProfile, recentAnalyses, upc
       const severity = info.max_severity;
       injuryFlags.push({
         area,
-        flag: age < 12 ? 'prehab' : (severity === 'high' ? 'amber' : 'yellow'),
-        note: age < 12 ? null : `${area.charAt(0).toUpperCase() + area.slice(1)} stress detected by motion analysis (${info.count} signal${info.count > 1 ? 's' : ''}).`,
+        flag: (age !== null && age < 12) ? 'prehab' : (severity === 'high' ? 'amber' : 'yellow'),
+        note: (age !== null && age < 12) ? null : `${area.charAt(0).toUpperCase() + area.slice(1)} stress detected by motion analysis (${info.count} signal${info.count > 1 ? 's' : ''}).`,
         prehab: (measuredInjury.routine_level || []).find(r => r.area === area)?.prehab
           || INJURY_SIGNALS[area]?.prehab
           || `Warm up ${area} area thoroughly before practice.`,
@@ -121,7 +131,7 @@ export async function generateMastermindPlan(athleteProfile, recentAnalyses, upc
       if (signal.deductions.some(d => allTypes.some(t => t.includes(d)))) {
         injuryFlags.push({
           area, flag: age < 12 ? 'prehab' : signal.flag,
-          note: age < 12 ? null : signal.note, prehab: signal.prehab,
+          note: (age !== null && age < 12) ? null : signal.note, prehab: signal.prehab,
           disclaimer: 'STRIVE injury signals are not a medical diagnosis. Consult a qualified sports medicine professional.',
           source: 'text_match',
         });

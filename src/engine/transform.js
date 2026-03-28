@@ -70,7 +70,7 @@ function mapConfidence(geminiConfidence) {
  * @returns {Object} - Shape compatible with existing ResultsScreen / SkillCard props
  */
 export function transformForUI(pipelineResult, extras = {}) {
-  const { routine_summary, skills, special_requirements, training_plan, mental_performance, nutrition_note, levelProgressionAnalysis, primary_athlete_confidence, sv_verified, _meta } = pipelineResult;
+  const { routine_summary, skills, special_requirements, training_plan, mental_performance, nutrition_note, levelProgressionAnalysis, primary_athlete_confidence, sv_verified, _meta } = pipelineResult || {};
 
   // ── Routine-level confidence from Gemini (not hardcoded) ───────────────────
   const routineConfidence = mapConfidence(routine_summary?.confidence);
@@ -127,7 +127,7 @@ export function transformForUI(pipelineResult, extras = {}) {
     name: s.skill_name,
     saves: s.deduction_value,
     drill: s.corrective_drill?.name
-      ? `${s.corrective_drill.name} (${s.corrective_drill.sets_reps})`
+      ? `${s.corrective_drill.name}${s.corrective_drill.sets_reps ? ` (${s.corrective_drill.sets_reps})` : ''}`
       : (s.reason || s.fault_observed || "Focus on form"),
   }));
 

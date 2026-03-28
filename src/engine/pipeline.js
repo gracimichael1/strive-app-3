@@ -246,9 +246,9 @@ export async function runAnalysisPipeline({ videoFile, profile, event, tier, gym
       rawGeminiResponse = compactRaw;
       log.info("pass1", `Compact retry succeeded: ${scorecard.deduction_log?.length || 0} skills`);
     } catch (retryErr) {
-      // Both attempts failed — throw the original parse error
+      // Both attempts failed
       log.error("pass1", `Compact retry also failed: ${retryErr.message}`);
-      throw parseErr;
+      throw new Error(`Analysis failed: ${parseErr.message} (compact retry: ${retryErr.message})`);
     }
   }
 
@@ -289,11 +289,9 @@ export async function runAnalysisPipeline({ videoFile, profile, event, tier, gym
   // ── MediaPipe landmark extraction (runs in background, ready for Pass 2) ──
   // Uses the compressed/original video file — separate from Gemini File API path.
   // If extraction fails, landmarkData stays null and Pass 2 works without it.
-  let landmarkData = null;
   const landmarkPromise = (() => {
     if (effectiveTier === 'free') return Promise.resolve(null);
     return serializeLandmarksForPrompt(fileToUpload, null, gymnastSelection).then(data => {
-      landmarkData = data;
       if (data) {
         log.info("landmarks", `Extracted ${data.metadata.valid_frames}/${data.metadata.total_frames_extracted} frames, ` +
           `${data.metadata.frames_in_prompt} in prompt (${data.metadata.extraction_ms}ms)`);
@@ -310,7 +308,7 @@ export async function runAnalysisPipeline({ videoFile, profile, event, tier, gym
   // ── Wait for landmark extraction before measuring biomechanics ────────────
   // landmarkPromise runs in parallel with Pass 1. Now that Pass 1 is done,
   // wait for landmarks so we have real angle data for biomechanics + injury detection.
-  await landmarkPromise;
+  const landmarkData = await landmarkPromise;
 
   // ── Measure biomechanics per skill from landmark data ─────────────────────
   const measuredBiomechanics = measureSkillBiomechanics(scorecard.deduction_log || [], landmarkData);

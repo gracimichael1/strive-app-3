@@ -112,9 +112,12 @@ export function computeScoreFromScorecard(scorecard, startValue = 10.0, options 
       skillTotal = snapToUSAG(Math.abs(entry.total_deduction || entry.deduction_value || 0));
     }
 
-    // Apply cap — falls (0.50 deduction) are exempt
-    const hasFall = skillTotal >= 0.50 ||
-      (entry.deductions || []).some(d => /fall/i.test(d.type || '') || /fall/i.test(d.description || ''));
+    // Apply cap — falls are exempt (check explicit flag first, then text, then magnitude)
+    const hasFall = entry.fall_detected === true ||
+      (entry.deductions || []).some(d =>
+        d.type === 'fall' || /\bfall\b/i.test(d.type || '') || /\bfall\b/i.test(d.description || '')
+      ) ||
+      skillTotal >= 0.50;
     if (skillTotal > SKILL_CAP && !hasFall) {
       const scale = SKILL_CAP / skillTotal;
       // Scale individual deductions proportionally
