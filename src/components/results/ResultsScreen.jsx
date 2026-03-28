@@ -213,6 +213,88 @@ export default function ResultsScreen({ result, profile, previousResult, onBack,
           </div>
         )}
 
+        {/* ═══ CELEBRATIONS — What went well ═══ */}
+        {canSeeJudgeNarrative(tier) && result.celebrations && result.celebrations.length > 0 && (
+          <div style={{
+            margin: '10px 16px 0', padding: '12px 14px', borderRadius: 10,
+            background: 'rgba(34,197,94,0.04)', border: '1px solid rgba(34,197,94,0.12)',
+          }}>
+            <div style={{
+              fontSize: 11, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase',
+              color: 'rgba(34,197,94,0.7)', marginBottom: 8, fontFamily: T.sans,
+            }}>
+              What Went Well
+            </div>
+            {result.celebrations.map((c, i) => (
+              <div key={i} style={{
+                fontSize: 13, color: 'rgba(255,255,255,0.7)', lineHeight: 1.6,
+                fontFamily: T.sans, paddingLeft: 12, marginBottom: 4,
+                borderLeft: '2px solid rgba(34,197,94,0.25)',
+              }}>
+                {c}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ═══ TOP 3 FIXES — Biggest improvements available ═══ */}
+        {canSeeJudgeNarrative(tier) && result.top3Fixes && result.top3Fixes.length > 0 && (
+          <div style={{
+            margin: '10px 16px 0', padding: '12px 14px', borderRadius: 10,
+            background: 'rgba(232,150,42,0.04)', border: '1px solid rgba(232,150,42,0.12)',
+          }}>
+            <div style={{
+              fontSize: 11, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase',
+              color: 'rgba(232,150,42,0.7)', marginBottom: 8, fontFamily: T.sans,
+            }}>
+              Top 3 Fixes
+            </div>
+            {result.top3Fixes.map((fix, i) => (
+              <div key={i} style={{
+                display: 'flex', gap: 8, alignItems: 'flex-start', marginBottom: 6,
+              }}>
+                <div style={{
+                  width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
+                  background: 'rgba(232,150,42,0.15)', display: 'flex',
+                  alignItems: 'center', justifyContent: 'center',
+                  fontSize: 11, fontWeight: 800, color: T.gold, fontFamily: T.mono,
+                }}>
+                  {i + 1}
+                </div>
+                <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', lineHeight: 1.6, fontFamily: T.sans }}>
+                  {fix}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ═══ TOP IMPROVEMENTS — Specific skills with biggest gain ═══ */}
+        {canSeeJudgeNarrative(tier) && result.topImprovements && result.topImprovements.length > 0 && (
+          <div style={{
+            margin: '10px 16px 0', padding: '12px 14px', borderRadius: 10,
+            background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)',
+          }}>
+            <div style={{
+              fontSize: 11, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase',
+              color: 'rgba(255,255,255,0.4)', marginBottom: 8, fontFamily: T.sans,
+            }}>
+              Biggest Score Impact
+            </div>
+            {result.topImprovements.map((imp, i) => (
+              <div key={i} style={{
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                padding: '6px 0', borderBottom: i < result.topImprovements.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+              }}>
+                <div style={{ fontSize: 13, color: T.text, fontFamily: T.sans }}>{imp.skillName || imp.skill}</div>
+                <div style={{ fontSize: 13, fontWeight: 800, color: T.gold, fontFamily: T.mono }}>
+                  +{(imp.deduction || imp.potential || 0).toFixed(2)}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* ═══ YOUR TRAINING CTA (elite only) ═══ */}
         {onTraining && tier === 'elite' && (
           <button onClick={onTraining} style={{

@@ -280,6 +280,13 @@ function SkillCard({ skill, index, defaultExpanded, videoFile }) {
   const category = safeStr(skill.category, '');
   const fallDetected = !!skill.fallDetected;
   const narrativeText = safeStr(skill.narrative, '');
+  const eliteComparison = safeStr(skill.eliteComparison || skill.elite_comparison, '');
+  const drillName = safeStr(skill.drillRecommendation || skill.drill || (skill.corrective_drill && skill.corrective_drill.name) || '', '');
+  const drillDesc = safeStr((skill.corrective_drill && skill.corrective_drill.description) || '', '');
+  const drillSetsReps = safeStr(skill.drillSetsReps || (skill.corrective_drill && skill.corrective_drill.sets_reps) || '', '');
+  const bioNotes = safeStr((skill.biomechanics && skill.biomechanics.notes) || '', '');
+  const bodyLineScore = typeof (skill.biomechanics && skill.biomechanics.body_line_score) === 'number' ? skill.biomechanics.body_line_score : null;
+  const efficiencyRating = typeof (skill.biomechanics && skill.biomechanics.efficiency_rating) === 'number' ? skill.biomechanics.efficiency_rating : null;
   const rawInjurySignal = safeStr(skill.injurySignal, '');
   const injurySignal = (() => {
     if (!rawInjurySignal) return '';
@@ -595,6 +602,16 @@ function SkillCard({ skill, index, defaultExpanded, videoFile }) {
                 </SectionBox>
               )}
 
+              {/* Elite Comparison — how this skill compares to elite execution */}
+              {eliteComparison && (
+                <SectionBox borderColor="rgba(255,193,90,0.12)" bgColor="rgba(255,193,90,0.03)">
+                  <SectionHeader color="#ffc15a">Judge's Eye</SectionHeader>
+                  <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)', lineHeight: 1.7, fontFamily: "'Outfit', sans-serif", fontStyle: 'italic' }}>
+                    {eliteComparison}
+                  </div>
+                </SectionBox>
+              )}
+
               {/* Fault Observed */}
               {skill.fault && deduction > 0 && (
                 <SectionBox borderColor="rgba(224,104,32,0.15)" bgColor="rgba(224,104,32,0.04)">
@@ -706,12 +723,63 @@ function SkillCard({ skill, index, defaultExpanded, videoFile }) {
                   </div>
                 </SectionBox>
               )}
+              {/* Corrective Drill — specific exercise to fix this skill */}
+              {drillName && (
+                <SectionBox borderColor="rgba(34,197,94,0.12)" bgColor="rgba(34,197,94,0.03)">
+                  <SectionHeader color={COLORS.green}>Drill to Fix This</SectionHeader>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.text, marginBottom: 4, fontFamily: "'Outfit', sans-serif" }}>
+                    {drillName}
+                  </div>
+                  {drillDesc && (
+                    <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', lineHeight: 1.6, fontFamily: "'Outfit', sans-serif" }}>
+                      {drillDesc}
+                    </div>
+                  )}
+                  {drillSetsReps && (
+                    <div style={{ fontSize: 11, color: COLORS.gold, marginTop: 4, fontWeight: 600, fontFamily: "'Space Mono', monospace" }}>
+                      {drillSetsReps}
+                    </div>
+                  )}
+                </SectionBox>
+              )}
             </>
           )}
 
           {/* ═══ TAB: BIOMECHANICS ═══ */}
           {cardTab === 'bio' && (
             <div>
+              {/* Body Line & Efficiency scores from Gemini analysis */}
+              {(bodyLineScore != null || efficiencyRating != null) && (
+                <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+                  {bodyLineScore != null && (
+                    <div style={{ flex: 1, background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: '8px 10px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.06)' }}>
+                      <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 4, fontFamily: "'Outfit', sans-serif" }}>Body Line</div>
+                      <div style={{ fontSize: 20, fontWeight: 900, color: bodyLineScore >= 8 ? '#22c55e' : bodyLineScore >= 6 ? '#ffc15a' : '#dc2626', fontFamily: "'Space Mono', monospace" }}>
+                        {bodyLineScore}<span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>/10</span>
+                      </div>
+                    </div>
+                  )}
+                  {efficiencyRating != null && (
+                    <div style={{ flex: 1, background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: '8px 10px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.06)' }}>
+                      <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 4, fontFamily: "'Outfit', sans-serif" }}>Efficiency</div>
+                      <div style={{ fontSize: 20, fontWeight: 900, color: efficiencyRating >= 8 ? '#22c55e' : efficiencyRating >= 6 ? '#ffc15a' : '#dc2626', fontFamily: "'Space Mono', monospace" }}>
+                        {efficiencyRating}<span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>/10</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Biomechanics notes from video analysis */}
+              {bioNotes && (
+                <div style={{ marginBottom: 10, padding: '8px 12px', borderRadius: 8, background: 'rgba(232,150,42,0.04)', border: '1px solid rgba(232,150,42,0.10)' }}>
+                  <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 4, fontFamily: "'Outfit', sans-serif" }}>Analysis Notes</div>
+                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', lineHeight: 1.6, fontFamily: "'Outfit', sans-serif" }}>
+                    {bioNotes}
+                  </div>
+                </div>
+              )}
+
               {bioAngles.length > 0 ? (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
                   {bioAngles.map((a, i) => {
