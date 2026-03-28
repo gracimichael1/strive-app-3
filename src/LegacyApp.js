@@ -2362,8 +2362,8 @@ function OnboardingScreen({ onComplete }) {
   };
 
   const handleNext = () => {
-    // After name (step 1), show AgeGate before proceeding to gender (step 2)
-    if (step === 1) {
+    // After role (step 0), show AgeGate BEFORE collecting name (COPPA: age gate first)
+    if (step === 0) {
       setLegalScreen("age-gate");
       return;
     }
@@ -2595,7 +2595,7 @@ function OnboardingScreen({ onComplete }) {
             setLegalScreen("parental-consent");
           } else {
             setLegalScreen(null);
-            setStep(2); // proceed to gender
+            setStep(1); // proceed to name (age gate now fires after role, before name)
           }
         }}
         onBack={() => setLegalScreen(null)}
@@ -2606,12 +2606,12 @@ function OnboardingScreen({ onComplete }) {
   if (legalScreen === "parental-consent") {
     return (
       <ParentalConsent
-        athleteName={name}
+        athleteName={name || 'your child'}
         accountEmail="" /* No account email yet pre-Supabase */
         onConsent={(record) => {
           setParentalConsentRecord(record);
           setLegalScreen(null);
-          setStep(2); // proceed to gender — consentConfirmed stored on profile at completion
+          setStep(1); // proceed to name — age gate + consent now happen before name (COPPA compliant)
         }}
         onDecline={() => {
           // Stay on declined screen (ParentalConsent handles the declined UI)
