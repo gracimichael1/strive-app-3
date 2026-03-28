@@ -286,9 +286,9 @@ export default function ResultsScreen({ result, profile, previousResult, onBack,
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                 padding: '6px 0', borderBottom: i < result.topImprovements.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
               }}>
-                <div style={{ fontSize: 13, color: T.text, fontFamily: T.sans }}>{imp.skillName || imp.skill}</div>
-                <div style={{ fontSize: 13, fontWeight: 800, color: T.gold, fontFamily: T.mono }}>
-                  +{(imp.deduction || imp.potential || 0).toFixed(2)}
+                <div style={{ fontSize: 13, color: T.text, fontFamily: T.sans, flex: 1, marginRight: 8 }}>{imp.fix || imp.skillName || imp.skill}</div>
+                <div style={{ fontSize: 13, fontWeight: 800, color: T.gold, fontFamily: T.mono, flexShrink: 0 }}>
+                  +{(imp.pointsGained || imp.deduction || imp.potential || 0).toFixed(2)}
                 </div>
               </div>
             ))}

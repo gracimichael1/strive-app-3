@@ -281,8 +281,12 @@ function SkillCard({ skill, index, defaultExpanded, videoFile }) {
   const fallDetected = !!skill.fallDetected;
   const narrativeText = safeStr(skill.narrative, '');
   const eliteComparison = safeStr(skill.eliteComparison || skill.elite_comparison, '');
-  const drillName = safeStr(skill.drillRecommendation || skill.drill || (skill.corrective_drill && skill.corrective_drill.name) || '', '');
-  const drillDesc = safeStr((skill.corrective_drill && skill.corrective_drill.description) || '', '');
+  const drillName = safeStr(skill.drill || (skill.corrective_drill && skill.corrective_drill.name) || '', '');
+  const drillFullText = safeStr(skill.drillRecommendation || '', '');
+  // drillRecommendation is "name: description (sets)" — extract description portion
+  const drillDesc = drillName && drillFullText.startsWith(drillName)
+    ? safeStr(drillFullText.slice(drillName.length).replace(/^[:\s]+/, '').replace(/\s*\([^)]+\)\s*$/, ''), '')
+    : safeStr((skill.corrective_drill && skill.corrective_drill.description) || '', '');
   const drillSetsReps = safeStr(skill.drillSetsReps || (skill.corrective_drill && skill.corrective_drill.sets_reps) || '', '');
   const bioNotes = safeStr((skill.biomechanics && skill.biomechanics.notes) || '', '');
   const bodyLineScore = typeof (skill.biomechanics && skill.biomechanics.body_line_score) === 'number' ? skill.biomechanics.body_line_score : null;
