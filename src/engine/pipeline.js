@@ -836,12 +836,15 @@ function parseJSON(raw, label) {
  */
 function extractJSON(raw) {
   if (!raw || typeof raw !== 'string') return null;
+  const rawLen = raw.length;
 
   // ── Pass 1: Direct parse ─────────────────────────────
   try {
     const trimmed = raw.trim();
     if (trimmed.startsWith('{')) {
-      return JSON.parse(trimmed);
+      const result = JSON.parse(trimmed);
+      console.log(`[extractJSON] Pass 1 succeeded (direct parse, ${rawLen} chars)`);
+      return result;
     }
   } catch { /* continue */ }
 
@@ -852,7 +855,9 @@ function extractJSON(raw) {
       /```(?:json)?\s*\n?([\s\S]*?)\n?```/
     );
     if (fenceMatch?.[1]) {
-      return JSON.parse(fenceMatch[1].trim());
+      const result = JSON.parse(fenceMatch[1].trim());
+      console.log(`[extractJSON] Pass 2 succeeded (markdown fence, ${rawLen} chars)`);
+      return result;
     }
   } catch { /* continue */ }
 
@@ -862,7 +867,9 @@ function extractJSON(raw) {
     const lastBrace = raw.lastIndexOf('}');
     if (firstBrace !== -1 && lastBrace > firstBrace) {
       const candidate = raw.slice(firstBrace, lastBrace + 1);
-      return JSON.parse(candidate);
+      const result = JSON.parse(candidate);
+      console.log(`[extractJSON] Pass 3 succeeded (brace extraction, ${rawLen} chars)`);
+      return result;
     }
   } catch { /* continue */ }
 
@@ -887,7 +894,11 @@ function extractJSON(raw) {
     // Sort by length — largest block is most likely the full response
     blocks.sort((a, b) => b.length - a.length);
     for (const block of blocks) {
-      try { return JSON.parse(block); } catch { /* try next */ }
+      try {
+        const result = JSON.parse(block);
+        console.log(`[extractJSON] Pass 4 succeeded (largest block, ${block.length}/${rawLen} chars)`);
+        return result;
+      } catch { /* try next */ }
     }
   } catch { /* continue */ }
 
@@ -917,7 +928,9 @@ function extractJSON(raw) {
       // Close brackets and braces
       partial += ']'.repeat(Math.max(0, brackets));
       partial += '}'.repeat(Math.max(0, braces));
-      return JSON.parse(partial);
+      const result = JSON.parse(partial);
+      console.warn(`[extractJSON] Pass 5 succeeded (truncation repair, closed ${braces} braces + ${brackets} brackets)`);
+      return result;
     }
   } catch { /* pass 5 failed */ }
 
