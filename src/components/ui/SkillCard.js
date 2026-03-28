@@ -307,7 +307,7 @@ function SkillCard({ skill, index, defaultExpanded, videoFile }) {
   const gradeGroup = (grade || '').charAt(0);
   const borderLeftColor = gradeGroup === 'A' ? '#22c55e' : gradeGroup === 'B' ? '#e8962a' : gradeGroup === 'C' ? '#e06820' : '#dc2626';
 
-  // Biomechanics: use real data from Gemini
+  // Biomechanics: use real measured data when available
   const bioAngles = skill.biomechanics && Array.isArray(skill.biomechanics) && skill.biomechanics.length > 0
     ? skill.biomechanics
     : [];
@@ -582,7 +582,7 @@ function SkillCard({ skill, index, defaultExpanded, videoFile }) {
                     if (!p1 || !p2) return null;
                     return <line key={`${a}-${b}`} x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y} stroke="rgba(232,150,42,0.85)" strokeWidth="0.008" strokeLinecap="round" />;
                   })}
-                  {Object.entries(skelFrame.joints).filter(([n]) => n.startsWith('left') || n.startsWith('right')).map(([name, j]) => (
+                  {skelFrame.joints && Object.entries(skelFrame.joints).filter(([n]) => n.startsWith('left') || n.startsWith('right')).map(([name, j]) => (
                     <g key={name}>
                       <circle cx={j.x} cy={j.y} r="0.012" fill={name.includes('Shoulder') ? '#e8962a' : name.includes('Hip') ? '#3B82F6' : name.includes('Knee') ? '#60A5FA' : name.includes('Ankle') ? '#93C5FD' : '#ffc15a'} />
                       <circle cx={j.x} cy={j.y} r="0.004" fill="rgba(255,255,255,0.9)" />
@@ -755,7 +755,7 @@ function SkillCard({ skill, index, defaultExpanded, videoFile }) {
           {/* ═══ TAB: BIOMECHANICS ═══ */}
           {cardTab === 'bio' && (
             <div>
-              {/* Body Line & Efficiency scores from Gemini analysis */}
+              {/* Body Line & Efficiency scores from video analysis */}
               {(bodyLineScore != null || efficiencyRating != null) && (
                 <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
                   {bodyLineScore != null && (

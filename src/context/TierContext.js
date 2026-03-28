@@ -152,28 +152,29 @@ export function TierProvider({ children }) {
     });
   }, []);
 
-  const features = TIER_FEATURES[tier] || TIER_FEATURES[TIERS.FREE];
-  const isPaid = tier === TIERS.COMPETITIVE || tier === TIERS.ELITE;
-  const canAnalyze = isPaid || analysesThisMonth < features.maxAnalysesPerMonth;
-  const analysesRemaining = isPaid ? Infinity : Math.max(0, features.maxAnalysesPerMonth - analysesThisMonth);
-
-  const value = useMemo(() => ({
-    tier,
-    features,
-    canAnalyze,
-    analysesRemaining,
-    analysesThisMonth,
-    changeTier,
-    upgradeToCompetitive,
-    upgradeToElite,
-    incrementAnalyses,
-    isPaid,
-    isCompetitive: tier === TIERS.COMPETITIVE || tier === TIERS.ELITE,
-    isElite: tier === TIERS.ELITE,
-    isPro: isPaid,
-    upgradeToPro: upgradeToCompetitive,
-    loading,
-  }), [tier, analysesThisMonth, loading, features, canAnalyze, analysesRemaining, isPaid, changeTier, upgradeToCompetitive, upgradeToElite, incrementAnalyses]);
+  const value = useMemo(() => {
+    const features = TIER_FEATURES[tier] || TIER_FEATURES[TIERS.FREE];
+    const isPaid = tier === TIERS.COMPETITIVE || tier === TIERS.ELITE;
+    const canAnalyze = isPaid || analysesThisMonth < features.maxAnalysesPerMonth;
+    const analysesRemaining = isPaid ? Infinity : Math.max(0, features.maxAnalysesPerMonth - analysesThisMonth);
+    return {
+      tier,
+      features,
+      canAnalyze,
+      analysesRemaining,
+      analysesThisMonth,
+      changeTier,
+      upgradeToCompetitive,
+      upgradeToElite,
+      incrementAnalyses,
+      isPaid,
+      isCompetitive: tier === TIERS.COMPETITIVE || tier === TIERS.ELITE,
+      isElite: tier === TIERS.ELITE,
+      isPro: isPaid,
+      upgradeToPro: upgradeToCompetitive,
+      loading,
+    };
+  }, [tier, analysesThisMonth, loading, changeTier, upgradeToCompetitive, upgradeToElite, incrementAnalyses]);
 
   return (
     <TierContext.Provider value={value}>
