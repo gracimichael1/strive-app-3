@@ -378,7 +378,7 @@ export default function ResultsScreen({ result, profile, previousResult, onBack,
               borderRight: i < 3 ? `1px solid ${T.border}` : 'none',
             }}>
               <div style={{ fontSize: 18, fontWeight: 800, color: s.color, fontFamily: T.mono }}>{s.val}</div>
-              <div style={{ fontSize: 9, color: T.textMuted, textTransform: 'uppercase', letterSpacing: 0.5, fontFamily: T.sans }}>{s.label}</div>
+              <div style={{ fontSize: 11, color: T.textMuted, textTransform: 'uppercase', letterSpacing: 0.5, fontFamily: T.sans }}>{s.label}</div>
             </div>
           ))}
         </div>
@@ -1144,7 +1144,7 @@ function SkillCard({ skill, index, isFree, tier, freeDeductionLimit, globalDeduc
               <span title="Skill identification is approximate" style={{ fontSize: 11, cursor: 'help', opacity: 0.6 }}>◐</span>
             )}
             <span style={{
-              fontSize: 9, fontWeight: 600, padding: '2px 6px', borderRadius: 4,
+              fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 4,
               background: category === 'DANCE' || category === 'TURN' || category === 'LEAP' ? 'rgba(96,165,250,0.12)' : 'rgba(255,255,255,0.04)',
               color: category === 'DANCE' || category === 'TURN' || category === 'LEAP' ? T.blue : T.textMuted,
               textTransform: 'uppercase', letterSpacing: 0.5,
@@ -1542,9 +1542,9 @@ function SkillCard({ skill, index, isFree, tier, freeDeductionLimit, globalDeduc
                               const status = diff <= tolerance1 ? 'Clean' : diff <= tolerance2 ? 'Watch' : 'Flag';
                               return (
                                 <div key={joint} style={{ padding: '6px 8px', borderRadius: 6, background: 'rgba(255,255,255,0.02)' }}>
-                                  <div style={{ fontSize: 9, color: T.textMuted, fontFamily: T.sans }}>{joint}</div>
+                                  <div style={{ fontSize: 10, color: T.textMuted, fontFamily: T.sans }}>{joint}</div>
                                   <div style={{ fontSize: 16, fontWeight: 800, color: c, fontFamily: T.mono }}>{angle}°</div>
-                                  <div style={{ fontSize: 9, color: c, fontWeight: 600, fontFamily: T.sans }}>{status}</div>
+                                  <div style={{ fontSize: 10, color: c, fontWeight: 600, fontFamily: T.sans }}>{status}</div>
                                 </div>
                               );
                             })}

@@ -113,7 +113,7 @@ export default function SkillCard({ skill, expanded, onToggle, onSeek }) {
           <div style={{ fontSize: 14, fontWeight: 600, color: '#E2E8F0', marginBottom: 2, fontFamily: "'Outfit', sans-serif" }}>
             {skill.skillName}
           </div>
-          <div style={{ fontSize: 11, color: '#8A90AA', fontFamily: "'Space Mono', monospace" }}>
+          <div style={{ fontSize: 12, color: '#8A90AA', fontFamily: "'Space Mono', monospace" }}>
             {formatTime(skill.start)} → {formatTime(skill.end)} · {skill.duration}s
           </div>
         </div>

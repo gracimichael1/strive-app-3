@@ -447,7 +447,7 @@ function SkillCard({ skill, index, defaultExpanded, videoFile }) {
             <div
               style={{
                 fontSize: 12,
-                color: 'rgba(255,255,255,0.4)',
+                color: 'rgba(255,255,255,0.55)',
                 marginTop: 4,
                 lineHeight: 1.4,
                 overflow: 'hidden',
@@ -540,9 +540,9 @@ function SkillCard({ skill, index, defaultExpanded, videoFile }) {
                   fontWeight: 600,
                   fontFamily: "'Outfit', sans-serif",
                   background: cardTab === t.id ? COLORS.gold : 'transparent',
-                  color: cardTab === t.id ? '#070c16' : 'rgba(255,255,255,0.4)',
+                  color: cardTab === t.id ? '#070c16' : 'rgba(255,255,255,0.55)',
                   transition: 'all 0.15s',
-                  minHeight: 28,
+                  minHeight: 40,
                 }}
               >
                 {t.label}
@@ -587,7 +587,7 @@ function SkillCard({ skill, index, defaultExpanded, videoFile }) {
                   ))}
                 </svg>
               )}
-              <div style={{ position: 'absolute', top: 6, left: 6, background: 'rgba(0,0,0,0.7)', padding: '2px 8px', borderRadius: 4, fontSize: 9, fontWeight: 700, color: '#e8962a', fontFamily: "'Space Mono', monospace" }}>
+              <div style={{ position: 'absolute', top: 6, left: 6, background: 'rgba(0,0,0,0.7)', padding: '2px 8px', borderRadius: 4, fontSize: 10, fontWeight: 700, color: '#e8962a', fontFamily: "'Space Mono', monospace" }}>
                 {formatTimestamp(timestamp)}
               </div>
             </div>
@@ -757,7 +757,7 @@ function SkillCard({ skill, index, defaultExpanded, videoFile }) {
                 <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
                   {bodyLineScore != null && (
                     <div style={{ flex: 1, background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: '8px 10px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.06)' }}>
-                      <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 4, fontFamily: "'Outfit', sans-serif" }}>Body Line</div>
+                      <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 4, fontFamily: "'Outfit', sans-serif" }}>Body Line</div>
                       <div style={{ fontSize: 20, fontWeight: 900, color: bodyLineScore >= 8 ? '#22c55e' : bodyLineScore >= 6 ? '#ffc15a' : '#dc2626', fontFamily: "'Space Mono', monospace" }}>
                         {bodyLineScore}<span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>/10</span>
                       </div>
@@ -765,7 +765,7 @@ function SkillCard({ skill, index, defaultExpanded, videoFile }) {
                   )}
                   {efficiencyRating != null && (
                     <div style={{ flex: 1, background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: '8px 10px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.06)' }}>
-                      <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 4, fontFamily: "'Outfit', sans-serif" }}>Efficiency</div>
+                      <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 4, fontFamily: "'Outfit', sans-serif" }}>Efficiency</div>
                       <div style={{ fontSize: 20, fontWeight: 900, color: efficiencyRating >= 8 ? '#22c55e' : efficiencyRating >= 6 ? '#ffc15a' : '#dc2626', fontFamily: "'Space Mono', monospace" }}>
                         {efficiencyRating}<span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>/10</span>
                       </div>
@@ -777,7 +777,7 @@ function SkillCard({ skill, index, defaultExpanded, videoFile }) {
               {/* Biomechanics notes from video analysis */}
               {bioNotes && (
                 <div style={{ marginBottom: 10, padding: '8px 12px', borderRadius: 8, background: 'rgba(232,150,42,0.04)', border: '1px solid rgba(232,150,42,0.10)' }}>
-                  <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 4, fontFamily: "'Outfit', sans-serif" }}>Analysis Notes</div>
+                  <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 4, fontFamily: "'Outfit', sans-serif" }}>Analysis Notes</div>
                   <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', lineHeight: 1.6, fontFamily: "'Outfit', sans-serif" }}>
                     {bioNotes}
                   </div>
@@ -805,7 +805,7 @@ function SkillCard({ skill, index, defaultExpanded, videoFile }) {
                           border: `1px solid ${aColor}20`,
                         }}
                       >
-                        <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4, fontFamily: "'Outfit', sans-serif" }}>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4, fontFamily: "'Outfit', sans-serif" }}>
                           {a.label}
                         </div>
                         <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 4 }}>
@@ -813,21 +813,21 @@ function SkillCard({ skill, index, defaultExpanded, videoFile }) {
                             {actual}&deg;
                           </span>
                           <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>/</span>
-                          <span style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.4)', fontFamily: "'Space Mono', monospace" }}>
+                          <span style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.55)', fontFamily: "'Space Mono', monospace" }}>
                             {ideal}&deg;
                           </span>
                         </div>
                         <div style={{ height: 4, background: 'rgba(255,255,255,0.06)', borderRadius: 2, overflow: 'hidden', marginBottom: 4 }}>
                           <div style={{ height: '100%', width: `${pct}%`, background: aColor, borderRadius: 2, transition: 'width 0.6s ease' }} />
                         </div>
-                        <div style={{ fontSize: 9, color: aColor, fontWeight: 600 }}>{statusLabel}</div>
+                        <div style={{ fontSize: 10, color: aColor, fontWeight: 600 }}>{statusLabel}</div>
                       </div>
                     );
                   })}
                 </div>
               ) : skill.biomechanics_measured ? (
                 <div style={{ padding: 12 }}>
-                  <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginBottom: 8, letterSpacing: 1.2, textTransform: 'uppercase' }}>
+                  <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.55)', marginBottom: 8, letterSpacing: 1.2, textTransform: 'uppercase' }}>
                     Measured by Motion Analysis
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
@@ -866,7 +866,7 @@ function SkillCard({ skill, index, defaultExpanded, videoFile }) {
                       </div>
                     )}
                   </div>
-                  <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.25)', marginTop: 8 }}>
+                  <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', marginTop: 8 }}>
                     Based on {skill.biomechanics_measured.frames_analyzed} frames analyzed via motion tracking
                   </div>
                 </div>
@@ -896,7 +896,7 @@ function SkillCard({ skill, index, defaultExpanded, videoFile }) {
                           {safeStr(sig.signal)}
                         </SectionHeader>
                         <span style={{
-                          fontSize: 9, fontWeight: 700, padding: '1px 6px', borderRadius: 4,
+                          fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 4,
                           background: sig.severity === 'high' ? 'rgba(220,38,38,0.15)' : 'rgba(232,150,42,0.12)',
                           color: sig.severity === 'high' ? COLORS.red : COLORS.orange,
                           fontFamily: "'Space Mono', monospace", textTransform: 'uppercase',
@@ -1045,7 +1045,7 @@ function SkillCard({ skill, index, defaultExpanded, videoFile }) {
                     style={{
                       background: 'none', border: '1px solid rgba(255,255,255,0.1)',
                       borderRadius: 6, padding: '6px 14px', cursor: 'pointer',
-                      fontSize: 11, color: 'rgba(255,255,255,0.4)', fontFamily: "'Outfit', sans-serif",
+                      fontSize: 11, color: 'rgba(255,255,255,0.55)', fontFamily: "'Outfit', sans-serif",
                     }}
                   >
                     Cancel
