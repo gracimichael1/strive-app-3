@@ -69,9 +69,6 @@ export default function ResultsScreen({ result, profile, previousResult, onBack,
 
   if (!result) return <div style={{ minHeight: '100vh', background: T.bg }} />;
 
-  // Diagnostic — remove after confirming field names
-  console.log('[ResultsScreen] result:', result);
-
   const skills = result.gradedSkills ?? result.skills ?? result.skillBreakdown ?? [];
   const event = result.event || '';
   const finalScore = result.finalScore || 0;
@@ -462,7 +459,7 @@ export default function ResultsScreen({ result, profile, previousResult, onBack,
             {result?.biomechanics_raw ? (
               <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
                 <div style={{ fontSize: 11, fontWeight: 600, color: 'rgba(230,237,243,0.5)', fontFamily: "'Outfit', sans-serif", marginBottom: 6 }}>Raw Measurements</div>
-                {result.biomechanics_raw.map((m, i) => (
+                {(Array.isArray(result.biomechanics_raw) ? result.biomechanics_raw : []).map((m, i) => (
                   <div key={i} style={{ fontSize: 11, color: '#e2e8f0', fontFamily: "'Space Mono', monospace", lineHeight: 1.8 }}>
                     {m.skill_name}: knee {m.knee_angle_left != null ? `${m.knee_angle_left}°/${m.knee_angle_right}°` : 'Pending'} · hip {m.hip_angle_left != null ? `${m.hip_angle_left}°/${m.hip_angle_right}°` : 'Pending'} · spine {m.spine_angle != null ? `${m.spine_angle}°` : 'Pending'}
                   </div>
