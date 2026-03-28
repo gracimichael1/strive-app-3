@@ -134,7 +134,7 @@ export default async function handler(req, res) {
     }
   } catch (e) {
     console.error(`[gemini-proxy] ${action} error:`, e.message);
-    return res.status(500).json({ error: e.message });
+    return res.status(500).json({ error: 'Analysis service error. Please try again.' });
   }
 }
 

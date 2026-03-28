@@ -1583,9 +1583,10 @@ export default function LegacyApp() {
         pointerEvents: "none", zIndex: 0, willChange: "transform",
       }} />
 
-      {screen === "share" && <ShareScreen token={shareToken} />}
-      {screen === "legal" && <LegalScreen onBack={() => setScreen(profile ? "settings" : "splash")} />}
+      {screen === "share" && <StriveErrorBoundary name="Share"><ShareScreen token={shareToken} /></StriveErrorBoundary>}
+      {screen === "legal" && <StriveErrorBoundary name="Legal"><LegalScreen onBack={() => setScreen(profile ? "settings" : "splash")} /></StriveErrorBoundary>}
       {screen === "training" && (
+        <StriveErrorBoundary name="Training">
         <Suspense fallback={<div style={{ minHeight: "100vh", background: "#0d1117" }} />}>
           <MastermindScreen
             athleteProfile={profile}
@@ -1597,13 +1598,14 @@ export default function LegacyApp() {
             onChangeGoal={() => setShowGoalSetup(true)}
           />
         </Suspense>
+        </StriveErrorBoundary>
       )}
-      {screen === "beta-gate" && <BetaCodeScreen onSuccess={() => setScreen("splash")} />}
-      {screen === "splash" && <SplashScreen onStart={() => setScreen("onboarding")} />}
-      {screen === "onboarding" && <OnboardingScreen onComplete={(p) => {
+      {screen === "beta-gate" && <StriveErrorBoundary name="Beta Gate"><BetaCodeScreen onSuccess={() => setScreen("splash")} /></StriveErrorBoundary>}
+      {screen === "splash" && <StriveErrorBoundary name="Splash"><SplashScreen onStart={() => setScreen("onboarding")} /></StriveErrorBoundary>}
+      {screen === "onboarding" && <StriveErrorBoundary name="Onboarding"><OnboardingScreen onComplete={(p) => {
         saveProfile(p); setScreen("dashboard");
         try { const { trackEvent } = require("./utils/monitoring"); trackEvent("signup_completed", { level: p.level, role: p.role }); } catch {}
-      }} />}
+      }} /></StriveErrorBoundary>}
       {screen === "dashboard" && (
         <StriveErrorBoundary name="Dashboard">
         {useNewDashboard ? (
