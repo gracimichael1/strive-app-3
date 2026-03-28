@@ -186,6 +186,37 @@ function DashboardScreen({ profile, tier, recentAnalyses, lastResult, onAnalyze,
         Analyze a Routine
       </button>
 
+      {/* First-time user guidance */}
+      {!hasScores && !lastResult && (
+        <div
+          style={{
+            background: COLORS.surface,
+            border: `1px solid ${COLORS.border}`,
+            borderRadius: 16,
+            padding: '20px',
+            marginBottom: 16,
+            textAlign: 'center',
+          }}
+          role="region"
+          aria-label="Getting started"
+        >
+          <div style={{ fontSize: 32, marginBottom: 12 }} aria-hidden="true">🎯</div>
+          <div style={{ fontSize: 16, fontWeight: 600, color: COLORS.text, marginBottom: 8, fontFamily: "'Outfit', sans-serif" }}>
+            See Your Score
+          </div>
+          <div style={{ fontSize: 13, color: COLORS.textSecondary, lineHeight: 1.6, fontFamily: "'Outfit', sans-serif" }}>
+            Upload a routine video to get instant scoring feedback, skill-by-skill breakdown, and personalized training tips.
+          </div>
+          <div style={{ marginTop: 14, display: 'flex', justifyContent: 'center', gap: 16 }}>
+            {['Record from stands', 'Side angle is best', '30-90 sec video'].map((tip, i) => (
+              <div key={i} style={{ fontSize: 11, color: COLORS.textMuted, fontFamily: "'Space Mono', monospace" }}>
+                {tip}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Recent analysis preview */}
       {lastResult && (
         <button
