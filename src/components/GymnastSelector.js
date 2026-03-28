@@ -48,6 +48,7 @@ export default function GymnastSelector({ videoFile, onSelect, onSkip }) {
     let cancelled = false;
 
     (async () => {
+      let blobUrl = null;
       try {
         setStatus('loading');
 
@@ -56,7 +57,7 @@ export default function GymnastSelector({ videoFile, onSelect, onSkip }) {
         video.preload = 'auto';
         video.muted = true;
         video.playsInline = true;
-        const blobUrl = URL.createObjectURL(videoFile);
+        blobUrl = URL.createObjectURL(videoFile);
         video.src = blobUrl;
 
         // Wait for metadata
@@ -167,6 +168,7 @@ export default function GymnastSelector({ videoFile, onSelect, onSkip }) {
         setStatus('selecting');
 
       } catch (err) {
+        if (blobUrl) URL.revokeObjectURL(blobUrl);
         console.warn('[GymnastSelector] Detection failed:', err.message);
         if (!cancelled) onSkip(); // Fail gracefully — skip selector
       }

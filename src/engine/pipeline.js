@@ -30,6 +30,7 @@ import { transformForUI } from "./transform";
 import { compressVideo, needsCompression, formatMB } from "./videoCompressor";
 import { serializeLandmarksForPrompt } from "./landmarkSerializer";
 import { pruneOldAnalyses } from "../utils/helpers";
+import { disposePoseDetector } from "../analysis/poseDetector";
 
 // ─── Analysis metadata — version traceability for calibration ────────────────
 const ANALYSIS_METADATA = {
@@ -476,16 +477,18 @@ export async function runAnalysisPipeline({ videoFile, profile, event, tier, gym
         // Pass 2 failure is completely silent — pass1 results already displayed
         log.warn("pass2", `Background enrichment failed (non-fatal): ${e.message}`);
       } finally {
-        // Cleanup uploaded file after pass2 completes (or fails)
+        // Cleanup uploaded file and release GPU memory after pass2 completes (or fails)
         try { geminiProxy({ action: "deleteFile", fileName: fileRef.fileName }); } catch {}
+        try { disposePoseDetector(); } catch {}
       }
     })();
   } else {
-    // Free tier or no pass2 callback — cleanup uploaded file now
+    // Free tier or no pass2 callback — cleanup now
     if (effectiveTier === 'free') {
       log.info("pass2", "Skipping pass2 — free tier");
     }
     try { geminiProxy({ action: "deleteFile", fileName: fileRef.fileName }); } catch {}
+    try { disposePoseDetector(); } catch {}
   }
 
   return uiResult;

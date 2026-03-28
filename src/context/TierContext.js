@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import storage from '../utils/storage';
 
 const TierContext = createContext();
@@ -127,53 +127,56 @@ export function TierProvider({ children }) {
     })();
   }, []);
 
-  const changeTier = async (newTier) => {
+  const changeTier = useCallback(async (newTier) => {
     setTier(newTier);
     if (newTier === TIERS.FREE) {
       await storage.delete('strive-tier');
     } else {
       await storage.set('strive-tier', newTier);
     }
-  };
+  }, []);
 
-  const upgradeToCompetitive = async () => changeTier(TIERS.COMPETITIVE);
-  const upgradeToElite = async () => changeTier(TIERS.ELITE);
+  const upgradeToCompetitive = useCallback(async () => changeTier(TIERS.COMPETITIVE), [changeTier]);
+  const upgradeToElite = useCallback(async () => changeTier(TIERS.ELITE), [changeTier]);
 
-  const incrementAnalyses = async () => {
+  const incrementAnalyses = useCallback(async () => {
     const now = new Date();
-    const newCount = analysesThisMonth + 1;
-    setAnalysesThisMonth(newCount);
-    await storage.set('strive-analyses-month', JSON.stringify({
-      count: newCount,
-      month: now.getMonth(),
-      year: now.getFullYear(),
-    }));
-  };
+    setAnalysesThisMonth(prev => {
+      const newCount = prev + 1;
+      storage.set('strive-analyses-month', JSON.stringify({
+        count: newCount,
+        month: now.getMonth(),
+        year: now.getFullYear(),
+      }));
+      return newCount;
+    });
+  }, []);
 
   const features = TIER_FEATURES[tier] || TIER_FEATURES[TIERS.FREE];
   const isPaid = tier === TIERS.COMPETITIVE || tier === TIERS.ELITE;
   const canAnalyze = isPaid || analysesThisMonth < features.maxAnalysesPerMonth;
   const analysesRemaining = isPaid ? Infinity : Math.max(0, features.maxAnalysesPerMonth - analysesThisMonth);
 
+  const value = useMemo(() => ({
+    tier,
+    features,
+    canAnalyze,
+    analysesRemaining,
+    analysesThisMonth,
+    changeTier,
+    upgradeToCompetitive,
+    upgradeToElite,
+    incrementAnalyses,
+    isPaid,
+    isCompetitive: tier === TIERS.COMPETITIVE || tier === TIERS.ELITE,
+    isElite: tier === TIERS.ELITE,
+    isPro: isPaid,
+    upgradeToPro: upgradeToCompetitive,
+    loading,
+  }), [tier, analysesThisMonth, loading, features, canAnalyze, analysesRemaining, isPaid, changeTier, upgradeToCompetitive, upgradeToElite, incrementAnalyses]);
+
   return (
-    <TierContext.Provider value={{
-      tier,
-      features,
-      canAnalyze,
-      analysesRemaining,
-      analysesThisMonth,
-      changeTier,
-      upgradeToCompetitive,
-      upgradeToElite,
-      incrementAnalyses,
-      isPaid,
-      isCompetitive: tier === TIERS.COMPETITIVE || tier === TIERS.ELITE,
-      isElite: tier === TIERS.ELITE,
-      // Legacy compatibility — maps to isPaid
-      isPro: isPaid,
-      upgradeToPro: upgradeToCompetitive,
-      loading,
-    }}>
+    <TierContext.Provider value={value}>
       {children}
     </TierContext.Provider>
   );

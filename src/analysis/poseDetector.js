@@ -185,6 +185,15 @@ export async function detectPosesForFrames(frames, onProgress = null, targetCent
   return poseFrames;
 }
 
+/**
+ * Release GPU memory held by MediaPipe PoseLandmarker instances.
+ * Call after analysis pipeline completes.
+ */
+export function disposePoseDetector() {
+  if (landmarker) { try { landmarker.close(); } catch {} landmarker = null; }
+  if (multiLandmarker) { try { multiLandmarker.close(); } catch {} multiLandmarker = null; }
+}
+
 function midpoint(a, b) {
   return {
     x: (a.x + b.x) / 2,

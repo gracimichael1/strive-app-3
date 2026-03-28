@@ -56,3 +56,18 @@ export async function extractFrames(video, fps = 8, onProgress = null) {
 
   return frames;
 }
+
+/**
+ * Release canvas memory held by extracted frames.
+ * Call after frame data is no longer needed (e.g., after landmark extraction).
+ * @param {Array<{canvas: HTMLCanvasElement}>} frames
+ */
+export function cleanupFrames(frames) {
+  if (!Array.isArray(frames)) return;
+  for (const f of frames) {
+    if (f.canvas) {
+      f.canvas.width = 0;
+      f.canvas.height = 0;
+    }
+  }
+}

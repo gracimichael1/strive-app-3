@@ -8,9 +8,9 @@
  * Gemini File API video upload path.
  */
 
-import { loadPoseDetector, detectPose } from '../analysis/poseDetector';
+import { loadPoseDetector, detectPose, disposePoseDetector } from '../analysis/poseDetector';
 import { angleDeg } from '../analysis/biomechanics';
-import { extractFrames } from '../analysis/frameExtractor';
+import { extractFrames, cleanupFrames } from '../analysis/frameExtractor';
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -112,6 +112,9 @@ export async function serializeLandmarksForPrompt(videoFile, onProgress = null, 
 
       if (onProgress) onProgress(i + 1, rawFrames.length);
     }
+
+    // Release canvas memory — landmark data has been extracted into serializedFrames
+    cleanupFrames(rawFrames);
 
     if (serializedFrames.length === 0) {
       return null;
