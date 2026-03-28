@@ -124,7 +124,7 @@ function SectionHeader({ color, children }) {
   return (
     <div
       style={{
-        fontSize: 10,
+        fontSize: 11,
         fontWeight: 700,
         color,
         letterSpacing: 1,
@@ -600,7 +600,7 @@ function SkillCard({ skill, index, defaultExpanded, videoFile }) {
               {narrativeText && (
                 <SectionBox borderColor="rgba(232,150,42,0.15)" bgColor="rgba(232,150,42,0.04)">
                   <SectionHeader color={COLORS.gold}>What Happened</SectionHeader>
-                  <div style={{ fontSize: 13, color: COLORS.text, lineHeight: 1.7, fontFamily: "'Outfit', sans-serif" }}>
+                  <div style={{ fontSize: 14, color: COLORS.text, lineHeight: 1.7, fontFamily: "'Outfit', sans-serif" }}>
                     {narrativeText}
                   </div>
                 </SectionBox>
@@ -610,7 +610,7 @@ function SkillCard({ skill, index, defaultExpanded, videoFile }) {
               {eliteComparison && (
                 <SectionBox borderColor="rgba(255,193,90,0.12)" bgColor="rgba(255,193,90,0.03)">
                   <SectionHeader color="#ffc15a">Judge's Eye</SectionHeader>
-                  <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)', lineHeight: 1.7, fontFamily: "'Outfit', sans-serif", fontStyle: 'italic' }}>
+                  <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.75)', lineHeight: 1.7, fontFamily: "'Outfit', sans-serif", fontStyle: 'italic' }}>
                     {eliteComparison}
                   </div>
                 </SectionBox>
@@ -620,7 +620,7 @@ function SkillCard({ skill, index, defaultExpanded, videoFile }) {
               {skill.fault && deduction > 0 && (
                 <SectionBox borderColor="rgba(224,104,32,0.15)" bgColor="rgba(224,104,32,0.04)">
                   <SectionHeader color={COLORS.orange}>Fault Observed</SectionHeader>
-                  <div style={{ fontSize: 13, color: COLORS.text, lineHeight: 1.6, fontFamily: "'Outfit', sans-serif" }}>
+                  <div style={{ fontSize: 14, color: COLORS.text, lineHeight: 1.6, fontFamily: "'Outfit', sans-serif" }}>
                     {safeStr(skill.fault, '')}
                   </div>
                   {ruleRef && (
@@ -644,7 +644,7 @@ function SkillCard({ skill, index, defaultExpanded, videoFile }) {
                       <div key={i} style={{ display: 'flex', alignItems: 'stretch', gap: 10, marginBottom: 6, padding: '6px 10px', borderRadius: 8, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
                         <div style={{ width: 3, borderRadius: 2, background: sevColor, flexShrink: 0 }} aria-label={`${severity} severity`} />
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 12, color: COLORS.text, lineHeight: 1.5, fontFamily: "'Outfit', sans-serif" }}>{faultName}</div>
+                          <div style={{ fontSize: 13, color: COLORS.text, lineHeight: 1.5, fontFamily: "'Outfit', sans-serif" }}>{faultName}</div>
                         </div>
                         {faultDed != null && faultDed > 0 && (
                           <div style={{ fontSize: 13, fontWeight: 800, color: sevColor, fontFamily: "'Space Mono', monospace", flexShrink: 0, alignSelf: 'center' }}>
@@ -686,7 +686,7 @@ function SkillCard({ skill, index, defaultExpanded, videoFile }) {
               {(strengthNote || isClean) && (
                 <SectionBox borderColor="rgba(232,150,42,0.15)" bgColor="rgba(232,150,42,0.04)">
                   <SectionHeader color={COLORS.gold}>Strength</SectionHeader>
-                  <div style={{ fontSize: 12, color: COLORS.text, lineHeight: 1.6, fontFamily: "'Outfit', sans-serif" }}>
+                  <div style={{ fontSize: 13, color: COLORS.text, lineHeight: 1.6, fontFamily: "'Outfit', sans-serif" }}>
                     {strengthNote || 'Clean execution \u2014 no deduction taken.'}
                   </div>
                 </SectionBox>
@@ -696,7 +696,7 @@ function SkillCard({ skill, index, defaultExpanded, videoFile }) {
               {correctForm && (
                 <SectionBox borderColor="rgba(34,197,94,0.15)" bgColor="rgba(34,197,94,0.04)">
                   <SectionHeader color={COLORS.green}>Correct Form</SectionHeader>
-                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', lineHeight: 1.6, fontFamily: "'Outfit', sans-serif" }}>
+                  <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.65)', lineHeight: 1.6, fontFamily: "'Outfit', sans-serif" }}>
                     {correctForm}
                   </div>
                 </SectionBox>

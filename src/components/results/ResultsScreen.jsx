@@ -205,7 +205,7 @@ export default function ResultsScreen({ result, profile, previousResult, onBack,
               Judge's overall read
             </div>
             <div style={{
-              fontSize: 13.5, color: 'rgba(255,255,255,0.72)', lineHeight: 1.75,
+              fontSize: 14.5, color: 'rgba(255,255,255,0.72)', lineHeight: 1.75,
               fontStyle: 'italic', fontFamily: T.sans,
             }}>
               "{result.overallAssessment || result.whyThisScore}"
