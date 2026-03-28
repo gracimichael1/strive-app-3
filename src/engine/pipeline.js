@@ -29,6 +29,7 @@ import { detectInjurySignals } from "./injuryDetection";
 import { transformForUI } from "./transform";
 import { compressVideo, needsCompression, formatMB } from "./videoCompressor";
 import { serializeLandmarksForPrompt } from "./landmarkSerializer";
+import { pruneOldAnalyses } from "../utils/helpers";
 
 // ─── Analysis metadata — version traceability for calibration ────────────────
 const ANALYSIS_METADATA = {
@@ -296,10 +297,16 @@ export async function runAnalysisPipeline({ videoFile, profile, event, tier, gym
     });
   })();
 
+  // ── Wait for landmark extraction before measuring biomechanics ────────────
+  // landmarkPromise runs in parallel with Pass 1. Now that Pass 1 is done,
+  // wait for landmarks so we have real angle data for biomechanics + injury detection.
+  await landmarkPromise;
+
   // ── Measure biomechanics per skill from landmark data ─────────────────────
-  // Uses the already-extracted landmark frames matched to skill timestamp windows.
-  // Runs before building pipeline result so measured angles are available for cross-validation.
   const measuredBiomechanics = measureSkillBiomechanics(scorecard.deduction_log || [], landmarkData);
+  if (measuredBiomechanics.some(b => b !== null)) {
+    log.info("biomechanics", `Measured angles for ${measuredBiomechanics.filter(b => b !== null).length}/${measuredBiomechanics.length} skills`);
+  }
 
   // ── Cross-validate Gemini deductions against measured angles ─────────────
   const biomechanicsFlags = crossValidateBiomechanics(scorecard.deduction_log || [], measuredBiomechanics);
@@ -404,6 +411,9 @@ export async function runAnalysisPipeline({ videoFile, profile, event, tier, gym
 
   // ── Session cache write — fast reload of same video ─────────────────────
   try { sessionStorage.setItem(cacheKey, JSON.stringify(uiResult)); } catch {}
+
+  // ── Prune old analyses if localStorage is getting full ─────────────────
+  try { pruneOldAnalyses(); } catch {}
 
   // ── Log training data (fire and forget) ────────────────────────────────
   try {
