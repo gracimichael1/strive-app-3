@@ -4638,7 +4638,10 @@ const AnalyzingScreen = React.memo(function AnalyzingScreen({ uploadData, profil
           if (data.state === "ACTIVE") break;
           if (data.state === "FAILED") throw new Error("Video processing failed on server");
         }
-      } catch (e) { if (e.message.includes("failed")) throw e; }
+      } catch (e) {
+        if (e.message.includes("failed")) throw e;
+        log.warn("upload", `Poll error (will retry): ${e.message}`);
+      }
       setProgress(58 + Math.min(10, Math.floor(i / 2)));
       if (i === 39) throw new Error("Video processing timed out");
     }
@@ -4869,21 +4872,6 @@ IMPORTANT: The deduction_log must contain ONE entry per distinct skill or transi
     let apiKey = null;
     if (!uploadData.video) throw new Error("No video file available.");
 
-    // ── Score caching — return cached result for duplicate submissions ──
-    // Fingerprint: file name + size + lastModified + athlete name + level + event
-    const PROMPT_VERSION = "v14_schema_restored"; // Bump this when prompt changes to invalidate cache
-    const fingerprintParts = [
-      PROMPT_VERSION,
-      uploadData.video.name || "video",
-      String(uploadData.video.size || 0),
-      String(uploadData.video.lastModified || 0),
-      (profile.name || "unknown").toLowerCase().trim(),
-      profile.level || "L6",
-      uploadData.event || "floor",
-    ].join("_");
-    const cacheKey = `strive_cache_${btoa(unescape(encodeURIComponent(fingerprintParts)))}`;
-    // COMPLIANCE: strive_cache removed from localStorage (contained PII).
-
     try {
       // Upload video once — requires a client-side API key for direct Gemini uploads
       if (!apiKey && serverKeyAvailable) {
@@ -4919,8 +4907,9 @@ IMPORTANT: The deduction_log must contain ONE entry per distinct skill or transi
           }
         }
 
-        // Cleanup uploaded file
-        try { fetch(`https://generativelanguage.googleapis.com/v1beta/${fileRef.fileName}?key=${apiKey}`, { method: "DELETE" }); } catch {}
+        // Cleanup uploaded file (fire-and-forget but log failures)
+        fetch(`https://generativelanguage.googleapis.com/v1beta/${fileRef.fileName}?key=${apiKey}`, { method: "DELETE" })
+          .catch(e => console.warn('[cleanup] Gemini file delete failed:', e.message));
       } else if (serverKeyAvailable) {
         // Server proxy path — send full video as base64 to /api/analyze
         setStatus(`Server-side analysis of ${profile.level} ${uploadData.event}...`);
